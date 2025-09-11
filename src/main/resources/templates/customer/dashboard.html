@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - Reliable Carriers</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --light-bg: #f8f9fa;
+            --dark-bg: #343a40;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(44, 62, 80, 0.95) !important;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: white !important;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+        }
+
+        .main-container {
+            margin-top: 80px;
+            padding: 20px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+            padding: 20px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #2ecc71);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #f1c40f);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-color), #c0392b);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 30px 20px;
+            height: 100%;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stats-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .tracking-input {
+            border-radius: 25px;
+            border: 2px solid #e9ecef;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .tracking-input:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .quick-action {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .quick-action:hover {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+        }
+
+        .quick-action-icon {
+            font-size: 2.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+
+        .footer {
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            padding: 40px 0;
+            margin-top: 50px;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-transit {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-delivered {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin-top: 60px;
+                padding: 10px;
+            }
+            
+            .card {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shipping-fast me-2"></i>
+                Reliable Carriers
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customer/track">
+                            <i class="fas fa-search me-1"></i>Track Package
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customer/quote">
+                            <i class="fas fa-calculator me-1"></i>Get Quote
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customer/packages">
+                            <i class="fas fa-boxes me-1"></i>My Packages
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customer/help">
+                            <i class="fas fa-question-circle me-1"></i>Help
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <div class="container">
+            <!-- Welcome Section -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <h1 class="display-4 mb-3">
+                                <i class="fas fa-home text-primary me-3"></i>
+                                Welcome to Your Package Dashboard
+                            </h1>
+                            <p class="lead text-muted mb-4">
+                                Track your packages, create quotes, and manage your shipments - all without needing an account!
+                            </p>
+                            <div class="row justify-content-center">
+                                <div class="col-md-8">
+                                    <form class="d-flex" action="/customer/track" method="post">
+                                        <input type="text" class="form-control tracking-input me-3" 
+                                               name="trackingNumber" placeholder="Enter tracking number (e.g., RC12345678)" 
+                                               required>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search me-2"></i>Track Package
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h2 class="text-white mb-4 text-center">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h2>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="quick-action" onclick="window.location.href='/customer/track'">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h5>Track Package</h5>
+                        <p class="text-muted">Track any package using its tracking number</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="quick-action" onclick="window.location.href='/customer/quote'">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <h5>Get Quote</h5>
+                        <p class="text-muted">Get instant shipping quotes for your packages</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="quick-action" onclick="window.location.href='/customer/packages'">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <h5>My Packages</h5>
+                        <p class="text-muted">View all your packages by email address</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="quick-action" onclick="window.location.href='/customer/store'">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <h5>Business Shipping</h5>
+                        <p class="text-muted">Send multiple packages to different customers</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h2 class="text-white mb-4 text-center">
+                        <i class="fas fa-star me-2"></i>Why Choose Our Service?
+                    </h2>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <h4>No Account Required</h4>
+                        <p class="text-muted">Track packages and create quotes without registration. Just use your email or phone number.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <h4>Real-time Notifications</h4>
+                        <p class="text-muted">Get SMS and email updates about your package status automatically.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h4>Complete Tracking</h4>
+                        <p class="text-muted">View detailed tracking information, driver details, and delivery estimates.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Types -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h2 class="text-white mb-4 text-center">
+                        <i class="fas fa-truck me-2"></i>Shipping Services
+                    </h2>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-turtle me-2"></i>Economy</h4>
+                        </div>
+                        <div class="card-body text-center">
+                            <h3 class="text-primary mb-3">5-7 Days</h3>
+                            <p class="text-muted">Most economical option for non-urgent shipments</p>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Best pricing</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Reliable delivery</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Package tracking</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-balance-scale me-2"></i>Standard</h4>
+                        </div>
+                        <div class="card-body text-center">
+                            <h3 class="text-primary mb-3">3-5 Days</h3>
+                            <p class="text-muted">Balanced option for speed and cost</p>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Faster delivery</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Priority handling</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Real-time updates</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-rocket me-2"></i>Express</h4>
+                        </div>
+                        <div class="card-body text-center">
+                            <h3 class="text-primary mb-3">1-2 Days</h3>
+                            <p class="text-muted">Fastest delivery for urgent shipments</p>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Overnight delivery</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Premium service</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Guaranteed delivery</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Section -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <h3 class="mb-4">Need Help?</h3>
+                            <p class="text-muted mb-4">Our customer support team is here to help you with any questions or concerns.</p>
+                            <div class="row justify-content-center">
+                                <div class="col-md-4 mb-3">
+                                    <a href="/customer/help" class="btn btn-outline-primary w-100">
+                                        <i class="fas fa-question-circle me-2"></i>Help Center
+                                    </a>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <a href="/customer/contact" class="btn btn-outline-success w-100">
+                                        <i class="fas fa-envelope me-2"></i>Contact Us
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5><i class="fas fa-shipping-fast me-2"></i>Reliable Carriers</h5>
+                    <p>Your trusted partner for reliable package delivery and tracking services.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/customer/track" class="text-light">Track Package</a></li>
+                        <li><a href="/customer/quote" class="text-light">Get Quote</a></li>
+                        <li><a href="/customer/packages" class="text-light">My Packages</a></li>
+                        <li><a href="/customer/help" class="text-light">Help Center</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contact Info</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-phone me-2"></i>1-800-RELIABLE</li>
+                        <li><i class="fas fa-envelope me-2"></i>support@reliablecarriers.com</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i>123 Shipping St, NY 10001</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p class="mb-0">&copy; 2024 Reliable Carriers. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add loading animation
+        window.addEventListener('load', function() {
+            document.body.classList.add('loaded');
+        });
+
+        // Add form validation
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const trackingInput = this.querySelector('input[name="trackingNumber"]');
+                if (trackingInput && trackingInput.value.trim() === '') {
+                    e.preventDefault();
+                    alert('Please enter a tracking number');
+                    trackingInput.focus();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

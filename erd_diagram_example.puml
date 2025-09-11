@@ -1,0 +1,150 @@
+@startuml Reliable Carriers Database ERD
+
+!theme plain
+skinparam backgroundColor #f8fafc
+skinparam linetype ortho
+skinparam roundcorner 20
+skinparam entity {
+    BackgroundColor #e2e8f0
+    BorderColor #475569
+    FontColor #1e293b
+}
+skinparam relationship {
+    Color #3b82f6
+    FontColor #1e293b
+}
+
+title Reliable Carriers - Database Entity Relationship Diagram
+
+' Customer Entity
+entity "Customer" as customer {
+    * customer_id : INT (PK)
+    --
+    * first_name : VARCHAR(50)
+    * last_name : VARCHAR(50)
+    * email : VARCHAR(100)
+    * phone : VARCHAR(20)
+    * address_line1 : VARCHAR(100)
+    address_line2 : VARCHAR(100)
+    * city : VARCHAR(50)
+    * state : VARCHAR(2)
+    * zip_code : VARCHAR(10)
+    * country : VARCHAR(50)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    is_active : BOOLEAN
+}
+
+' Package Entity
+entity "Package" as package {
+    * package_id : INT (PK)
+    --
+    * customer_id : INT (FK)
+    * tracking_number : VARCHAR(50)
+    * weight : DECIMAL(8,2)
+    * length : DECIMAL(8,2)
+    * width : DECIMAL(8,2)
+    * height : DECIMAL(8,2)
+    * description : TEXT
+    * declared_value : DECIMAL(10,2)
+    * pickup_address : TEXT
+    * delivery_address : TEXT
+    * service_type : VARCHAR(50)
+    * status : VARCHAR(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+' Booking Entity
+entity "Booking" as booking {
+    * booking_id : INT (PK)
+    --
+    * customer_id : INT (FK)
+    * package_id : INT (FK)
+    * service_type_id : INT (FK)
+    * pickup_date : DATE
+    * delivery_date : DATE
+    * total_cost : DECIMAL(10,2)
+    * payment_status : VARCHAR(20)
+    * booking_status : VARCHAR(20)
+    * special_instructions : TEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+' Service Type Entity
+entity "ServiceType" as service_type {
+    * service_type_id : INT (PK)
+    --
+    * service_name : VARCHAR(100)
+    * description : TEXT
+    * base_price : DECIMAL(8,2)
+    * price_per_kg : DECIMAL(8,2)
+    * delivery_time_days : INT
+    * is_active : BOOLEAN
+    created_at : TIMESTAMP
+}
+
+' Tracking Entity
+entity "Tracking" as tracking {
+    * tracking_id : INT (PK)
+    --
+    * package_id : INT (FK)
+    * status : VARCHAR(50)
+    * location : VARCHAR(100)
+    * description : TEXT
+    * timestamp : TIMESTAMP
+    * updated_by : VARCHAR(50)
+}
+
+' Payment Entity
+entity "Payment" as payment {
+    * payment_id : INT (PK)
+    --
+    * booking_id : INT (FK)
+    * amount : DECIMAL(10,2)
+    * payment_method : VARCHAR(50)
+    * transaction_id : VARCHAR(100)
+    * payment_status : VARCHAR(20)
+    * payment_date : TIMESTAMP
+    created_at : TIMESTAMP
+}
+
+' Driver Entity
+entity "Driver" as driver {
+    * driver_id : INT (PK)
+    --
+    * first_name : VARCHAR(50)
+    * last_name : VARCHAR(50)
+    * license_number : VARCHAR(20)
+    * phone : VARCHAR(20)
+    * email : VARCHAR(100)
+    * vehicle_id : VARCHAR(20)
+    * is_active : BOOLEAN
+    created_at : TIMESTAMP
+}
+
+' Delivery Assignment Entity
+entity "DeliveryAssignment" as delivery_assignment {
+    * assignment_id : INT (PK)
+    --
+    * package_id : INT (FK)
+    * driver_id : INT (FK)
+    * assigned_date : DATE
+    * pickup_time : TIME
+    * delivery_time : TIME
+    * status : VARCHAR(20)
+    created_at : TIMESTAMP
+}
+
+' Relationships
+customer ||--o{ package : "owns"
+customer ||--o{ booking : "makes"
+package ||--o| booking : "included_in"
+service_type ||--o{ booking : "selected_for"
+package ||--o{ tracking : "tracked_by"
+booking ||--o| payment : "has"
+driver ||--o{ delivery_assignment : "assigned_to"
+package ||--o| delivery_assignment : "delivered_by"
+
+@enduml

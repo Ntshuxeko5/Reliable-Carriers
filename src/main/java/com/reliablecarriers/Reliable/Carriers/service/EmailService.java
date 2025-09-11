@@ -1,0 +1,61 @@
+package com.reliablecarriers.Reliable.Carriers.service;
+
+import java.util.Map;
+
+public interface EmailService {
+    
+    /**
+     * Send a simple text email
+     */
+    void sendSimpleEmail(String to, String subject, String text);
+    
+    /**
+     * Send an HTML email using a template
+     */
+    void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables);
+    
+    /**
+     * Send shipment confirmation email
+     */
+    void sendShipmentConfirmation(String to, String customerName, String trackingNumber, String estimatedDelivery);
+    
+    /**
+     * Send delivery update email
+     */
+    void sendDeliveryUpdate(String to, String customerName, String trackingNumber, String status, String location);
+    
+    /**
+     * Send delivery confirmation email
+     */
+    void sendDeliveryConfirmation(String to, String customerName, String trackingNumber, String deliveryDate);
+    
+    /**
+     * Send driver assignment email
+     */
+    void sendDriverAssignment(String to, String driverName, String trackingNumber, String pickupAddress, String deliveryAddress);
+    
+    /**
+     * Send payment confirmation email
+     */
+    void sendPaymentConfirmation(String to, String customerName, String trackingNumber, String amount, String paymentMethod);
+    
+    /**
+     * Send password reset email
+     */
+    void sendPasswordReset(String to, String resetToken);
+    
+    /**
+     * Send welcome email
+     */
+    void sendWelcomeEmail(String to, String customerName);
+    
+    /**
+     * Send admin notification
+     */
+    void sendAdminNotification(String subject, String message);
+    
+    /**
+     * Send bulk email to multiple recipients
+     */
+    void sendBulkEmail(String[] recipients, String subject, String templateName, Map<String, Object> variables);
+}

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold">Reliable Carriers</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/admin/dashboard" class="hover:text-blue-200">Dashboard</a>
+                    <a href="/admin/analytics" class="hover:text-blue-200">Analytics</a>
+                    <a href="/admin/audit" class="text-blue-200 font-semibold">Audit Logs</a>
+                    <a href="/logout" class="hover:text-blue-200">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Audit Logs</h1>
+            <p class="text-gray-600 mt-2">Monitor system activity and security events</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-list-alt text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Logs</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="totalLogs">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Successful</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="successfulLogs">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 text-red-600">
+                        <i class="fas fa-exclamation-triangle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Failed</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="failedLogs">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Recent Activity</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="recentActivity">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">User Role</label>
+                    <select id="roleFilter" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="">All Roles</option>
+                        <option value="ADMIN">Admin</option>
+                        <option value="DRIVER">Driver</option>
+                        <option value="CUSTOMER">Customer</option>
+                        <option value="STAFF">Staff</option>
+                        <option value="TRACKING_MANAGER">Tracking Manager</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Action</label>
+                    <select id="actionFilter" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="">All Actions</option>
+                        <option value="LOGIN">Login</option>
+                        <option value="LOGOUT">Logout</option>
+                        <option value="SHIPMENT_CREATION">Shipment Creation</option>
+                        <option value="SHIPMENT_UPDATE">Shipment Update</option>
+                        <option value="PAYMENT">Payment</option>
+                        <option value="USER_CREATION">User Creation</option>
+                        <option value="USER_UPDATE">User Update</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select id="statusFilter" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="">All Status</option>
+                        <option value="SUCCESS">Success</option>
+                        <option value="FAILED">Failed</option>
+                        <option value="ERROR">Error</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                    <input type="datetime-local" id="startDate" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                    <input type="datetime-local" id="endDate" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="applyFilters()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Activity by Role</h3>
+                <div class="relative" style="height: 16rem;">
+                    <canvas id="roleChart" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Activity by Action</h3>
+                <div class="relative" style="height: 16rem;">
+                    <canvas id="actionChart" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-900">Audit Logs</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="exportToCsv()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                            <i class="fas fa-download mr-2"></i>Export CSV
+                        </button>
+                        <button onclick="exportToJson()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            <i class="fas fa-code mr-2"></i>Export JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditLogsTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Audit logs will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200">
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-gray-700">
+                        Showing <span id="showingStart">1</span> to <span id="showingEnd">20</span> of <span id="totalCount">0</span> results
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="previousPage()" id="prevBtn" class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50">Previous</button>
+                        <span class="px-3 py-1 text-sm text-gray-700">Page <span id="currentPage">1</span></span>
+                        <button onclick="nextPage()" id="nextBtn" class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="detailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900">Audit Log Details</h3>
+                        <button onclick="closeDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="px-6 py-4">
+                    <div id="modalContent">
+                        <!-- Modal content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 0;
+        let pageSize = 20;
+        let totalPages = 0;
+        let roleChart, actionChart;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAuditStats();
+            loadAuditLogs();
+            initCharts();
+        });
+
+        // Load audit statistics
+        async function loadAuditStats() {
+            try {
+                const response = await fetch('/api/admin/audit/stats', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                const stats = await response.json();
+                
+                document.getElementById('totalLogs').textContent = stats.totalLogs || 0;
+                document.getElementById('recentActivity').textContent = stats.recentActivity || 0;
+                
+                // Load analytics data for charts
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - 7);
+                
+                const analyticsResponse = await fetch(`/api/admin/audit/analytics/counts?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                const analytics = await analyticsResponse.json();
+                
+                updateCharts(analytics);
+                updateStatusCounts(analytics);
+            } catch (error) {
+                console.error('Error loading audit stats:', error);
+            }
+        }
+
+        // Update status counts
+        function updateStatusCounts(analytics) {
+            const byStatus = analytics.byStatus || {};
+            document.getElementById('successfulLogs').textContent = byStatus.SUCCESS || 0;
+            document.getElementById('failedLogs').textContent = (byStatus.FAILED || 0) + (byStatus.ERROR || 0);
+        }
+
+        // Initialize charts
+        function initCharts() {
+            const roleCtx = document.getElementById('roleChart').getContext('2d');
+            const actionCtx = document.getElementById('actionChart').getContext('2d');
+
+            roleChart = new Chart(roleCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            actionChart = new Chart(actionCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Count',
+                        data: [],
+                        backgroundColor: '#3B82F6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update charts with data
+        function updateCharts(analytics) {
+            // Update role chart
+            const byRole = analytics.byRole || {};
+            roleChart.data.labels = Object.keys(byRole);
+            roleChart.data.datasets[0].data = Object.values(byRole);
+            roleChart.update();
+
+            // Update action chart
+            const byAction = analytics.byAction || {};
+            actionChart.data.labels = Object.keys(byAction).slice(0, 10); // Top 10 actions
+            actionChart.data.datasets[0].data = Object.values(byAction).slice(0, 10);
+            actionChart.update();
+        }
+
+        // Load audit logs
+        async function loadAuditLogs(page = 0) {
+            try {
+                const params = new URLSearchParams({
+                    page: page,
+                    size: pageSize
+                });
+
+                // Add filters
+                const roleFilter = document.getElementById('roleFilter').value;
+                const actionFilter = document.getElementById('actionFilter').value;
+                const statusFilter = document.getElementById('statusFilter').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                if (roleFilter) params.append('userRole', roleFilter);
+                if (actionFilter) params.append('action', actionFilter);
+                if (statusFilter) params.append('status', statusFilter);
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+
+                const response = await fetch(`/api/admin/audit/logs?${params}`, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                const data = await response.json();
+
+                displayAuditLogs(data.content || data);
+                updatePagination(data);
+            } catch (error) {
+                console.error('Error loading audit logs:', error);
+            }
+        }
+
+        // Display audit logs in table
+        function displayAuditLogs(logs) {
+            const tbody = document.getElementById('auditLogsTable');
+            tbody.innerHTML = '';
+
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                const statusClass = log.status === 'SUCCESS' ? 'text-green-600' : 
+                                  log.status === 'FAILED' ? 'text-red-600' : 'text-yellow-600';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${new Date(log.createdAt).toLocaleString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${log.userEmail || 'SYSTEM'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${log.userRole || 'SYSTEM'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${log.action}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${log.entityType || '-'} ${log.entityId ? `#${log.entityId}` : ''}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                            ${log.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${log.ipAddress || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <button onclick="showDetails(${JSON.stringify(log).replace(/"/g, '&quot;')})" 
+                                class="text-blue-600 hover:text-blue-900">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update pagination
+        function updatePagination(data) {
+            currentPage = data.number || 0;
+            totalPages = data.totalPages || 0;
+            const totalElements = data.totalElements || 0;
+
+            document.getElementById('currentPage').textContent = currentPage + 1;
+            document.getElementById('showingStart').textContent = (currentPage * pageSize) + 1;
+            document.getElementById('showingEnd').textContent = Math.min((currentPage + 1) * pageSize, totalElements);
+            document.getElementById('totalCount').textContent = totalElements;
+
+            document.getElementById('prevBtn').disabled = currentPage === 0;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages - 1;
+        }
+
+        // Navigation functions
+        function previousPage() {
+            if (currentPage > 0) {
+                loadAuditLogs(currentPage - 1);
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages - 1) {
+                loadAuditLogs(currentPage + 1);
+            }
+        }
+
+        // Apply filters
+        function applyFilters() {
+            loadAuditLogs(0);
+        }
+
+        // Show details modal
+        function showDetails(log) {
+            const modal = document.getElementById('detailsModal');
+            const content = document.getElementById('modalContent');
+
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Basic Information</h4>
+                        <div class="mt-2 grid grid-cols-2 gap-4 text-sm">
+                            <div><span class="font-medium">User:</span> ${log.userEmail || 'SYSTEM'}</div>
+                            <div><span class="font-medium">Role:</span> ${log.userRole || 'SYSTEM'}</div>
+                            <div><span class="font-medium">Action:</span> ${log.action}</div>
+                            <div><span class="font-medium">Status:</span> ${log.status}</div>
+                            <div><span class="font-medium">Entity:</span> ${log.entityType || '-'} ${log.entityId ? `#${log.entityId}` : ''}</div>
+                            <div><span class="font-medium">Timestamp:</span> ${new Date(log.createdAt).toLocaleString()}</div>
+                        </div>
+                    </div>
+                    
+                    ${log.ipAddress ? `
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Network Information</h4>
+                        <div class="mt-2 grid grid-cols-2 gap-4 text-sm">
+                            <div><span class="font-medium">IP Address:</span> ${log.ipAddress}</div>
+                            <div><span class="font-medium">Session ID:</span> ${log.sessionId || '-'}</div>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${log.oldValues || log.newValues ? `
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Changes</h4>
+                        <div class="mt-2 space-y-2">
+                            ${log.oldValues ? `<div><span class="font-medium">Old Values:</span> <pre class="text-xs bg-gray-100 p-2 rounded">${log.oldValues}</pre></div>` : ''}
+                            ${log.newValues ? `<div><span class="font-medium">New Values:</span> <pre class="text-xs bg-gray-100 p-2 rounded">${log.newValues}</pre></div>` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${log.errorMessage ? `
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Error Information</h4>
+                        <div class="mt-2">
+                            <pre class="text-xs bg-red-100 p-2 rounded text-red-800">${log.errorMessage}</pre>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${log.additionalData ? `
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Additional Data</h4>
+                        <div class="mt-2">
+                            <pre class="text-xs bg-gray-100 p-2 rounded">${log.additionalData}</pre>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        // Close details modal
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.add('hidden');
+        }
+
+        // Export functions
+        async function exportToCsv() {
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                
+                const response = await fetch(`/api/admin/audit/export/csv?${params}`, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                const csv = await response.text();
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error exporting CSV:', error);
+            }
+        }
+
+        async function exportToJson() {
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                
+                const response = await fetch(`/api/admin/audit/export/json?${params}`, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                const json = await response.text();
+                
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `audit_logs_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error exporting JSON:', error);
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('detailsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDetailsModal();
+            }
+        });
+
+        function getToken() {
+            return (
+                localStorage.getItem('token') ||
+                sessionStorage.getItem('token') ||
+                localStorage.getItem('jwtToken') ||
+                sessionStorage.getItem('jwtToken')
+            );
+        }
+    </script>
+</body>
+</html>

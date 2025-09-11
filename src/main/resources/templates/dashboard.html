@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'morph': 'morph 8s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '33%': { transform: 'translateY(-10px) rotate(1deg)' },
+                            '66%': { transform: 'translateY(-5px) rotate(-1deg)' },
+                        },
+                        morph: {
+                            '0%, 100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+                            '50%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' },
+                        },
+                        glow: {
+                            '0%, 100%': { boxShadow: '0 0 5px rgba(102, 126, 234, 0.5)' },
+                            '50%': { boxShadow: '0 0 20px rgba(102, 126, 234, 1), 0 0 30px rgba(102, 126, 234, 0.5)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/modern-animations.css}">
+    <link rel="stylesheet" th:href="@{/css/animation-extras.css}">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-reliable-800 to-reliable-900 text-white shadow-lg">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-truck text-reliable-yellow-400"></i>
+                    <span>Reliable Carriers</span>
+                </a>
+                <div class="flex items-center space-x-6">
+                    <span class="text-sm">Welcome, <span id="userName" class="font-semibold">User</span></span>
+                    <a href="/booking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Book Service</a>
+                    <a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a>
+                    <a href="/price-list" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Price List</a>
+                    <button id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="fixed top-4 right-4 z-50"></div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Section with Modern Animations -->
+        <div class="relative overflow-hidden morphing-bg text-white rounded-2xl p-8 mb-8 animate-fade-in">
+            <!-- Particle Container -->
+            <div class="particle-container absolute inset-0" data-particles="20"></div>
+            
+            <!-- Floating Elements -->
+            <div class="absolute top-10 right-10 w-16 h-16 bg-white/10 rounded-full float-slow"></div>
+            <div class="absolute bottom-10 left-10 w-12 h-12 bg-white/10 rounded-full float-fast"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center justify-between">
+                    <div class="animate-on-scroll">
+                        <h1 class="text-3xl font-bold mb-2 typewriter">Welcome to Your Dashboard</h1>
+                        <p class="text-xl opacity-90">Manage your shipments and track your deliveries</p>
+                    </div>
+                    <div class="hidden md:block">
+                        <i class="fas fa-chart-line text-6xl opacity-20 float"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 animate-slide-up">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Book New Shipment</h3>
+                        <p class="text-gray-600 text-sm">Create a new delivery request</p>
+                    </div>
+                    <div class="bg-reliable-100 p-3 rounded-lg">
+                        <i class="fas fa-plus text-reliable-600 text-xl"></i>
+                    </div>
+                </div>
+                <a href="/booking" class="mt-4 inline-block w-full text-center bg-reliable-600 text-white py-2 px-4 rounded-lg hover:bg-reliable-700 transition-colors">
+                    Book Now
+                </a>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 animate-slide-up">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Track Package</h3>
+                        <p class="text-gray-600 text-sm">Check delivery status</p>
+                    </div>
+                    <div class="bg-reliable-100 p-3 rounded-lg">
+                        <i class="fas fa-search text-reliable-600 text-xl"></i>
+                    </div>
+                </div>
+                <a href="/tracking" class="mt-4 inline-block w-full text-center bg-reliable-600 text-white py-2 px-4 rounded-lg hover:bg-reliable-700 transition-colors">
+                    Track Now
+                </a>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 animate-slide-up">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Moving Services</h3>
+                        <p class="text-gray-600 text-sm">Book furniture moving</p>
+                    </div>
+                    <div class="bg-reliable-100 p-3 rounded-lg">
+                        <i class="fas fa-truck-moving text-reliable-600 text-xl"></i>
+                    </div>
+                </div>
+                <a href="/moving-services" class="mt-4 inline-block w-full text-center bg-reliable-600 text-white py-2 px-4 rounded-lg hover:bg-reliable-700 transition-colors">
+                    Book Moving
+                </a>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 animate-slide-up">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Price List</h3>
+                        <p class="text-gray-600 text-sm">View service rates</p>
+                    </div>
+                    <div class="bg-reliable-100 p-3 rounded-lg">
+                        <i class="fas fa-tags text-reliable-600 text-xl"></i>
+                    </div>
+                </div>
+                <a href="/price-list" class="mt-4 inline-block w-full text-center bg-reliable-600 text-white py-2 px-4 rounded-lg hover:bg-reliable-700 transition-colors">
+                    View Prices
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-fade-in">
+                <div class="flex items-center">
+                    <div class="bg-green-100 p-3 rounded-lg">
+                        <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-2xl font-bold text-gray-800" id="deliveredCount">0</h3>
+                        <p class="text-gray-600">Delivered</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-fade-in">
+                <div class="flex items-center">
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <i class="fas fa-shipping-fast text-blue-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-2xl font-bold text-gray-800" id="inTransitCount">0</h3>
+                        <p class="text-gray-600">In Transit</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-fade-in">
+                <div class="flex items-center">
+                    <div class="bg-yellow-100 p-3 rounded-lg">
+                        <i class="fas fa-clock text-yellow-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-2xl font-bold text-gray-800" id="pendingCount">0</h3>
+                        <p class="text-gray-600">Pending</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-fade-in">
+                <div class="flex items-center">
+                    <div class="bg-purple-100 p-3 rounded-lg">
+                        <i class="fas fa-dollar-sign text-purple-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-2xl font-bold text-gray-800" id="totalSpent">R0</h3>
+                        <p class="text-gray-600">Total Spent</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Shipments -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 animate-slide-up">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Recent Shipments</h2>
+                <a href="/shipments" class="text-reliable-600 hover:text-reliable-700 font-medium">View All</a>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Tracking #</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Service</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Created</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentShipmentsTable">
+                        <!-- Shipments will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="noShipments" class="text-center py-8 text-gray-500 hidden">
+                <i class="fas fa-box-open text-4xl mb-4"></i>
+                <p>No shipments found. <a href="/booking" class="text-reliable-600 hover:text-reliable-700">Book your first shipment</a></p>
+            </div>
+        </div>
+
+        <!-- Quick Tracking -->
+        <div class="bg-gradient-to-r from-reliable-50 to-reliable-100 rounded-2xl p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Quick Track Package</h2>
+            <div class="max-w-md">
+                <div class="flex space-x-4">
+                    <input type="text" id="quickTrackingNumber" 
+                           class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+                           placeholder="Enter tracking number">
+                    <button id="quickTrackBtn" 
+                            class="bg-reliable-600 hover:bg-reliable-700 text-white px-6 py-3 rounded-lg transition-colors">
+                        Track
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Information -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Available Services -->
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Available Services</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-reliable-100 p-2 rounded-lg mr-4">
+                            <i class="fas fa-shipping-fast text-reliable-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Express Delivery</h3>
+                            <p class="text-sm text-gray-600">Same day and next day delivery</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-reliable-100 p-2 rounded-lg mr-4">
+                            <i class="fas fa-truck-moving text-reliable-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Moving Services</h3>
+                            <p class="text-sm text-gray-600">Furniture and load transport</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-reliable-100 p-2 rounded-lg mr-4">
+                            <i class="fas fa-globe text-reliable-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">International Shipping</h3>
+                            <p class="text-sm text-gray-600">Worldwide delivery services</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Need Help?</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-reliable-100 p-2 rounded-lg mr-4">
+                            <i class="fas fa-phone text-reliable-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Call Us</h3>
+                            <p class="text-sm text-gray-600">+27 11 123 4567</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-reliable-100 p-2 rounded-lg mr-4">
+                            <i class="fas fa-envelope text-reliable-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Email Support</h3>
+                            <p class="text-sm text-gray-600">support@reliablecarriers.co.za</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-reliable-100 p-2 rounded-lg mr-4">
+                            <i class="fas fa-comments text-reliable-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Live Chat</h3>
+                            <p class="text-sm text-gray-600">Available 24/7</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-reliable-yellow-400">Reliable Carriers</h3>
+                    <p class="text-gray-300">Professional courier services you can trust for all your delivery needs.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Services</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Moving Services</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Load Transport</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">International Shipping</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/contact" class="hover:text-reliable-yellow-400 transition-colors">Contact Us</a></li>
+                        <li><a href="/tracking" class="hover:text-reliable-yellow-400 transition-colors">Track Package</a></li>
+                        <li><a href="/price-list" class="hover:text-reliable-yellow-400 transition-colors">Price List</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Contact Info</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <p><i class="fas fa-phone mr-2"></i> +27 11 123 4567</p>
+                        <p><i class="fas fa-envelope mr-2"></i> info@reliablecarriers.co.za</p>
+                        <p><i class="fas fa-map-marker-alt mr-2"></i> Johannesburg, South Africa</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/modern-animations.js}"></script>
+    <script>
+        // Load dashboard data
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize modern animations
+            if (window.modernAnimations) {
+                // Add 3D tilt to dashboard cards
+                const dashboardCards = document.querySelectorAll('.glass-card, .bg-white');
+                dashboardCards.forEach(card => {
+                    window.modernAnimations.add3DTilt(card);
+                });
+                
+                // Add magnetic effect to buttons
+                const buttons = document.querySelectorAll('button, .btn-modern');
+                buttons.forEach(button => {
+                    window.modernAnimations.addMagneticEffect(button);
+                });
+            }
+            
+            loadDashboardData();
+            loadRecentShipments();
+        });
+
+        function loadDashboardData() {
+            // Simulate loading dashboard statistics
+            fetch('/api/dashboard/stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('deliveredCount').textContent = data.delivered || 0;
+                    document.getElementById('inTransitCount').textContent = data.inTransit || 0;
+                    document.getElementById('pendingCount').textContent = data.pending || 0;
+                    document.getElementById('totalSpent').textContent = 'R' + (data.totalSpent || 0);
+                })
+                .catch(error => {
+                    console.error('Error loading dashboard stats:', error);
+                });
+        }
+
+        function loadRecentShipments() {
+            fetch('/api/shipments/recent')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('recentShipmentsTable');
+                    const noShipments = document.getElementById('noShipments');
+                    
+                    if (data.length === 0) {
+                        tableBody.innerHTML = '';
+                        noShipments.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    noShipments.classList.add('hidden');
+                    tableBody.innerHTML = data.map(shipment => `
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="py-3 px-4">
+                                <span class="font-mono text-sm">${shipment.trackingNumber}</span>
+                            </td>
+                            <td class="py-3 px-4">${shipment.serviceType}</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 text-xs rounded-full ${getStatusColor(shipment.status)}">
+                                    ${shipment.status}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-600">
+                                ${new Date(shipment.createdAt).toLocaleDateString()}
+                            </td>
+                            <td class="py-3 px-4">
+                                <a href="/tracking?number=${shipment.trackingNumber}" 
+                                   class="text-reliable-600 hover:text-reliable-700 text-sm font-medium">
+                                    Track
+                                </a>
+                            </td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Error loading recent shipments:', error);
+                });
+        }
+
+        function getStatusColor(status) {
+            switch(status.toLowerCase()) {
+                case 'delivered':
+                    return 'bg-green-100 text-green-800';
+                case 'in_transit':
+                    return 'bg-blue-100 text-blue-800';
+                case 'pending':
+                    return 'bg-yellow-100 text-yellow-800';
+                case 'failed':
+                    return 'bg-red-100 text-red-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Quick tracking functionality
+        document.getElementById('quickTrackBtn').addEventListener('click', function() {
+            const trackingNumber = document.getElementById('quickTrackingNumber').value.trim();
+            if (trackingNumber) {
+                window.location.href = `/tracking?number=${trackingNumber}`;
+            } else {
+                showAlert('Please enter a tracking number', 'error');
+            }
+        });
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/';
+                }
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                window.location.href = '/';
+            });
+        });
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            alertDiv.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg mb-4 flex items-center space-x-2 animate-slide-up`;
+            alertDiv.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

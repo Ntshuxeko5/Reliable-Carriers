@@ -1,0 +1,451 @@
+# Reliable Carriers - Shipday Enhanced Configuration
+# This configuration enables all Shipday-compatible features and optimizes system performance
+
+spring:
+  application:
+    name: reliable-carriers-shipday-enhanced
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/reliable_carriers?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+  
+  # Redis Configuration for Caching
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+# Security Configuration
+security:
+  jwt:
+    secret: ${JWT_SECRET:your-super-secret-jwt-key-here-make-it-long-and-secure}
+    expiration: 86400000 # 24 hours
+  cors:
+    allowed-origins: "*"
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+
+# Logging Configuration
+logging:
+  level:
+    com.reliablecarriers: INFO
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/reliable-carriers.log
+    max-size: 10MB
+    max-history: 30
+
+# Shipday-Compatible Features Configuration
+
+# Proof of Delivery Configuration
+app:
+  pod:
+    signature:
+      enabled: true
+    photo:
+      enabled: true
+    id-verification:
+      enabled: true
+    storage:
+      path: /uploads/pod
+      max-file-size: 10MB
+      allowed-types: jpg,jpeg,png,pdf
+  
+  # Automated Dispatch Configuration
+  dispatch:
+    ai:
+      enabled: true
+    rules:
+      enabled: true
+    load-balancing:
+      enabled: true
+    geographic-optimization:
+      enabled: true
+    max-drivers-per-shipment: 3
+    assignment-timeout: 300000 # 5 minutes
+  
+  # Customer Feedback Configuration
+  feedback:
+    enabled: true
+    sentiment-analysis:
+      enabled: true
+    auto-response:
+      enabled: true
+    notification:
+      enabled: true
+    rating-threshold: 3.0
+  
+  # Integration Webhook Configuration
+  webhooks:
+    enabled: true
+    retry:
+      enabled: true
+      max-attempts: 3
+      delay: 60000 # 1 minute
+    monitoring:
+      enabled: true
+    security:
+      enabled: true
+      signature-validation: true
+  
+  # POS Integration Configuration
+  integration:
+    toast:
+      enabled: true
+      api-url: ${TOAST_API_URL:https://api.toasttab.com}
+      api-key: ${TOAST_API_KEY:}
+    lightspeed:
+      enabled: true
+      api-url: ${LIGHTSPEED_API_URL:https://api.lightspeedapp.com}
+      api-key: ${LIGHTSPEED_API_KEY:}
+    square:
+      enabled: true
+      api-url: ${SQUARE_API_URL:https://connect.squareup.com}
+      api-key: ${SQUARE_API_KEY:}
+    shopify:
+      enabled: true
+      api-url: ${SHOPIFY_API_URL:https://your-store.myshopify.com}
+      api-key: ${SHOPIFY_API_KEY:}
+  
+  # Notification Configuration
+  notification:
+    email:
+      enabled: true
+      provider: sendgrid
+      from-email: ${FROM_EMAIL:noreply@reliablecarriers.com}
+      template-path: /templates/email
+    sms:
+      enabled: true
+      provider: smsportal
+      from-number: ${FROM_SMS_NUMBER:+27123456789}
+    push:
+      enabled: true
+      provider: firebase
+  
+  # Tracking Configuration
+  tracking:
+    real-time:
+      enabled: true
+      update-interval: 30000 # 30 seconds
+    gps:
+      enabled: true
+      accuracy-threshold: 10 # meters
+    geofencing:
+      enabled: true
+      radius: 100 # meters
+  
+  # Route Optimization Configuration
+  routing:
+    algorithm: nearest-neighbor
+    traffic:
+      enabled: true
+      provider: google-maps
+    optimization:
+      enabled: true
+      max-route-time: 480 # 8 hours
+      max-stops: 20
+  
+  # Analytics Configuration
+  analytics:
+    enabled: true
+    real-time:
+      enabled: true
+    reporting:
+      enabled: true
+      auto-generate: true
+      schedule: "0 0 1 * * ?" # Daily at 1 AM
+    metrics:
+      retention-days: 365
+      aggregation-interval: 3600 # 1 hour
+  
+  # Performance Configuration
+  performance:
+    caching:
+      enabled: true
+      ttl: 3600 # 1 hour
+    async:
+      enabled: true
+      thread-pool-size: 10
+    monitoring:
+      enabled: true
+      metrics:
+        enabled: true
+        export:
+          prometheus:
+            enabled: true
+  
+  # Security Configuration
+  security:
+    encryption:
+      enabled: true
+      algorithm: AES-256
+    rate-limiting:
+      enabled: true
+      requests-per-minute: 100
+    audit:
+      enabled: true
+      log-level: INFO
+  
+  # Mobile App Configuration
+  mobile:
+    driver-app:
+      enabled: true
+      features:
+        - real-time-tracking
+        - signature-capture
+        - photo-upload
+        - route-optimization
+        - push-notifications
+    customer-app:
+      enabled: true
+      features:
+        - package-tracking
+        - real-time-notifications
+        - feedback-submission
+        - order-history
+  
+  # Business Intelligence Configuration
+  bi:
+    enabled: true
+    predictions:
+      enabled: true
+      models:
+        - delivery-time-prediction
+        - demand-forecasting
+        - driver-performance
+    insights:
+      enabled: true
+      auto-generate: true
+      schedule: "0 0 6 * * ?" # Daily at 6 AM
+  
+  # Quality Assurance Configuration
+  qa:
+    enabled: true
+    automated-checks:
+      enabled: true
+      schedule: "0 */30 * * * ?" # Every 30 minutes
+    data-validation:
+      enabled: true
+      strict-mode: false
+  
+  # Emergency Handling Configuration
+  emergency:
+    enabled: true
+    auto-escalation:
+      enabled: true
+      threshold: 30 # minutes
+    backup-drivers:
+      enabled: true
+      auto-assignment: true
+  
+  # Compliance Configuration
+  compliance:
+    enabled: true
+    gdpr:
+      enabled: true
+      data-retention-days: 2555 # 7 years
+    audit-trail:
+      enabled: true
+      retention-days: 2555 # 7 years
+
+# External Service Configuration
+
+# SendGrid Email Configuration
+sendgrid:
+  api-key: ${SENDGRID_API_KEY:}
+  from-email: ${SENDGRID_FROM_EMAIL:noreply@reliablecarriers.com}
+
+# SMSPortal SMS Configuration
+smsportal:
+  api-key: ${SMSPORTAL_API_KEY:}
+  client-id: ${SMSPORTAL_CLIENT_ID:}
+  from-number: ${SMSPORTAL_FROM_NUMBER:+27123456789}
+
+# Google Maps Configuration
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+    geocoding:
+      enabled: true
+    directions:
+      enabled: true
+    traffic:
+      enabled: true
+
+# Firebase Push Notifications
+firebase:
+  project-id: ${FIREBASE_PROJECT_ID:}
+  private-key-id: ${FIREBASE_PRIVATE_KEY_ID:}
+  private-key: ${FIREBASE_PRIVATE_KEY:}
+  client-email: ${FIREBASE_CLIENT_EMAIL:}
+  client-id: ${FIREBASE_CLIENT_ID:}
+
+# AWS S3 Configuration (for file storage)
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET:reliable-carriers-uploads}
+    region: ${AWS_S3_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY:}
+    secret-key: ${AWS_SECRET_KEY:}
+
+# Monitoring Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Swagger Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,metrics,env,configprops
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+
+# Cache Configuration
+spring:
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1 hour
+      cache-null-values: false
+
+# Async Configuration
+spring:
+  task:
+    execution:
+      pool:
+        core-size: 10
+        max-size: 20
+        queue-capacity: 100
+        keep-alive: 60s
+      thread-name-prefix: async-
+
+# Validation Configuration
+spring:
+  validation:
+    enabled: true
+
+# File Upload Configuration
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+
+# Database Migration Configuration
+spring:
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+# Health Check Configuration
+management:
+  health:
+    redis:
+      enabled: true
+    db:
+      enabled: true
+    disk:
+      enabled: true
+      threshold: 10GB
+
+# Performance Monitoring
+management:
+  metrics:
+    tags:
+      application: reliable-carriers
+      environment: ${ENVIRONMENT:development}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.95,0.99
+
+# Custom Properties for Shipday Compatibility
+shipday:
+  compatibility:
+    enabled: true
+    features:
+      - proof-of-delivery
+      - automated-dispatch
+      - customer-feedback
+      - pos-integration
+      - real-time-tracking
+      - route-optimization
+      - analytics-reporting
+    migration:
+      enabled: false
+      data-import: false
+    api:
+      version: v1
+      backward-compatibility: true

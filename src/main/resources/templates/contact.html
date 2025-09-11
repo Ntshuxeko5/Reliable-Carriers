@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-reliable-800 to-reliable-900 text-white shadow-lg">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-truck text-reliable-yellow-400"></i>
+                    <span>Reliable Carriers</span>
+                </a>
+                <ul class="hidden md:flex space-x-8">
+                    <li><a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
+                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/booking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Book Service</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative bg-gradient-to-r from-reliable-700 to-reliable-800 text-white py-20">
+        <div class="absolute inset-0 bg-black opacity-50"></div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">Contact Us</h1>
+            <p class="text-xl md:text-2xl mb-8 opacity-90 animate-slide-up">Get in touch with our team for any questions or support</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <!-- Contact Information -->
+        <section class="mb-16 animate-slide-up">
+            <h2 class="text-3xl font-bold text-gray-800 mb-12 text-center">Get In Touch</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-phone text-reliable-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Phone</h3>
+                    <p class="text-gray-600 mb-2">+27 11 123 4567</p>
+                    <p class="text-gray-600 mb-4">Available 24/7</p>
+                    <a href="tel:+27111234567" class="text-reliable-600 hover:text-reliable-700 font-medium">Call Now</a>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-envelope text-reliable-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Email</h3>
+                    <p class="text-gray-600 mb-2">info@reliablecarriers.co.za</p>
+                    <p class="text-gray-600 mb-4">support@reliablecarriers.co.za</p>
+                    <a href="mailto:info@reliablecarriers.co.za" class="text-reliable-600 hover:text-reliable-700 font-medium">Send Email</a>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-map-marker-alt text-reliable-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Address</h3>
+                    <p class="text-gray-600 mb-2">123 Logistics Street</p>
+                    <p class="text-gray-600 mb-4">Johannesburg, South Africa</p>
+                    <a href="#" class="text-reliable-600 hover:text-reliable-700 font-medium">Get Directions</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Form and Map -->
+        <section class="mb-16 animate-slide-up">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Contact Form -->
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Send Us a Message</h2>
+                    <form id="contactForm" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="firstName" class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                                <input type="text" id="firstName" name="firstName" required 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
+                                       placeholder="Enter your first name">
+                            </div>
+                            <div>
+                                <label for="lastName" class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                                <input type="text" id="lastName" name="lastName" required 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
+                                       placeholder="Enter your last name">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                            <input type="email" id="email" name="email" required 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
+                                   placeholder="Enter your email">
+                        </div>
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
+                                   placeholder="Enter your phone number">
+                        </div>
+                        <div>
+                            <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                            <select id="subject" name="subject" required 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300">
+                                <option value="">Select a subject</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="booking">Booking Information</option>
+                                <option value="tracking">Tracking Support</option>
+                                <option value="moving">Moving Services</option>
+                                <option value="complaint">Complaint</option>
+                                <option value="feedback">Feedback</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message *</label>
+                            <textarea id="message" name="message" rows="5" required 
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
+                                      placeholder="Enter your message"></textarea>
+                        </div>
+                        <button type="submit" 
+                                class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105">
+                            Send Message
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Map and Business Hours -->
+                <div class="space-y-8">
+                    <!-- Map Placeholder -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Our Location</h3>
+                        <div class="bg-gray-100 rounded-lg p-8 text-center">
+                            <i class="fas fa-map-marked-alt text-4xl text-reliable-600 mb-4"></i>
+                            <p class="text-gray-600">Interactive map will be displayed here</p>
+                            <p class="text-sm text-gray-500 mt-2">123 Logistics Street, Johannesburg, South Africa</p>
+                        </div>
+                    </div>
+
+                    <!-- Business Hours -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Business Hours</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                <span class="font-medium text-gray-700">Monday - Friday</span>
+                                <span class="text-gray-600">8:00 AM - 8:00 PM</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                <span class="font-medium text-gray-700">Saturday</span>
+                                <span class="text-gray-600">9:00 AM - 6:00 PM</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                <span class="font-medium text-gray-700">Sunday</span>
+                                <span class="text-gray-600">10:00 AM - 4:00 PM</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="font-medium text-gray-700">Emergency Support</span>
+                                <span class="text-green-600 font-medium">24/7 Available</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="mb-16 animate-slide-up">
+            <h2 class="text-3xl font-bold text-gray-800 mb-12 text-center">Frequently Asked Questions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">How do I track my package?</h3>
+                    <p class="text-gray-600">You can track your package using the tracking number provided when you booked your service. Simply enter the tracking number on our tracking page for real-time updates.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">What are your delivery times?</h3>
+                    <p class="text-gray-600">We offer various delivery options including same-day, overnight, and economy delivery. Delivery times depend on the service type and location.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Do you provide moving services?</h3>
+                    <p class="text-gray-600">Yes, we offer comprehensive moving services including furniture moving, load transport, and complete house moving services nationwide.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">How do I book a service?</h3>
+                    <p class="text-gray-600">You can book a service through our online booking system, by calling our customer service, or by visiting our office. Online booking is available 24/7.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">What areas do you serve?</h3>
+                    <p class="text-gray-600">Our courier services are currently available in Gauteng Province, while our moving services are available nationwide across South Africa.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Do you provide insurance?</h3>
+                    <p class="text-gray-600">Yes, all our services include basic insurance coverage. Additional insurance options are available for high-value items and special requirements.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 text-white rounded-2xl p-8 text-center">
+            <h2 class="text-3xl font-bold mb-4">Need Immediate Assistance?</h2>
+            <p class="text-xl mb-6 opacity-90">Our customer support team is here to help you 24/7</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="tel:+27111234567" class="bg-white text-reliable-yellow-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+                    <i class="fas fa-phone mr-2"></i>Call Now
+                </a>
+                <a href="/booking" class="bg-transparent border-2 border-white text-white font-bold py-3 px-8 rounded-lg hover:bg-white hover:text-reliable-yellow-600 transition-all duration-300 transform hover:scale-105">
+                    Book Service
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-reliable-yellow-400">Reliable Carriers</h3>
+                    <p class="text-gray-300">Professional courier services you can trust for all your delivery needs.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Services</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Moving Services</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Load Transport</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">International Shipping</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/contact" class="hover:text-reliable-yellow-400 transition-colors">Contact Us</a></li>
+                        <li><a href="/tracking" class="hover:text-reliable-yellow-400 transition-colors">Track Package</a></li>
+                        <li><a href="/price-list" class="hover:text-reliable-yellow-400 transition-colors">Price List</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Contact Info</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <p><i class="fas fa-phone mr-2"></i> +27 11 123 4567</p>
+                        <p><i class="fas fa-envelope mr-2"></i> info@reliablecarriers.co.za</p>
+                        <p><i class="fas fa-map-marker-alt mr-2"></i> Johannesburg, South Africa</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chatbot -->
+    <div class="fixed bottom-4 right-4 z-50">
+        <div class="chatbot-toggle bg-reliable-600 text-white p-4 rounded-full shadow-lg cursor-pointer hover:bg-reliable-700 transition-colors" id="chatbotToggle">
+            <i class="fas fa-comments text-xl"></i>
+        </div>
+        <div class="chatbot-container absolute bottom-16 right-0 w-80 h-96 bg-white rounded-lg shadow-2xl hidden" id="chatbotContainer">
+            <div class="chatbot-header bg-reliable-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+                <h3 class="font-bold">Customer Support</h3>
+                <button class="chatbot-close text-white hover:text-gray-200" id="chatbotClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chatbot-messages p-4 h-64 overflow-y-auto" id="chatbotMessages">
+                <div class="message bot-message bg-gray-100 text-gray-800 p-3 rounded-lg mb-2">
+                    Hello! How can I help you today?
+                </div>
+            </div>
+            <div class="chatbot-input p-4 border-t">
+                <div class="flex space-x-2">
+                    <input type="text" id="chatbotInput" placeholder="Type your message..." 
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
+                    <button class="chatbot-send bg-reliable-600 text-white p-2 rounded-lg hover:bg-reliable-700 transition-colors" id="chatbotSend">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/app.js}"></script>
+    <script>
+        // Contact form submission
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const formData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                subject: document.getElementById('subject').value,
+                message: document.getElementById('message').value
+            };
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+            submitBtn.disabled = true;
+            
+            // Simulate form submission
+            setTimeout(() => {
+                // Reset form
+                this.reset();
+                
+                // Show success message
+                showAlert('Thank you for your message! We will get back to you soon.', 'success');
+                
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 2000);
+        });
+
+        function showAlert(message, type) {
+            const alertContainer = document.createElement('div');
+            alertContainer.className = `fixed top-4 right-4 z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-2 animate-slide-up`;
+            alertContainer.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(alertContainer);
+            
+            setTimeout(() => {
+                if (alertContainer.parentElement) {
+                    alertContainer.remove();
+                }
+            }, 5000);
+        }
+
+        // Chatbot functionality
+        document.getElementById('chatbotToggle').addEventListener('click', function() {
+            const container = document.getElementById('chatbotContainer');
+            container.classList.toggle('hidden');
+        });
+
+        document.getElementById('chatbotClose').addEventListener('click', function() {
+            document.getElementById('chatbotContainer').classList.add('hidden');
+        });
+
+        document.getElementById('chatbotSend').addEventListener('click', function() {
+            sendChatbotMessage();
+        });
+
+        document.getElementById('chatbotInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendChatbotMessage();
+            }
+        });
+
+        function sendChatbotMessage() {
+            const input = document.getElementById('chatbotInput');
+            const message = input.value.trim();
+            if (message) {
+                addMessage(message, 'user');
+                input.value = '';
+                
+                // Send message to chatbot API
+                fetch('/api/chatbot/message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    addMessage(data.response, 'bot');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addMessage('Sorry, I\'m having trouble connecting. Please try again later.', 'bot');
+                });
+            }
+        }
+
+        function addMessage(text, sender) {
+            const messages = document.getElementById('chatbotMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message ${sender === 'user' ? 'bg-reliable-600 text-white ml-auto' : 'bg-gray-100 text-gray-800'} p-3 rounded-lg mb-2 max-w-xs`;
+            messageDiv.textContent = text;
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price List - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-reliable-800 to-reliable-900 text-white shadow-lg">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-truck text-reliable-yellow-400"></i>
+                    <span>Reliable Carriers</span>
+                </a>
+                <ul class="hidden md:flex space-x-8">
+                    <li><a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
+                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/booking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Book Service</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="fixed top-4 right-4 z-50"></div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero Section -->
+        <div class="bg-gradient-to-r from-reliable-600 to-reliable-700 text-white rounded-2xl p-8 md:p-12 mb-8 text-center animate-fade-in">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-slide-up">Our Price List</h1>
+            <p class="text-xl md:text-2xl mb-8 opacity-90 animate-slide-up">Transparent pricing for all our professional courier and moving services</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
+                <a href="/booking" class="bg-reliable-yellow-500 hover:bg-reliable-yellow-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                    Book Now
+                </a>
+                <a href="/moving-services" class="bg-white hover:bg-gray-100 text-reliable-800 font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                    Moving Services
+                </a>
+            </div>
+        </div>
+
+        <!-- Important Notice -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-8 rounded-lg animate-fade-in">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-yellow-400 text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-lg font-medium text-yellow-800">Service Availability</h3>
+                    <p class="text-yellow-700 mt-2">
+                        <strong>Courier Services:</strong> Currently available in Gauteng Province only. We're expanding nationwide soon!<br>
+                        <strong>Moving Services:</strong> Available nationwide across South Africa.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Courier Services Section -->
+        <section class="mb-12 animate-slide-up">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Courier Services</h2>
+                <p class="text-xl text-gray-600">Fast and reliable delivery options within Gauteng Province</p>
+                <div class="mt-4 inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    <i class="fas fa-map-marker-alt mr-2"></i>
+                    Gauteng Province Only
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Same Day Delivery -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="text-center">
+                        <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-bolt text-reliable-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Same Day</h3>
+                        <div class="text-3xl font-bold text-reliable-600 mb-2">R140</div>
+                        <p class="text-gray-600 text-sm mb-4">Same day delivery within Gauteng</p>
+                        <ul class="text-sm text-gray-600 space-y-1 mb-6">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Express processing</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Priority handling</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Real-time tracking</li>
+                        </ul>
+                        <a href="/booking?service=same-day" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Book Now
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Overnight Delivery -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="text-center">
+                        <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-moon text-reliable-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Overnight</h3>
+                        <div class="text-3xl font-bold text-reliable-600 mb-2">R120</div>
+                        <p class="text-gray-600 text-sm mb-4">Next day delivery within Gauteng</p>
+                        <ul class="text-sm text-gray-600 space-y-1 mb-6">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Fast processing</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Secure handling</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Status updates</li>
+                        </ul>
+                        <a href="/booking?service=overnight" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Book Now
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Economy Delivery -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="text-center">
+                        <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-shipping-fast text-reliable-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Economy</h3>
+                        <div class="text-3xl font-bold text-reliable-600 mb-2">R100</div>
+                        <p class="text-gray-600 text-sm mb-4">2-3 business days within Gauteng</p>
+                        <ul class="text-sm text-gray-600 space-y-1 mb-6">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Cost-effective</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Reliable delivery</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Package tracking</li>
+                        </ul>
+                        <a href="/booking?service=economy" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Book Now
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Urgent Delivery -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-reliable-yellow-200">
+                    <div class="text-center">
+                        <div class="bg-reliable-yellow-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-exclamation-triangle text-reliable-yellow-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Urgent</h3>
+                        <div class="text-3xl font-bold text-reliable-yellow-600 mb-2">R425</div>
+                        <p class="text-gray-600 text-sm mb-4">Priority urgent delivery within Gauteng</p>
+                        <ul class="text-sm text-gray-600 space-y-1 mb-6">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Highest priority</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Dedicated handling</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Live tracking</li>
+                        </ul>
+                        <a href="/booking?service=urgent" class="w-full bg-reliable-yellow-600 hover:bg-reliable-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Book Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Moving Services Section -->
+        <section class="mb-12 animate-slide-up">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Moving Services</h2>
+                <p class="text-xl text-gray-600">Professional furniture moving and load transport nationwide</p>
+                <div class="mt-4 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                    <i class="fas fa-globe mr-2"></i>
+                    Available Nationwide
+                </div>
+            </div>
+
+            <!-- Pricing Model Explanation -->
+            <div class="bg-gradient-to-r from-reliable-50 to-reliable-100 rounded-2xl p-8 mb-8">
+                <div class="text-center">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Our Moving Service Pricing Model</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-lg p-6 shadow-md">
+                            <div class="text-4xl font-bold text-reliable-600 mb-2">R550</div>
+                            <h4 class="font-semibold text-gray-800 mb-2">Base Price</h4>
+                            <p class="text-gray-600 text-sm">Fixed price for up to 20km</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-6 shadow-md">
+                            <div class="text-4xl font-bold text-reliable-600 mb-2">20km</div>
+                            <h4 class="font-semibold text-gray-800 mb-2">Free Distance</h4>
+                            <p class="text-gray-600 text-sm">Included in base price</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-6 shadow-md">
+                            <div class="text-4xl font-bold text-reliable-600 mb-2">R25/km</div>
+                            <h4 class="font-semibold text-gray-800 mb-2">Extra Distance</h4>
+                            <p class="text-gray-600 text-sm">For distances over 20km</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Furniture Moving -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="text-center">
+                        <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-couch text-reliable-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Furniture Moving</h3>
+                        <div class="text-3xl font-bold text-reliable-600 mb-2">R550</div>
+                        <p class="text-gray-600 text-sm mb-4">1 Load (20km): R550</p>
+                        <ul class="text-sm text-gray-600 space-y-1 mb-6">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Professional movers</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Furniture protection</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Assembly/disassembly</li>
+                        </ul>
+                        <a href="/moving-services?type=furniture" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Book Moving
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Load Transport -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="text-center">
+                        <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-truck-loading text-reliable-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Load Transport</h3>
+                        <div class="text-3xl font-bold text-reliable-600 mb-2">R550</div>
+                        <p class="text-gray-600 text-sm mb-4">Heavy load transport service</p>
+                        <ul class="text-sm text-gray-600 space-y-1 mb-6">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Heavy equipment</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Secure loading</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Specialized vehicles</li>
+                        </ul>
+                        <a href="/moving-services?type=load-transport" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Book Transport
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Complete Moving -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="text-center">
+                        <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-home text-reliable-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Complete Moving</h3>
+                        <div class="text-3xl font-bold text-reliable-600 mb-2">R550</div>
+                        <p class="text-gray-600 text-sm mb-4">Full house moving service</p>
+                        <ul class="text-sm text-gray-600 space-y-1 mb-6">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Full house moving</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Packing services</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Insurance included</li>
+                        </ul>
+                        <a href="/moving-services?type=complete-moving" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Book Complete
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Price Calculator Section -->
+        <section class="bg-white rounded-2xl shadow-lg p-8 mb-8 animate-slide-up">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Moving Service Price Calculator</h2>
+                <p class="text-xl text-gray-600">Calculate the cost for your moving service based on distance</p>
+            </div>
+
+            <div class="max-w-md mx-auto">
+                <div class="space-y-6">
+                    <div>
+                        <label for="distanceInput" class="block text-sm font-medium text-gray-700 mb-2">
+                            Distance (kilometers)
+                        </label>
+                        <input type="number" id="distanceInput" min="1" step="0.1" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+                               placeholder="Enter distance in km">
+                    </div>
+                    <button id="calculateBtn" 
+                            class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        Calculate Price
+                    </button>
+                </div>
+
+                <div id="priceResult" class="mt-8 hidden">
+                    <div class="bg-gradient-to-r from-reliable-50 to-reliable-100 rounded-lg p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Price Breakdown</h3>
+                        <div id="priceBreakdown" class="space-y-2 text-gray-700">
+                            <!-- Price breakdown will be populated here -->
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-semibold text-gray-800">Total Price:</span>
+                                <span id="totalPrice" class="text-2xl font-bold text-reliable-600"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Service Comparison Table -->
+        <section class="bg-white rounded-2xl shadow-lg p-8 mb-8 animate-slide-up">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Service Comparison</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Service</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Price</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Delivery Time</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Availability</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Features</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr>
+                            <td class="py-3 px-4 font-medium">Same Day Delivery</td>
+                            <td class="py-3 px-4 text-reliable-600 font-bold">R140</td>
+                            <td class="py-3 px-4">Same day</td>
+                            <td class="py-3 px-4">Gauteng only</td>
+                            <td class="py-3 px-4 text-sm">Express, Priority handling</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4 font-medium">Overnight Delivery</td>
+                            <td class="py-3 px-4 text-reliable-600 font-bold">R120</td>
+                            <td class="py-3 px-4">Next day</td>
+                            <td class="py-3 px-4">Gauteng only</td>
+                            <td class="py-3 px-4 text-sm">Fast, Secure handling</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4 font-medium">Economy Delivery</td>
+                            <td class="py-3 px-4 text-reliable-600 font-bold">R100</td>
+                            <td class="py-3 px-4">2-3 business days</td>
+                            <td class="py-3 px-4">Gauteng only</td>
+                            <td class="py-3 px-4 text-sm">Cost-effective, Reliable</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4 font-medium">Urgent Delivery</td>
+                            <td class="py-3 px-4 text-reliable-yellow-600 font-bold">R425</td>
+                            <td class="py-3 px-4">Same day</td>
+                            <td class="py-3 px-4">Gauteng only</td>
+                            <td class="py-3 px-4 text-sm">Highest priority, Live tracking</td>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <td class="py-3 px-4 font-medium">Furniture Moving</td>
+                            <td class="py-3 px-4 text-reliable-600 font-bold">R550 + R25/km</td>
+                            <td class="py-3 px-4">Scheduled</td>
+                            <td class="py-3 px-4">Nationwide</td>
+                            <td class="py-3 px-4 text-sm">Professional movers, Protection</td>
+                        </tr>
+                        <tr class="bg-gray-50">
+                            <td class="py-3 px-4 font-medium">Load Transport</td>
+                            <td class="py-3 px-4 text-reliable-600 font-bold">R550 + R25/km</td>
+                            <td class="py-3 px-4">Scheduled</td>
+                            <td class="py-3 px-4">Nationwide</td>
+                            <td class="py-3 px-4 text-sm">Heavy equipment, Secure loading</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 text-white rounded-2xl p-8 text-center">
+            <h2 class="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+            <p class="text-xl mb-6 opacity-90">Choose the service that best fits your needs and book with confidence</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/booking" class="bg-white text-reliable-yellow-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+                    Book Courier Service
+                </a>
+                <a href="/moving-services" class="bg-transparent border-2 border-white text-white font-bold py-3 px-8 rounded-lg hover:bg-white hover:text-reliable-yellow-600 transition-all duration-300 transform hover:scale-105">
+                    Book Moving Service
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-reliable-yellow-400">Reliable Carriers</h3>
+                    <p class="text-gray-300">Professional courier services you can trust for all your delivery needs.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Services</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Moving Services</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Load Transport</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">International Shipping</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/contact" class="hover:text-reliable-yellow-400 transition-colors">Contact Us</a></li>
+                        <li><a href="/tracking" class="hover:text-reliable-yellow-400 transition-colors">Track Package</a></li>
+                        <li><a href="/price-list" class="hover:text-reliable-yellow-400 transition-colors">Price List</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Contact Info</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <p><i class="fas fa-phone mr-2"></i> +27 11 123 4567</p>
+                        <p><i class="fas fa-envelope mr-2"></i> info@reliablecarriers.co.za</p>
+                        <p><i class="fas fa-map-marker-alt mr-2"></i> Johannesburg, South Africa</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script th:src="@{/js/app.js}"></script>
+    <script>
+        // Price calculator functionality
+        document.getElementById('calculateBtn').addEventListener('click', function() {
+            const distance = parseFloat(document.getElementById('distanceInput').value);
+            
+            if (!distance || distance <= 0) {
+                showAlert('Please enter a valid distance', 'error');
+                return;
+            }
+            
+            calculatePrice(distance);
+        });
+
+        async function calculatePrice(distance) {
+            try {
+                const response = await fetch('/api/pricing/moving-service-breakdown', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `distanceKm=${distance}`
+                });
+                
+                const data = await response.json();
+                displayPriceBreakdown(data);
+            } catch (error) {
+                console.error('Error calculating price:', error);
+                // Fallback calculation
+                const basePrice = 550;
+                const pricePerKm = 25;
+                const maxFreeDistance = 20;
+                
+                let totalPrice = basePrice;
+                let breakdown = `Base price for ${maxFreeDistance}km: R${basePrice}`;
+                
+                if (distance > maxFreeDistance) {
+                    const extraDistance = distance - maxFreeDistance;
+                    const extraCost = extraDistance * pricePerKm;
+                    totalPrice += extraCost;
+                    breakdown += `<br>Extra ${extraDistance.toFixed(1)}km × R${pricePerKm}/km = R${extraCost.toFixed(2)}`;
+                }
+                
+                displayPriceBreakdown({
+                    basePrice: basePrice,
+                    extraDistanceCharge: distance > maxFreeDistance ? (distance - maxFreeDistance) * pricePerKm : 0,
+                    totalPrice: totalPrice,
+                    breakdown: breakdown,
+                    distanceKm: distance,
+                    maxFreeDistanceKm: maxFreeDistance,
+                    pricePerKm: pricePerKm
+                });
+            }
+        }
+
+        function displayPriceBreakdown(data) {
+            const resultDiv = document.getElementById('priceResult');
+            const breakdownDiv = document.getElementById('priceBreakdown');
+            const totalPriceDiv = document.getElementById('totalPrice');
+            
+            breakdownDiv.innerHTML = `
+                <div><strong>Distance:</strong> ${data.distanceKm} km</div>
+                <div><strong>Base Price:</strong> R${data.basePrice}</div>
+                ${data.extraDistanceCharge > 0 ? `<div><strong>Extra Distance Charge:</strong> R${data.extraDistanceCharge.toFixed(2)}</div>` : ''}
+                <div><strong>Max Free Distance:</strong> ${data.maxFreeDistanceKm} km</div>
+                <div><strong>Price per km (after ${data.maxFreeDistanceKm}km):</strong> R${data.pricePerKm}</div>
+            `;
+            
+            totalPriceDiv.textContent = `R${data.totalPrice.toFixed(2)}`;
+            resultDiv.classList.remove('hidden');
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            alertDiv.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg mb-4 flex items-center space-x-2 animate-slide-up`;
+            alertDiv.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

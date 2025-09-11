@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Driver Tracking Dashboard</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Leaflet CSS for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body class="bg-gradient-to-br from-reliable-yellow-400 to-reliable-yellow-600 min-h-screen">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-80 bg-white/95 backdrop-blur-md border-r border-white/20 h-full overflow-y-auto">
+            <div class="p-6">
+                <h4 class="text-center mb-6 text-xl font-bold text-gray-800">
+                    <i class="fas fa-map-marker-alt text-reliable-yellow-500 mr-2"></i>
+                    Tracking Manager
+                </h4>
+                
+                <!-- Statistics Cards -->
+                <div class="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 p-4 mb-4">
+                    <h6 class="text-gray-600 text-sm font-medium">Total Drivers</h6>
+                    <h3 id="totalDrivers" class="text-2xl font-bold text-reliable-yellow-500 mb-0">0</h3>
+                </div>
+                
+                <div class="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 p-4 mb-4">
+                    <h6 class="text-gray-600 text-sm font-medium">Online Drivers</h6>
+                    <h3 id="onlineDrivers" class="text-2xl font-bold text-green-600 mb-0">0</h3>
+                </div>
+                
+                <div class="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 p-4 mb-4">
+                    <h6 class="text-gray-600 text-sm font-medium">Offline Drivers</h6>
+                    <h3 id="offlineDrivers" class="text-2xl font-bold text-red-600 mb-0">0</h3>
+                </div>
+                
+                <div class="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 p-4 mb-4">
+                    <h6 class="text-gray-600 text-sm font-medium">Online %</h6>
+                    <h3 id="onlinePercentage" class="text-2xl font-bold text-blue-600 mb-0">0%</h3>
+                </div>
+                
+                <div class="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 p-4 mb-4">
+                    <h6 class="text-muted">Total Packages</h6>
+                    <h3 id="totalPackages" class="text-2xl font-bold text-blue-600 mb-0">0</h3>
+                </div>
+                
+                <div class="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 p-4 mb-4">
+                    <h6 class="text-gray-600 text-sm font-medium">Total Weight</h6>
+                    <h3 id="totalWeight" class="text-2xl font-bold text-yellow-600 mb-0">0 kg</h3>
+                </div>
+                
+                <!-- Controls -->
+                <div class="space-y-3">
+                    <button class="w-full bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 hover:from-reliable-yellow-600 hover:to-reliable-yellow-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg" onclick="refreshData()">
+                        <i class="fas fa-sync-alt mr-2"></i> Refresh Data
+                    </button>
+                    <button class="w-full bg-transparent border-2 border-reliable-yellow-500 text-reliable-yellow-500 hover:bg-reliable-yellow-500 hover:text-white font-bold py-3 px-4 rounded-xl transition-all duration-300" onclick="toggleRealTime()">
+                        <i class="fas fa-play mr-2"></i> <span id="realTimeText">Start Real-time</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 bg-white/90 backdrop-blur-md p-6 overflow-y-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Map Section -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-2xl shadow-lg border border-white/20">
+                        <div class="p-4 border-b border-gray-200">
+                            <h5 class="text-lg font-bold text-gray-800 mb-0">
+                                <i class="fas fa-map text-reliable-yellow-500 mr-2"></i> Real-Time Driver Map
+                            </h5>
+                        </div>
+                        <div class="p-0">
+                            <div id="map" class="h-96 rounded-b-2xl"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Driver List Section -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-2xl shadow-lg border border-white/20">
+                        <div class="p-4 border-b border-gray-200">
+                            <h5 class="text-lg font-bold text-gray-800 mb-0">
+                                <i class="fas fa-users text-reliable-yellow-500 mr-2"></i> Active Drivers
+                            </h5>
+                        </div>
+                        <div class="p-4">
+                            <div id="driverList" class="max-h-96 overflow-y-auto space-y-3">
+                                <!-- Driver items will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS for maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Custom JS -->
+    <script th:src="@{/js/tracking.js}"></script>
+    
+    <script>
+        let map;
+        let markers = {};
+        let realTimeInterval;
+        let isRealTimeActive = false;
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([40.7128, -74.0060], 10); // Default to NYC
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        }
+        
+        // Load tracking data
+        async function loadTrackingData() {
+            try {
+                const response = await fetch('/api/tracking/map-view');
+                const data = await response.json();
+                
+                updateStatistics(data.statistics);
+                updateDriverList(data.allDrivers);
+                updateMapMarkers(data.activeDrivers);
+                
+            } catch (error) {
+                console.error('Error loading tracking data:', error);
+            }
+        }
+        
+        // Update statistics
+        function updateStatistics(stats) {
+            document.getElementById('totalDrivers').textContent = stats.totalDrivers || 0;
+            document.getElementById('onlineDrivers').textContent = stats.onlineDrivers || 0;
+            document.getElementById('offlineDrivers').textContent = stats.offlineDrivers || 0;
+            document.getElementById('onlinePercentage').textContent = 
+                Math.round(stats.onlinePercentage || 0) + '%';
+            document.getElementById('totalPackages').textContent = stats.totalPackages || 0;
+            document.getElementById('totalWeight').textContent = (stats.totalWeight || 0) + ' kg';
+        }
+        
+        // Update driver list
+        function updateDriverList(drivers) {
+            const driverList = document.getElementById('driverList');
+            driverList.innerHTML = '';
+            
+            drivers.forEach(driver => {
+                const driverItem = document.createElement('div');
+                driverItem.className = 'driver-item';
+                
+                // Package information
+                const packageInfo = driver.lastLocation && driver.lastLocation.activeShipments ? 
+                    `<div class="mt-2">
+                        <small class="text-info">
+                            <i class="fas fa-box"></i> ${driver.lastLocation.totalPackages || 0} packages
+                            ${driver.lastLocation.totalWeight ? `(${driver.lastLocation.totalWeight} kg)` : ''}
+                        </small>
+                        ${driver.lastLocation.nextDeliveryLocation ? 
+                            `<br><small class="text-muted">
+                                <i class="fas fa-map-marker-alt"></i> Next: ${driver.lastLocation.nextDeliveryLocation}
+                            </small>` : ''
+                        }
+                    </div>` : '';
+                
+                driverItem.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${driver.name}</h6>
+                            <small class="text-muted">${driver.email}</small>
+                            ${packageInfo}
+                        </div>
+                        <div class="text-end">
+                            <span class="badge ${driver.isOnline ? 'bg-success' : 'bg-danger'}">
+                                ${driver.status}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                driverList.appendChild(driverItem);
+            });
+        }
+        
+        // Update map markers
+        function updateMapMarkers(drivers) {
+            // Clear existing markers
+            Object.values(markers).forEach(marker => map.removeLayer(marker));
+            markers = {};
+            
+            drivers.forEach(driver => {
+                if (driver.latitude && driver.longitude) {
+                    // Package information for popup
+                    const packageInfo = driver.activeShipments && driver.activeShipments.length > 0 ? 
+                        `<p><strong>Packages:</strong> ${driver.totalPackages || 0} (${driver.totalWeight || 0} kg)</p>
+                         <p><strong>Next Delivery:</strong> ${driver.nextDeliveryLocation || 'N/A'}</p>
+                         <p><strong>Delivery Time:</strong> ${driver.nextDeliveryTime || 'N/A'}</p>` : 
+                        '<p><strong>Packages:</strong> No active packages</p>';
+                    
+                    const marker = L.marker([driver.latitude, driver.longitude])
+                        .bindPopup(`
+                            <div>
+                                <h6>${driver.driverName}</h6>
+                                <p><strong>Vehicle:</strong> ${driver.vehicleModel || 'N/A'} (${driver.vehiclePlate || 'N/A'})</p>
+                                <p><strong>Status:</strong> ${driver.status}</p>
+                                <p><strong>Last Update:</strong> ${driver.formattedTimestamp}</p>
+                                ${packageInfo}
+                                <button class="btn btn-sm btn-primary mt-2" onclick="showDriverDetails(${driver.driverId})">
+                                    View Details
+                                </button>
+                            </div>
+                        `)
+                        .addTo(map);
+                    
+                    markers[driver.driverId] = marker;
+                }
+            });
+        }
+        
+        // Refresh data
+        function refreshData() {
+            loadTrackingData();
+        }
+        
+        // Toggle real-time updates
+        function toggleRealTime() {
+            if (isRealTimeActive) {
+                clearInterval(realTimeInterval);
+                document.getElementById('realTimeText').textContent = 'Start Real-time';
+                isRealTimeActive = false;
+            } else {
+                realTimeInterval = setInterval(loadTrackingData, 30000); // Update every 30 seconds
+                document.getElementById('realTimeText').textContent = 'Stop Real-time';
+                isRealTimeActive = true;
+            }
+        }
+        
+        // Show driver details modal
+        function showDriverDetails(driverId) {
+            // This would open a modal with detailed driver and package information
+            // For now, we'll just show an alert with basic info
+            alert('Driver details modal would open here for driver ID: ' + driverId);
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            loadTrackingData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-reliable-800 to-reliable-900 text-white shadow-lg">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-truck text-reliable-yellow-400"></i>
+                    <span>Reliable Carriers</span>
+                </a>
+                <ul class="hidden md:flex space-x-8">
+                    <li><a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
+                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/booking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Book Service</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <!-- Payment Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">Complete Your Payment</h1>
+            <p class="text-xl text-gray-600">Secure payment powered by Paystack</p>
+        </div>
+
+        <!-- Payment Form -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Payment Details -->
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Payment Details</h2>
+                    
+                    <!-- Service Information -->
+                    <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Service Summary</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Service Type:</span>
+                                <span class="font-medium" id="serviceType">Express Delivery</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Distance:</span>
+                                <span class="font-medium" id="distance">25 km</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Weight:</span>
+                                <span class="font-medium" id="weight">2.5 kg</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Insurance:</span>
+                                <span class="font-medium" id="insurance">Basic Coverage</span>
+                            </div>
+                            <hr class="my-3">
+                            <div class="flex justify-between text-lg font-bold">
+                                <span>Total Amount:</span>
+                                <span class="text-reliable-600" id="totalAmount">₦5,500</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Information -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Customer Information</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Name:</span>
+                                <span class="font-medium" id="customerName">John Doe</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Email:</span>
+                                <span class="font-medium" id="customerEmail">john@example.com</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Phone:</span>
+                                <span class="font-medium" id="customerPhone">+234 801 234 5678</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Payment Method</h2>
+                    
+                    <!-- Paystack Payment Button -->
+                    <div class="space-y-6">
+                        <div class="bg-reliable-50 border border-reliable-200 rounded-lg p-6">
+                            <div class="flex items-center mb-4">
+                                <i class="fas fa-credit-card text-reliable-600 text-2xl mr-3"></i>
+                                <h3 class="text-lg font-semibold text-gray-800">Pay with Card</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Secure payment via Paystack. Accepts all major cards and bank transfers.</p>
+                            
+                            <button id="paystackBtn" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-4 px-6 rounded-lg transition-colors duration-300 flex items-center justify-center">
+                                <i class="fas fa-lock mr-2"></i>
+                                Pay ₦5,500
+                            </button>
+                        </div>
+
+                        <!-- Alternative Payment Methods -->
+                        <div class="space-y-3">
+                            <h4 class="font-semibold text-gray-800">Other Payment Options</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors duration-300">
+                                    <i class="fas fa-university mr-2"></i>
+                                    Bank Transfer
+                                </button>
+                                <button class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors duration-300">
+                                    <i class="fas fa-mobile-alt mr-2"></i>
+                                    USSD
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Security Notice -->
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <i class="fas fa-shield-alt text-green-600 mt-1 mr-3"></i>
+                                <div>
+                                    <h4 class="font-semibold text-green-800">Secure Payment</h4>
+                                    <p class="text-green-700 text-sm">Your payment information is encrypted and secure. We never store your card details.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Status -->
+        <div id="paymentStatus" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+                <div id="paymentSuccess" class="hidden">
+                    <i class="fas fa-check-circle text-green-500 text-6xl mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Payment Successful!</h2>
+                    <p class="text-gray-600 mb-6">Your payment has been processed successfully. You will receive a confirmation email shortly.</p>
+                    <div class="space-y-3">
+                        <p class="text-sm text-gray-500">Transaction ID: <span id="transactionId" class="font-mono"></span></p>
+                        <p class="text-sm text-gray-500">Reference: <span id="reference" class="font-mono"></span></p>
+                    </div>
+                    <div class="mt-8 space-x-4">
+                        <a href="/dashboard" class="bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">
+                            Go to Dashboard
+                        </a>
+                        <a href="/tracking" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">
+                            Track Package
+                        </a>
+                    </div>
+                </div>
+                
+                <div id="paymentFailed" class="hidden">
+                    <i class="fas fa-times-circle text-red-500 text-6xl mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Payment Failed</h2>
+                    <p class="text-gray-600 mb-6">Your payment could not be processed. Please try again or contact support.</p>
+                    <button id="retryPayment" class="bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Reliable Carriers</h3>
+                    <p class="text-gray-300">Professional courier services you can trust.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/" class="hover:text-white transition-colors">Home</a></li>
+                        <li><a href="/about" class="hover:text-white transition-colors">About</a></li>
+                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="/tracking" class="hover:text-white transition-colors">Track Package</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Services</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li>Express Delivery</li>
+                        <li>Standard Shipping</li>
+                        <li>International</li>
+                        <li>Same Day Delivery</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Contact Info</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><i class="fas fa-phone mr-2"></i>1-800-RELIABLE</li>
+                        <li><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</li>
+                        <li><i class="fas fa-clock mr-2"></i>24/7 Support</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Payment configuration
+        let paystackPublicKey = '';
+        let paymentData = {
+            amount: 550000, // Amount in kobo
+            email: 'john@example.com',
+            reference: '',
+            callback: function(response) {
+                // Handle payment success
+                console.log('Payment successful:', response);
+                showPaymentSuccess(response);
+            },
+            onClose: function() {
+                // Handle payment modal close
+                console.log('Payment modal closed');
+            }
+        };
+
+        // Initialize payment
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get Paystack public key
+            fetch('/api/paystack/public-key')
+                .then(response => response.json())
+                .then(data => {
+                    paystackPublicKey = data.publicKey;
+                })
+                .catch(error => {
+                    console.error('Error fetching public key:', error);
+                });
+
+            // Handle payment button click
+            document.getElementById('paystackBtn').addEventListener('click', function() {
+                initializePayment();
+            });
+
+            // Handle retry payment
+            document.getElementById('retryPayment').addEventListener('click', function() {
+                hidePaymentStatus();
+            });
+        });
+
+        function initializePayment() {
+            // Generate reference
+            paymentData.reference = 'PAY_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            
+            // Initialize Paystack
+            const handler = PaystackPop.setup({
+                key: paystackPublicKey,
+                email: paymentData.email,
+                amount: paymentData.amount,
+                currency: 'NGN',
+                ref: paymentData.reference,
+                callback: function(response) {
+                    // Verify payment on server
+                    verifyPayment(response.reference);
+                },
+                onClose: function() {
+                    console.log('Payment modal closed');
+                }
+            });
+            handler.openIframe();
+        }
+
+        function verifyPayment(reference) {
+            // Show loading state
+            showLoading();
+            
+            // Verify payment with server
+            fetch(`/api/paystack/verify?reference=${reference}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showPaymentSuccess({
+                            reference: reference,
+                            transaction: 'TXN_' + Date.now()
+                        });
+                    } else {
+                        showPaymentFailed();
+                    }
+                })
+                .catch(error => {
+                    console.error('Payment verification error:', error);
+                    showPaymentFailed();
+                });
+        }
+
+        function showPaymentSuccess(response) {
+            document.getElementById('paymentStatus').classList.remove('hidden');
+            document.getElementById('paymentSuccess').classList.remove('hidden');
+            document.getElementById('paymentFailed').classList.add('hidden');
+            
+            document.getElementById('transactionId').textContent = response.transaction || 'N/A';
+            document.getElementById('reference').textContent = response.reference;
+        }
+
+        function showPaymentFailed() {
+            document.getElementById('paymentStatus').classList.remove('hidden');
+            document.getElementById('paymentSuccess').classList.add('hidden');
+            document.getElementById('paymentFailed').classList.remove('hidden');
+        }
+
+        function hidePaymentStatus() {
+            document.getElementById('paymentStatus').classList.add('hidden');
+        }
+
+        function showLoading() {
+            const btn = document.getElementById('paystackBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            btn.disabled = true;
+        }
+    </script>
+</body>
+</html>

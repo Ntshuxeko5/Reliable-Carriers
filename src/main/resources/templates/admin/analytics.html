@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Reliable Carriers</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-reliable-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
+                        <p class="text-sm text-gray-600">Business intelligence and performance metrics</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="flex space-x-2">
+                        <select id="timeRange" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last year</option>
+                        </select>
+                        <button onclick="refreshAnalytics()" class="bg-reliable-600 hover:bg-reliable-700 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                    </div>
+                    <button onclick="window.location.href='/admin/dashboard'" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-shipping-fast text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Shipments</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalShipments">0</p>
+                        <p class="text-xs text-green-600" id="shipmentsGrowth">+0%</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Revenue</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalRevenue">$0</p>
+                        <p class="text-xs text-green-600" id="revenueGrowth">+0%</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-users text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Active Customers</p>
+                        <p class="text-2xl font-bold text-gray-900" id="activeCustomers">0</p>
+                        <p class="text-xs text-green-600" id="customersGrowth">+0%</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-star text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Avg Rating</p>
+                        <p class="text-2xl font-bold text-gray-900" id="avgRating">0.0</p>
+                        <p class="text-xs text-green-600" id="ratingGrowth">+0%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Revenue Chart -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Revenue Trend</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="toggleChartType('revenue', 'line')" class="px-3 py-1 text-xs bg-reliable-100 text-reliable-700 rounded-lg">Line</button>
+                        <button onclick="toggleChartType('revenue', 'bar')" class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-lg">Bar</button>
+                    </div>
+                </div>
+                <div class="relative" style="height: 16rem;">
+                    <canvas id="revenueChart" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+            
+            <!-- Shipments Chart -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Shipments by Status</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="toggleChartType('shipments', 'doughnut')" class="px-3 py-1 text-xs bg-reliable-100 text-reliable-700 rounded-lg">Doughnut</button>
+                        <button onclick="toggleChartType('shipments', 'pie')" class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-lg">Pie</button>
+                    </div>
+                </div>
+                <div class="relative" style="height: 16rem;">
+                    <canvas id="shipmentsChart" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <!-- Driver Performance -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Top Drivers</h3>
+                <div id="topDrivers" class="space-y-3">
+                    <!-- Driver performance will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Customer Satisfaction -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Customer Satisfaction</h3>
+                <div id="customerSatisfaction" class="space-y-3">
+                    <!-- Customer satisfaction metrics will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Service Performance -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Service Performance</h3>
+                <div id="servicePerformance" class="space-y-3">
+                    <!-- Service performance metrics will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Analytics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Geographic Distribution -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Geographic Distribution</h3>
+                <div class="relative" style="height: 16rem;">
+                    <canvas id="geographicChart" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+            
+            <!-- Time-based Analytics -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Peak Hours Analysis</h3>
+                <div class="relative" style="height: 16rem;">
+                    <canvas id="peakHoursChart" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let revenueChart, shipmentsChart, geographicChart, peakHoursChart;
+        
+        // Initialize charts
+        function initCharts() {
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [],
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Shipments Chart
+            const shipmentsCtx = document.getElementById('shipmentsChart').getContext('2d');
+            shipmentsChart = new Chart(shipmentsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Delivered', 'In Transit', 'Pending', 'Failed'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            '#10b981',
+                            '#3b82f6',
+                            '#f59e0b',
+                            '#ef4444'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Geographic Chart
+            const geographicCtx = document.getElementById('geographicChart').getContext('2d');
+            geographicChart = new Chart(geographicCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Shipments',
+                        data: [],
+                        backgroundColor: '#0ea5e9'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Peak Hours Chart
+            const peakHoursCtx = document.getElementById('peakHoursChart').getContext('2d');
+            peakHoursChart = new Chart(peakHoursCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Shipments',
+                        data: [],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Load analytics data
+        async function loadAnalytics() {
+            const timeRange = document.getElementById('timeRange').value;
+            
+            try {
+                const response = await fetch(`/api/admin/analytics?timeRange=${timeRange}`, {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                const data = await response.json();
+                
+                updateMetrics(data.metrics);
+                updateCharts(data.charts);
+                updatePerformanceData(data.performance);
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+        
+        // Update key metrics
+        function updateMetrics(metrics) {
+            document.getElementById('totalShipments').textContent = metrics.totalShipments.toLocaleString();
+            document.getElementById('totalRevenue').textContent = '$' + metrics.totalRevenue.toLocaleString();
+            document.getElementById('activeCustomers').textContent = metrics.activeCustomers.toLocaleString();
+            document.getElementById('avgRating').textContent = metrics.avgRating.toFixed(1);
+            
+            // Update growth indicators
+            document.getElementById('shipmentsGrowth').textContent = metrics.shipmentsGrowth + '%';
+            document.getElementById('revenueGrowth').textContent = metrics.revenueGrowth + '%';
+            document.getElementById('customersGrowth').textContent = metrics.customersGrowth + '%';
+            document.getElementById('ratingGrowth').textContent = metrics.ratingGrowth + '%';
+        }
+        
+        // Update charts
+        function updateCharts(charts) {
+            // Update revenue chart
+            revenueChart.data.labels = charts.revenue.labels;
+            revenueChart.data.datasets[0].data = charts.revenue.data;
+            revenueChart.update();
+            
+            // Update shipments chart
+            shipmentsChart.data.datasets[0].data = charts.shipments.data;
+            shipmentsChart.update();
+            
+            // Update geographic chart
+            geographicChart.data.labels = charts.geographic.labels;
+            geographicChart.data.datasets[0].data = charts.geographic.data;
+            geographicChart.update();
+            
+            // Update peak hours chart
+            peakHoursChart.data.labels = charts.peakHours.labels;
+            peakHoursChart.data.datasets[0].data = charts.peakHours.data;
+            peakHoursChart.update();
+        }
+        
+        // Update performance data
+        function updatePerformanceData(performance) {
+            // Update top drivers
+            const topDriversHtml = performance.topDrivers.map(driver => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <p class="font-semibold text-gray-900">${driver.name}</p>
+                        <p class="text-sm text-gray-600">${driver.deliveries} deliveries</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold text-green-600">${driver.rating}★</p>
+                        <p class="text-xs text-gray-500">${driver.completionRate}%</p>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('topDrivers').innerHTML = topDriversHtml;
+            
+            // Update customer satisfaction
+            const satisfactionHtml = `
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">5 Stars</span>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: ${performance.satisfaction.fiveStars}%"></div>
+                            </div>
+                            <span class="text-sm font-semibold">${performance.satisfaction.fiveStars}%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">4 Stars</span>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: ${performance.satisfaction.fourStars}%"></div>
+                            </div>
+                            <span class="text-sm font-semibold">${performance.satisfaction.fourStars}%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">3 Stars</span>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                <div class="bg-yellow-500 h-2 rounded-full" style="width: ${performance.satisfaction.threeStars}%"></div>
+                            </div>
+                            <span class="text-sm font-semibold">${performance.satisfaction.threeStars}%</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('customerSatisfaction').innerHTML = satisfactionHtml;
+            
+            // Update service performance
+            const serviceHtml = performance.service.map(service => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <p class="font-semibold text-gray-900">${service.name}</p>
+                        <p class="text-sm text-gray-600">${service.orders} orders</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold text-reliable-600">$${service.revenue}</p>
+                        <p class="text-xs text-gray-500">${service.growth}%</p>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('servicePerformance').innerHTML = serviceHtml;
+        }
+        
+        // Toggle chart types
+        function toggleChartType(chartName, type) {
+            if (chartName === 'revenue') {
+                revenueChart.config.type = type;
+                revenueChart.update();
+            } else if (chartName === 'shipments') {
+                shipmentsChart.config.type = type;
+                shipmentsChart.update();
+            }
+        }
+        
+        // Refresh analytics
+        function refreshAnalytics() {
+            loadAnalytics();
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            loadAnalytics();
+            
+            // Add event listener for time range changes
+            document.getElementById('timeRange').addEventListener('change', loadAnalytics);
+        });
+
+        function getToken() {
+            return (
+                localStorage.getItem('token') ||
+                sessionStorage.getItem('token') ||
+                localStorage.getItem('jwtToken') ||
+                sessionStorage.getItem('jwtToken')
+            );
+        }
+    </script>
+</body>
+</html>

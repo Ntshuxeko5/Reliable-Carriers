@@ -1,0 +1,104 @@
+@startuml Reliable Carriers Booking System Sequence
+
+!theme plain
+skinparam backgroundColor #f8fafc
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+
+title Reliable Carriers - Package Booking & Tracking System
+
+actor "Customer" as C
+participant "Website" as W
+participant "Booking API" as BA
+participant "Payment Gateway" as PG
+participant "Database" as DB
+participant "Tracking System" as TS
+participant "Email Service" as ES
+
+== Package Booking Flow ==
+
+C -> W: Browse services & get quote
+activate W
+W -> BA: Request quote (package details)
+activate BA
+BA -> DB: Query pricing rules
+activate DB
+DB --> BA: Return pricing data
+deactivate DB
+BA --> W: Return quote
+deactivate BA
+W --> C: Display quote
+deactivate W
+
+C -> W: Submit booking request
+activate W
+W -> BA: Create booking (customer info, package details)
+activate BA
+BA -> DB: Save booking record
+activate DB
+DB --> BA: Booking ID
+deactivate DB
+
+BA -> PG: Process payment
+activate PG
+PG -> PG: Validate payment
+PG --> BA: Payment confirmation
+deactivate PG
+
+BA -> DB: Update booking status (confirmed)
+activate DB
+DB --> BA: Success
+deactivate DB
+
+BA -> TS: Create tracking record
+activate TS
+TS -> DB: Save tracking info
+activate DB
+DB --> TS: Tracking number
+deactivate DB
+TS --> BA: Tracking details
+deactivate TS
+
+BA -> ES: Send confirmation email
+activate ES
+ES -> ES: Generate email content
+ES --> C: Send confirmation
+deactivate ES
+
+BA --> W: Booking confirmation
+deactivate BA
+W --> C: Show confirmation page
+deactivate W
+
+== Package Tracking Flow ==
+
+C -> W: Enter tracking number
+activate W
+W -> TS: Request tracking info
+activate TS
+TS -> DB: Query tracking data
+activate DB
+DB --> TS: Package status & location
+deactivate DB
+TS --> W: Tracking details
+deactivate TS
+W --> C: Display tracking info
+deactivate W
+
+== Delivery Updates ==
+
+TS -> TS: Package status change detected
+activate TS
+TS -> DB: Update tracking status
+activate DB
+DB --> TS: Success
+deactivate DB
+
+TS -> ES: Send status update email
+activate ES
+ES --> C: Delivery update notification
+deactivate ES
+deactivate TS
+
+@enduml

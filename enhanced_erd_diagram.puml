@@ -1,0 +1,369 @@
+@startuml Reliable Carriers Enhanced Database ERD
+
+!theme plain
+skinparam backgroundColor #f8fafc
+skinparam linetype ortho
+skinparam roundcorner 20
+skinparam entity {
+    BackgroundColor #e2e8f0
+    BorderColor #475569
+    FontColor #1e293b
+    FontSize 12
+}
+skinparam relationship {
+    Color #3b82f6
+    FontColor #1e293b
+    FontSize 10
+}
+skinparam note {
+    BackgroundColor #fef3c7
+    BorderColor #f59e0b
+    FontColor #92400e
+}
+
+title Reliable Carriers - Enhanced Database Entity Relationship Diagram
+
+' ===== CORE BUSINESS ENTITIES =====
+
+entity "Customer" as customer {
+    * customer_id : INT (PK)
+    --
+    * customer_type : ENUM('individual', 'business', 'wholesale')
+    * first_name : VARCHAR(50)
+    * last_name : VARCHAR(50)
+    * email : VARCHAR(100)
+    * phone : VARCHAR(20)
+    * address_line1 : VARCHAR(100)
+    address_line2 : VARCHAR(100)
+    * city : VARCHAR(50)
+    * state : VARCHAR(2)
+    * zip_code : VARCHAR(10)
+    * country : VARCHAR(50)
+    * tax_id : VARCHAR(20)
+    * credit_limit : DECIMAL(12,2)
+    * payment_terms : INT
+    * is_active : BOOLEAN
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+    notes : TEXT
+}
+
+entity "CustomerAddress" as customer_address {
+    * address_id : INT (PK)
+    --
+    * customer_id : INT (FK)
+    * address_type : ENUM('billing', 'shipping', 'pickup', 'delivery')
+    * address_line1 : VARCHAR(100)
+    address_line2 : VARCHAR(100)
+    * city : VARCHAR(50)
+    * state : VARCHAR(2)
+    * zip_code : VARCHAR(10)
+    * country : VARCHAR(50)
+    * is_default : BOOLEAN
+    * is_active : BOOLEAN
+    created_at : TIMESTAMP
+}
+
+entity "Package" as package {
+    * package_id : INT (PK)
+    --
+    * customer_id : INT (FK)
+    * tracking_number : VARCHAR(50)
+    * package_type : ENUM('box', 'envelope', 'pallet', 'fragile', 'oversized')
+    * weight : DECIMAL(8,2)
+    * length : DECIMAL(8,2)
+    * width : DECIMAL(8,2)
+    * height : DECIMAL(8,2)
+    * dimensional_weight : DECIMAL(8,2)
+    * description : TEXT
+    * declared_value : DECIMAL(10,2)
+    * insurance_amount : DECIMAL(10,2)
+    * pickup_address_id : INT (FK)
+    * delivery_address_id : INT (FK)
+    * service_type_id : INT (FK)
+    * status : ENUM('pending', 'picked_up', 'in_transit', 'out_for_delivery', 'delivered', 'returned', 'lost')
+    * special_handling : TEXT
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "ServiceType" as service_type {
+    * service_type_id : INT (PK)
+    --
+    * service_name : VARCHAR(100)
+    * service_code : VARCHAR(20)
+    * description : TEXT
+    * base_price : DECIMAL(8,2)
+    * price_per_kg : DECIMAL(8,2)
+    * price_per_cubic_meter : DECIMAL(8,2)
+    * delivery_time_days : INT
+    * max_weight : DECIMAL(8,2)
+    * max_dimensions : VARCHAR(50)
+    * is_active : BOOLEAN
+    * requires_signature : BOOLEAN
+    * insurance_included : BOOLEAN
+    * created_at : TIMESTAMP
+}
+
+entity "Booking" as booking {
+    * booking_id : INT (PK)
+    --
+    * customer_id : INT (FK)
+    * package_id : INT (FK)
+    * service_type_id : INT (FK)
+    * booking_number : VARCHAR(50)
+    * pickup_date : DATE
+    * pickup_time_slot : VARCHAR(20)
+    * delivery_date : DATE
+    * delivery_time_slot : VARCHAR(20)
+    * total_cost : DECIMAL(10,2)
+    * tax_amount : DECIMAL(10,2)
+    * discount_amount : DECIMAL(10,2)
+    * final_amount : DECIMAL(10,2)
+    * payment_status : ENUM('pending', 'paid', 'failed', 'refunded')
+    * booking_status : ENUM('draft', 'confirmed', 'in_progress', 'completed', 'cancelled')
+    * special_instructions : TEXT
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+' ===== PAYMENT & FINANCIAL ENTITIES =====
+
+entity "Payment" as payment {
+    * payment_id : INT (PK)
+    --
+    * booking_id : INT (FK)
+    * payment_method : ENUM('credit_card', 'debit_card', 'bank_transfer', 'cash', 'check', 'paypal')
+    * amount : DECIMAL(10,2)
+    * currency : VARCHAR(3)
+    * transaction_id : VARCHAR(100)
+    * payment_status : ENUM('pending', 'processing', 'completed', 'failed', 'refunded')
+    * payment_date : TIMESTAMP
+    * gateway_response : TEXT
+    * created_at : TIMESTAMP
+}
+
+entity "Invoice" as invoice {
+    * invoice_id : INT (PK)
+    --
+    * customer_id : INT (FK)
+    * invoice_number : VARCHAR(50)
+    * invoice_date : DATE
+    * due_date : DATE
+    * subtotal : DECIMAL(10,2)
+    * tax_amount : DECIMAL(10,2)
+    * total_amount : DECIMAL(10,2)
+    * paid_amount : DECIMAL(10,2)
+    * balance_due : DECIMAL(10,2)
+    * status : ENUM('draft', 'sent', 'paid', 'overdue', 'cancelled')
+    * notes : TEXT
+    * created_at : TIMESTAMP
+}
+
+entity "InvoiceItem" as invoice_item {
+    * item_id : INT (PK)
+    --
+    * invoice_id : INT (FK)
+    * booking_id : INT (FK)
+    * description : VARCHAR(200)
+    * quantity : INT
+    * unit_price : DECIMAL(8,2)
+    * total_price : DECIMAL(10,2)
+    * created_at : TIMESTAMP
+}
+
+' ===== TRACKING & LOGISTICS ENTITIES =====
+
+entity "Tracking" as tracking {
+    * tracking_id : INT (PK)
+    --
+    * package_id : INT (FK)
+    * status : ENUM('created', 'picked_up', 'in_transit', 'out_for_delivery', 'delivered', 'returned', 'lost')
+    * location : VARCHAR(100)
+    * latitude : DECIMAL(10,8)
+    * longitude : DECIMAL(11,8)
+    * description : TEXT
+    * timestamp : TIMESTAMP
+    * updated_by : VARCHAR(50)
+    * estimated_delivery : TIMESTAMP
+    * actual_delivery : TIMESTAMP
+    * signature_name : VARCHAR(100)
+    * signature_image : VARCHAR(255)
+}
+
+entity "Driver" as driver {
+    * driver_id : INT (PK)
+    --
+    * employee_id : VARCHAR(20)
+    * first_name : VARCHAR(50)
+    * last_name : VARCHAR(50)
+    * license_number : VARCHAR(20)
+    * license_expiry : DATE
+    * phone : VARCHAR(20)
+    * email : VARCHAR(100)
+    * vehicle_id : VARCHAR(20)
+    * vehicle_type : ENUM('van', 'truck', 'motorcycle', 'bicycle')
+    * is_active : BOOLEAN
+    * hire_date : DATE
+    * termination_date : DATE
+    * created_at : TIMESTAMP
+}
+
+entity "Vehicle" as vehicle {
+    * vehicle_id : INT (PK)
+    --
+    * vehicle_number : VARCHAR(20)
+    * vehicle_type : ENUM('van', 'truck', 'motorcycle', 'bicycle')
+    * make : VARCHAR(50)
+    * model : VARCHAR(50)
+    * year : INT
+    * license_plate : VARCHAR(20)
+    * capacity_weight : DECIMAL(8,2)
+    * capacity_volume : DECIMAL(8,2)
+    * fuel_type : ENUM('gasoline', 'diesel', 'electric', 'hybrid')
+    * is_active : BOOLEAN
+    * last_maintenance : DATE
+    * next_maintenance : DATE
+    * created_at : TIMESTAMP
+}
+
+entity "DeliveryAssignment" as delivery_assignment {
+    * assignment_id : INT (PK)
+    --
+    * package_id : INT (FK)
+    * driver_id : INT (FK)
+    * vehicle_id : INT (FK)
+    * assigned_date : DATE
+    * pickup_time : TIME
+    * delivery_time : TIME
+    * status : ENUM('assigned', 'in_progress', 'completed', 'failed')
+    * notes : TEXT
+    * created_at : TIMESTAMP
+}
+
+' ===== OPERATIONAL ENTITIES =====
+
+entity "Warehouse" as warehouse {
+    * warehouse_id : INT (PK)
+    --
+    * warehouse_code : VARCHAR(20)
+    * warehouse_name : VARCHAR(100)
+    * address_line1 : VARCHAR(100)
+    * city : VARCHAR(50)
+    * state : VARCHAR(2)
+    * zip_code : VARCHAR(10)
+    * country : VARCHAR(50)
+    * phone : VARCHAR(20)
+    * email : VARCHAR(100)
+    * capacity : DECIMAL(10,2)
+    * is_active : BOOLEAN
+    * created_at : TIMESTAMP
+}
+
+entity "Route" as route {
+    * route_id : INT (PK)
+    --
+    * route_name : VARCHAR(100)
+    * start_location : VARCHAR(100)
+    * end_location : VARCHAR(100)
+    * estimated_duration : INT
+    * distance_km : DECIMAL(8,2)
+    * is_active : BOOLEAN
+    * created_at : TIMESTAMP
+}
+
+entity "RouteStop" as route_stop {
+    * stop_id : INT (PK)
+    --
+    * route_id : INT (FK)
+    * stop_order : INT
+    * location : VARCHAR(100)
+    * latitude : DECIMAL(10,8)
+    * longitude : DECIMAL(11,8)
+    * estimated_time : TIME
+    * stop_type : ENUM('pickup', 'delivery', 'warehouse')
+    * created_at : TIMESTAMP
+}
+
+' ===== SUPPORT & COMMUNICATION ENTITIES =====
+
+entity "SupportTicket" as support_ticket {
+    * ticket_id : INT (PK)
+    --
+    * customer_id : INT (FK)
+    * booking_id : INT (FK)
+    * ticket_number : VARCHAR(50)
+    * subject : VARCHAR(200)
+    * description : TEXT
+    * priority : ENUM('low', 'medium', 'high', 'urgent')
+    * status : ENUM('open', 'in_progress', 'resolved', 'closed')
+    * assigned_to : VARCHAR(50)
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+    * resolved_at : TIMESTAMP
+}
+
+entity "Notification" as notification {
+    * notification_id : INT (PK)
+    --
+    * customer_id : INT (FK)
+    * notification_type : ENUM('email', 'sms', 'push', 'in_app')
+    * subject : VARCHAR(200)
+    * message : TEXT
+    * status : ENUM('pending', 'sent', 'delivered', 'failed')
+    * sent_at : TIMESTAMP
+    * delivered_at : TIMESTAMP
+    * created_at : TIMESTAMP
+}
+
+' ===== RELATIONSHIPS =====
+
+' Customer relationships
+customer ||--o{ customer_address : "has"
+customer ||--o{ package : "owns"
+customer ||--o{ booking : "makes"
+customer ||--o{ invoice : "receives"
+customer ||--o{ support_ticket : "creates"
+customer ||--o{ notification : "receives"
+
+' Package relationships
+package ||--o| booking : "included_in"
+package ||--o{ tracking : "tracked_by"
+package ||--o| delivery_assignment : "delivered_by"
+package ||--o| customer_address : "pickup_from"
+package ||--o| customer_address : "delivered_to"
+
+' Service relationships
+service_type ||--o{ booking : "selected_for"
+service_type ||--o{ package : "applied_to"
+
+' Booking relationships
+booking ||--o| payment : "has"
+booking ||--o| invoice_item : "billed_as"
+booking ||--o| support_ticket : "related_to"
+
+' Payment relationships
+payment ||--o| booking : "pays_for"
+
+' Invoice relationships
+invoice ||--o{ invoice_item : "contains"
+invoice ||--o| customer : "billed_to"
+
+' Driver relationships
+driver ||--o{ delivery_assignment : "assigned_to"
+driver ||--o| vehicle : "drives"
+
+' Vehicle relationships
+vehicle ||--o{ delivery_assignment : "used_for"
+
+' Route relationships
+route ||--o{ route_stop : "includes"
+
+' Notes for complex business rules
+note right of customer : "Customer types have different\npricing and credit terms"
+note right of package : "Dimensional weight is calculated\nas (L×W×H)/166 for air freight"
+note right of tracking : "GPS coordinates are captured\nfor real-time location tracking"
+note right of payment : "Multiple payment methods\nsupported with gateway integration"
+note right of delivery_assignment : "Optimized route planning\nfor efficient deliveries"
+
+@enduml

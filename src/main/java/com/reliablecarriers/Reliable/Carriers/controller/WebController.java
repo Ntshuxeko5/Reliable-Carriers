@@ -1,0 +1,206 @@
+package com.reliablecarriers.Reliable.Carriers.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
+@Controller
+public class WebController {
+
+    @GetMapping("/")
+    public String home() {
+        return "index";
+    }
+
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
+
+    @GetMapping("/staff-login")
+    public String staffLogin() {
+        return "staff-login";
+    }
+
+    @GetMapping("/register")
+    public String register() {
+        return "register";
+    }
+
+    @GetMapping("/dashboard")
+    public String dashboard(HttpServletRequest request) {
+        // Get user role from session or authentication
+        String userRole = null;
+        
+        // Try to get from session first
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            userRole = (String) session.getAttribute("userRole");
+        }
+        
+        // If no session, try to get from authentication
+        if (userRole == null) {
+            try {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.getPrincipal() instanceof UserDetails) {
+                    UserDetails userDetails = (UserDetails) auth.getPrincipal();
+                    // Extract role from authorities
+                    for (GrantedAuthority authority : userDetails.getAuthorities()) {
+                        if (authority.getAuthority().startsWith("ROLE_")) {
+                            userRole = authority.getAuthority().substring(5); // Remove "ROLE_" prefix
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // If authentication fails, continue with default behavior
+            }
+        }
+        
+        // Redirect based on role
+        if (userRole != null) {
+            switch (userRole) {
+                case "ADMIN":
+                    return "redirect:/admin/dashboard";
+                case "DRIVER":
+                    return "redirect:/driver/dashboard";
+                case "TRACKING_MANAGER":
+                    return "redirect:/tracking/dashboard";
+                case "STAFF":
+                    return "redirect:/staff/dashboard";
+                case "CUSTOMER":
+                default:
+                    return "redirect:/customer";
+            }
+        }
+        
+        // Default fallback
+        return "redirect:/customer";
+    }
+
+    @GetMapping("/admin")
+    public String adminPanel() {
+        return "admin";
+    }
+
+    @GetMapping("/admin/dashboard")
+    public String adminDashboard() {
+        return "admin/dashboard";
+    }
+
+    @GetMapping("/staff/dashboard")
+    public String staffDashboard() {
+        return "staff/dashboard";
+    }
+
+    @GetMapping("/tracking/{trackingNumber}")
+    public String tracking(@PathVariable String trackingNumber, Model model) {
+        model.addAttribute("trackingNumber", trackingNumber);
+        return "tracking/basic";
+    }
+
+    @GetMapping("/tracking")
+    public String tracking() {
+        return "tracking/basic";
+    }
+    
+    @GetMapping("/tracking/basic")
+    public String basicTracking() {
+        return "tracking/basic";
+    }
+
+    @GetMapping("/notifications")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String notifications() {
+        return "notifications";
+    }
+
+    @GetMapping("/moving-services")
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
+    public String movingServices() {
+        return "moving-services";
+    }
+
+    @GetMapping("/shipments")
+    public String shipments() {
+        return "shipments";
+    }
+
+    @GetMapping("/drivers")
+    public String drivers() {
+        return "drivers";
+    }
+
+    @GetMapping("/vehicles")
+    public String vehicles() {
+        return "vehicles";
+    }
+
+    @GetMapping("/profile")
+    public String profile() {
+        return "profile";
+    }
+
+    @GetMapping("/booking")
+    public String booking() {
+        return "booking";
+    }
+    
+    @GetMapping("/driver/workboard")
+    public String driverWorkboard() {
+        return "driver/workboard";
+    }
+    
+    @GetMapping("/admin/driver-management")
+    public String adminDriverManagement() {
+        return "admin/driver-management";
+    }
+    
+    @GetMapping("/admin/analytics")
+    public String adminAnalytics() {
+        return "admin/analytics";
+    }
+    
+    @GetMapping("/admin/audit")
+    public String adminAudit() {
+        return "admin/audit";
+    }
+    
+    @GetMapping("/about")
+    public String about() {
+        return "about";
+    }
+    
+    @GetMapping("/contact")
+    public String contact() {
+        return "contact";
+    }
+
+    @GetMapping("/price-list")
+    public String priceList() {
+        return "price-list";
+    }
+
+    @GetMapping("/driver/dashboard")
+    public String driverDashboard() {
+        return "driver/dashboard";
+    }
+
+    @GetMapping("/payment")
+    public String payment() {
+        return "payment";
+    }
+    
+    @GetMapping("/color-test")
+    public String colorTest() {
+        return "color-test";
+    }
+}

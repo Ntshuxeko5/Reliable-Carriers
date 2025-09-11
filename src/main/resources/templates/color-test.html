@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Test - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Force color overrides to ensure colors work */
+        .text-reliable-yellow-400 { color: #facc15 !important; }
+        .text-reliable-yellow-300 { color: #fde047 !important; }
+        .text-reliable-yellow-500 { color: #eab308 !important; }
+        .text-reliable-yellow-600 { color: #ca8a04 !important; }
+        .bg-reliable-yellow-400 { background-color: #facc15 !important; }
+        .bg-reliable-yellow-500 { background-color: #eab308 !important; }
+        .bg-reliable-yellow-600 { background-color: #ca8a04 !important; }
+        .bg-reliable-600 { background-color: #0284c7 !important; }
+        .bg-reliable-700 { background-color: #0369a1 !important; }
+        .bg-reliable-800 { background-color: #075985 !important; }
+        .bg-reliable-900 { background-color: #0c4a6e !important; }
+        .text-reliable-600 { color: #0284c7 !important; }
+        .from-reliable-900 { background-color: #0c4a6e !important; }
+        .to-reliable-700 { background-color: #0369a1 !important; }
+        .from-reliable-800 { background-color: #075985 !important; }
+        .to-reliable-900 { background-color: #0c4a6e !important; }
+        .from-reliable-yellow-500 { background-color: #eab308 !important; }
+        .to-reliable-yellow-600 { background-color: #ca8a04 !important; }
+        .from-reliable-50 { background-color: #f0f9ff !important; }
+        .to-reliable-100 { background-color: #e0f2fe !important; }
+        
+        /* Ensure hero section has proper colors */
+        .hero-section {
+            background: linear-gradient(135deg, #0c4a6e 0%, #075985 50%, #0369a1 100%) !important;
+            color: white !important;
+        }
+        
+        /* Ensure buttons have proper colors */
+        .btn-primary {
+            background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%) !important;
+            color: white !important;
+        }
+        
+        /* Ensure navigation has proper colors */
+        .nav-header {
+            background: linear-gradient(135deg, #075985 0%, #0c4a6e 100%) !important;
+            color: white !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-reliable-800 to-reliable-900 text-white shadow-lg nav-header">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-truck text-reliable-yellow-400"></i>
+                    <span>Reliable Carriers</span>
+                </a>
+                <a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Back to Home</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 class="text-4xl font-bold text-gray-800 mb-8 text-center">Color Test Page</h1>
+        
+        <!-- Hero Section Test -->
+        <section class="relative min-h-96 flex items-center justify-center overflow-hidden bg-gradient-to-br from-reliable-900 via-reliable-800 to-reliable-700 text-white hero-section rounded-2xl mb-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold mb-4">Hero Section Test</h2>
+                <p class="text-xl mb-6">This should have a blue gradient background with white text</p>
+                <button class="bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 text-white font-bold py-3 px-8 rounded-lg btn-primary">
+                    Yellow Button Test
+                </button>
+            </div>
+        </section>
+        
+        <!-- Color Palette Test -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <!-- Reliable Blue Colors -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Reliable Blue Colors</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-50 rounded mr-3"></div>
+                        <span class="text-sm">reliable-50</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-100 rounded mr-3"></div>
+                        <span class="text-sm">reliable-100</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-200 rounded mr-3"></div>
+                        <span class="text-sm">reliable-200</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-300 rounded mr-3"></div>
+                        <span class="text-sm">reliable-300</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-400 rounded mr-3"></div>
+                        <span class="text-sm">reliable-400</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-500 rounded mr-3"></div>
+                        <span class="text-sm">reliable-500</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-600 rounded mr-3"></div>
+                        <span class="text-sm">reliable-600</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-700 rounded mr-3"></div>
+                        <span class="text-sm">reliable-700</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-800 rounded mr-3"></div>
+                        <span class="text-sm">reliable-800</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-900 rounded mr-3"></div>
+                        <span class="text-sm">reliable-900</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reliable Yellow Colors -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Reliable Yellow Colors</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-50 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-50</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-100 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-100</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-200 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-200</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-300 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-300</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-400 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-400</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-500 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-500</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-600 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-600</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-700 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-700</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-800 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-800</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-reliable-yellow-900 rounded mr-3"></div>
+                        <span class="text-sm">reliable-yellow-900</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Text Color Test -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Text Color Test</h3>
+            <div class="space-y-2">
+                <p class="text-reliable-600 text-lg">This text should be reliable blue (reliable-600)</p>
+                <p class="text-reliable-yellow-400 text-lg">This text should be reliable yellow (reliable-yellow-400)</p>
+                <p class="text-reliable-yellow-500 text-lg">This text should be reliable yellow (reliable-yellow-500)</p>
+                <p class="text-reliable-yellow-600 text-lg">This text should be reliable yellow (reliable-yellow-600)</p>
+            </div>
+        </div>
+        
+        <!-- Button Test -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Button Test</h3>
+            <div class="flex flex-wrap gap-4">
+                <button class="bg-reliable-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-reliable-700 transition-colors">
+                    Reliable Blue Button
+                </button>
+                <button class="bg-reliable-yellow-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-reliable-yellow-600 transition-colors">
+                    Reliable Yellow Button
+                </button>
+                <button class="bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 text-white font-bold py-3 px-6 rounded-lg btn-primary">
+                    Gradient Yellow Button
+                </button>
+            </div>
+        </div>
+        
+        <!-- Status -->
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            <strong>Status:</strong> If you can see colors in the boxes above, the color system is working correctly!
+        </div>
+    </div>
+</body>
+</html>

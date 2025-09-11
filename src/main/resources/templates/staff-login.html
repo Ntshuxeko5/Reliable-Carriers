@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 5px rgba(2, 132, 199, 0.3)' },
+                            '50%': { boxShadow: '0 0 20px rgba(2, 132, 199, 0.6)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-reliable-900 via-reliable-800 to-reliable-700 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <!-- Background Elements -->
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute top-20 left-10 w-32 h-32 bg-reliable-yellow-400/10 rounded-full animate-bounce-gentle"></div>
+        <div class="absolute bottom-20 right-10 w-24 h-24 bg-white/5 rounded-full animate-bounce-gentle" style="animation-delay: 1s;"></div>
+        <div class="absolute top-1/2 left-1/4 w-16 h-16 bg-reliable-yellow-400/15 rounded-full animate-bounce-gentle" style="animation-delay: 2s;"></div>
+    </div>
+
+    <div class="relative max-w-md w-full space-y-8 animate-fade-in">
+        <!-- Logo and Header -->
+        <div class="text-center">
+            <div class="mx-auto h-20 w-20 bg-gradient-to-r from-reliable-yellow-400 to-reliable-yellow-500 rounded-full flex items-center justify-center mb-6 animate-pulse-glow">
+                <i class="fas fa-shield-alt text-white text-3xl"></i>
+            </div>
+            <h2 class="text-4xl font-bold text-white mb-2">Staff Portal</h2>
+            <p class="text-gray-300 text-lg">Secure access for Reliable Carriers staff</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <i class="fas fa-shield-alt mr-1"></i>
+                    Secure
+                </span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <i class="fas fa-users mr-1"></i>
+                    Staff Only
+                </span>
+            </div>
+        </div>
+
+        <!-- Login Form -->
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-8 animate-slide-up border border-white/20">
+            <form id="staffLoginForm" class="space-y-6">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-white mb-2">
+                        <i class="fas fa-envelope mr-2"></i>
+                        Staff Email Address
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-envelope text-gray-400"></i>
+                        </div>
+                        <input id="email" name="email" type="email" required 
+                               class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-yellow-500 focus:border-transparent transition-all duration-300 bg-white/90 backdrop-blur-sm"
+                               placeholder="staff@reliablecarriers.co.za">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-white mb-2">
+                        <i class="fas fa-lock mr-2"></i>
+                        Password
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </div>
+                        <input id="password" name="password" type="password" required 
+                               class="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-yellow-500 focus:border-transparent transition-all duration-300 bg-white/90 backdrop-blur-sm"
+                               placeholder="Enter your password">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-eye text-gray-400 hover:text-gray-600 transition-colors"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember-me" type="checkbox" 
+                               class="h-4 w-4 text-reliable-yellow-500 focus:ring-reliable-yellow-500 border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-sm text-white">
+                            Remember me
+                        </label>
+                    </div>
+                    <a href="#" class="text-sm text-reliable-yellow-300 hover:text-reliable-yellow-200 transition-colors">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <div>
+                    <button type="submit" 
+                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 hover:from-reliable-yellow-600 hover:to-reliable-yellow-700 focus:ring-2 focus:ring-offset-2 focus:ring-reliable-yellow-500 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                            <i class="fas fa-sign-in-alt text-reliable-yellow-300 group-hover:text-reliable-yellow-200 transition-colors"></i>
+                        </span>
+                        Access Staff Portal
+                    </button>
+                </div>
+            </form>
+
+            <!-- Security Notice -->
+            <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">Security Notice</h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            <p>This portal is for authorized staff members only. Unauthorized access attempts will be logged and reported.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Roles Info -->
+            <div class="mt-6">
+                <h4 class="text-sm font-medium text-white mb-3">Available Staff Roles:</h4>
+                <div class="grid grid-cols-1 gap-2 text-xs text-gray-300">
+                    <div class="flex items-center">
+                        <i class="fas fa-user-shield text-red-400 mr-2"></i>
+                        <span>Administrators - Full system access</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-user-tie text-blue-400 mr-2"></i>
+                        <span>Staff - Customer service & operations</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-truck text-green-400 mr-2"></i>
+                        <span>Drivers - Delivery & tracking access</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-chart-line text-purple-400 mr-2"></i>
+                        <span>Managers - Analytics & reporting</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="text-center">
+            <a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors font-medium">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Public Site
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="fixed top-4 right-4 z-50"></div>
+
+    <script th:src="@{/js/app.js}"></script>
+    <script>
+        // Password toggle functionality
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Form submission
+        document.getElementById('staffLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Authenticating...';
+            submitBtn.disabled = true;
+            
+            // Simulate API call
+            fetch('/api/auth/staff-login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Authentication failed');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Check if we have a valid response with user data
+                if (data && data.id && data.email && data.role && data.token) {
+                    // Store the JWT token (standardized keys)
+                    localStorage.setItem('jwtToken', data.token);
+                    sessionStorage.setItem('jwtToken', data.token);
+                    localStorage.setItem('token', data.token);
+                    sessionStorage.setItem('token', data.token);
+                    localStorage.setItem('userRole', data.role);
+                    localStorage.setItem('userEmail', data.email);
+                    
+                                         showAlert('Authentication successful! Redirecting to staff portal...', 'success');
+                     setTimeout(() => {
+                         // Ensure the JWT token is present in sessionStorage for immediate use
+                         sessionStorage.setItem('jwtToken', data.token);
+                         sessionStorage.setItem('token', data.token);
+                         sessionStorage.setItem('userRole', data.role);
+                         sessionStorage.setItem('userEmail', data.email);
+                         
+                         // Redirect based on user role
+                         if (data.role === 'ADMIN') {
+                             window.location.href = '/admin/dashboard';
+                         } else if (data.role === 'DRIVER') {
+                             window.location.href = '/driver/dashboard';
+                         } else if (data.role === 'TRACKING_MANAGER') {
+                             window.location.href = '/tracking/dashboard';
+                         } else if (data.role === 'STAFF') {
+                             window.location.href = '/staff/dashboard';
+                         } else {
+                             window.location.href = '/dashboard';
+                         }
+                     }, 1500);
+                } else {
+                    showAlert(data.message || 'Authentication failed. Please check your credentials.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Login error:', error);
+                showAlert(error.message || 'An error occurred. Please try again.', 'error');
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            alertDiv.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg mb-4 flex items-center space-x-2 animate-slide-up`;
+            alertDiv.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

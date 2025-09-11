@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Package - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-reliable-800 to-reliable-900 text-white shadow-lg">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-truck text-reliable-yellow-400"></i>
+                    <span>Reliable Carriers</span>
+                </a>
+                <ul class="hidden md:flex space-x-8">
+                    <li><a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
+                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/booking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Book Service</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative bg-gradient-to-r from-reliable-700 to-reliable-800 text-white py-20">
+        <div class="absolute inset-0 bg-black opacity-50"></div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">Track Your Package</h1>
+            <p class="text-xl md:text-2xl mb-8 opacity-90 animate-slide-up">Enter your tracking number to get real-time updates</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <!-- Tracking Form -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8 animate-slide-up">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Enter Tracking Number</h2>
+            <form id="trackingForm" class="space-y-4">
+                <div>
+                    <label for="trackingNumber" class="block text-sm font-medium text-gray-700 mb-2">Tracking Number</label>
+                    <input type="text" id="trackingNumber" name="trackingNumber" 
+                           th:value="${trackingNumber}" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+                           placeholder="Enter your tracking number (e.g., RC123456789)">
+                </div>
+                <button type="submit" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">
+                    <i class="fas fa-search mr-2"></i>Track Package
+                </button>
+            </form>
+        </div>
+
+        <!-- Tracking Results -->
+        <div id="trackingResults" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Package Status</h2>
+                    <span id="trackingNumberDisplay" class="text-lg font-semibold text-reliable-600"></span>
+                </div>
+                
+                <!-- Status Overview -->
+                <div class="bg-gradient-to-r from-reliable-50 to-reliable-100 rounded-lg p-6 mb-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 id="packageStatus" class="text-xl font-bold text-gray-800 mb-2">In Transit</h3>
+                            <p id="packageLocation" class="text-gray-600">Last updated: <span id="lastUpdate"></span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-600">Estimated Delivery</p>
+                            <p id="estimatedDelivery" class="text-lg font-bold text-reliable-600">Dec 15, 2024</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tracking Timeline -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Tracking History</h3>
+                    <div id="trackingTimeline" class="space-y-4">
+                        <!-- Timeline items will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Package Details -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3">Package Details</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Weight:</span>
+                                <span id="packageWeight" class="font-medium">2.5 kg</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Dimensions:</span>
+                                <span id="packageDimensions" class="font-medium">30 x 20 x 15 cm</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Service Type:</span>
+                                <span id="serviceType" class="font-medium">Standard Delivery</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3">Delivery Information</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">From:</span>
+                                <span id="senderAddress" class="font-medium">New York, NY</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">To:</span>
+                                <span id="recipientAddress" class="font-medium">Los Angeles, CA</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Signature Required:</span>
+                                <span id="signatureRequired" class="font-medium">Yes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Results Message -->
+        <div id="noResults" class="hidden bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <i class="fas fa-exclamation-triangle text-yellow-500 text-3xl mb-4"></i>
+            <h3 class="text-lg font-semibold text-yellow-800 mb-2">No Package Found</h3>
+            <p class="text-yellow-700">Please check your tracking number and try again, or contact our customer service for assistance.</p>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="hidden text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-reliable-600"></div>
+            <p class="mt-2 text-gray-600">Tracking your package...</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Reliable Carriers</h3>
+                    <p class="text-gray-300">Professional courier services you can trust.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/" class="hover:text-white transition-colors">Home</a></li>
+                        <li><a href="/about" class="hover:text-white transition-colors">About</a></li>
+                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="/tracking" class="hover:text-white transition-colors">Track Package</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Services</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li>Express Delivery</li>
+                        <li>Standard Shipping</li>
+                        <li>International</li>
+                        <li>Same Day Delivery</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Contact Info</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><i class="fas fa-phone mr-2"></i>1-800-RELIABLE</li>
+                        <li><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</li>
+                        <li><i class="fas fa-clock mr-2"></i>24/7 Support</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const trackingForm = document.getElementById('trackingForm');
+            const trackingResults = document.getElementById('trackingResults');
+            const noResults = document.getElementById('noResults');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            trackingForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const trackingNumber = document.getElementById('trackingNumber').value.trim();
+                
+                if (!trackingNumber) {
+                    alert('Please enter a tracking number');
+                    return;
+                }
+
+                // Show loading spinner
+                loadingSpinner.classList.remove('hidden');
+                trackingResults.classList.add('hidden');
+                noResults.classList.add('hidden');
+
+                // Simulate API call (replace with actual API call)
+                setTimeout(() => {
+                    loadingSpinner.classList.add('hidden');
+                    
+                    // Mock data - replace with actual API response
+                    if (trackingNumber.length >= 8) {
+                        displayTrackingResults(trackingNumber);
+                    } else {
+                        noResults.classList.remove('hidden');
+                    }
+                }, 1500);
+            });
+
+            function displayTrackingResults(trackingNumber) {
+                // Mock tracking data
+                const mockData = {
+                    trackingNumber: trackingNumber,
+                    status: 'In Transit',
+                    location: 'Chicago Distribution Center',
+                    lastUpdate: 'Dec 12, 2024 - 2:30 PM',
+                    estimatedDelivery: 'Dec 15, 2024',
+                    weight: '2.5 kg',
+                    dimensions: '30 x 20 x 15 cm',
+                    serviceType: 'Standard Delivery',
+                    senderAddress: 'New York, NY',
+                    recipientAddress: 'Los Angeles, CA',
+                    signatureRequired: 'Yes',
+                    timeline: [
+                        {
+                            date: 'Dec 12, 2024 - 2:30 PM',
+                            status: 'Package in transit',
+                            location: 'Chicago Distribution Center'
+                        },
+                        {
+                            date: 'Dec 11, 2024 - 8:15 AM',
+                            status: 'Package departed',
+                            location: 'New York Hub'
+                        },
+                        {
+                            date: 'Dec 10, 2024 - 3:45 PM',
+                            status: 'Package received',
+                            location: 'New York Hub'
+                        }
+                    ]
+                };
+
+                // Update display
+                document.getElementById('trackingNumberDisplay').textContent = mockData.trackingNumber;
+                document.getElementById('packageStatus').textContent = mockData.status;
+                document.getElementById('packageLocation').textContent = `Last updated: ${mockData.lastUpdate}`;
+                document.getElementById('estimatedDelivery').textContent = mockData.estimatedDelivery;
+                document.getElementById('packageWeight').textContent = mockData.weight;
+                document.getElementById('packageDimensions').textContent = mockData.dimensions;
+                document.getElementById('serviceType').textContent = mockData.serviceType;
+                document.getElementById('senderAddress').textContent = mockData.senderAddress;
+                document.getElementById('recipientAddress').textContent = mockData.recipientAddress;
+                document.getElementById('signatureRequired').textContent = mockData.signatureRequired;
+
+                // Build timeline
+                const timelineContainer = document.getElementById('trackingTimeline');
+                timelineContainer.innerHTML = '';
+                
+                mockData.timeline.forEach((item, index) => {
+                    const timelineItem = document.createElement('div');
+                    timelineItem.className = 'flex items-start space-x-4';
+                    timelineItem.innerHTML = `
+                        <div class="flex-shrink-0">
+                            <div class="w-3 h-3 bg-reliable-500 rounded-full ${index === 0 ? 'ring-2 ring-reliable-200' : ''}"></div>
+                            ${index < mockData.timeline.length - 1 ? '<div class="w-0.5 h-8 bg-gray-300 ml-1.5"></div>' : ''}
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-800">${item.status}</p>
+                            <p class="text-sm text-gray-600">${item.location}</p>
+                            <p class="text-xs text-gray-500">${item.date}</p>
+                        </div>
+                    `;
+                    timelineContainer.appendChild(timelineItem);
+                });
+
+                trackingResults.classList.remove('hidden');
+            }
+
+            // Check if tracking number is provided in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackingFromUrl = urlParams.get('tracking');
+            if (trackingFromUrl) {
+                document.getElementById('trackingNumber').value = trackingFromUrl;
+                trackingForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>

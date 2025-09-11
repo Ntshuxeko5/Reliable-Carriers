@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 5px rgba(249, 115, 22, 0.3)' },
+                            '50%': { boxShadow: '0 0 20px rgba(249, 115, 22, 0.6)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-reliable-600 to-reliable-700 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-white rounded-full flex items-center justify-center">
+                            <i class="fas fa-truck text-reliable-600 text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-white font-semibold text-lg">Reliable Carriers</h1>
+                        <p class="text-reliable-200 text-xs">Staff Portal</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center text-white">
+                        <i class="fas fa-user-circle text-xl mr-2"></i>
+                        <span id="userName">Staff User</span>
+                    </div>
+                    <button onclick="logout()" class="bg-reliable-yellow-500 hover:bg-reliable-yellow-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Section -->
+        <div class="bg-gradient-to-r from-reliable-yellow-400 to-reliable-yellow-500 rounded-2xl p-8 mb-8 animate-fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Welcome to Staff Dashboard</h2>
+                    <p class="text-reliable-yellow-100 text-lg">Manage customer inquiries, track shipments, and provide excellent service</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-white text-sm">
+                        <p>Today's Date: <span id="currentDate"></span></p>
+                        <p>Current Time: <span id="currentTime"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <i class="fas fa-shipping-fast text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-500 text-sm">Active Shipments</p>
+                        <p class="text-2xl font-bold text-gray-900" id="activeShipments">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <i class="fas fa-headset text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-500 text-sm">Customer Inquiries</p>
+                        <p class="text-2xl font-bold text-gray-900" id="customerInquiries">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+                <div class="flex items-center">
+                    <div class="p-3 bg-yellow-100 rounded-lg">
+                        <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-500 text-sm">Pending Actions</p>
+                        <p class="text-2xl font-bold text-gray-900" id="pendingActions">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg">
+                        <i class="fas fa-star text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-500 text-sm">Satisfaction Rate</p>
+                        <p class="text-2xl font-bold text-gray-900" id="satisfactionRate">98%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Actions -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Customer Service Panel -->
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-headset text-reliable-600 mr-2"></i>
+                    Customer Service
+                </h3>
+                <div class="space-y-4">
+                    <button onclick="openCustomerInquiries()" class="w-full bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg transition-colors flex items-center justify-between">
+                        <span>View Customer Inquiries</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button onclick="openShipmentTracking()" class="w-full bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg transition-colors flex items-center justify-between">
+                        <span>Track Shipments</span>
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button onclick="openCustomerSupport()" class="w-full bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg transition-colors flex items-center justify-between">
+                        <span>Customer Support</span>
+                        <i class="fas fa-comments"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Operations Panel -->
+            <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-cogs text-reliable-600 mr-2"></i>
+                    Operations
+                </h3>
+                <div class="space-y-4">
+                    <button onclick="openShipmentManagement()" class="w-full bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg transition-colors flex items-center justify-between">
+                        <span>Shipment Management</span>
+                        <i class="fas fa-box"></i>
+                    </button>
+                    <button onclick="openDriverCoordination()" class="w-full bg-teal-500 hover:bg-teal-600 text-white p-4 rounded-lg transition-colors flex items-center justify-between">
+                        <span>Driver Coordination</span>
+                        <i class="fas fa-truck"></i>
+                    </button>
+                    <button onclick="openReports()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white p-4 rounded-lg transition-colors flex items-center justify-between">
+                        <span>Generate Reports</span>
+                        <i class="fas fa-chart-bar"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-history text-reliable-600 mr-2"></i>
+                Recent Activity
+            </h3>
+            <div class="space-y-4" id="recentActivity">
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">Shipment RC001234567 delivered successfully</p>
+                        <p class="text-xs text-gray-500">2 minutes ago</p>
+                    </div>
+                </div>
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">New customer inquiry received</p>
+                        <p class="text-xs text-gray-500">15 minutes ago</p>
+                    </div>
+                </div>
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">Driver assigned to shipment RC001234568</p>
+                        <p class="text-xs text-gray-500">1 hour ago</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="fixed top-4 right-4 z-50"></div>
+
+    <script th:src="@{/js/app.js}"></script>
+    <script>
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            loadDashboardData();
+        });
+
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('currentDate').textContent = now.toLocaleDateString();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+        }
+
+        function loadDashboardData() {
+            // Load user data
+            const userData = JSON.parse(localStorage.getItem('user') || '{}');
+            if (userData.firstName && userData.lastName) {
+                document.getElementById('userName').textContent = `${userData.firstName} ${userData.lastName}`;
+            }
+
+            // Load dashboard stats (mock data for now)
+            document.getElementById('activeShipments').textContent = '24';
+            document.getElementById('customerInquiries').textContent = '8';
+            document.getElementById('pendingActions').textContent = '3';
+        }
+
+        function openCustomerInquiries() {
+            showAlert('Customer Inquiries feature coming soon!', 'info');
+        }
+
+        function openShipmentTracking() {
+            window.location.href = '/tracking';
+        }
+
+        function openCustomerSupport() {
+            showAlert('Customer Support feature coming soon!', 'info');
+        }
+
+        function openShipmentManagement() {
+            showAlert('Shipment Management feature coming soon!', 'info');
+        }
+
+        function openDriverCoordination() {
+            showAlert('Driver Coordination feature coming soon!', 'info');
+        }
+
+        function openReports() {
+            showAlert('Reports feature coming soon!', 'info');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('jwtToken');
+            sessionStorage.removeItem('userRole');
+            sessionStorage.removeItem('userEmail');
+            window.location.href = '/staff-login';
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            
+            let bgColor = 'bg-blue-500';
+            let icon = 'fa-info-circle';
+            
+            if (type === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'fa-check-circle';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'fa-exclamation-circle';
+            } else if (type === 'warning') {
+                bgColor = 'bg-yellow-500';
+                icon = 'fa-exclamation-triangle';
+            }
+            
+            alertDiv.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg mb-4 flex items-center space-x-2 animate-slide-up`;
+            alertDiv.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

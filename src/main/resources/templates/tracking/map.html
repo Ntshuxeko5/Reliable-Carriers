@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Real-Time Driver Map</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Leaflet CSS for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body class="h-screen w-screen relative overflow-hidden">
+    <div class="h-full w-full relative">
+        <!-- Map Container -->
+        <div id="map" style="height: 100%; width: 100%;"></div>
+        
+        <!-- Map Info Panel -->
+        <div class="absolute top-5 left-5 z-50 bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-lg max-w-xs">
+            <h5 class="text-lg font-bold text-gray-800 mb-3">
+                <i class="fas fa-map-marker-alt text-reliable-600 mr-2"></i>
+                Real-Time Tracking
+            </h5>
+            
+            <div class="mb-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Active Drivers:</span>
+                    <span class="text-2xl font-bold text-reliable-600" id="activeDriverCount">0</span>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Total Drivers:</span>
+                    <span id="totalDriverCount">0</span>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Last Update:</span>
+                    <span id="lastUpdate">--</span>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button class="control-btn" onclick="refreshMapData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="control-btn" id="realTimeBtn" onclick="toggleRealTime()">
+                    <i class="fas fa-play"></i> <span id="realTimeText">Start Real-time</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Map Controls -->
+        <div class="absolute top-5 right-5 z-50 bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-lg">
+            <h6 class="text-sm font-bold text-gray-800 mb-3">Map Controls</h6>
+            
+            <div class="space-y-2">
+                <button class="w-full bg-gradient-to-r from-reliable-600 to-reliable-700 hover:from-reliable-700 hover:to-reliable-800 text-white font-medium py-2 px-3 rounded-xl transition-all duration-300 transform hover:scale-105 text-sm" onclick="fitAllMarkers()">
+                    <i class="fas fa-expand mr-1"></i> Fit All
+                </button>
+                <button class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-2 px-3 rounded-xl transition-all duration-300 transform hover:scale-105 text-sm" onclick="clearMap()">
+                    <i class="fas fa-trash mr-1"></i> Clear
+                </button>
+                <button class="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-medium py-2 px-3 rounded-xl transition-all duration-300 transform hover:scale-105 text-sm" onclick="toggleHeatmap()">
+                    <i class="fas fa-fire mr-1"></i> Heatmap
+                </button>
+                <button class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 px-3 rounded-xl transition-all duration-300 transform hover:scale-105 text-sm" onclick="exportMapData()">
+                    <i class="fas fa-download mr-1"></i> Export
+                </button>
+            </div>
+            
+            <hr class="my-3 border-gray-300">
+            
+            <div class="flex items-center mb-2">
+                <input class="w-4 h-4 text-reliable-600 border-gray-300 rounded focus:ring-reliable-500" type="checkbox" id="showOnlineDrivers" checked>
+                <label class="ml-2 text-sm text-gray-700" for="showOnlineDrivers">
+                    Show Online Drivers
+                </label>
+            </div>
+            
+            <div class="flex items-center mb-2">
+                <input class="w-4 h-4 text-reliable-600 border-gray-300 rounded focus:ring-reliable-500" type="checkbox" id="showOfflineDrivers">
+                <label class="ml-2 text-sm text-gray-700" for="showOfflineDrivers">
+                    Show Offline Drivers
+                </label>
+            </div>
+            
+            <div class="flex items-center mb-2">
+                <input class="w-4 h-4 text-reliable-600 border-gray-300 rounded focus:ring-reliable-500" type="checkbox" id="showTrails">
+                <label class="ml-2 text-sm text-gray-700" for="showTrails">
+                    Show Movement Trails
+                </label>
+            </div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 hidden">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-reliable-600"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS for maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Custom JS -->
+    <script th:src="@{/js/tracking.js}"></script>
+    
+    <script>
+        let map;
+        let markers = {};
+        let realTimeInterval;
+        let isRealTimeActive = false;
+        let driverTrails = {};
+        let heatmapLayer = null;
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([40.7128, -74.0060], 10);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Add fullscreen control
+            L.control.fullscreen({
+                position: 'topleft',
+                title: {
+                    'false': 'View Fullscreen',
+                    'true': 'Exit Fullscreen'
+                }
+            }).addTo(map);
+            
+            // Add scale control
+            L.control.scale({
+                imperial: true,
+                metric: true,
+                position: 'bottomleft'
+            }).addTo(map);
+        }
+        
+        // Load map data
+        async function loadMapData() {
+            try {
+                showLoading(true);
+                const response = await fetch('/api/tracking/active-drivers');
+                const drivers = await response.json();
+                
+                updateMapMarkers(drivers);
+                updateMapInfo(drivers);
+                showLoading(false);
+                
+            } catch (error) {
+                console.error('Error loading map data:', error);
+                showLoading(false);
+            }
+        }
+        
+        // Update map markers
+        function updateMapMarkers(drivers) {
+            // Clear existing markers
+            Object.values(markers).forEach(marker => map.removeLayer(marker));
+            markers = {};
+            
+            drivers.forEach(driver => {
+                if (driver.latitude && driver.longitude) {
+                    const marker = createDriverMarker(driver);
+                    markers[driver.driverId] = marker;
+                    marker.addTo(map);
+                    
+                    // Add to trail if enabled
+                    if (document.getElementById('showTrails').checked) {
+                        addToTrail(driver);
+                    }
+                }
+            });
+        }
+        
+        // Create driver marker
+        function createDriverMarker(driver) {
+            const markerColor = driver.isOnline ? '#28a745' : '#dc3545';
+            const icon = L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background-color: ${markerColor}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+            
+            const marker = L.marker([driver.latitude, driver.longitude], { icon })
+                .bindPopup(createDriverPopup(driver));
+            
+            return marker;
+        }
+        
+        // Create driver popup
+        function createDriverPopup(driver) {
+            return `
+                <div class="driver-popup">
+                    <h6 class="text-primary mb-2">${driver.driverName}</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Vehicle:</strong><br>
+                            ${driver.vehicleModel || 'N/A'}
+                        </div>
+                        <div class="col-6">
+                            <strong>Status:</strong><br>
+                            <span class="badge ${driver.isOnline ? 'bg-success' : 'bg-danger'}">
+                                ${driver.status}
+                            </span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Last Update:</strong><br>
+                            ${driver.formattedTimestamp}
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <button class="btn btn-sm btn-primary" onclick="showDriverDetails(${driver.driverId})">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Update map info
+        function updateMapInfo(drivers) {
+            const activeDrivers = drivers.filter(d => d.isOnline).length;
+            const totalDrivers = drivers.length;
+            
+            document.getElementById('activeDriverCount').textContent = activeDrivers;
+            document.getElementById('totalDriverCount').textContent = totalDrivers;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+        
+        // Refresh map data
+        function refreshMapData() {
+            loadMapData();
+        }
+        
+        // Toggle real-time updates
+        function toggleRealTime() {
+            if (isRealTimeActive) {
+                stopRealTime();
+            } else {
+                startRealTime();
+            }
+        }
+        
+        // Start real-time updates
+        function startRealTime() {
+            isRealTimeActive = true;
+            realTimeInterval = setInterval(loadMapData, 30000); // 30 seconds
+            updateRealTimeButton(true);
+        }
+        
+        // Stop real-time updates
+        function stopRealTime() {
+            isRealTimeActive = false;
+            if (realTimeInterval) {
+                clearInterval(realTimeInterval);
+                realTimeInterval = null;
+            }
+            updateRealTimeButton(false);
+        }
+        
+        // Update real-time button
+        function updateRealTimeButton(isActive) {
+            const btn = document.getElementById('realTimeBtn');
+            const text = document.getElementById('realTimeText');
+            if (btn && text) {
+                if (isActive) {
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-danger');
+                    text.textContent = 'Stop Real-time';
+                } else {
+                    btn.classList.remove('btn-danger');
+                    btn.classList.add('btn-outline-primary');
+                    text.textContent = 'Start Real-time';
+                }
+            }
+        }
+        
+        // Fit all markers to view
+        function fitAllMarkers() {
+            if (Object.keys(markers).length > 0) {
+                const group = new L.featureGroup(Object.values(markers));
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+        
+        // Clear map
+        function clearMap() {
+            Object.values(markers).forEach(marker => map.removeLayer(marker));
+            markers = {};
+            driverTrails = {};
+        }
+        
+        // Toggle heatmap
+        function toggleHeatmap() {
+            // This would require a heatmap library like Leaflet.heat
+            console.log('Heatmap toggle - requires additional library');
+        }
+        
+        // Export map data
+        function exportMapData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                drivers: Object.values(markers).map(marker => ({
+                    lat: marker.getLatLng().lat,
+                    lng: marker.getLatLng().lng,
+                    driverId: marker.driverId
+                }))
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `map-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Add to driver trail
+        function addToTrail(driver) {
+            if (!driverTrails[driver.driverId]) {
+                driverTrails[driver.driverId] = [];
+            }
+            
+            driverTrails[driver.driverId].push([driver.latitude, driver.longitude]);
+            
+            // Keep only last 10 points
+            if (driverTrails[driver.driverId].length > 10) {
+                driverTrails[driver.driverId].shift();
+            }
+            
+            // Draw trail
+            if (driverTrails[driver.driverId].length > 1) {
+                const polyline = L.polyline(driverTrails[driver.driverId], {
+                    color: driver.isOnline ? '#28a745' : '#dc3545',
+                    weight: 2,
+                    opacity: 0.7
+                }).addTo(map);
+            }
+        }
+        
+        // Show driver details
+        function showDriverDetails(driverId) {
+            // Navigate to driver details page
+            window.location.href = `/tracking/driver/${driverId}`;
+        }
+        
+        // Show loading
+        function showLoading(show) {
+            const loadingElement = document.getElementById('loadingIndicator');
+            if (loadingElement) {
+                loadingElement.style.display = show ? 'block' : 'none';
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            loadMapData();
+        });
+    </script>
+</body>
+</html>
