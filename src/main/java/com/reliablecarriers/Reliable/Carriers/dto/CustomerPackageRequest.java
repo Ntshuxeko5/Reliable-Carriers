@@ -97,6 +97,12 @@ public class CustomerPackageRequest {
     // Notification preferences
     private Boolean emailNotifications = true;
     private Boolean smsNotifications = true;
+
+    // Optional: coordinates for distance calculation (Johannesburg/Gauteng context)
+    private Double pickupLatitude;
+    private Double pickupLongitude;
+    private Double deliveryLatitude;
+    private Double deliveryLongitude;
     
     // Getters and Setters
     public String getSenderName() {
@@ -297,5 +303,37 @@ public class CustomerPackageRequest {
 
     public void setSmsNotifications(Boolean smsNotifications) {
         this.smsNotifications = smsNotifications;
+    }
+
+    public Double getPickupLatitude() {
+        return pickupLatitude;
+    }
+
+    public void setPickupLatitude(Double pickupLatitude) {
+        this.pickupLatitude = pickupLatitude;
+    }
+
+    public Double getPickupLongitude() {
+        return pickupLongitude;
+    }
+
+    public void setPickupLongitude(Double pickupLongitude) {
+        this.pickupLongitude = pickupLongitude;
+    }
+
+    public Double getDeliveryLatitude() {
+        return deliveryLatitude;
+    }
+
+    public void setDeliveryLatitude(Double deliveryLatitude) {
+        this.deliveryLatitude = deliveryLatitude;
+    }
+
+    public Double getDeliveryLongitude() {
+        return deliveryLongitude;
+    }
+
+    public void setDeliveryLongitude(Double deliveryLongitude) {
+        this.deliveryLongitude = deliveryLongitude;
     }
 }

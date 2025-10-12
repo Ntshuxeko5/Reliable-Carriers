@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Location History - Reliable Carriers</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h3>Driver History</h3>
+        <form id="historyForm" class="mb-3">
+            <input id="driverId" placeholder="Driver ID" required>
+            <input id="start" type="datetime-local" required>
+            <input id="end" type="datetime-local" required>
+            <button type="submit">Load</button>
+        </form>
+        <div id="map" style="height: 500px"></div>
+    </div>
+    <script>
+        const map = L.map('map').setView([0,0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+        document.getElementById('historyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const driverId = document.getElementById('driverId').value;
+            const start = new Date(document.getElementById('start').value).toISOString();
+            const end = new Date(document.getElementById('end').value).toISOString();
+            const res = await fetch(`/api/tracking/driver/${driverId}/history?startTime=${encodeURIComponent(start)}&endTime=${encodeURIComponent(end)}`, {
+                headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
+            });
+            const points = await res.json();
+            const latlngs = points.map(p => [p.latitude, p.longitude]);
+            if (latlngs.length) {
+                L.polyline(latlngs, { color: 'blue' }).addTo(map);
+                map.fitBounds(latlngs);
+            }
+        });
+    </script>
+</body>
+</html>
+
+

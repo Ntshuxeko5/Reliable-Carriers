@@ -2,7 +2,7 @@ package com.reliablecarriers.Reliable.Carriers.config;
 
 import com.reliablecarriers.Reliable.Carriers.security.JwtAuthenticationFilter;
 import com.reliablecarriers.Reliable.Carriers.security.RateLimitFilter;
-import com.reliablecarriers.Reliable.Carriers.security.CustomUserDetailsService;
+import com.reliablecarriers.Reliable.Carriers.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -91,10 +91,10 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        return http.getSharedObject(AuthenticationManagerBuilder.class)
-                .userDetailsService(userDetailsService)
-                .passwordEncoder(passwordEncoder())
-                .and()
-                .build();
+        AuthenticationManagerBuilder authenticationManagerBuilder = 
+            http.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.userDetailsService(userDetailsService)
+                .passwordEncoder(passwordEncoder());
+        return authenticationManagerBuilder.build();
     }
 }

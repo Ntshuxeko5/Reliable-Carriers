@@ -24,6 +24,7 @@ public class QuoteResponse {
     private String description;
     private Date quoteExpiryDate;
     private boolean isActive;
+    private Double distanceKm;
     
     public static class ServiceOption {
         private ServiceType serviceType;
@@ -225,5 +226,13 @@ public class QuoteResponse {
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public Double getDistanceKm() {
+        return distanceKm;
+    }
+
+    public void setDistanceKm(Double distanceKm) {
+        this.distanceKm = distanceKm;
     }
 }

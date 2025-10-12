@@ -326,7 +326,11 @@
                     params.append('currentLng', currentLocation.lng);
                 }
                 
-                const response = await fetch(`/api/driver/packages?${params}`);
+                const response = await fetch(`/api/driver/packages?${params}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                    }
+                });
                 const data = await response.json();
                 
                 packages = data;
@@ -405,6 +409,13 @@
                                     </span>
                                 </div>` : ''
                             }
+                            <div class="mt-2 space-x-2">
+                                ${type === 'pickup' ? `
+                                    <button class="text-xs px-2 py-1 bg-yellow-600 text-white rounded" onclick="event.stopPropagation(); updatePackageStatus(${pkg.id}, 'PICKED_UP')">Mark Picked</button>
+                                ` : `
+                                    <button class="text-xs px-2 py-1 bg-green-600 text-white rounded" onclick="event.stopPropagation(); updatePackageStatus(${pkg.id}, 'DELIVERED')">Mark Delivered</button>
+                                `}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -420,7 +431,11 @@
                     params.append('currentLng', currentLocation.lng);
                 }
                 
-                const response = await fetch(`/api/driver/packages/next-recommended?${params}`);
+                const response = await fetch(`/api/driver/packages/next-recommended?${params}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                    }
+                });
                 
                 if (response.ok) {
                     const nextPackage = await response.json();
@@ -538,90 +553,47 @@
             `;
         }
         
-        // Show package details modal
+        // Show package details in modal
         function showPackageDetails(packageId) {
             const pkg = packages.find(p => p.id === packageId);
             if (!pkg) return;
-            
-            document.getElementById('packageModalContent').innerHTML = `
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="font-bold text-gray-900">${pkg.trackingNumber}</h4>
-                        <p class="text-sm text-gray-600">${pkg.recipientName}</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Weight</p>
-                            <p class="text-sm text-gray-900">${pkg.weight} kg</p>
-                        </div>
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Status</p>
-                            <p class="text-sm text-gray-900">${pkg.formattedStatus}</p>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <p class="text-xs font-medium text-gray-500">Pickup Address</p>
-                        <p class="text-sm text-gray-900">${pkg.pickupAddress}</p>
-                        <p class="text-xs text-gray-600">${pkg.pickupCity}, ${pkg.pickupState}</p>
-                    </div>
-                    
-                    <div>
-                        <p class="text-xs font-medium text-gray-500">Delivery Address</p>
-                        <p class="text-sm text-gray-900">${pkg.deliveryAddress}</p>
-                        <p class="text-xs text-gray-600">${pkg.deliveryCity}, ${pkg.deliveryState}</p>
-                    </div>
-                    
-                    ${pkg.description ? `
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Description</p>
-                            <p class="text-sm text-gray-900">${pkg.description}</p>
-                        </div>
-                    ` : ''}
-                    
-                    <div class="flex space-x-2 pt-4">
-                        ${pkg.status === 'PENDING' || pkg.status === 'ASSIGNED' ? `
-                            <button onclick="updatePackageStatus(${pkg.id}, 'PICKED_UP')" 
-                                    class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm transition-colors duration-200">
-                                <i class="fas fa-hand-holding-box mr-1"></i>Mark Picked Up
-                            </button>
-                        ` : ''}
-                        
-                        ${pkg.isCurrentlyCarrying ? `
-                            <button onclick="updatePackageStatus(${pkg.id}, 'DELIVERED')" 
-                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm transition-colors duration-200">
-                                <i class="fas fa-check mr-1"></i>Mark Delivered
-                            </button>
-                        ` : ''}
-                    </div>
+            const content = document.getElementById('packageModalContent');
+            content.innerHTML = `
+                <div class="space-y-2 text-sm">
+                    <div><strong>Tracking:</strong> ${pkg.trackingNumber}</div>
+                    <div><strong>Recipient:</strong> ${pkg.recipientName}</div>
+                    <div><strong>Address:</strong> ${pkg.deliveryAddress || ''}, ${pkg.deliveryCity || ''}, ${pkg.deliveryState || ''}</div>
+                    <div><strong>Status:</strong> ${pkg.status}</div>
+                    <div><strong>Weight:</strong> ${pkg.weight || 0} kg</div>
+                </div>
+                <div class="mt-3 flex gap-2">
+                    <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded" onclick="updatePackageStatus(${pkg.id}, 'PICKED_UP')">Mark Picked</button>
+                    <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded" onclick="updatePackageStatus(${pkg.id}, 'DELIVERED')">Mark Delivered</button>
                 </div>
             `;
-            
             document.getElementById('packageModal').classList.remove('hidden');
         }
-        
-        // Close package modal
+
         function closePackageModal() {
             document.getElementById('packageModal').classList.add('hidden');
         }
-        
-        // Update package status
+
         async function updatePackageStatus(packageId, newStatus) {
             try {
-                const response = await fetch(`/api/driver/packages/${packageId}/status?newStatus=${newStatus}`, {
-                    method: 'PUT'
+                const resp = await fetch(`/api/driver/packages/${packageId}/status?newStatus=${encodeURIComponent(newStatus)}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                    }
                 });
-                
-                if (response.ok) {
+                if (resp.ok) {
                     closePackageModal();
                     loadPackageData();
                 } else {
-                    alert('Error updating package status');
+                    alert('Failed to update package status');
                 }
-            } catch (error) {
-                console.error('Error updating package status:', error);
-                alert('Error updating package status');
+            } catch (e) {
+                alert('Failed to update package status');
             }
         }
         
@@ -639,6 +611,22 @@
         // Logout function
         function logout() {
             window.location.href = '/logout';
+        }
+        
+        // Send live location to backend
+        async function sendLiveLocation(lat, lng) {
+            try {
+                await fetch('/api/driver/location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                    },
+                    body: JSON.stringify({ latitude: lat, longitude: lng })
+                });
+            } catch (e) {
+                console.warn('Live location update failed', e);
+            }
         }
         
         // Initialize on page load

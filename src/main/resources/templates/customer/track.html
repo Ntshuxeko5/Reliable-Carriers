@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Package - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#dbb714',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #fde047, #facc15);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
+                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
+                            <rect x="4" y="20" width="40" height="20" rx="2" />
+                            <rect x="44" y="28" width="12" height="8" rx="1" />
+                            <circle cx="18" cy="44" r="4" fill="white" />
+                            <circle cx="46" cy="44" r="4" fill="white" />
+                        </svg>
+                    </span>
+                    <span>Reliable Carriers</span>
+                </a>
+                <div class="hidden md:flex space-x-8">
+                    <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/customer/track" class="text-brand-300 hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-search mr-2"></i>Track Package
+                    </a>
+                    <a href="/customer/quote" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-calculator mr-2"></i>Get Quote
+                    </a>
+                    <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-boxes mr-2"></i>My Packages
+                    </a>
+                    <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-store mr-2"></i>Business
+                    </a>
+                    <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-question-circle mr-2"></i>Help
+                    </a>
+                    <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                </div>
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            <!-- Mobile menu -->
+            <div class="md:hidden hidden" id="mobileMenu">
+                <div class="py-4 space-y-4">
+                    <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/customer/track" class="block text-brand-300 hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-search mr-2"></i>Track Package
+                    </a>
+                    <a href="/customer/quote" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-calculator mr-2"></i>Get Quote
+                    </a>
+                    <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-boxes mr-2"></i>My Packages
+                    </a>
+                    <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-store mr-2"></i>Business
+                    </a>
+                    <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-question-circle mr-2"></i>Help
+                    </a>
+                    <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-800">
+        <div class="glass-effect rounded-3xl p-8 hover-lift">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-search mr-3 gradient-text"></i>Track Package
+                </h1>
+                <p class="text-xl text-gray-700">Enter your tracking number to get real-time updates on your package</p>
+            </div>
+            
+            <form method="post" action="/customer/track" class="mb-8">
+                <div class="flex flex-col sm:flex-row gap-4">
+              <input name="trackingNumber" type="text" 
+                  class="flex-1 px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
+                  placeholder="Enter tracking number (e.g., RC12345678)" required>
+                    <button type="submit" class="bg-gradient-to-r from-brand-500 to-brand-600 text-white px-8 py-4 rounded-full font-bold hover:from-brand-600 hover:to-brand-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <i class="fas fa-search mr-2"></i>Track Package
+                    </button>
+                            </div>
+                        </form>
+            
+            <div th:if="${error}" class="bg-red-500/20 border border-red-500/30 text-red-200 px-6 py-4 rounded-2xl mb-6" th:text="${error}"></div>
+            
+            <div th:if="${found}" class="space-y-6">
+                <div class="bg-white/10 rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-box mr-2 text-brand-400"></i>Package Details
+                    </h3>
+                    <div class="bg-gray-100 rounded-xl p-4">
+                        <pre class="text-gray-800 text-sm overflow-x-auto" th:text="${#objects.toJson(package)}"></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-8">
+                <a href="/customer/dashboard" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto w-fit">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-brand-400">Reliable Carriers</h3>
+                    <p class="text-gray-300">Your trusted partner for reliable package delivery and tracking services.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/customer/track" class="hover:text-brand-400 transition-colors">Track Package</a></li>
+                        <li><a href="/customer/quote" class="hover:text-brand-400 transition-colors">Get Quote</a></li>
+                        <li><a href="/customer/packages" class="hover:text-brand-400 transition-colors">My Packages</a></li>
+                        <li><a href="/customer/help" class="hover:text-brand-400 transition-colors">Help Center</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Services</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">National Shipping</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Moving Services</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Load Transport</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Contact Info</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <p><i class="fas fa-phone mr-2"></i>+27 11 123 4567</p>
+                        <p><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</p>
+                        <p><i class="fas fa-map-marker-alt mr-2"></i>Johannesburg, South Africa</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Add form validation
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const trackingInput = this.querySelector('input[name="trackingNumber"]');
+                if (trackingInput && trackingInput.value.trim() === '') {
+                    e.preventDefault();
+                    alert('Please enter a tracking number');
+                    trackingInput.focus();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+

@@ -51,44 +51,79 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
 
     @Override
     public QuoteResponse createQuote(CustomerPackageRequest request) {
-        // Generate quote ID
-        String quoteId = "Q" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        
-        // Calculate costs for different service types
-        List<QuoteResponse.ServiceOption> availableServices = calculateServiceOptions(request);
-        
-        // Get recommended service (usually the middle option)
-        QuoteResponse.ServiceOption recommendedService = availableServices.stream()
-                .filter(QuoteResponse.ServiceOption::isRecommended)
-                .findFirst()
-                .orElse(availableServices.get(1)); // Default to second option if no recommended
-        
-        // Create quote response
-        QuoteResponse quote = new QuoteResponse();
-        quote.setQuoteId(quoteId);
-        quote.setTrackingNumber("TEMP_" + quoteId); // Temporary tracking number
-        quote.setTotalCost(recommendedService.getCost());
-        quote.setBaseCost(calculateBaseCost(request));
-        quote.setServiceFee(calculateServiceFee(request, recommendedService.getServiceType()));
-        quote.setInsuranceFee(BigDecimal.ZERO); // Default no insurance
-        quote.setFuelSurcharge(calculateFuelSurcharge(request));
-        quote.setServiceType(recommendedService.getServiceType());
-        quote.setEstimatedDeliveryTime(recommendedService.getEstimatedDeliveryTime());
-        quote.setEstimatedDeliveryDate(calculateEstimatedDeliveryDate(recommendedService.getServiceType()));
-        quote.setAvailableServices(availableServices);
-        quote.setPickupAddress(formatAddress(request.getPickupAddress(), request.getPickupCity(), request.getPickupState()));
-        quote.setDeliveryAddress(formatAddress(request.getDeliveryAddress(), request.getDeliveryCity(), request.getDeliveryState()));
-        quote.setWeight(request.getWeight());
-        quote.setDimensions(request.getDimensions());
-        quote.setDescription(request.getDescription());
-        quote.setQuoteExpiryDate(calculateQuoteExpiryDate());
-        quote.setActive(true);
-        
-        // Store quote for later retrieval
-        quoteStorage.put(quoteId, quote);
-        quoteRequests.put(quoteId, request);
-        
-        return quote;
+        try {
+            System.out.println("Creating quote for request: " + request.getSenderEmail());
+            
+            // Validate request
+            if (request.getSenderEmail() == null || request.getSenderEmail().trim().isEmpty()) {
+                throw new IllegalArgumentException("Sender email is required");
+            }
+            if (request.getPickupAddress() == null || request.getPickupAddress().trim().isEmpty()) {
+                throw new IllegalArgumentException("Pickup address is required");
+            }
+            if (request.getDeliveryAddress() == null || request.getDeliveryAddress().trim().isEmpty()) {
+                throw new IllegalArgumentException("Delivery address is required");
+            }
+            if (request.getWeight() == null || request.getWeight() <= 0) {
+                throw new IllegalArgumentException("Valid weight is required");
+            }
+            
+            // Generate quote ID
+            String quoteId = "Q" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            System.out.println("Generated quote ID: " + quoteId);
+            
+            // Calculate costs for different service types
+            List<QuoteResponse.ServiceOption> availableServices = calculateServiceOptions(request);
+            System.out.println("Calculated " + availableServices.size() + " service options");
+            
+            if (availableServices.isEmpty()) {
+                throw new RuntimeException("No service options available");
+            }
+            
+            // Get recommended service (usually the middle option)
+            QuoteResponse.ServiceOption recommendedService = availableServices.stream()
+                    .filter(QuoteResponse.ServiceOption::isRecommended)
+                    .findFirst()
+                    .orElse(availableServices.get(1)); // Default to second option if no recommended
+            
+            if (recommendedService == null) {
+                recommendedService = availableServices.get(0); // Fallback to first option
+            }
+            
+            // Create quote response
+            QuoteResponse quote = new QuoteResponse();
+            quote.setQuoteId(quoteId);
+            quote.setTrackingNumber("TEMP_" + quoteId); // Temporary tracking number
+            quote.setTotalCost(recommendedService.getCost());
+            quote.setBaseCost(calculateBaseCost(request));
+            quote.setServiceFee(calculateServiceFee(request, recommendedService.getServiceType()));
+            quote.setInsuranceFee(BigDecimal.ZERO); // Default no insurance
+            quote.setFuelSurcharge(calculateFuelSurcharge(request));
+            quote.setServiceType(recommendedService.getServiceType());
+            quote.setEstimatedDeliveryTime(recommendedService.getEstimatedDeliveryTime());
+            quote.setEstimatedDeliveryDate(calculateEstimatedDeliveryDate(recommendedService.getServiceType()));
+            quote.setAvailableServices(availableServices);
+            quote.setDistanceKm(estimateDistanceKm(request));
+            quote.setPickupAddress(formatAddress(request.getPickupAddress(), request.getPickupCity(), request.getPickupState()));
+            quote.setDeliveryAddress(formatAddress(request.getDeliveryAddress(), request.getDeliveryCity(), request.getDeliveryState()));
+            quote.setWeight(request.getWeight());
+            quote.setDimensions(request.getDimensions());
+            quote.setDescription(request.getDescription());
+            quote.setQuoteExpiryDate(calculateQuoteExpiryDate());
+            quote.setActive(true);
+            
+            // Store quote for later retrieval
+            quoteStorage.put(quoteId, quote);
+            quoteRequests.put(quoteId, request);
+            
+            System.out.println("Quote created successfully: " + quoteId);
+            return quote;
+            
+        } catch (Exception e) {
+            System.err.println("Error in createQuote: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to create quote: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -132,8 +167,13 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
         // Create initial tracking entry
         createTrackingEntry(savedShipment, ShipmentStatus.PENDING, "Shipment created", "Shipment registered in the system");
         
-        // Send notifications
-        notificationService.sendShipmentCreatedNotification(savedShipment);
+        // Send notifications (optional - can be disabled for instant quotes)
+        try {
+            notificationService.sendShipmentCreatedNotification(savedShipment);
+        } catch (Exception e) {
+            // Log but don't fail the shipment creation if notification fails
+            System.out.println("Notification failed for shipment " + savedShipment.getTrackingNumber() + ": " + e.getMessage());
+        }
         
         // Remove quote from storage
         quoteStorage.remove(quoteId);
@@ -397,46 +437,87 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
 
     // Helper methods
     private List<QuoteResponse.ServiceOption> calculateServiceOptions(CustomerPackageRequest request) {
-        List<QuoteResponse.ServiceOption> options = new ArrayList<>();
-        
-        // Economy service
-        BigDecimal economyCost = pricingService.calculateCourierPrice(ServiceType.ECONOMY);
-        options.add(new QuoteResponse.ServiceOption(
-            ServiceType.ECONOMY, 
-            economyCost, 
-            "5-7 business days", 
-            "Most economical option", 
-            false
-        ));
-        
-        // Standard service
-        BigDecimal standardCost = pricingService.calculateCourierPrice(ServiceType.OVERNIGHT);
-        options.add(new QuoteResponse.ServiceOption(
-            ServiceType.OVERNIGHT, 
-            standardCost, 
-            "3-5 business days", 
-            "Balanced speed and cost", 
-            true
-        ));
-        
-        // Express service
-        BigDecimal expressCost = pricingService.calculateCourierPrice(ServiceType.SAME_DAY);
-        options.add(new QuoteResponse.ServiceOption(
-            ServiceType.SAME_DAY, 
-            expressCost, 
-            "1-2 business days", 
-            "Fastest delivery option", 
-            false
-        ));
-        
-        return options;
+        try {
+            System.out.println("Calculating service options...");
+            List<QuoteResponse.ServiceOption> options = new ArrayList<>();
+            
+            // Economy service
+            BigDecimal economyCost = pricingService.calculateCourierPrice(ServiceType.ECONOMY);
+            options.add(new QuoteResponse.ServiceOption(
+                ServiceType.ECONOMY, 
+                economyCost, 
+                "5-7 business days", 
+                "Most economical option", 
+                false
+            ));
+            
+            // Standard service
+            BigDecimal standardCost = pricingService.calculateCourierPrice(ServiceType.OVERNIGHT);
+            options.add(new QuoteResponse.ServiceOption(
+                ServiceType.OVERNIGHT, 
+                standardCost, 
+                "3-5 business days", 
+                "Balanced speed and cost", 
+                true
+            ));
+            
+            // Express service
+            BigDecimal expressCost = pricingService.calculateCourierPrice(ServiceType.SAME_DAY);
+            options.add(new QuoteResponse.ServiceOption(
+                ServiceType.SAME_DAY, 
+                expressCost, 
+                "1-2 business days", 
+                "Fastest delivery option", 
+                false
+            ));
+            
+            System.out.println("Service options calculated: " + options.size());
+            return options;
+            
+        } catch (Exception e) {
+            System.err.println("Error calculating service options: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Return default options if pricing service fails
+            List<QuoteResponse.ServiceOption> fallbackOptions = new ArrayList<>();
+            fallbackOptions.add(new QuoteResponse.ServiceOption(
+                ServiceType.ECONOMY, 
+                new BigDecimal("100.00"), 
+                "5-7 business days", 
+                "Most economical option", 
+                false
+            ));
+            fallbackOptions.add(new QuoteResponse.ServiceOption(
+                ServiceType.OVERNIGHT, 
+                new BigDecimal("120.00"), 
+                "3-5 business days", 
+                "Balanced speed and cost", 
+                true
+            ));
+            fallbackOptions.add(new QuoteResponse.ServiceOption(
+                ServiceType.SAME_DAY, 
+                new BigDecimal("140.00"), 
+                "1-2 business days", 
+                "Fastest delivery option", 
+                false
+            ));
+            
+            System.out.println("Using fallback service options: " + fallbackOptions.size());
+            return fallbackOptions;
+        }
     }
 
     private BigDecimal calculateBaseCost(CustomerPackageRequest request) {
-        // Base cost calculation based on weight and distance
-        double baseRate = 10.0; // Base rate per pound
-        double distanceMultiplier = calculateDistanceMultiplier(request);
-        return new BigDecimal(request.getWeight() * baseRate * distanceMultiplier);
+        // South Africa (Johannesburg/Gauteng) pricing logic: R550 up to 20km, then R25/km thereafter
+        double distanceKm = estimateDistanceKm(request);
+        BigDecimal base = new BigDecimal("550.00");
+        if (distanceKm > 20) {
+            double extra = distanceKm - 20.0;
+            base = base.add(new BigDecimal("25.00").multiply(BigDecimal.valueOf(extra)));
+        }
+        // Add a small weight component (R5/kg) to reflect handling effort
+        BigDecimal weightComponent = BigDecimal.valueOf(request.getWeight() == null ? 0.0 : request.getWeight() * 5.0);
+        return base.add(weightComponent);
     }
 
     private BigDecimal calculateServiceFee(CustomerPackageRequest request, ServiceType serviceType) {
@@ -450,14 +531,43 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
     }
 
     private BigDecimal calculateFuelSurcharge(CustomerPackageRequest request) {
-        // Fuel surcharge calculation (simplified)
-        return new BigDecimal("3.50");
+        // Fuel surcharge 5% of base for quotes
+        BigDecimal base = calculateBaseCost(request);
+        return base.multiply(new BigDecimal("0.05")).setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
-    private double calculateDistanceMultiplier(CustomerPackageRequest request) {
-        // Simplified distance calculation
-        // In a real implementation, this would use geocoding APIs
-        return 1.2; // Default multiplier
+    private double estimateDistanceKm(CustomerPackageRequest request) {
+        // Haversine if coords present; otherwise approximate within Gauteng (Johannesburg-centric)
+        if (request.getPickupLatitude() != null && request.getPickupLongitude() != null 
+                && request.getDeliveryLatitude() != null && request.getDeliveryLongitude() != null) {
+            return haversineKm(request.getPickupLatitude(), request.getPickupLongitude(),
+                    request.getDeliveryLatitude(), request.getDeliveryLongitude());
+        }
+        // Fallback: heuristic distance based on different city names
+        String fromCity = safeLower(request.getPickupCity());
+        String toCity = safeLower(request.getDeliveryCity());
+        if (fromCity.equals(toCity)) return 10.0; // intra-city avg
+        // Common Gauteng pairs
+        if ((fromCity.contains("johannesburg") && toCity.contains("pretoria")) || (fromCity.contains("pretoria") && toCity.contains("johannesburg"))) return 55.0;
+        if ((fromCity.contains("sandton") && toCity.contains("midrand")) || (fromCity.contains("midrand") && toCity.contains("sandton"))) return 20.0;
+        if ((fromCity.contains("johannesburg") && toCity.contains("soweto")) || (fromCity.contains("soweto") && toCity.contains("johannesburg"))) return 25.0;
+        // Default fallback
+        return 30.0;
+    }
+
+    private String safeLower(String s) {
+        return s == null ? "" : s.toLowerCase();
+    }
+
+    private double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                   Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                   Math.sin(dLon/2) * Math.sin(dLon/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
     }
 
     private Date calculateEstimatedDeliveryDate(ServiceType serviceType) {

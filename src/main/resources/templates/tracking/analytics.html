@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking Analytics - Reliable Carriers</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h3>Tracking Analytics</h3>
+        <div style="max-width:900px">
+            <canvas id="driversChart"></canvas>
+        </div>
+    </div>
+    <script>
+        async function loadStats() {
+            const res = await fetch('/api/tracking/statistics', {
+                headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
+            });
+            const s = await res.json();
+            const ctx = document.getElementById('driversChart');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Online', 'Offline'],
+                    datasets: [{ data: [s.onlineDrivers || 0, s.offlineDrivers || 0], backgroundColor: ['#22c55e','#ef4444'] }]
+                }
+            });
+        }
+        loadStats();
+    </script>
+</body>
+</html>
+
+

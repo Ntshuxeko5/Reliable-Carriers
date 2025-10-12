@@ -6,10 +6,13 @@ import com.reliablecarriers.Reliable.Carriers.model.Payment;
 import com.reliablecarriers.Reliable.Carriers.model.PaymentMethod;
 import com.reliablecarriers.Reliable.Carriers.service.PaystackService;
 import com.reliablecarriers.Reliable.Carriers.service.PaymentService;
-import com.reliablecarriers.Reliable.Carriers.service.AuthService;
+import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageRequest;
+import com.reliablecarriers.Reliable.Carriers.model.Shipment;
+import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -26,13 +29,13 @@ public class PaystackController {
     
     private final PaystackService paystackService;
     private final PaymentService paymentService;
-    private final AuthService authService;
+    private final CustomerPackageService customerPackageService;
     
     @Autowired
-    public PaystackController(PaystackService paystackService, PaymentService paymentService, AuthService authService) {
+    public PaystackController(PaystackService paystackService, PaymentService paymentService, CustomerPackageService customerPackageService) {
         this.paystackService = paystackService;
         this.paymentService = paymentService;
-        this.authService = authService;
+        this.customerPackageService = customerPackageService;
     }
     
     /**
@@ -42,18 +45,23 @@ public class PaystackController {
     public ResponseEntity<Map<String, Object>> initializePayment(@RequestBody Map<String, Object> request) {
         try {
             // Extract data from request
-            Long shipmentId = Long.valueOf(request.get("shipmentId").toString());
+            String quoteId = request.get("shipmentId").toString(); // Using quoteId as shipmentId for now
             BigDecimal amount = new BigDecimal(request.get("amount").toString());
             String email = request.get("email").toString();
+            String serviceType = request.get("serviceType").toString();
             
             // Create payment record
             Payment payment = new Payment();
             payment.setTransactionId(paystackService.generatePaymentReference());
             payment.setAmount(amount);
-            payment.setPaymentMethod(PaymentMethod.CREDIT_CARD); // Default for Paystack
+            payment.setPaymentMethod(PaymentMethod.CREDIT_CARD);
             
-            // Set user and shipment (you'll need to implement this based on your auth system)
-            // For now, we'll create a basic payment record
+            // Store quote information in payment notes for later use
+            String notes = String.format("quoteId:%s,email:%s,serviceType:%s", quoteId, email, serviceType);
+            payment.setNotes(notes);
+            
+            // Save payment record
+            payment = paymentService.createPayment(payment);
             
             // Create Paystack request
             String callbackUrl = appBaseUrl + "/api/paystack/verify";
@@ -67,6 +75,7 @@ public class PaystackController {
             result.put("authorizationUrl", response.getData().getAuthorizationUrl());
             result.put("reference", response.getData().getReference());
             result.put("accessCode", response.getData().getAccessCode());
+            result.put("paymentId", payment.getId());
             
             return ResponseEntity.ok(result);
             
@@ -82,22 +91,45 @@ public class PaystackController {
      * Verify payment callback from Paystack
      */
     @GetMapping("/verify")
-    public ResponseEntity<Map<String, Object>> verifyPayment(@RequestParam String reference) {
+    public String verifyPayment(@RequestParam String reference, Model model) {
         try {
             Payment payment = paystackService.processPaymentVerification(reference);
             
-            Map<String, Object> result = new HashMap<>();
-            result.put("status", "success");
-            result.put("paymentStatus", payment.getStatus());
-            result.put("message", "Payment verification completed");
+            // If payment is successful, create shipment from quote
+            if (payment.getStatus().toString().equals("COMPLETED") && payment.getNotes() != null) {
+                try {
+                    // Parse notes to extract quote information
+                    String[] parts = payment.getNotes().split(",");
+                    String quoteId = parts[0].split(":")[1];
+                    String email = parts[1].split(":")[1];
+                    String serviceType = parts[2].split(":")[1];
+                    
+                    // Create shipment from quote
+                    CustomerPackageRequest shipmentRequest = new CustomerPackageRequest();
+                    shipmentRequest.setSenderEmail(email);
+                    shipmentRequest.setServiceType(serviceType);
+                    // Add other required fields as needed
+                    
+                    Shipment shipment = customerPackageService.createShipmentFromQuote(quoteId, shipmentRequest);
+                    
+                    // Redirect to success page with tracking number
+                    return "redirect:/payment-success?reference=" + reference + 
+                           "&tracking=" + shipment.getTrackingNumber() + 
+                           "&amount=" + payment.getAmount() + 
+                           "&service=" + serviceType;
+                    
+                } catch (Exception e) {
+                    // Redirect to success page with error info
+                    return "redirect:/payment-success?reference=" + reference + 
+                           "&error=" + e.getMessage();
+                }
+            }
             
-            return ResponseEntity.ok(result);
+            // Payment not completed or no metadata
+            return "redirect:/payment-success?reference=" + reference + "&error=Payment not completed";
             
         } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("status", "error");
-            error.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
+            return "redirect:/payment-success?reference=" + reference + "&error=" + e.getMessage();
         }
     }
     

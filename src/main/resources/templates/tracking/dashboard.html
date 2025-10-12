@@ -74,6 +74,26 @@
                     Tracking Manager
                 </h4>
                 
+                <!-- Search/Filters -->
+                <div class="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 p-4 mb-4">
+                    <h6 class="text-gray-700 font-medium mb-3"><i class="fas fa-filter mr-2"></i>Filters</h6>
+                    <div class="space-y-2">
+                        <input id="filterSearch" class="form-control form-control-sm" placeholder="Search driver/vehicle/plate" />
+                        <div class="d-flex gap-2">
+                            <input id="filterCity" class="form-control form-control-sm" placeholder="City" />
+                            <input id="filterState" class="form-control form-control-sm" placeholder="State" />
+                        </div>
+                        <div class="d-flex gap-2">
+                            <input id="filterStart" type="datetime-local" class="form-control form-control-sm" />
+                            <input id="filterEnd" type="datetime-local" class="form-control form-control-sm" />
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-primary" onclick="applyFilters()"><i class="fas fa-search mr-1"></i>Apply</button>
+                            <button class="btn btn-sm btn-secondary" onclick="clearFilters()">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Statistics Cards -->
                 <div class="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 p-4 mb-4">
                     <h6 class="text-gray-600 text-sm font-medium">Total Drivers</h6>
@@ -146,6 +166,11 @@
                             <div id="driverList" class="max-h-96 overflow-y-auto space-y-3">
                                 <!-- Driver items will be populated here -->
                             </div>
+                            <hr class="my-4" />
+                            <h5 class="text-lg font-bold text-gray-800 mb-2">
+                                <i class="fas fa-car-side text-reliable-yellow-500 mr-2"></i> Vehicles
+                            </h5>
+                            <div id="vehicleList" class="max-h-64 overflow-y-auto space-y-2"></div>
                         </div>
                     </div>
                 </div>
@@ -176,16 +201,81 @@
         // Load tracking data
         async function loadTrackingData() {
             try {
-                const response = await fetch('/api/tracking/map-view');
+                const response = await fetch('/api/tracking/map-view', {
+                    headers: {
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                    }
+                });
                 const data = await response.json();
                 
                 updateStatistics(data.statistics);
                 updateDriverList(data.allDrivers);
+                updateVehicleList(data.allVehicles);
                 updateMapMarkers(data.activeDrivers);
                 
             } catch (error) {
                 console.error('Error loading tracking data:', error);
             }
+        }
+
+        // Apply filters/search
+        async function applyFilters() {
+            const search = document.getElementById('filterSearch').value.trim();
+            const city = document.getElementById('filterCity').value.trim();
+            const state = document.getElementById('filterState').value.trim();
+            const start = document.getElementById('filterStart').value;
+            const end = document.getElementById('filterEnd').value;
+
+            try {
+                let drivers = [];
+                if (search) {
+                    const res = await fetch(`/api/tracking/search?searchTerm=${encodeURIComponent(search)}`, {
+                        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
+                    });
+                    drivers = await res.json();
+                }
+
+                let filtered = [];
+                if (city && state) {
+                    const res2 = await fetch(`/api/tracking/location?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`, {
+                        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
+                    });
+                    filtered = await res2.json();
+                }
+
+                // Optionally load time-range history for a selected driver
+                if (drivers.length && start && end) {
+                    const d0 = drivers[0];
+                    const res3 = await fetch(`/api/tracking/driver/${d0.driverId}/history?startTime=${encodeURIComponent(new Date(start).toISOString())}&endTime=${encodeURIComponent(new Date(end).toISOString())}`, {
+                        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
+                    });
+                    const history = await res3.json();
+                    // Draw polyline on map
+                    const latlngs = history.map(p => [p.latitude, p.longitude]);
+                    if (latlngs.length) {
+                        const poly = L.polyline(latlngs, { color: 'blue' }).addTo(map);
+                        map.fitBounds(latlngs);
+                    }
+                }
+
+                // Merge and update list/map from search+filter results if available
+                const combined = [...(drivers || []), ...(filtered || [])];
+                if (combined.length) {
+                    updateDriverList(combined);
+                    updateMapMarkers(combined.map(d => ({ latitude: d.latitude, longitude: d.longitude, driverId: d.driverId, driverName: d.name, status: d.status })));
+                }
+            } catch (e) {
+                console.error('Failed to apply filters', e);
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterCity').value = '';
+            document.getElementById('filterState').value = '';
+            document.getElementById('filterStart').value = '';
+            document.getElementById('filterEnd').value = '';
+            loadTrackingData();
         }
         
         // Update statistics
@@ -237,6 +327,24 @@
                     </div>
                 `;
                 driverList.appendChild(driverItem);
+            });
+        }
+        
+        // Update vehicle list
+        function updateVehicleList(vehicles) {
+            const vehicleList = document.getElementById('vehicleList');
+            vehicleList.innerHTML = '';
+            vehicles.forEach(v => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center p-2 bg-gray-50 rounded';
+                item.innerHTML = `
+                    <div>
+                        <div class="font-semibold text-sm">${v.model || 'Vehicle'}</div>
+                        <div class="text-xs text-gray-600">${v.plate || ''}</div>
+                    </div>
+                    <span class="badge ${v.isOnline ? 'bg-success' : 'bg-secondary'}">${v.status || (v.isOnline ? 'Online' : 'Offline')}</span>
+                `;
+                vehicleList.appendChild(item);
             });
         }
         

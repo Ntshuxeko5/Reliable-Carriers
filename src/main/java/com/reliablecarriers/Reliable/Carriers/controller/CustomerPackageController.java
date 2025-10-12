@@ -29,12 +29,19 @@ public class CustomerPackageController {
 
     // Quote Management
     @PostMapping("/quote")
-    public ResponseEntity<QuoteResponse> createQuote(@Valid @RequestBody CustomerPackageRequest request) {
+    public ResponseEntity<Map<String, Object>> createQuote(@Valid @RequestBody CustomerPackageRequest request) {
         try {
             QuoteResponse quote = customerPackageService.createQuote(request);
-            return new ResponseEntity<>(quote, HttpStatus.CREATED);
+            return new ResponseEntity<>(Map.of("success", true, "data", quote), HttpStatus.CREATED);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            // Log the error for debugging
+            System.err.println("Error creating quote: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", "Failed to create quote: " + e.getMessage(),
+                "details", e.getClass().getSimpleName()
+            ));
         }
     }
 

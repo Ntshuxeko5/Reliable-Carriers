@@ -1,6 +1,7 @@
 package com.reliablecarriers.Reliable.Carriers.security;
 
 import com.reliablecarriers.Reliable.Carriers.service.AuditService;
+import com.reliablecarriers.Reliable.Carriers.service.CustomUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureException;
@@ -76,11 +77,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String extractEmailFromToken(String token) {
         try {
             javax.crypto.SecretKey key = io.jsonwebtoken.security.Keys.hmacShaKeyFor(jwtSecret.getBytes());
-            Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
+            Claims claims = Jwts.parser()
+                .verifyWith(key)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
             return claims.getSubject();
         } catch (Exception e) {
             return null;
@@ -90,11 +91,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean validateToken(String token, UserDetails userDetails) {
         try {
             javax.crypto.SecretKey key = io.jsonwebtoken.security.Keys.hmacShaKeyFor(jwtSecret.getBytes());
-            Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
+            Claims claims = Jwts.parser()
+                .verifyWith(key)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
 
             String email = claims.getSubject();
             return email != null && email.equals(userDetails.getUsername()) && !isTokenExpired(claims);

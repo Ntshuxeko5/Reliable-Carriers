@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Quote - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#dbb714',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Maps (loaded only if API key is configured) -->
+    <script th:if="${@environment.getProperty('google.maps.api.key')}" th:inline="javascript">
+        (function(){
+            var key = /*[[${@environment.getProperty('google.maps.api.key')}]]*/ 'YOUR_API_KEY';
+            if (key && key !== 'your-google-maps-api-key') {
+                var s = document.createElement('script');
+                s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(key) + '&libraries=places&region=za';
+                s.async = true;
+                s.defer = true;
+                document.head.appendChild(s);
+                window.__MAPS_ENABLED__ = true;
+            } else {
+                window.__MAPS_ENABLED__ = false;
+            }
+        })();
+    </script>
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #fde047, #facc15);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+
+    </head>
+    <body class="bg-gray-50 font-sans">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
+                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
+                            <rect x="4" y="20" width="40" height="20" rx="2" />
+                            <rect x="44" y="28" width="12" height="8" rx="1" />
+                            <circle cx="18" cy="44" r="4" fill="white" />
+                            <circle cx="46" cy="44" r="4" fill="white" />
+                        </svg>
+                    </span>
+                    <span>Reliable Carriers</span>
+                </a>
+                <div class="hidden md:flex space-x-8">
+                    <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/customer/track" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-search mr-2"></i>Track Package
+                    </a>
+                    <a href="/customer/quote" class="text-brand-300 hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-calculator mr-2"></i>Get Quote
+                    </a>
+                    <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-boxes mr-2"></i>My Packages
+                    </a>
+                    <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-store mr-2"></i>Business
+                    </a>
+                    <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-question-circle mr-2"></i>Help
+                    </a>
+                    <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                </div>
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
+                    <i class="fas fa-bars text-xl"></i>
+            </button>
+            </div>
+            <!-- Mobile menu -->
+            <div class="md:hidden hidden" id="mobileMenu">
+                <div class="py-4 space-y-4">
+                    <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/customer/track" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-search mr-2"></i>Track Package
+                    </a>
+                    <a href="/customer/quote" class="block text-brand-300 hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-calculator mr-2"></i>Get Quote
+                    </a>
+                    <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-boxes mr-2"></i>My Packages
+                    </a>
+                    <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-store mr-2"></i>Business
+                    </a>
+                    <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-question-circle mr-2"></i>Help
+                    </a>
+                    <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="rounded-3xl p-8 hover-lift bg-white shadow-sm">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-calculator mr-3 gradient-text"></i>Create Quote
+                </h1>
+                <p class="text-xl text-gray-700">Get instant shipping quotes for your packages</p>
+                    </div>
+            
+                        <form id="quoteForm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+               <label class="block text-gray-800 font-medium mb-2">Pickup Address</label>
+               <input id="pickupAddress" type="text" 
+                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
+                               placeholder="Enter pickup address" required>
+                                    <input type="hidden" id="pickupLat" />
+                                    <input type="hidden" id="pickupLng" />
+                                </div>
+                    <div>
+               <label class="block text-gray-800 font-medium mb-2">Delivery Address</label>
+               <input id="deliveryAddress" type="text" 
+                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
+                               placeholder="Enter delivery address" required>
+                                    <input type="hidden" id="deliveryLat" />
+                                    <input type="hidden" id="deliveryLng" />
+                    </div>
+                </div>
+                
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div>
+         <label class="block text-gray-800 font-medium mb-2">Weight (kg)</label>
+               <input id="weight" type="number" 
+                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
+                               min="0" step="0.1" required>
+                    </div>
+                    <div>
+               <label class="block text-gray-800 font-medium mb-2">Length (cm)</label>
+               <input type="number" 
+                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
+                   min="0" required>
+                    </div>
+                    <div>
+               <label class="block text-gray-800 font-medium mb-2">Width (cm)</label>
+               <input type="number" 
+                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
+                   min="0" required>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+              <label class="block text-gray-800 font-medium mb-2">Email</label>
+              <input id="senderEmail" type="email" 
+                  class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
+                           placeholder="you@example.com" required>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="flex items-center text-gray-800">
+                        <input class="form-check-input mr-3" type="checkbox" value="1" id="useCurrentLocation">
+                        <span>Use my current location as pickup</span>
+                    </label>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+            <button type="button" onclick="previewRoute()" 
+                class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <i class="fas fa-map mr-2"></i>Preview Route
+                    </button>
+            <button type="submit" 
+                class="bg-gradient-to-r from-brand-500 to-brand-600 text-white px-8 py-4 rounded-full font-bold hover:from-brand-600 hover:to-brand-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <i class="fas fa-magic mr-2"></i>Get Quote
+                    </button>
+                    <a href="/customer/dashboard" 
+                       class="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-8 py-4 rounded-full font-bold hover:from-gray-700 hover:to-gray-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </a>
+                </div>
+            </form>
+                <div id="mapPreview" class="mt-8" style="display:none">
+                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-map mr-2 text-brand-400"></i>Route Preview
+                    </h3>
+                    <div id="map" class="rounded-xl overflow-hidden" style="height: 400px; width: 100%;"></div>
+                    <div id="routeInfo" class="mt-4 text-center">
+                        <div class="inline-flex items-center space-x-4 text-gray-700">
+                            <span><i class="fas fa-route mr-2"></i>Distance: <span id="routeDistance" class="text-brand-600 font-bold">-</span> km</span>
+                            <span><i class="fas fa-clock mr-2"></i>Duration: <span id="routeDuration" class="text-brand-600 font-bold">-</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+                    <div id="quoteResult" class="mt-8" style="display:none">
+                        <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-4">
+                                <i class="fas fa-receipt mr-2 text-green-400"></i>Instant Quote Results
+                            </h3>
+                    
+                    <!-- Service Options -->
+                    <div id="serviceOptions" class="mb-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Choose Your Service:</h4>
+                        <div id="serviceOptionsList" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Service options will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Service Details -->
+                    <div id="selectedServiceDetails" class="bg-white rounded-xl p-6 mb-6" style="display:none">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-gray-800">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-400 mb-2">
+                                    <span id="resDistance">-</span> km
+                                </div>
+                                <div class="text-gray-300 text-sm">Distance</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-brand-400 mb-2">
+                                    R<span id="resTotal">-</span>
+                                </div>
+                                <div class="text-gray-300 text-sm">Total Cost</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-400 mb-2">
+                                    <span id="resService">-</span>
+                                </div>
+                                <div class="text-gray-300 text-sm">Service Type</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-purple-400 mb-2">
+                                    <span id="resDelivery">-</span>
+                                </div>
+                                <div class="text-gray-300 text-sm">Delivery Time</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cost Breakdown -->
+                        <div class="mt-4 bg-gray-50 rounded-lg p-4">
+                            <h5 class="text-gray-800 font-semibold mb-3">Cost Breakdown:</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                    <span class="text-gray-300">Base Cost:</span>
+                                    <span class="text-gray-900 font-semibold">R<span id="baseCost">-</span></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-300">Service Fee:</span>
+                                    <span class="text-gray-900 font-semibold">R<span id="serviceFee">-</span></span>
+                                    </div>
+                                <div>
+                                    <span class="text-gray-300">Fuel Surcharge:</span>
+                                    <span class="text-gray-900 font-semibold">R<span id="fuelSurcharge">-</span></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-300">Insurance:</span>
+                                    <span class="text-gray-900 font-semibold">R<span id="insuranceFee">-</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Section -->
+                    <div id="paymentSection" class="bg-white border border-gray-100 rounded-2xl p-6" style="display:none">
+                        <h4 class="text-xl font-bold text-gray-900 mb-4">
+                            <i class="fas fa-credit-card mr-2 text-blue-400"></i>Complete Your Order
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Order Summary -->
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <h5 class="text-gray-900 font-semibold mb-3">Order Summary:</h5>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between text-gray-700">
+                                        <span>From:</span>
+                                        <span class="text-gray-900" id="orderPickup">-</span>
+                                    </div>
+                                    <div class="flex justify-between text-gray-700">
+                                        <span>To:</span>
+                                        <span class="text-gray-900" id="orderDelivery">-</span>
+                                    </div>
+                                    <div class="flex justify-between text-gray-700">
+                                        <span>Weight:</span>
+                                        <span class="text-gray-900" id="orderWeight">-</span>
+                                    </div>
+                                    <div class="flex justify-between text-gray-700">
+                                        <span>Service:</span>
+                                        <span class="text-gray-900" id="orderService">-</span>
+                                    </div>
+                                    <div class="border-t border-gray-200 pt-2 mt-2">
+                                        <div class="flex justify-between text-lg font-bold text-brand-600">
+                                            <span>Total:</span>
+                                            <span>R<span id="orderTotal">-</span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Options -->
+                            <div class="bg-white rounded-xl p-4">
+                                <h5 class="text-gray-900 font-semibold mb-3">Payment Method:</h5>
+                                <div class="space-y-3">
+                                    <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                                        <input type="radio" name="paymentMethod" value="paystack" class="mr-3" checked>
+                                        <i class="fas fa-credit-card text-blue-400 mr-2"></i>
+                                        <span class="text-gray-900">Credit/Debit Card (Paystack)</span>
+                                    </label>
+                                    <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                                        <input type="radio" name="paymentMethod" value="eft" class="mr-3">
+                                        <i class="fas fa-university text-green-400 mr-2"></i>
+                                        <span class="text-gray-900">EFT/Bank Transfer</span>
+                                    </label>
+                                </div>
+                                
+                                <button id="proceedToPayment" 
+                                        class="w-full mt-4 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-full font-bold hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                                    <i class="fas fa-lock mr-2"></i>Proceed to Payment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center text-gray-600 text-sm">
+                        <i class="fas fa-info-circle mr-2"></i>Quote valid for 24 hours. Payment required to confirm shipment.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Order Confirmation Modal -->
+            <div id="orderConfirmationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" style="display:none">
+                <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+                    <div class="text-center">
+                        <div class="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-check text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h3>
+                        <p class="text-gray-600 mb-4">Your shipment has been created successfully.</p>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                            <div class="text-sm text-gray-600 mb-2">Tracking Number:</div>
+                            <div class="text-2xl font-bold text-blue-600" id="confirmationTrackingNumber">-</div>
+                        </div>
+                        
+                        <div class="space-y-2 text-sm text-gray-600 mb-6">
+                            <div>Estimated Delivery: <span class="font-semibold" id="confirmationDelivery">-</span></div>
+                            <div>Total Paid: <span class="font-semibold">R<span id="confirmationTotal">-</span></span></div>
+                            </div>
+                        
+                        <div class="flex gap-3">
+                            <button onclick="trackNewPackage()" 
+                                    class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                Track Package
+                            </button>
+                            <button onclick="closeConfirmationModal()" 
+                                    class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-brand-400">Reliable Carriers</h3>
+                    <p class="text-gray-300">Your trusted partner for reliable package delivery and tracking services.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/customer/track" class="hover:text-brand-400 transition-colors">Track Package</a></li>
+                        <li><a href="/customer/quote" class="hover:text-brand-400 transition-colors">Get Quote</a></li>
+                        <li><a href="/customer/packages" class="hover:text-brand-400 transition-colors">My Packages</a></li>
+                        <li><a href="/customer/help" class="hover:text-brand-400 transition-colors">Help Center</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Services</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">National Shipping</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Moving Services</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Load Transport</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Contact Info</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <p><i class="fas fa-phone mr-2"></i>+27 11 123 4567</p>
+                        <p><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</p>
+                        <p><i class="fas fa-map-marker-alt mr-2"></i>Johannesburg, South Africa</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        let map, directionsService, directionsRenderer;
+        let pickupAutocomplete, deliveryAutocomplete;
+        let currentQuote = null;
+        let selectedService = null;
+
+        function initMap() {
+            if (!window.__MAPS_ENABLED__ || typeof google === 'undefined' || !google.maps) {
+                // Maps not available; hide preview UI gracefully
+                const preview = document.getElementById('mapPreview');
+                if (preview) preview.style.display = 'none';
+                return;
+            }
+            // Initialize map centered on Johannesburg
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: -26.2041, lng: 28.0473 },
+                zoom: 10
+            });
+            
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+
+            // Initialize autocomplete for pickup address
+            pickupAutocomplete = new google.maps.places.Autocomplete(document.getElementById('pickupAddress'), {
+                componentRestrictions: { country: 'za' },
+                fields: ['formatted_address', 'geometry', 'name']
+            });
+
+            // Initialize autocomplete for delivery address
+            deliveryAutocomplete = new google.maps.places.Autocomplete(document.getElementById('deliveryAddress'), {
+                componentRestrictions: { country: 'za' },
+                fields: ['formatted_address', 'geometry', 'name']
+            });
+
+            // Capture coordinates when place is selected
+            pickupAutocomplete.addListener('place_changed', function() {
+                const place = pickupAutocomplete.getPlace();
+                if (place.geometry) {
+                    document.getElementById('pickupLat').value = place.geometry.location.lat();
+                    document.getElementById('pickupLng').value = place.geometry.location.lng();
+                }
+            });
+
+            deliveryAutocomplete.addListener('place_changed', function() {
+                const place = deliveryAutocomplete.getPlace();
+                if (place.geometry) {
+                    document.getElementById('deliveryLat').value = place.geometry.location.lat();
+                    document.getElementById('deliveryLng').value = place.geometry.location.lng();
+                }
+            });
+        }
+
+        function previewRoute() {
+            if (!window.__MAPS_ENABLED__ || typeof google === 'undefined' || !google.maps) {
+                alert('Map preview is unavailable (missing Google Maps API key). You can still get a quote.');
+                return;
+            }
+            const pickup = document.getElementById('pickupAddress').value;
+            const delivery = document.getElementById('deliveryAddress').value;
+            
+            if (!pickup || !delivery) {
+                alert('Please enter both pickup and delivery addresses');
+                return;
+            }
+
+            const request = {
+                origin: pickup,
+                destination: delivery,
+                travelMode: google.maps.TravelMode.DRIVING,
+                unitSystem: google.maps.UnitSystem.METRIC
+            };
+
+            directionsService.route(request, function(result, status) {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(result);
+                    
+                    const route = result.routes[0];
+                    const leg = route.legs[0];
+                    
+                    document.getElementById('routeDistance').textContent = (leg.distance.value / 1000).toFixed(1);
+                    document.getElementById('routeDuration').textContent = leg.duration.text;
+                    document.getElementById('mapPreview').style.display = 'block';
+                    
+                    // Update hidden coordinate fields
+                    document.getElementById('pickupLat').value = leg.start_location.lat();
+                    document.getElementById('pickupLng').value = leg.start_location.lng();
+                    document.getElementById('deliveryLat').value = leg.end_location.lat();
+                    document.getElementById('deliveryLng').value = leg.end_location.lng();
+                } else {
+                    alert('Could not calculate route: ' + status);
+                }
+            });
+        }
+
+        function displayServiceOptions(services) {
+            const container = document.getElementById('serviceOptionsList');
+            container.innerHTML = '';
+            
+            services.forEach((service, index) => {
+                const serviceCard = document.createElement('div');
+                serviceCard.className = `bg-white rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 border ${service.isRecommended ? 'border-brand-400 ring-1 ring-brand-200' : 'border-gray-100'}`;
+                serviceCard.innerHTML = `
+                    <div class="text-center text-gray-900">
+                        <div class="text-2xl font-bold text-gray-900 mb-2">R${service.cost}</div>
+                        <div class="text-sm text-gray-700 mb-2">${service.serviceType}</div>
+                        <div class="text-xs text-gray-500 mb-3">${service.description}</div>
+                        <div class="text-xs text-brand-600">${service.estimatedDeliveryTime}</div>
+                        ${service.isRecommended ? '<div class="text-xs text-brand-600 font-bold mt-1">RECOMMENDED</div>' : ''}
+                    </div>
+                `;
+                
+                serviceCard.addEventListener('click', () => selectService(service));
+                container.appendChild(serviceCard);
+            });
+        }
+
+        function selectService(service) {
+            selectedService = service;
+            
+            // Update selected service details
+            document.getElementById('resDistance').textContent = currentQuote.distanceKm.toFixed(1);
+            document.getElementById('resTotal').textContent = service.cost;
+            document.getElementById('resService').textContent = service.serviceType;
+            document.getElementById('resDelivery').textContent = service.estimatedDeliveryTime;
+            
+            // Update cost breakdown
+            document.getElementById('baseCost').textContent = currentQuote.baseCost;
+            document.getElementById('serviceFee').textContent = currentQuote.serviceFee;
+            document.getElementById('fuelSurcharge').textContent = currentQuote.fuelSurcharge;
+            document.getElementById('insuranceFee').textContent = currentQuote.insuranceFee;
+            
+            // Show selected service details and payment section
+            document.getElementById('selectedServiceDetails').style.display = 'block';
+            document.getElementById('paymentSection').style.display = 'block';
+            
+            // Update order summary
+            document.getElementById('orderPickup').textContent = currentQuote.pickupAddress;
+            document.getElementById('orderDelivery').textContent = currentQuote.deliveryAddress;
+            document.getElementById('orderWeight').textContent = currentQuote.weight + ' kg';
+            document.getElementById('orderService').textContent = service.serviceType;
+            document.getElementById('orderTotal').textContent = service.cost;
+            
+            // Scroll to payment section
+            document.getElementById('paymentSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function processPayment() {
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+            
+            if (paymentMethod === 'paystack') {
+                processPaystackPayment();
+            } else if (paymentMethod === 'eft') {
+                processEFTPayment();
+            }
+        }
+
+        async function processPaystackPayment() {
+            try {
+                const paymentData = {
+                    shipmentId: currentQuote.quoteId,
+                    amount: selectedService.cost,
+                    email: document.getElementById('senderEmail').value,
+                    serviceType: selectedService.serviceType
+                };
+                
+                const response = await fetch('/api/paystack/initialize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(paymentData)
+                });
+                
+                if (!response.ok) throw new Error('Payment initialization failed');
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Redirect to Paystack payment page
+                    window.location.href = result.authorizationUrl;
+                } else {
+                    throw new Error(result.message || 'Payment failed');
+                }
+            } catch (error) {
+                alert('Payment failed: ' + error.message);
+            }
+        }
+
+        async function processEFTPayment() {
+            try {
+                // Create shipment with EFT payment
+                const shipmentData = {
+                    senderName: 'Customer',
+                    senderEmail: document.getElementById('senderEmail').value,
+                    pickupAddress: document.getElementById('pickupAddress').value,
+                    pickupCity: 'Johannesburg',
+                    pickupState: 'Gauteng',
+                    pickupZipCode: '2000',
+                    pickupCountry: 'South Africa',
+                    recipientName: 'Recipient',
+                    recipientEmail: document.getElementById('senderEmail').value,
+                    deliveryAddress: document.getElementById('deliveryAddress').value,
+                    deliveryCity: 'Pretoria',
+                    deliveryState: 'Gauteng',
+                    deliveryZipCode: '0001',
+                    deliveryCountry: 'South Africa',
+                    weight: parseFloat(document.getElementById('weight').value),
+                    serviceType: selectedService.serviceType,
+                    paymentMethod: 'EFT'
+                };
+                
+                const response = await fetch(`/api/customer/quote/${currentQuote.quoteId}/create-shipment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(shipmentData)
+                });
+                
+                if (!response.ok) throw new Error('Shipment creation failed');
+                
+                const result = await response.json();
+                
+                // Show EFT payment instructions
+                showEFTPaymentInstructions(result.trackingNumber, selectedService.cost);
+                
+            } catch (error) {
+                alert('Order creation failed: ' + error.message);
+            }
+        }
+
+        function showEFTPaymentInstructions(trackingNumber, amount) {
+            const modal = document.getElementById('orderConfirmationModal');
+            const content = modal.querySelector('.bg-white');
+            
+            content.innerHTML = `
+                <div class="text-center">
+                    <div class="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-university text-blue-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">EFT Payment Required</h3>
+                    <p class="text-gray-600 mb-4">Your shipment has been created. Please complete payment via EFT.</p>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <div class="text-sm text-gray-600 mb-2">Tracking Number:</div>
+                        <div class="text-2xl font-bold text-blue-600">${trackingNumber}</div>
+                    </div>
+                    
+                    <div class="bg-blue-50 rounded-lg p-4 mb-6 text-left">
+                        <h4 class="font-semibold text-gray-900 mb-2">Payment Details:</h4>
+                        <div class="space-y-1 text-sm text-gray-600">
+                            <div><strong>Amount:</strong> R${amount}</div>
+                            <div><strong>Reference:</strong> ${trackingNumber}</div>
+                            <div><strong>Bank:</strong> Standard Bank</div>
+                            <div><strong>Account:</strong> 1234567890</div>
+                            <div><strong>Branch:</strong> 051001</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-sm text-gray-600 mb-6">
+                        <p>Once payment is confirmed, your shipment will be processed and you'll receive tracking updates.</p>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="trackNewPackage()" 
+                                class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Track Package
+                        </button>
+                        <button onclick="closeConfirmationModal()" 
+                                class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function trackNewPackage() {
+            window.location.href = '/customer/track';
+        }
+
+        function closeConfirmationModal() {
+            document.getElementById('orderConfirmationModal').style.display = 'none';
+        }
+
+        document.getElementById('quoteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Show loading state
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Getting Quote...';
+            submitBtn.disabled = true;
+            
+            const useLoc = document.getElementById('useCurrentLocation').checked;
+            const payload = {
+                senderName: 'Customer',
+                senderEmail: document.getElementById('senderEmail').value,
+                pickupAddress: document.getElementById('pickupAddress').value,
+                pickupCity: 'Johannesburg',
+                pickupState: 'Gauteng',
+                pickupZipCode: '2000',
+                pickupCountry: 'South Africa',
+                recipientName: 'Recipient',
+                recipientEmail: document.getElementById('senderEmail').value,
+                deliveryAddress: document.getElementById('deliveryAddress').value,
+                deliveryCity: 'Pretoria',
+                deliveryState: 'Gauteng',
+                deliveryZipCode: '0001',
+                deliveryCountry: 'South Africa',
+                weight: parseFloat(document.getElementById('weight').value),
+                serviceType: 'OVERNIGHT'
+            };
+            
+            // Add coordinates if available
+            if (document.getElementById('pickupLat').value) {
+                payload.pickupLatitude = parseFloat(document.getElementById('pickupLat').value);
+                payload.pickupLongitude = parseFloat(document.getElementById('pickupLng').value);
+            }
+            if (document.getElementById('deliveryLat').value) {
+                payload.deliveryLatitude = parseFloat(document.getElementById('deliveryLat').value);
+                payload.deliveryLongitude = parseFloat(document.getElementById('deliveryLng').value);
+            }
+            
+            if (useLoc && navigator.geolocation) {
+                try {
+                    const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
+                    payload.pickupLatitude = pos.coords.latitude;
+                    payload.pickupLongitude = pos.coords.longitude;
+                } catch {}
+            }
+
+            try {
+                const resp = await fetch('/api/customer/quote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const responseData = await resp.json();
+                
+                if (!resp.ok) {
+                    throw new Error(responseData.error || 'Failed to get quote');
+                }
+                
+                if (responseData.success && responseData.data) {
+                    currentQuote = responseData.data;
+                    
+                    // Display service options
+                    displayServiceOptions(currentQuote.availableServices);
+                    
+                    // Show quote results
+                    document.getElementById('quoteResult').style.display = 'block';
+                    
+                    // Scroll to results
+                    document.getElementById('quoteResult').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    throw new Error(responseData.error || 'Invalid response format');
+                }
+                
+            } catch (e) {
+                console.error('Quote creation error:', e);
+                alert('Could not create quote: ' + e.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Payment button event listener
+        document.getElementById('proceedToPayment').addEventListener('click', processPayment);
+
+        // Initialize when page loads
+        window.onload = function() {
+            initMap();
+        };
+    </script>
+</body>
+</html>
+
+

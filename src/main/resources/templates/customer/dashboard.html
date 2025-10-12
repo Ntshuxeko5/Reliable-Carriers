@@ -4,504 +4,391 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Dashboard - Reliable Carriers</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#dbb714',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #e74c3c;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --light-bg: #f8f9fa;
-            --dark-bg: #343a40;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-
-        .navbar {
-            background: rgba(44, 62, 80, 0.95) !important;
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        .navbar-brand {
-            font-weight: bold;
-            color: white !important;
-        }
-
-        .nav-link {
-            color: rgba(255, 255, 255, 0.8) !important;
-            transition: color 0.3s ease;
-        }
-
-        .nav-link:hover {
-            color: white !important;
-        }
-
-        .main-container {
-            margin-top: 80px;
-            padding: 20px;
-        }
-
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        
+        .hover-lift {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
         }
-
-        .card:hover {
+        
+        .hover-lift:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
-            border: none;
-            padding: 20px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success-color), #2ecc71);
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-weight: 600;
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, var(--warning-color), #f1c40f);
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-weight: 600;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--accent-color), #c0392b);
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-weight: 600;
-        }
-
-        .feature-card {
-            text-align: center;
-            padding: 30px 20px;
-            height: 100%;
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            color: var(--secondary-color);
-            margin-bottom: 20px;
-        }
-
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 20px;
-        }
-
-        .stats-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .stats-label {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .tracking-input {
-            border-radius: 25px;
-            border: 2px solid #e9ecef;
-            padding: 15px 25px;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-
-        .tracking-input:focus {
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-        }
-
-        .quick-action {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-
-        .quick-action:hover {
-            border-color: var(--secondary-color);
-            transform: translateY(-3px);
-        }
-
-        .quick-action-icon {
-            font-size: 2.5rem;
-            color: var(--secondary-color);
-            margin-bottom: 15px;
-        }
-
-        .footer {
-            background: rgba(44, 62, 80, 0.95);
-            color: white;
-            padding: 40px 0;
-            margin-top: 50px;
-        }
-
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-transit {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .status-delivered {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        @media (max-width: 768px) {
-            .main-container {
-                margin-top: 60px;
-                padding: 10px;
-            }
-            
-            .card {
-                margin-bottom: 20px;
-            }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #fde047, #facc15);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-50 font-sans">
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-shipping-fast me-2"></i>
-                Reliable Carriers
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/customer/track">
-                            <i class="fas fa-search me-1"></i>Track Package
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/customer/quote">
-                            <i class="fas fa-calculator me-1"></i>Get Quote
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/customer/packages">
-                            <i class="fas fa-boxes me-1"></i>My Packages
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/customer/help">
-                            <i class="fas fa-question-circle me-1"></i>Help
-                        </a>
-                    </li>
-                </ul>
+    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
+                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
+                            <rect x="4" y="20" width="40" height="20" rx="2" />
+                            <rect x="44" y="28" width="12" height="8" rx="1" />
+                            <circle cx="18" cy="44" r="4" fill="white" />
+                            <circle cx="46" cy="44" r="4" fill="white" />
+                        </svg>
+                    </span>
+                    <span>Reliable Carriers</span>
+                </a>
+                <div class="hidden md:flex space-x-8">
+                    <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/customer/track" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-search mr-2"></i>Track Package
+                    </a>
+                    <a href="/customer/quote" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-calculator mr-2"></i>Get Quote
+                    </a>
+                    <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-boxes mr-2"></i>My Packages
+                    </a>
+                    <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-store mr-2"></i>Business
+                    </a>
+                    <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-question-circle mr-2"></i>Help
+                    </a>
+                    <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                </div>
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            <!-- Mobile menu -->
+            <div class="md:hidden hidden" id="mobileMenu">
+                <div class="py-4 space-y-4">
+                    <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/customer/track" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-search mr-2"></i>Track Package
+                    </a>
+                    <a href="/customer/quote" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-calculator mr-2"></i>Get Quote
+                    </a>
+                    <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-boxes mr-2"></i>My Packages
+                    </a>
+                    <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-store mr-2"></i>Business
+                    </a>
+                    <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-question-circle mr-2"></i>Help
+                    </a>
+                    <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="main-container">
-        <div class="container">
-            <!-- Welcome Section -->
-            <div class="row mb-5">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body text-center py-5">
-                            <h1 class="display-4 mb-3">
-                                <i class="fas fa-home text-primary me-3"></i>
-                                Welcome to Your Package Dashboard
-                            </h1>
-                            <p class="lead text-muted mb-4">
-                                Track your packages, create quotes, and manage your shipments - all without needing an account!
-                            </p>
-                            <div class="row justify-content-center">
-                                <div class="col-md-8">
-                                    <form class="d-flex" action="/customer/track" method="post">
-                                        <input type="text" class="form-control tracking-input me-3" 
-                                               name="trackingNumber" placeholder="Enter tracking number (e.g., RC12345678)" 
-                                               required>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-search me-2"></i>Track Package
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <div class="bg-grey max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-800">
+        <!-- Welcome Section -->
+        <div class="bg- grey text-center mb-12">
+            <div class="bg-grey glass-effect rounded-3xl p-8 mb-8 hover-lift">
+                <h1 class="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
+                    <span class="gradient-text">Welcome to Your</span>
+                    <br>
+                    <span class="text-black">Package Dashboard</span>
+                </h1>
+                <p class="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
+                    Track your packages, create quotes, and manage your shipments - all without needing an account!
+                </p>
+                <div class="max-w-2xl mx-auto">
+                    <form class="flex flex-col sm:flex-row gap-4" action="/customer/track" method="post">
+                        <input type="text" class="flex-1 px-6 py-4 rounded-full border-2 border-grey/20 bg-white/10 text-black placeholder-gray-300 focus:border-brand-400 focus:outline-none transition-all duration-300"
+                               name="trackingNumber" placeholder="Enter tracking number (e.g., RC12345678)" 
+                               required>
+                        <button type="submit" class="bg-gradient-to-r from-brand-500 to-brand-600 text-black px-8 py-4 rounded-full font-bold hover:from-brand-600 hover:to-brand-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                            <i class="fas fa-search mr-2"></i>Track Package
+                        </button>
+                    </form>
                 </div>
             </div>
+        </div>
 
-            <!-- Quick Actions -->
-            <div class="row mb-5">
-                <div class="col-12">
-                    <h2 class="text-white mb-4 text-center">
-                        <i class="fas fa-bolt me-2"></i>Quick Actions
-                    </h2>
-                </div>
-                <div class="col-md-3 mb-4">
-                    <div class="quick-action" onclick="window.location.href='/customer/track'">
-                        <div class="quick-action-icon">
+        <!-- Quick Actions -->
+        <div class="mb-12">
+            <h2 class="text-4xl font-bold text-black mb-8 text-center">
+                <i class="fas fa-bolt mr-3 gradient-text"></i>Quick Actions
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <a href="/customer/track" class="group">
+                    <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
+                        <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
                             <i class="fas fa-search"></i>
                         </div>
-                        <h5>Track Package</h5>
-                        <p class="text-muted">Track any package using its tracking number</p>
+                        <h3 class="text-xl font-bold text-black mb-3">Track Package</h3>
+                        <p class="text-gray-300">Track any package using its tracking number</p>
                     </div>
-                </div>
-                <div class="col-md-3 mb-4">
-                    <div class="quick-action" onclick="window.location.href='/customer/quote'">
-                        <div class="quick-action-icon">
+                </a>
+                <a href="/customer/quote" class="group">
+                    <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
+                        <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
                             <i class="fas fa-calculator"></i>
                         </div>
-                        <h5>Get Quote</h5>
-                        <p class="text-muted">Get instant shipping quotes for your packages</p>
+                        <h3 class="text-xl font-bold text-black mb-3">Get Quote</h3>
+                        <p class="text-gray-300">Get instant shipping quotes for your packages</p>
                     </div>
-                </div>
-                <div class="col-md-3 mb-4">
-                    <div class="quick-action" onclick="window.location.href='/customer/packages'">
-                        <div class="quick-action-icon">
+                </a>
+                <a href="/customer/packages" class="group">
+                    <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
+                        <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
                             <i class="fas fa-boxes"></i>
                         </div>
-                        <h5>My Packages</h5>
-                        <p class="text-muted">View all your packages by email address</p>
+                        <h3 class="text-xl font-bold text-black mb-3">My Packages</h3>
+                        <p class="text-gray-300">View all your packages by email address</p>
                     </div>
-                </div>
-                <div class="col-md-3 mb-4">
-                    <div class="quick-action" onclick="window.location.href='/customer/store'">
-                        <div class="quick-action-icon">
+                </a>
+                <a href="/customer/store" class="group">
+                    <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
+                        <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
                             <i class="fas fa-store"></i>
                         </div>
-                        <h5>Business Shipping</h5>
-                        <p class="text-muted">Send multiple packages to different customers</p>
+                        <h3 class="text-xl font-bold text-black mb-3">Business Shipping</h3>
+                        <p class="text-gray-300">Send multiple packages to different customers</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="mb-12">
+            <h2 class="text-4xl font-bold text-black mb-8 text-center">
+                <i class="fas fa-star mr-3 gradient-text"></i>Why Choose Our Service?
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="text-6xl mb-6 text-brand-400">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-black mb-4">No Account Required</h3>
+                    <p class="text-gray-300">Track packages and create quotes without registration. Just use your email or phone number.</p>
+                </div>
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="text-6xl mb-6 text-brand-400">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-black mb-4">Real-time Notifications</h3>
+                    <p class="text-gray-300">Get SMS and email updates about your package status automatically.</p>
+                </div>
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="text-6xl mb-6 text-brand-400">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-black mb-4">Complete Tracking</h3>
+                    <p class="text-gray-300">View detailed tracking information, driver details, and delivery estimates.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Types -->
+        <div class="mb-12">
+            <h2 class="text-4xl font-bold text-black mb-8 text-center">
+                <i class="fas fa-truck mr-3 gradient-text"></i>Shipping Services
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="glass-effect rounded-2xl overflow-hidden hover-lift">
+                    <div class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 p-6 text-white">
+                        <h3 class="text-2xl font-bold mb-2">
+                            <i class="fas fa-turtle mr-2"></i>Economy
+                        </h3>
+                        <p class="text-gray-200">Most economical option for non-urgent shipments</p>
+                    </div>
+                    <div class="p-6 bg-grey/10 text-black">
+                        <h4 class="text-3xl font-bold text-brand-400 mb-4">5-7 Days</h4>
+                        <ul class="space-y-2">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>Best pricing
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>Reliable delivery
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>Package tracking
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="glass-effect rounded-2xl overflow-hidden hover-lift">
+                    <div class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 p-6 text-white">
+                        <h3 class="text-2xl font-bold mb-2">
+                            <i class="fas fa-balance-scale mr-2"></i>Standard
+                        </h3>
+                        <p class="text-gray-200">Balanced option for speed and cost</p>
+                    </div>
+                    <div class="p-6 bg-grey/10 text-black">
+                        <h4 class="text-3xl font-bold text-brand-400 mb-4">3-5 Days</h4>
+                        <ul class="space-y-2">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>Faster delivery
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>Priority handling
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>Real-time updates
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="glass-effect rounded-2xl overflow-hidden hover-lift">
+                    <div class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 p-6 text-white">
+                        <h3 class="text-2xl font-bold mb-2">
+                            <i class="fas fa-rocket mr-2"></i>Express
+                        </h3>
+                        <p class="text-grey-200">Fastest delivery for urgent shipments</p>
+                    </div>
+                    <div class="p-6 bg-grey/10 text-black">
+                        <h4 class="text-3xl font-bold text-brand-400 mb-4">1-2 Days</h4>
+                        <ul class="space-y-2">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>Overnight delivery
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>Premium service
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-400 mr-2"></i>Guaranteed delivery
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Features Section -->
-            <div class="row mb-5">
-                <div class="col-12">
-                    <h2 class="text-white mb-4 text-center">
-                        <i class="fas fa-star me-2"></i>Why Choose Our Service?
-                    </h2>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-user-shield"></i>
-                        </div>
-                        <h4>No Account Required</h4>
-                        <p class="text-muted">Track packages and create quotes without registration. Just use your email or phone number.</p>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-bell"></i>
-                        </div>
-                        <h4>Real-time Notifications</h4>
-                        <p class="text-muted">Get SMS and email updates about your package status automatically.</p>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <h4>Complete Tracking</h4>
-                        <p class="text-muted">View detailed tracking information, driver details, and delivery estimates.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Service Types -->
-            <div class="row mb-5">
-                <div class="col-12">
-                    <h2 class="text-white mb-4 text-center">
-                        <i class="fas fa-truck me-2"></i>Shipping Services
-                    </h2>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-turtle me-2"></i>Economy</h4>
-                        </div>
-                        <div class="card-body text-center">
-                            <h3 class="text-primary mb-3">5-7 Days</h3>
-                            <p class="text-muted">Most economical option for non-urgent shipments</p>
-                            <ul class="list-unstyled">
-                                <li><i class="fas fa-check text-success me-2"></i>Best pricing</li>
-                                <li><i class="fas fa-check text-success me-2"></i>Reliable delivery</li>
-                                <li><i class="fas fa-check text-success me-2"></i>Package tracking</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-balance-scale me-2"></i>Standard</h4>
-                        </div>
-                        <div class="card-body text-center">
-                            <h3 class="text-primary mb-3">3-5 Days</h3>
-                            <p class="text-muted">Balanced option for speed and cost</p>
-                            <ul class="list-unstyled">
-                                <li><i class="fas fa-check text-success me-2"></i>Faster delivery</li>
-                                <li><i class="fas fa-check text-success me-2"></i>Priority handling</li>
-                                <li><i class="fas fa-check text-success me-2"></i>Real-time updates</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-rocket me-2"></i>Express</h4>
-                        </div>
-                        <div class="card-body text-center">
-                            <h3 class="text-primary mb-3">1-2 Days</h3>
-                            <p class="text-muted">Fastest delivery for urgent shipments</p>
-                            <ul class="list-unstyled">
-                                <li><i class="fas fa-check text-success me-2"></i>Overnight delivery</li>
-                                <li><i class="fas fa-check text-success me-2"></i>Premium service</li>
-                                <li><i class="fas fa-check text-success me-2"></i>Guaranteed delivery</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contact Section -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body text-center py-5">
-                            <h3 class="mb-4">Need Help?</h3>
-                            <p class="text-muted mb-4">Our customer support team is here to help you with any questions or concerns.</p>
-                            <div class="row justify-content-center">
-                                <div class="col-md-4 mb-3">
-                                    <a href="/customer/help" class="btn btn-outline-primary w-100">
-                                        <i class="fas fa-question-circle me-2"></i>Help Center
-                                    </a>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <a href="/customer/contact" class="btn btn-outline-success w-100">
-                                        <i class="fas fa-envelope me-2"></i>Contact Us
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Contact Section -->
+        <div class="text-center">
+            <div class="glass-effect rounded-3xl p-8 hover-lift">
+                <h3 class="text-3xl font-bold text-black mb-6">Need Help?</h3>
+                <p class="text-xl text-gray-200 mb-8">Our customer support team is here to help you with any questions or concerns.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="/customer/help" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-reliable-700 hover:to-reliable-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <i class="fas fa-question-circle mr-2"></i>Help Center
+                    </a>
+                    <a href="/customer/contact" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-full font-bold hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <i class="fas fa-envelope mr-2"></i>Contact Us
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4">
-                    <h5><i class="fas fa-shipping-fast me-2"></i>Reliable Carriers</h5>
-                    <p>Your trusted partner for reliable package delivery and tracking services.</p>
+    <footer class="bg-gray-900 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-brand-400">Reliable Carriers</h3>
+                    <p class="text-gray-300">Your trusted partner for reliable package delivery and tracking services.</p>
                 </div>
-                <div class="col-md-4">
-                    <h5>Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="/customer/track" class="text-light">Track Package</a></li>
-                        <li><a href="/customer/quote" class="text-light">Get Quote</a></li>
-                        <li><a href="/customer/packages" class="text-light">My Packages</a></li>
-                        <li><a href="/customer/help" class="text-light">Help Center</a></li>
+                <div>
+                    <h4 class="font-bold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/customer/track" class="hover:text-brand-400 transition-colors">Track Package</a></li>
+                        <li><a href="/customer/quote" class="hover:text-brand-400 transition-colors">Get Quote</a></li>
+                        <li><a href="/customer/packages" class="hover:text-brand-400 transition-colors">My Packages</a></li>
+                        <li><a href="/customer/help" class="hover:text-brand-400 transition-colors">Help Center</a></li>
                     </ul>
                 </div>
-                <div class="col-md-4">
-                    <h5>Contact Info</h5>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-phone me-2"></i>1-800-RELIABLE</li>
-                        <li><i class="fas fa-envelope me-2"></i>support@reliablecarriers.com</li>
-                        <li><i class="fas fa-map-marker-alt me-2"></i>123 Shipping St, NY 10001</li>
+                <div>
+                    <h4 class="font-bold mb-4">Services</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">National Shipping</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Moving Services</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Load Transport</a></li>
                     </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Contact Info</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <p><i class="fas fa-phone mr-2"></i>+27 11 123 4567</p>
+                        <p><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</p>
+                        <p><i class="fas fa-map-marker-alt mr-2"></i>Johannesburg, South Africa</p>
+                    </div>
                 </div>
             </div>
-            <hr class="my-4">
-            <div class="row">
-                <div class="col-12 text-center">
-                    <p class="mb-0">&copy; 2024 Reliable Carriers. All rights reserved.</p>
-                </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
         // Add smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
             });
-        });
-
-        // Add loading animation
-        window.addEventListener('load', function() {
-            document.body.classList.add('loaded');
         });
 
         // Add form validation
@@ -514,6 +401,11 @@
                     trackingInput.focus();
                 }
             });
+        });
+
+        // Add loading animation
+        window.addEventListener('load', function() {
+            document.body.classList.add('loaded');
         });
     </script>
 </body>

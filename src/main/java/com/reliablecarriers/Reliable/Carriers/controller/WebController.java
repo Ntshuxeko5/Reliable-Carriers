@@ -199,8 +199,17 @@ public class WebController {
         return "payment";
     }
     
-    @GetMapping("/color-test")
-    public String colorTest() {
-        return "color-test";
+    @GetMapping("/forgot-password")
+    public String forgotPassword() {
+        return "forgot-password";
+    }
+
+    @GetMapping("/customer/dashboard")
+    public String customerDashboard() {
+        return "customer/dashboard";
+    }
+    @GetMapping("/payment-success")
+    public String paymentSuccess() {
+        return "payment-success";
     }
 }

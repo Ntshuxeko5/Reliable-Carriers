@@ -25,7 +25,15 @@ import java.util.List;
 import java.util.Arrays;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import com.reliablecarriers.Reliable.Carriers.dto.ForgotPasswordRequest;
+import com.reliablecarriers.Reliable.Carriers.dto.ResetPasswordRequest;
+import com.reliablecarriers.Reliable.Carriers.model.PasswordResetToken;
+import com.reliablecarriers.Reliable.Carriers.repository.PasswordResetTokenRepository;
+import com.reliablecarriers.Reliable.Carriers.service.EmailService;
+import java.security.SecureRandom;
+import java.util.Base64;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -36,14 +44,18 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
 
     @Autowired
-    public AuthController(AuthService authService, JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthController(AuthService authService, JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService, UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService) {
         this.authService = authService;
         this.jwtTokenUtil = jwtTokenUtil;
         this.userDetailsService = userDetailsService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.emailService = emailService;
     }
 
     @PostMapping("/register")
@@ -68,6 +80,11 @@ public class AuthController {
             user.setState(registerRequest.getState());
             user.setZipCode(registerRequest.getZipCode());
             user.setCountry(registerRequest.getCountry());
+            user.setWaiverAccepted(Boolean.TRUE.equals(registerRequest.getWaiverAccepted()));
+            if (Boolean.TRUE.equals(registerRequest.getWaiverAccepted())) {
+                user.setWaiverAcceptedAt(new java.util.Date());
+            }
+            user.setInsurancePreference(registerRequest.getInsurancePreference() != null ? registerRequest.getInsurancePreference() : "BUDGET");
             user.setRole(registerRequest.getRole());
 
             // Register the user
@@ -116,6 +133,11 @@ public class AuthController {
             user.setState(registerRequest.getState());
             user.setZipCode(registerRequest.getZipCode());
             user.setCountry(registerRequest.getCountry());
+            user.setWaiverAccepted(Boolean.TRUE.equals(registerRequest.getWaiverAccepted()));
+            if (Boolean.TRUE.equals(registerRequest.getWaiverAccepted())) {
+                user.setWaiverAcceptedAt(new java.util.Date());
+            }
+            user.setInsurancePreference(registerRequest.getInsurancePreference() != null ? registerRequest.getInsurancePreference() : "BUDGET");
             user.setRole(UserRole.DRIVER);
 
             // Register the driver user
@@ -159,6 +181,11 @@ public class AuthController {
             user.setState(registerRequest.getState());
             user.setZipCode(registerRequest.getZipCode());
             user.setCountry(registerRequest.getCountry());
+            user.setWaiverAccepted(Boolean.TRUE.equals(registerRequest.getWaiverAccepted()));
+            if (Boolean.TRUE.equals(registerRequest.getWaiverAccepted())) {
+                user.setWaiverAcceptedAt(new java.util.Date());
+            }
+            user.setInsurancePreference(registerRequest.getInsurancePreference() != null ? registerRequest.getInsurancePreference() : "BUDGET");
             user.setRole(UserRole.TRACKING_MANAGER);
 
             // Register the tracking manager user
@@ -384,5 +411,70 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating test users: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            // Find user by email
+            User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+            
+            // Always return success to prevent email enumeration attacks
+            if (user == null) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "If the email exists, a reset link has been sent."));
+            }
+            
+            // Generate secure token
+            String token = generateSecureToken();
+            
+            // Mark all existing tokens for this user as used
+            passwordResetTokenRepository.markAllTokensAsUsedForUser(user);
+            
+            // Create new password reset token
+            PasswordResetToken resetToken = new PasswordResetToken(token, user);
+            passwordResetTokenRepository.save(resetToken);
+            
+            // Send email
+            emailService.sendPasswordReset(user.getEmail(), token);
+            
+            return ResponseEntity.ok(Map.of("success", true, "message", "Password reset link sent to your email."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Error processing password reset request."));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            // Find valid token
+            PasswordResetToken resetToken = passwordResetTokenRepository.findValidToken(request.getToken(), new Date()).orElse(null);
+            
+            if (resetToken == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Invalid or expired reset token."));
+            }
+            
+            // Update user password
+            User user = resetToken.getUser();
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            userRepository.save(user);
+            
+            // Mark token as used
+            resetToken.setUsed(true);
+            passwordResetTokenRepository.save(resetToken);
+            
+            return ResponseEntity.ok(Map.of("success", true, "message", "Password reset successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Error resetting password."));
+        }
+    }
+
+    private String generateSecureToken() {
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 }

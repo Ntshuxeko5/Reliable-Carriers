@@ -124,21 +124,21 @@
                     </div>
                 </div>
 
-                <!-- Address Information -->
+                <!-- Address Information (Optional) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
-                            Street Address *
+                            Street Address (optional)
                         </label>
-                        <input id="address" name="address" type="text" required 
+                        <input id="address" name="address" type="text" 
                                class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
                                placeholder="Enter your street address">
                     </div>
                     <div>
                         <label for="city" class="block text-sm font-medium text-gray-700 mb-2">
-                            City *
+                            City (optional)
                         </label>
-                        <input id="city" name="city" type="text" required 
+                        <input id="city" name="city" type="text" 
                                class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
                                placeholder="Enter your city">
                     </div>
@@ -147,9 +147,9 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label for="state" class="block text-sm font-medium text-gray-700 mb-2">
-                            Province/State *
+                            Province/State (optional)
                         </label>
-                        <select id="state" name="state" required 
+                        <select id="state" name="state" 
                                 class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300">
                             <option value="">Select Province</option>
                             <option value="Gauteng">Gauteng</option>
@@ -164,18 +164,18 @@
                         </select>
                     </div>
                     <div>
-                        <label for="postalCode" class="block text-sm font-medium text-gray-700 mb-2">
-                            Postal Code *
+                        <label for="zipCode" class="block text-sm font-medium text-gray-700 mb-2">
+                            Postal Code (optional)
                         </label>
-                        <input id="postalCode" name="postalCode" type="text" required 
+                        <input id="zipCode" name="zipCode" type="text" 
                                class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
                                placeholder="Enter postal code">
                     </div>
                     <div>
                         <label for="country" class="block text-sm font-medium text-gray-700 mb-2">
-                            Country *
+                            Country (optional)
                         </label>
-                        <select id="country" name="country" required 
+                        <select id="country" name="country" 
                                 class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300">
                             <option value="South Africa">South Africa</option>
                             <option value="Other">Other</option>
@@ -234,7 +234,7 @@
                     </div>
                 </div>
 
-                <!-- Terms and Conditions -->
+                <!-- Liability Waiver and Terms -->
                 <div class="flex items-start">
                     <div class="flex items-center h-5">
                         <input id="terms" name="terms" type="checkbox" required 
@@ -248,6 +248,32 @@
                             <a href="#" class="text-reliable-600 hover:text-reliable-500 transition-colors">Privacy Policy</a>
                         </label>
                     </div>
+                </div>
+
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="waiver" name="waiver" type="checkbox" required 
+                               class="h-4 w-4 text-reliable-600 focus:ring-reliable-500 border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="waiver" class="text-gray-700">
+                            I acknowledge and accept the <a href="/docs/liability-waiver.pdf" target="_blank" class="text-reliable-600 hover:text-reliable-500">Liability Waiver</a>.
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Insurance Preference -->
+                <div>
+                    <label for="insurancePreference" class="block text-sm font-medium text-gray-700 mb-2">
+                        Insurance Preference
+                    </label>
+                    <select id="insurancePreference" name="insurancePreference" 
+                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300">
+                        <option value="BUDGET" selected>Budget Insurance (default)</option>
+                        <option value="BASIC">Basic</option>
+                        <option value="STANDARD">Standard</option>
+                        <option value="PREMIUM">Premium</option>
+                    </select>
                 </div>
 
                 <!-- Newsletter Subscription -->
@@ -353,11 +379,13 @@
                 address: document.getElementById('address').value,
                 city: document.getElementById('city').value,
                 state: document.getElementById('state').value,
-                postalCode: document.getElementById('postalCode').value,
+                zipCode: document.getElementById('zipCode').value,
                 country: document.getElementById('country').value,
                 userRole: document.getElementById('userRole').value,
                 password: password,
-                newsletter: document.getElementById('newsletter').checked
+                newsletter: document.getElementById('newsletter').checked,
+                waiverAccepted: document.getElementById('waiver').checked,
+                insurancePreference: document.getElementById('insurancePreference').value
             };
             
             // Simulate API call
@@ -370,7 +398,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
+                // Backend returns an AuthResponse on success; check for token or id
+                if (data && (data.token || data.id)) {
                     showAlert('Account created successfully! Redirecting to login...', 'success');
                     setTimeout(() => {
                         window.location.href = '/login';

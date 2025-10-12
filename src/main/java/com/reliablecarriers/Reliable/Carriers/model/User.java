@@ -49,6 +49,17 @@ public class User {
     
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
+
+    // Compliance and preferences
+    @Column(name = "waiver_accepted")
+    private Boolean waiverAccepted;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "waiver_accepted_at")
+    private Date waiverAcceptedAt;
+
+    @Column(length = 20)
+    private String insurancePreference; // BUDGET, BASIC, STANDARD, PREMIUM
     
     @PrePersist
     protected void onCreate() {
@@ -172,5 +183,29 @@ public class User {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getWaiverAccepted() {
+        return waiverAccepted;
+    }
+
+    public void setWaiverAccepted(Boolean waiverAccepted) {
+        this.waiverAccepted = waiverAccepted;
+    }
+
+    public Date getWaiverAcceptedAt() {
+        return waiverAcceptedAt;
+    }
+
+    public void setWaiverAcceptedAt(Date waiverAcceptedAt) {
+        this.waiverAcceptedAt = waiverAcceptedAt;
+    }
+
+    public String getInsurancePreference() {
+        return insurancePreference;
+    }
+
+    public void setInsurancePreference(String insurancePreference) {
+        this.insurancePreference = insurancePreference;
     }
 }

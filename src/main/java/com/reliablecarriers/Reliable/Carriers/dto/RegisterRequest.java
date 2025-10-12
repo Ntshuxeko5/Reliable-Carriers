@@ -36,6 +36,10 @@ public class RegisterRequest {
     private String country;
     private UserRole role;
 
+    // Registration confirmations
+    private Boolean waiverAccepted;
+    private String insurancePreference; // e.g., BUDGET, BASIC, STANDARD, PREMIUM
+
     // Default constructor
     public RegisterRequest() {
     }
@@ -51,7 +55,8 @@ public class RegisterRequest {
 
     // Constructor with all fields
     public RegisterRequest(String firstName, String lastName, String email, String password, String phone,
-                          String address, String city, String state, String zipCode, String country, UserRole role) {
+                          String address, String city, String state, String zipCode, String country, UserRole role,
+                          Boolean waiverAccepted, String insurancePreference) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -63,6 +68,8 @@ public class RegisterRequest {
         this.zipCode = zipCode;
         this.country = country;
         this.role = role;
+        this.waiverAccepted = waiverAccepted;
+        this.insurancePreference = insurancePreference;
     }
 
     // Getters and Setters
@@ -152,5 +159,21 @@ public class RegisterRequest {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public Boolean getWaiverAccepted() {
+        return waiverAccepted;
+    }
+
+    public void setWaiverAccepted(Boolean waiverAccepted) {
+        this.waiverAccepted = waiverAccepted;
+    }
+
+    public String getInsurancePreference() {
+        return insurancePreference;
+    }
+
+    public void setInsurancePreference(String insurancePreference) {
+        this.insurancePreference = insurancePreference;
     }
 }

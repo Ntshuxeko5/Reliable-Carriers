@@ -10,7 +10,7 @@
             theme: {
                 extend: {
                     colors: {
-                        'reliable': {
+                        'brand-blue': {
                             50: '#f0f9ff',
                             100: '#e0f2fe',
                             200: '#bae6fd',
@@ -22,7 +22,7 @@
                             800: '#075985',
                             900: '#0c4a6e',
                         },
-                        'reliable-yellow': {
+                        'brand': {
                             50: '#fff7ed',
                             100: '#ffedd5',
                             200: '#fed7aa',
@@ -67,18 +67,18 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-reliable-600 to-reliable-700 shadow-lg">
+    <nav class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="h-8 w-8 bg-white rounded-full flex items-center justify-center">
-                            <i class="fas fa-truck text-reliable-600 text-sm"></i>
+                            <i class="fas fa-truck text-brand-600 text-sm"></i>
                         </div>
                     </div>
                     <div class="ml-3">
                         <h1 class="text-white font-semibold text-lg">Reliable Carriers</h1>
-                        <p class="text-reliable-200 text-xs">Staff Portal</p>
+                        <p class="text-brand-200 text-xs">Staff Portal</p>
                     </div>
                 </div>
                 
@@ -87,7 +87,7 @@
                         <i class="fas fa-user-circle text-xl mr-2"></i>
                         <span id="userName">Staff User</span>
                     </div>
-                    <button onclick="logout()" class="bg-reliable-yellow-500 hover:bg-reliable-yellow-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <button onclick="logout()" class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg transition-colors">
                         <i class="fas fa-sign-out-alt mr-2"></i>Logout
                     </button>
                 </div>
@@ -98,11 +98,11 @@
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Welcome Section -->
-        <div class="bg-gradient-to-r from-reliable-yellow-400 to-reliable-yellow-500 rounded-2xl p-8 mb-8 animate-fade-in">
+    <div class="bg-gradient-to-r from-brand-400 to-brand-500 rounded-2xl p-8 mb-8 animate-fade-in">
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-3xl font-bold text-white mb-2">Welcome to Staff Dashboard</h2>
-                    <p class="text-reliable-yellow-100 text-lg">Manage customer inquiries, track shipments, and provide excellent service</p>
+                    <p class="text-brand-100 text-lg">Manage customer inquiries, track shipments, and provide excellent service</p>
                 </div>
                 <div class="text-right">
                     <div class="text-white text-sm">
@@ -169,7 +169,7 @@
             <!-- Customer Service Panel -->
             <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
                 <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <i class="fas fa-headset text-reliable-600 mr-2"></i>
+                    <i class="fas fa-headset text-brand-600 mr-2"></i>
                     Customer Service
                 </h3>
                 <div class="space-y-4">
@@ -191,7 +191,7 @@
             <!-- Operations Panel -->
             <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
                 <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <i class="fas fa-cogs text-reliable-600 mr-2"></i>
+                    <i class="fas fa-cogs text-brand-600 mr-2"></i>
                     Operations
                 </h3>
                 <div class="space-y-4">
@@ -213,8 +213,8 @@
 
         <!-- Recent Activity -->
         <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
-            <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <i class="fas fa-history text-reliable-600 mr-2"></i>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-history text-brand-600 mr-2"></i>
                 Recent Activity
             </h3>
             <div class="space-y-4" id="recentActivity">
