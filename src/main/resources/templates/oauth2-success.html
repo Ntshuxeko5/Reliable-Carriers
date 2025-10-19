@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login successful</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gray-50">
+  <div class="max-w-lg w-full text-center p-8 bg-white rounded-lg shadow">
+    <h1 class="text-2xl font-bold mb-4">Signing you in...</h1>
+    <p id="message" class="text-sm text-gray-600">Please wait while we redirect you to your dashboard.</p>
+  </div>
+
+  <script>
+    // Parse query params
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    const token = getQueryParam('token');
+    const role = getQueryParam('role') || 'CUSTOMER';
+
+    if (token) {
+      // Store token and redirect based on role
+      try {
+        localStorage.setItem('token', token);
+        sessionStorage.setItem('token', token);
+      } catch (e) {
+        console.warn('Failed to store token in localStorage', e);
+      }
+
+      const redirectMap = {
+        'ADMIN': '/admin/dashboard',
+        'DRIVER': '/driver/dashboard',
+        'TRACKING_MANAGER': '/tracking/dashboard',
+        'STAFF': '/staff/dashboard',
+        'CUSTOMER': '/customer'
+      };
+
+      const dest = redirectMap[role] || '/customer';
+      // small delay to show message
+      setTimeout(() => window.location.href = dest, 800);
+    } else {
+      document.getElementById('message').textContent = 'No token provided. Please return to the site and try signing in again.';
+    }
+  </script>
+</body>
+</html>

@@ -254,4 +254,62 @@ public class DriverWorkboardController {
         Map<String, Object> earnings = workboardService.getEarningsSummary(driverId, period);
         return ResponseEntity.ok(earnings);
     }
+
+    /**
+     * Accept a package assignment
+     */
+    @PostMapping("/packages/{packageId}/accept")
+    public ResponseEntity<Map<String, Object>> acceptPackage(@PathVariable Long packageId) {
+        try {
+            Long driverId = authService.getCurrentUser().getId();
+            boolean success = workboardService.acceptPackage(driverId, packageId);
+            
+            if (success) {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Package accepted successfully"
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Failed to accept package"
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "message", "Error accepting package: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Reject a package assignment
+     */
+    @PostMapping("/packages/{packageId}/reject")
+    public ResponseEntity<Map<String, Object>> rejectPackage(
+            @PathVariable Long packageId,
+            @RequestParam(required = false) String reason) {
+        try {
+            Long driverId = authService.getCurrentUser().getId();
+            boolean success = workboardService.rejectPackage(driverId, packageId, reason);
+            
+            if (success) {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Package rejected successfully"
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Failed to reject package"
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "message", "Error rejecting package: " + e.getMessage()
+            ));
+        }
+    }
 }

@@ -6,7 +6,6 @@ import com.reliablecarriers.Reliable.Carriers.model.PaymentStatus;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.service.PaymentService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +21,6 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @Autowired
     public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
     }

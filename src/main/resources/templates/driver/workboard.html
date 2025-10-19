@@ -988,6 +988,16 @@
                                     </span>
                                 </div>
                             ` : ''}
+                            ${pkg.status === 'ASSIGNED' ? `
+                                <div class="mt-2 flex space-x-1">
+                                    <button onclick="acceptPackage(${pkg.id})" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition-colors duration-200">
+                                        <i class="fas fa-check mr-1"></i>Accept
+                                    </button>
+                                    <button onclick="rejectPackage(${pkg.id})" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition-colors duration-200">
+                                        <i class="fas fa-times mr-1"></i>Reject
+                                    </button>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -1212,6 +1222,64 @@
             document.getElementById('currentTime').textContent = now.toLocaleTimeString();
         }
         
+        // Accept package
+        async function acceptPackage(packageId) {
+            try {
+                const response = await fetch(`/api/driver/workboard/packages/${packageId}/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken(),
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Package accepted successfully!', 'success');
+                    refreshWorkboard();
+                } else {
+                    showNotification(result.message || 'Failed to accept package', 'error');
+                }
+            } catch (error) {
+                console.error('Error accepting package:', error);
+                showNotification('Error accepting package', 'error');
+            }
+        }
+
+        // Reject package
+        async function rejectPackage(packageId) {
+            const reason = prompt('Please provide a reason for rejecting this package:');
+            if (!reason) return;
+            
+            try {
+                const response = await fetch(`/api/driver/workboard/packages/${packageId}/reject?reason=${encodeURIComponent(reason)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken(),
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Package rejected successfully!', 'success');
+                    refreshWorkboard();
+                } else {
+                    showNotification(result.message || 'Failed to reject package', 'error');
+                }
+            } catch (error) {
+                console.error('Error rejecting package:', error);
+                showNotification('Error rejecting package', 'error');
+            }
+        }
+
+        // Get auth token
+        function getToken() {
+            return localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
+        }
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             initMap();

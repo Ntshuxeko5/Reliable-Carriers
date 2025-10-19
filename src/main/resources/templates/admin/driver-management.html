@@ -424,9 +424,16 @@
                     },
                     body: JSON.stringify({
                         driverId: parseInt(driverId),
-                        packageIds: Array.from(selectedPackages)
+                        packageIds: Array.from(selectedPackages).map(id => parseInt(id))
                     })
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    alert('Error: ' + response.status + ' - ' + errorText);
+                    return;
+                }
                 
                 const result = await response.json();
                 

@@ -17,6 +17,9 @@ public class PaystackRequest {
     @JsonProperty("callback_url")
     private String callbackUrl;
     
+    @JsonProperty("redirect_url")
+    private String redirectUrl;
+    
     @JsonProperty("currency")
     private String currency = "NGN";
     
@@ -63,6 +66,14 @@ public class PaystackRequest {
     
     public void setCallbackUrl(String callbackUrl) {
         this.callbackUrl = callbackUrl;
+    }
+    
+    public String getRedirectUrl() {
+        return redirectUrl;
+    }
+    
+    public void setRedirectUrl(String redirectUrl) {
+        this.redirectUrl = redirectUrl;
     }
     
     public String getCurrency() {

@@ -2,7 +2,6 @@ package com.reliablecarriers.Reliable.Carriers.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 import javax.crypto.SecretKey;
@@ -41,12 +40,12 @@ public class JwtTokenUtil {
 
     // For retrieving any information from token we will need the secret key
     private Claims getAllClaimsFromToken(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
-        return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+    SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
+    return Jwts.parser()
+        .verifyWith(key)
+        .build()
+        .parseSignedClaims(token)
+        .getPayload();
     }
 
     // Check if the token has expired
@@ -66,14 +65,14 @@ public class JwtTokenUtil {
     // 2. Sign the JWT using the HS512 algorithm and secret key
     // 3. According to JWS Compact Serialization, compact the JWT to a URL-safe string
     private String doGenerateToken(Map<String, Object> claims, String subject) {
-        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtTokenValidity))
-                .signWith(key)
-                .compact();
+    SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
+    return Jwts.builder()
+        .setClaims(claims)
+        .setSubject(subject)
+        .setIssuedAt(new Date(System.currentTimeMillis()))
+        .setExpiration(new Date(System.currentTimeMillis() + jwtTokenValidity))
+        .signWith(key)
+        .compact();
     }
 
     // Validate token

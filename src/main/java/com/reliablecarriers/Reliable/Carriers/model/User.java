@@ -60,6 +60,16 @@ public class User {
 
     @Column(length = 20)
     private String insurancePreference; // BUDGET, BASIC, STANDARD, PREMIUM
+
+    @Column(name = "profile_picture", length = 255)
+    private String profilePicture; // URL to profile picture
+
+    // 2FA TOTP fields
+    @Column(name = "totp_secret", length = 128)
+    private String totpSecret;
+
+    @Column(name = "totp_enabled")
+    private Boolean totpEnabled = false;
     
     @PrePersist
     protected void onCreate() {
@@ -207,5 +217,53 @@ public class User {
 
     public void setInsurancePreference(String insurancePreference) {
         this.insurancePreference = insurancePreference;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
+
+    // OAuth2 provider linking
+    @Column(name = "oauth_provider", length = 50)
+    private String oauthProvider;
+
+    @Column(name = "oauth_provider_id", length = 128)
+    private String oauthProviderId;
+
+    public String getOauthProvider() {
+        return oauthProvider;
+    }
+
+    public void setOauthProvider(String oauthProvider) {
+        this.oauthProvider = oauthProvider;
+    }
+
+    public String getOauthProviderId() {
+        return oauthProviderId;
+    }
+
+    public void setOauthProviderId(String oauthProviderId) {
+        this.oauthProviderId = oauthProviderId;
+    }
+
+    // 2FA accessors
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public void setTotpSecret(String totpSecret) {
+        this.totpSecret = totpSecret;
+    }
+
+    public Boolean getTotpEnabled() {
+        return totpEnabled;
+    }
+
+    public void setTotpEnabled(Boolean totpEnabled) {
+        this.totpEnabled = totpEnabled;
     }
 }

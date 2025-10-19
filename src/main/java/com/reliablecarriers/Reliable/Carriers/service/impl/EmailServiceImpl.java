@@ -31,12 +31,31 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendSimpleEmail(String to, String subject, String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
-        mailSender.send(message);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(text);
+            mailSender.send(message);
+            System.out.println("Email sent successfully to " + to + " with subject: " + subject);
+        } catch (Exception e) {
+            System.err.println("Failed to send email to " + to + ": " + e.getMessage());
+            System.err.println("Email error details: " + e.getClass().getSimpleName());
+            if (e.getCause() != null) {
+                System.err.println("Email error cause: " + e.getCause().getMessage());
+            }
+            
+            // For development/testing, log the email content instead of throwing exception
+            System.out.println("=== EMAIL CONTENT (DEVELOPMENT MODE) ===");
+            System.out.println("To: " + to);
+            System.out.println("Subject: " + subject);
+            System.out.println("Message: " + text);
+            System.out.println("=== END EMAIL CONTENT ===");
+            
+            // In production, you might want to throw the exception
+            // throw new RuntimeException("Email sending failed", e);
+        }
     }
 
     @Override

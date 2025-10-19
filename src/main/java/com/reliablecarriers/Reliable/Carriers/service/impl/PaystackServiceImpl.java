@@ -1,6 +1,7 @@
 package com.reliablecarriers.Reliable.Carriers.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.reliablecarriers.Reliable.Carriers.dto.PaystackMetadata;
 import com.reliablecarriers.Reliable.Carriers.dto.PaystackRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.PaystackResponse;
@@ -17,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -30,6 +32,9 @@ public class PaystackServiceImpl implements PaystackService {
     
     @Value("${paystack.base.url:https://api.paystack.co}")
     private String paystackBaseUrl;
+    
+    @Value("${paystack.mock.mode:false}")
+    private boolean mockMode;
     
     private final ObjectMapper objectMapper;
     private final PaymentService paymentService;
@@ -51,16 +56,52 @@ public class PaystackServiceImpl implements PaystackService {
     @Override
     public PaystackResponse initializePayment(PaystackRequest request) {
         try {
-            // Convert amount to kobo
-            request.setAmount(convertToKobo(request.getAmount()));
+            // Mock mode for development/testing
+            if (mockMode) {
+                System.out.println("MOCK MODE: Simulating Paystack payment initialization");
+                PaystackResponse mockResponse = new PaystackResponse();
+                mockResponse.setStatus(true);
+                mockResponse.setMessage("Mock payment initialized successfully");
+                
+                PaystackResponse.PaystackData mockData = new PaystackResponse.PaystackData();
+                mockData.setAuthorizationUrl("https://checkout.paystack.com/mock-payment");
+                mockData.setAccessCode("mock_access_code_" + System.currentTimeMillis());
+                mockData.setReference(request.getReference());
+                mockData.setAmount(request.getAmount().longValue());
+                mockData.setCurrency("ZAR");
+                mockData.setStatus("pending");
+                
+                mockResponse.setData(mockData);
+                return mockResponse;
+            }
+            
+            // Set currency to ZAR (South African Rand)
+            request.setCurrency("ZAR");
+            
+            // For ZAR, amount is in cents (1 ZAR = 100 cents)
+            request.setAmount(convertToCents(request.getAmount()));
+            
+            System.out.println("Initializing Paystack payment with amount: " + request.getAmount());
+            System.out.println("Using secret key: " + (paystackSecretKey != null ? paystackSecretKey.substring(0, 10) + "..." : "null"));
             
             return getWebClient().post()
                     .uri("/transaction/initialize")
                     .bodyValue(request)
                     .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        response -> {
+                            System.err.println("Paystack API error: " + response.statusCode());
+                            return response.bodyToMono(String.class)
+                                .flatMap(errorBody -> {
+                                    System.err.println("Error body: " + errorBody);
+                                    return Mono.error(new RuntimeException("Paystack API Error: " + response.statusCode() + " - " + errorBody));
+                                });
+                        })
                     .bodyToMono(PaystackResponse.class)
                     .block();
         } catch (Exception e) {
+            System.err.println("Paystack initialization error: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Failed to initialize payment: " + e.getMessage(), e);
         }
     }
@@ -68,6 +109,25 @@ public class PaystackServiceImpl implements PaystackService {
     @Override
     public PaystackResponse verifyPayment(String reference) {
         try {
+            // Mock mode for development/testing
+            if (mockMode) {
+                System.out.println("MOCK MODE: Simulating Paystack payment verification");
+                PaystackResponse mockResponse = new PaystackResponse();
+                mockResponse.setStatus(true);
+                mockResponse.setMessage("Mock payment verified successfully");
+                
+                PaystackResponse.PaystackData mockData = new PaystackResponse.PaystackData();
+                mockData.setReference(reference);
+                mockData.setStatus("success");
+                mockData.setGatewayResponse("Successful");
+                mockData.setChannel("card");
+                mockData.setPaidAt("2024-01-01T00:00:00.000Z");
+                mockData.setCurrency("ZAR");
+                
+                mockResponse.setData(mockData);
+                return mockResponse;
+            }
+            
             return getWebClient().get()
                     .uri("/transaction/verify/" + reference)
                     .retrieve()
@@ -79,19 +139,58 @@ public class PaystackServiceImpl implements PaystackService {
     }
     
     @Override
-    public PaystackRequest createPaymentRequest(Payment payment, String callbackUrl) {
+    public PaystackRequest createPaymentRequest(Payment payment, String callbackUrl, String redirectUrl) {
         PaystackRequest request = new PaystackRequest();
         request.setAmount(payment.getAmount());
-        request.setEmail(payment.getUser().getEmail());
+        
+        // Handle email - either from user or from notes
+        String email = "customer@example.com";
+        if (payment.getUser() != null) {
+            email = payment.getUser().getEmail();
+        } else if (payment.getNotes() != null) {
+            try {
+                // Try to parse JSON notes first
+                if (payment.getNotes().trim().startsWith("{")) {
+                    Map<String, Object> notesMap = objectMapper.readValue(payment.getNotes(), new TypeReference<Map<String, Object>>(){});
+                    if (notesMap.containsKey("email")) {
+                        email = String.valueOf(notesMap.get("email"));
+                    }
+                } else if (payment.getNotes().contains("email:")) {
+                    // Fallback to old CSV format
+                    String[] parts = payment.getNotes().split(",");
+                    for (String part : parts) {
+                        if (part.startsWith("email:")) {
+                            email = part.split(":")[1];
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Could not parse payment notes for email: " + e.getMessage());
+            }
+        }
+        request.setEmail(email);
+        
         request.setReference(payment.getTransactionId());
         request.setCallbackUrl(callbackUrl);
+        request.setRedirectUrl(redirectUrl);
         
-        // Add metadata
+        // Add metadata (only if available)
         PaystackMetadata metadata = new PaystackMetadata();
-        metadata.addCustomField("payment_id", payment.getId().toString());
-        metadata.addCustomField("shipment_id", payment.getShipment().getId().toString());
-        metadata.addCustomField("user_id", payment.getUser().getId().toString());
-        metadata.addCustomField("service_type", payment.getShipment().getServiceType().toString());
+        if (payment.getId() != null) {
+            metadata.addCustomField("payment_id", payment.getId().toString());
+        }
+        if (payment.getUser() != null) {
+            metadata.addCustomField("user_id", payment.getUser().getId().toString());
+        }
+        if (payment.getShipment() != null) {
+            metadata.addCustomField("shipment_id", payment.getShipment().getId().toString());
+            metadata.addCustomField("service_type", payment.getShipment().getServiceType().toString());
+        }
+        // Add notes as metadata
+        if (payment.getNotes() != null) {
+            metadata.addCustomField("notes", payment.getNotes());
+        }
         request.setMetadata(metadata);
         
         return request;
@@ -136,13 +235,13 @@ public class PaystackServiceImpl implements PaystackService {
     }
     
     @Override
-    public BigDecimal convertToKobo(BigDecimal amount) {
+    public BigDecimal convertToCents(BigDecimal amount) {
         return amount.multiply(new BigDecimal("100"));
     }
     
     @Override
-    public BigDecimal convertFromKobo(Long amountInKobo) {
-        return new BigDecimal(amountInKobo).divide(new BigDecimal("100"));
+    public BigDecimal convertFromCents(Long amountInCents) {
+        return new BigDecimal(amountInCents).divide(new BigDecimal("100"));
     }
     
     // Getter for public key (used in frontend)

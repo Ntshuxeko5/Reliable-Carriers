@@ -16,11 +16,11 @@ public class Payment {
     private String transactionId;
     
     @ManyToOne
-    @JoinColumn(name = "shipment_id", nullable = false)
+    @JoinColumn(name = "shipment_id", nullable = true)
     private Shipment shipment;
     
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
     
     @Column(nullable = false)

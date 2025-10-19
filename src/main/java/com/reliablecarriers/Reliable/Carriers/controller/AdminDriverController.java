@@ -15,6 +15,7 @@ import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/drivers")
-@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+@PreAuthorize("hasAnyRole('ADMIN','TRACKING_MANAGER')")
 @CrossOrigin(origins = "*")
 public class AdminDriverController {
 
@@ -133,6 +134,11 @@ public class AdminDriverController {
             if (!driverOpt.isPresent()) {
                 return ResponseEntity.badRequest().body(new DriverPackageAssignmentResponse(false, "Driver not found"));
             }
+
+            // Ensure the selected user is actually a driver
+            if (driverOpt.get().getRole() != UserRole.DRIVER) {
+                return ResponseEntity.badRequest().body(new DriverPackageAssignmentResponse(false, "Selected user is not a driver"));
+            }
             
             // Validate package exists and is available
             Optional<Shipment> packageOpt = shipmentRepository.findById(request.getPackageId());
@@ -169,12 +175,31 @@ public class AdminDriverController {
     /**
      * Bulk assign packages to driver
      */
+    @Transactional
     @PostMapping("/bulk-assign-packages")
     public ResponseEntity<DriverPackageAssignmentResponse> bulkAssignPackages(@RequestBody Map<String, Object> request) {
         try {
+            // Debug logging
+            System.out.println("Received request: " + request);
+            System.out.println("DriverId: " + request.get("driverId"));
+            System.out.println("PackageIds: " + request.get("packageIds"));
+            
             Long driverId = Long.valueOf(request.get("driverId").toString());
             @SuppressWarnings("unchecked")
-            List<Long> packageIds = (List<Long>) request.get("packageIds");
+            List<Object> packageIdsRaw = (List<Object>) request.get("packageIds");
+            
+            // Convert package IDs to Long, handling both Integer and Long types
+            List<Long> packageIds = packageIdsRaw.stream()
+                .map(id -> {
+                    if (id instanceof Integer) {
+                        return ((Integer) id).longValue();
+                    } else if (id instanceof Long) {
+                        return (Long) id;
+                    } else {
+                        return Long.valueOf(id.toString());
+                    }
+                })
+                .collect(Collectors.toList());
             
             // Validate driver exists
             Optional<User> driverOpt = userRepository.findById(driverId);
@@ -183,6 +208,12 @@ public class AdminDriverController {
             }
             
             User driver = driverOpt.get();
+
+            // Ensure the selected user is actually a driver
+            if (driver.getRole() != UserRole.DRIVER) {
+                return ResponseEntity.badRequest().body(new DriverPackageAssignmentResponse(false, "Selected user is not a driver"));
+            }
+            
             int assignedCount = 0;
             List<String> errors = new ArrayList<>();
             
@@ -210,8 +241,8 @@ public class AdminDriverController {
             
             // Send notification to driver
             if (assignedCount > 0) {
-                            String message = String.format("You have been assigned %d new packages. Please check your workboard.", assignedCount);
-            notificationService.sendCustomSmsNotification(driver.getPhone(), message);
+                String message = String.format("You have been assigned %d new packages. Please check your workboard.", assignedCount);
+                notificationService.sendCustomSmsNotification(driver.getPhone(), message);
             }
             
             String resultMessage = String.format("Assigned %d packages successfully", assignedCount);
@@ -221,7 +252,7 @@ public class AdminDriverController {
             
             return ResponseEntity.ok(new DriverPackageAssignmentResponse(true, resultMessage));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new DriverPackageAssignmentResponse(false, "Error bulk assigning packages"));
+            return ResponseEntity.internalServerError().body(new DriverPackageAssignmentResponse(false, "Error bulk assigning packages: " + e.getMessage()));
         }
     }
 

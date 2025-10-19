@@ -151,7 +151,29 @@
                         Access Staff Portal
                     </button>
                 </div>
+                
+                <!-- Test Button -->
+                <div>
+                    <button type="button" id="testButton" 
+                            class="w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all duration-300">
+                        Test API Connection
+                    </button>
+                </div>
             </form>
+
+            <!-- 2FA Step (hidden initially) -->
+            <div id="otpStage" class="mt-6 hidden">
+                <h4 class="text-sm font-medium text-white mb-2">Two-factor authentication</h4>
+                <p class="text-xs text-white/80 mb-3">Enter the 6-digit verification code sent to your email.</p>
+                <div class="flex items-center space-x-2">
+                    <input id="otpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-300 text-center text-lg font-mono" placeholder="123456">
+                    <button id="verifyOtpBtn" class="px-4 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors">Verify</button>
+                </div>
+                <div class="mt-3 text-sm text-white/80">
+                    <a href="#" id="resendOtpLink" class="text-brand-300 hover:text-brand-200">Resend code</a>
+                </div>
+            </div>
 
             <!-- Security Notice -->
             <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -235,6 +257,9 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Authenticating...';
             submitBtn.disabled = true;
             
+            // Debug logging
+            console.log('Sending login request:', { identifier: email, password: password ? '[PROVIDED]' : '[NULL]' });
+            
             // Simulate API call
             fetch('/api/auth/staff-login', {
                 method: 'POST',
@@ -242,7 +267,7 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    email: email,
+                    identifier: email,
                     password: password
                 })
             })
@@ -255,9 +280,24 @@
                 return response.json();
             })
             .then(data => {
-                // Check if we have a valid response with user data
-                if (data && data.id && data.email && data.role && data.token) {
-                    // Store the JWT token (standardized keys)
+                // Check if 2FA is required
+                if (data && data.requires2fa) {
+                    // Store user info for 2FA step
+                    sessionStorage.setItem('pending2faEmail', data.email);
+                    sessionStorage.setItem('pending2faPhone', data.phone);
+                    sessionStorage.setItem('pending2faRole', data.role);
+                    sessionStorage.setItem('pending2faTotpEnabled', data.totpEnabled);
+                    
+                    // Show 2FA step
+                    document.getElementById('staffLoginForm').style.display = 'none';
+                    document.getElementById('otpStage').classList.remove('hidden');
+                    
+                    // Send 2FA token via email
+                    sendMethodToken(data.email, 'EMAIL');
+                    
+                    showAlert('Verification code sent to your email. Please check your inbox.', 'success');
+                } else if (data && data.id && data.email && data.role && data.token) {
+                    // Direct login success (no 2FA required)
                     localStorage.setItem('jwtToken', data.token);
                     sessionStorage.setItem('jwtToken', data.token);
                     localStorage.setItem('token', data.token);
@@ -265,27 +305,27 @@
                     localStorage.setItem('userRole', data.role);
                     localStorage.setItem('userEmail', data.email);
                     
-                                         showAlert('Authentication successful! Redirecting to staff portal...', 'success');
-                     setTimeout(() => {
-                         // Ensure the JWT token is present in sessionStorage for immediate use
-                         sessionStorage.setItem('jwtToken', data.token);
-                         sessionStorage.setItem('token', data.token);
-                         sessionStorage.setItem('userRole', data.role);
-                         sessionStorage.setItem('userEmail', data.email);
-                         
-                         // Redirect based on user role
-                         if (data.role === 'ADMIN') {
-                             window.location.href = '/admin/dashboard';
-                         } else if (data.role === 'DRIVER') {
-                             window.location.href = '/driver/dashboard';
-                         } else if (data.role === 'TRACKING_MANAGER') {
-                             window.location.href = '/tracking/dashboard';
-                         } else if (data.role === 'STAFF') {
-                             window.location.href = '/staff/dashboard';
-                         } else {
-                             window.location.href = '/dashboard';
-                         }
-                     }, 1500);
+                    showAlert('Authentication successful! Redirecting to staff portal...', 'success');
+                    setTimeout(() => {
+                        // Ensure the JWT token is present in sessionStorage for immediate use
+                        sessionStorage.setItem('jwtToken', data.token);
+                        sessionStorage.setItem('token', data.token);
+                        sessionStorage.setItem('userRole', data.role);
+                        sessionStorage.setItem('userEmail', data.email);
+                        
+                        // Redirect based on user role
+                        if (data.role === 'ADMIN') {
+                            window.location.href = '/admin/dashboard';
+                        } else if (data.role === 'DRIVER') {
+                            window.location.href = '/driver/dashboard';
+                        } else if (data.role === 'TRACKING_MANAGER') {
+                            window.location.href = '/tracking/dashboard';
+                        } else if (data.role === 'STAFF') {
+                            window.location.href = '/staff/dashboard';
+                        } else {
+                            window.location.href = '/dashboard';
+                        }
+                    }, 1500);
                 } else {
                     showAlert(data.message || 'Authentication failed. Please check your credentials.', 'error');
                 }
@@ -325,6 +365,137 @@
                 }
             }, 5000);
         }
+
+        // Helper to request method-based token (EMAIL or SMS)
+        function sendMethodToken(identifier, method) {
+            fetch('/api/auth/2fa/request?identifier=' + encodeURIComponent(identifier) + '&method=' + encodeURIComponent(method), {
+                method: 'POST'
+            })
+            .then(res => {
+                if (res.ok) {
+                    showAlert('Verification code sent via ' + method + '. Check your ' + (method === 'EMAIL' ? 'email' : 'phone') + '.', 'success');
+                } else {
+                    showAlert('Failed to send verification code. Please try again.', 'error');
+                }
+            })
+            .catch(() => showAlert('Failed to send verification code. Network error.', 'error'));
+        }
+
+        // OTP verification handler (method-based tokens)
+        document.getElementById('verifyOtpBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const code = document.getElementById('otpCode').value;
+            const email = sessionStorage.getItem('pending2faEmail');
+            if (!email || !code) {
+                showAlert('Please enter the 6-digit code.', 'error');
+                return;
+            }
+
+            fetch('/api/auth/2fa/verify-method?identifier=' + encodeURIComponent(email) + '&token=' + encodeURIComponent(code), {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Verification failed');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.token) {
+                    // Store the JWT token
+                    localStorage.setItem('jwtToken', data.token);
+                    sessionStorage.setItem('jwtToken', data.token);
+                    localStorage.setItem('token', data.token);
+                    sessionStorage.setItem('token', data.token);
+                    localStorage.setItem('userRole', data.role);
+                    localStorage.setItem('userEmail', data.email);
+                    
+                    showAlert('Authentication successful! Redirecting to staff portal...', 'success');
+                    setTimeout(() => {
+                        // Redirect based on user role
+                        if (data.role === 'ADMIN') {
+                            window.location.href = '/admin/dashboard';
+                        } else if (data.role === 'DRIVER') {
+                            window.location.href = '/driver/dashboard';
+                        } else if (data.role === 'TRACKING_MANAGER') {
+                            window.location.href = '/tracking/dashboard';
+                        } else if (data.role === 'STAFF') {
+                            window.location.href = '/staff/dashboard';
+                        } else {
+                            window.location.href = '/dashboard';
+                        }
+                    }, 1500);
+                } else {
+                    showAlert('Verification failed. Please try again.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('2FA verification error:', error);
+                showAlert(error.message || 'Verification failed. Please try again.', 'error');
+            });
+        });
+
+        // Resend OTP handler
+        document.getElementById('resendOtpLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            const email = sessionStorage.getItem('pending2faEmail');
+            if (email) {
+                sendMethodToken(email, 'EMAIL');
+            }
+        });
+
+        // Test button handler
+        document.getElementById('testButton').addEventListener('click', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            console.log('Testing API with:', { identifier: email, password: password ? '[PROVIDED]' : '[NULL]' });
+            
+            // Test the raw endpoint first
+            fetch('/api/auth/staff-login-raw', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    identifier: email,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Raw endpoint response:', data);
+                showAlert('Raw endpoint test: ' + JSON.stringify(data), 'success');
+            })
+            .catch(error => {
+                console.error('Raw endpoint error:', error);
+                showAlert('Raw endpoint error: ' + error.message, 'error');
+            });
+            
+            // Test the map endpoint
+            fetch('/api/auth/staff-login-test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    identifier: email,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Map endpoint response:', data);
+                showAlert('Map endpoint test: ' + JSON.stringify(data), 'success');
+            })
+            .catch(error => {
+                console.error('Map endpoint error:', error);
+                showAlert('Map endpoint error: ' + error.message, 'error');
+            });
+        });
     </script>
 </body>
 </html>

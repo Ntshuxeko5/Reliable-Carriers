@@ -24,4 +24,6 @@ public interface UserService {
     boolean existsByEmail(String email);
     
     List<User> searchUsers(String searchTerm);
+    
+    boolean changePassword(String email, String currentPassword, String newPassword);
 }

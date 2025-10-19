@@ -5,7 +5,6 @@ import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageResponse;
 import com.reliablecarriers.Reliable.Carriers.dto.QuoteResponse;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +21,6 @@ public class CustomerPackageController {
 
     private final CustomerPackageService customerPackageService;
 
-    @Autowired
     public CustomerPackageController(CustomerPackageService customerPackageService) {
         this.customerPackageService = customerPackageService;
     }

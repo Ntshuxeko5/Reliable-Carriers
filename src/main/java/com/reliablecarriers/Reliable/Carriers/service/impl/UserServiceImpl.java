@@ -122,4 +122,25 @@ public class UserServiceImpl implements UserService {
     public List<User> searchUsers(String searchTerm) {
         return userRepository.findByFirstNameContainingOrLastNameContaining(searchTerm, searchTerm);
     }
+
+    @Override
+    public boolean changePassword(String email, String currentPassword, String newPassword) {
+        try {
+            User user = getUserByEmail(email);
+            
+            // Verify current password
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                return false;
+            }
+            
+            // Update password
+            user.setPassword(passwordEncoder.encode(newPassword));
+            user.setUpdatedAt(new Date());
+            userRepository.save(user);
+            
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

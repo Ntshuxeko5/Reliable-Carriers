@@ -7,14 +7,12 @@ import com.reliablecarriers.Reliable.Carriers.dto.WorkboardStats;
 import com.reliablecarriers.Reliable.Carriers.model.*;
 import com.reliablecarriers.Reliable.Carriers.repository.*;
 import com.reliablecarriers.Reliable.Carriers.service.DriverWorkboardService;
-import com.reliablecarriers.Reliable.Carriers.service.EmailService;
+// Notification service is used via constructor injection
 import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
+// removed unused File import
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -27,23 +25,28 @@ import java.util.stream.Collectors;
 @Service
 public class DriverWorkboardServiceImpl implements DriverWorkboardService {
 
-    @Autowired
-    private ShipmentRepository shipmentRepository;
+    private final ShipmentRepository shipmentRepository;
 
-    @Autowired
-    private ProofOfDeliveryRepository proofOfDeliveryRepository;
+    private final ProofOfDeliveryRepository proofOfDeliveryRepository;
 
-    @Autowired
-    private DriverLocationRepository driverLocationRepository;
+    private final DriverLocationRepository driverLocationRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private EmailService emailService;
+    // NotificationService used for sending notifications
+    private final NotificationService notificationService;
 
-    @Autowired
-    private NotificationService notificationService;
+    public DriverWorkboardServiceImpl(ShipmentRepository shipmentRepository,
+                                      ProofOfDeliveryRepository proofOfDeliveryRepository,
+                                      DriverLocationRepository driverLocationRepository,
+                                      UserRepository userRepository,
+                                      NotificationService notificationService) {
+    this.shipmentRepository = shipmentRepository;
+    this.proofOfDeliveryRepository = proofOfDeliveryRepository;
+        this.driverLocationRepository = driverLocationRepository;
+        this.userRepository = userRepository;
+        this.notificationService = notificationService;
+    }
 
     private static final String UPLOAD_DIR = "uploads/driver/";
     private static final double EARTH_RADIUS = 6371; // Earth's radius in kilometers
@@ -616,8 +619,7 @@ public class DriverWorkboardServiceImpl implements DriverWorkboardService {
         
         // Save photos if provided
         if (request.getSignaturePhoto() != null && !request.getSignaturePhoto().isEmpty()) {
-            String signaturePhotoUrl = savePhoto(request.getSignaturePhoto(), "signature");
-            // Store the URL in the proof
+            savePhoto(request.getSignaturePhoto(), "signature");
         }
         
         if (request.getDeliveryPhoto() != null && !request.getDeliveryPhoto().isEmpty()) {
@@ -702,5 +704,79 @@ public class DriverWorkboardServiceImpl implements DriverWorkboardService {
         // Implementation for getting tracking history
         // This would query the shipment tracking repository
         return new ArrayList<>();
+    }
+
+    @Override
+    public boolean acceptPackage(Long driverId, Long packageId) {
+        try {
+            Optional<Shipment> packageOpt = shipmentRepository.findById(packageId);
+            if (!packageOpt.isPresent()) {
+                return false;
+            }
+            
+            Shipment shipment = packageOpt.get();
+            
+            // Check if package is assigned to this driver
+            if (shipment.getAssignedDriver() == null || !shipment.getAssignedDriver().getId().equals(driverId)) {
+                return false;
+            }
+            
+            // Check if package is in ASSIGNED status
+            if (shipment.getStatus() != ShipmentStatus.ASSIGNED) {
+                return false;
+            }
+            
+            // Update package status to accepted (you might want to add a new status like ACCEPTED)
+            shipment.setStatus(ShipmentStatus.ASSIGNED); // Keep as ASSIGNED for now
+            shipment.setUpdatedAt(new Date());
+            shipmentRepository.save(shipment);
+            
+            // Send notification to admin about acceptance
+            sendPackageAcceptanceNotification(shipment);
+            
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean rejectPackage(Long driverId, Long packageId, String reason) {
+        try {
+            Optional<Shipment> packageOpt = shipmentRepository.findById(packageId);
+            if (!packageOpt.isPresent()) {
+                return false;
+            }
+            
+            Shipment shipment = packageOpt.get();
+            
+            // Check if package is assigned to this driver
+            if (shipment.getAssignedDriver() == null || !shipment.getAssignedDriver().getId().equals(driverId)) {
+                return false;
+            }
+            
+            // Unassign the package
+            shipment.setAssignedDriver(null);
+            shipment.setStatus(ShipmentStatus.PENDING);
+            shipment.setUpdatedAt(new Date());
+            shipmentRepository.save(shipment);
+            
+            // Send notification to admin about rejection
+            sendPackageRejectionNotification(shipment, reason);
+            
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void sendPackageAcceptanceNotification(Shipment shipment) {
+        // Implementation for sending acceptance notification
+        // This could send email/SMS to admin
+    }
+
+    private void sendPackageRejectionNotification(Shipment shipment, String reason) {
+        // Implementation for sending rejection notification
+        // This could send email/SMS to admin with reason
     }
 }

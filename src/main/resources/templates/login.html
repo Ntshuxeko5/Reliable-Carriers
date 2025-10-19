@@ -75,16 +75,16 @@
         <div class="bg-white rounded-2xl shadow-xl p-8 animate-slide-up">
             <form id="loginForm" class="space-y-6">
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address
+                    <label for="identifier" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email or Phone
                     </label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-envelope text-gray-400"></i>
+                            <i class="fas fa-user text-gray-400"></i>
                         </div>
-                        <input id="email" name="email" type="email" required 
+                        <input id="identifier" name="identifier" type="text" required 
                                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
-                               placeholder="Enter your email">
+                               placeholder="Email address or phone (+27123456789)">
                     </div>
                 </div>
 
@@ -141,18 +141,30 @@
                 </div>
             </div>
 
+            <!-- OTP Step (hidden initially) -->
+            <div id="otpStage" class="mt-6 hidden">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Two-factor authentication</h4>
+                <p class="text-xs text-gray-500 mb-3">Enter the 6-digit verification code sent to your email or phone.</p>
+                <div class="flex items-center space-x-2">
+                    <input id="otpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300 text-center text-lg font-mono" placeholder="123456">
+                    <button id="verifyOtpBtn" class="px-4 py-3 bg-reliable-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Verify</button>
+                </div>
+                <div class="mt-3 text-sm text-gray-500">
+                    <a href="#" id="resendOtpLink" class="text-reliable-600 hover:text-blue-700">Resend code</a>
+                </div>
+            </div>
+
             <!-- Social Login Buttons -->
             <div class="mt-6 grid grid-cols-2 gap-3">
-                <button type="button" 
-                        class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:scale-105">
+                <a href="/oauth2/authorization/google" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:scale-105">
                     <i class="fab fa-google text-red-500 mr-2"></i>
                     Google
-                </button>
-                <button type="button" 
-                        class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:scale-105">
+                </a>
+                <a href="/oauth2/authorization/facebook" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300 transform hover:scale-105">
                     <i class="fab fa-facebook text-blue-600 mr-2"></i>
                     Facebook
-                </button>
+                </a>
             </div>
 
             <!-- Register Link -->
@@ -180,6 +192,22 @@
 
     <script th:src="@{/js/app.js}"></script>
     <script>
+        // Hide social buttons if the OAuth2 endpoints are not available (client IDs not configured)
+        (function checkSocialEndpoints(){
+            const googleBtn = document.querySelector('a[href="/oauth2/authorization/google"]');
+            const fbBtn = document.querySelector('a[href="/oauth2/authorization/facebook"]');
+
+            if (googleBtn) {
+                fetch('/oauth2/authorization/google', { method: 'GET', mode: 'no-cors' })
+                    .catch(() => { googleBtn.style.display = 'none'; });
+            }
+            if (fbBtn) {
+                fetch('/oauth2/authorization/facebook', { method: 'GET', mode: 'no-cors' })
+                    .catch(() => { fbBtn.style.display = 'none'; });
+            }
+        })();
+    </script>
+    <script>
         // Password toggle functionality
         document.getElementById('togglePassword').addEventListener('click', function() {
             const passwordInput = document.getElementById('password');
@@ -200,7 +228,7 @@
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const identifier = document.getElementById('identifier').value;
             const password = document.getElementById('password').value;
             
             // Show loading state
@@ -209,21 +237,71 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing in...';
             submitBtn.disabled = true;
             
-            // Simulate API call
+            // Call login API (identifier can be email or phone)
             fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    email: email,
+                    identifier: document.getElementById('identifier').value,
                     password: password
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.token) {
-                    // Store token and user data (standardized keys)
+            .then(async response => {
+                const data = await response.json().catch(() => ({}));
+                // Handle forbidden response when staff try to login via customer portal
+                if (response.status === 403) {
+                    showAlert(data || 'Access denied. Please use the staff login portal.', 'error');
+                    return;
+                }
+
+                // Coerce flags and handle non-OK responses
+                const requires2fa = data && (data.requires2fa === true || data.requires2fa === 'true');
+                const totpEnabled = data && (data.totpEnabled === true || data.totpEnabled === 'true');
+
+                // If API indicates 2FA required, show method selection (email or sms)
+                if (requires2fa || totpEnabled) {
+                    // Show the OTP stage and method choice
+                    document.getElementById('otpStage').classList.remove('hidden');
+                    // Inject method choice UI if not present
+                    if (!document.getElementById('twoFactorChoice')) {
+                        const choice = document.createElement('div');
+                        choice.id = 'twoFactorChoice';
+                        choice.className = 'mb-3';
+                        // If totpEnabled is true, guide user to use authenticator app; still allow method tokens as fallback
+                        const totpNote = data.totpEnabled ? '<p class="text-xs text-gray-500 mb-2">You have TOTP enabled. You can use your authenticator app or request a code via Email/SMS.</p>' : '';
+                        choice.innerHTML = `
+                            ${totpNote}
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Send code via</label>
+                            <div class="flex items-center space-x-2">
+                                <button id="sendEmailCode" class="px-3 py-2 bg-reliable-600 text-white rounded-lg">Email</button>
+                                <button id="sendSmsCode" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg">SMS</button>
+                            </div>
+                        `;
+                        // prepend so it appears above input
+                        document.getElementById('otpStage').prepend(choice);
+
+                        // wire up send buttons
+                        document.getElementById('sendEmailCode').addEventListener('click', function(ev){
+                            ev.preventDefault();
+                            const id = data.email || document.getElementById('identifier').value;
+                            sessionStorage.setItem('pending2faIdentifier', id);
+                            sendMethodToken(id, 'EMAIL');
+                        });
+                        document.getElementById('sendSmsCode').addEventListener('click', function(ev){
+                            ev.preventDefault();
+                            const id = data.email || document.getElementById('identifier').value;
+                            sessionStorage.setItem('pending2faIdentifier', id);
+                            sendMethodToken(id, 'SMS');
+                        });
+                    }
+
+                    showAlert('Two-factor authentication required. Choose Email or SMS to receive a code, or use your authenticator app if set up.', 'info');
+                    // store identifier for verify step
+                    sessionStorage.setItem('pending2faIdentifier', data.email || document.getElementById('identifier').value);
+                } else if (data && data.token) {
+                    // Store token and user data
                     localStorage.setItem('token', data.token);
                     sessionStorage.setItem('token', data.token);
                     localStorage.setItem('jwtToken', data.token);
@@ -234,8 +312,7 @@
                     setTimeout(() => {
                         // Role-based routing
                         let redirectUrl = '/dashboard'; // Default
-                        
-                                                switch(data.role) {
+                        switch(data.role) {
                             case 'ADMIN':
                                 redirectUrl = '/admin/dashboard';
                                 break;
@@ -253,9 +330,8 @@
                                 redirectUrl = '/customer';
                                 break;
                         }
-                        
                         window.location.href = redirectUrl;
-                    }, 1500);
+                    }, 1200);
                 } else {
                     showAlert(data.message || 'Login failed. Please try again.', 'error');
                 }
@@ -267,6 +343,60 @@
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             });
+        });
+
+        // Helper to request method-based token (EMAIL or SMS)
+        function sendMethodToken(identifier, method) {
+            fetch('/api/auth/2fa/request?identifier=' + encodeURIComponent(identifier) + '&method=' + encodeURIComponent(method), {
+                method: 'POST'
+            })
+            .then(res => {
+                if (res.ok) {
+                    showAlert('Verification code sent via ' + method + '. Check your ' + (method === 'EMAIL' ? 'email' : 'phone') + '.', 'success');
+                } else {
+                    showAlert('Failed to send verification code. Please try again.', 'error');
+                }
+            })
+            .catch(() => showAlert('Failed to send verification code. Network error.', 'error'));
+        }
+
+        // OTP verification handler (method-based tokens)
+        document.getElementById('verifyOtpBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const code = document.getElementById('otpCode').value;
+            const identifier = sessionStorage.getItem('pending2faIdentifier');
+            if (!identifier || !code) {
+                showAlert('Please enter the 6-digit code.', 'error');
+                return;
+            }
+
+            fetch('/api/auth/2fa/verify-method?identifier=' + encodeURIComponent(identifier) + '&token=' + encodeURIComponent(code), {
+                method: 'POST'
+            })
+            .then(async res => {
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.token) {
+                    localStorage.setItem('token', data.token);
+                    sessionStorage.setItem('token', data.token);
+                    showAlert('2FA verified — logging in...', 'success');
+                    // Redirect based on role if provided, else default to customer
+                    const role = data.role || data.userRole || 'CUSTOMER';
+                    setTimeout(() => {
+                        let redirectUrl = '/customer';
+                        switch(role) {
+                            case 'ADMIN': redirectUrl = '/admin/dashboard'; break;
+                            case 'DRIVER': redirectUrl = '/driver/dashboard'; break;
+                            case 'TRACKING_MANAGER': redirectUrl = '/tracking/dashboard'; break;
+                            case 'STAFF': redirectUrl = '/staff/dashboard'; break;
+                            case 'CUSTOMER': default: redirectUrl = '/customer'; break;
+                        }
+                        window.location.href = redirectUrl;
+                    }, 800);
+                } else {
+                    showAlert(data || data.message || 'Invalid 2FA code', 'error');
+                }
+            })
+            .catch(() => showAlert('An error occurred verifying code', 'error'));
         });
 
         function showAlert(message, type) {
@@ -294,6 +424,53 @@
                 }
             }, 5000);
         }
+
+        // OTP input improvements
+        document.addEventListener('DOMContentLoaded', function() {
+            const otpInput = document.getElementById('otpCode');
+            if (otpInput) {
+                // Auto-focus on OTP input when OTP stage is shown
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            const otpStage = document.getElementById('otpStage');
+                            if (otpStage && !otpStage.classList.contains('hidden')) {
+                                setTimeout(() => otpInput.focus(), 100);
+                            }
+                        }
+                    });
+                });
+                observer.observe(document.getElementById('otpStage'), { attributes: true });
+
+                // Format OTP input (only numbers, max 6 digits)
+                otpInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                    if (value.length > 6) value = value.substring(0, 6); // Max 6 digits
+                    e.target.value = value;
+                });
+
+                // Auto-submit when 6 digits are entered
+                otpInput.addEventListener('input', function(e) {
+                    if (e.target.value.length === 6) {
+                        document.getElementById('verifyOtpBtn').click();
+                    }
+                });
+            }
+
+            // Resend code functionality
+            const resendLink = document.getElementById('resendOtpLink');
+            if (resendLink) {
+                resendLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const identifier = sessionStorage.getItem('pending2faIdentifier');
+                    if (identifier) {
+                        // Default to SMS for resend
+                        sendMethodToken(identifier, 'SMS');
+                        showAlert('Verification code resent via SMS', 'success');
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

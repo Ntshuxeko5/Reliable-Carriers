@@ -8,7 +8,6 @@ import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.model.UserRole;
 import com.reliablecarriers.Reliable.Carriers.service.AuthService;
 import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,13 +17,13 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.List;
 import java.util.Arrays;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import com.reliablecarriers.Reliable.Carriers.dto.ForgotPasswordRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.ResetPasswordRequest;
 import com.reliablecarriers.Reliable.Carriers.model.PasswordResetToken;
@@ -34,10 +33,15 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Date;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "*")
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthService authService;
     private final JwtTokenUtil jwtTokenUtil;
@@ -46,9 +50,10 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+    private final com.reliablecarriers.Reliable.Carriers.service.TotpService totpService;
+    private final com.reliablecarriers.Reliable.Carriers.service.TwoFactorService twoFactorService;
 
-    @Autowired
-    public AuthController(AuthService authService, JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService, UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService) {
+    public AuthController(AuthService authService, JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService, UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService, com.reliablecarriers.Reliable.Carriers.service.TotpService totpService, com.reliablecarriers.Reliable.Carriers.service.TwoFactorService twoFactorService) {
         this.authService = authService;
         this.jwtTokenUtil = jwtTokenUtil;
         this.userDetailsService = userDetailsService;
@@ -56,6 +61,102 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailService = emailService;
+        this.totpService = totpService;
+        this.twoFactorService = twoFactorService;
+    }
+
+    // Endpoint to enable TOTP for a user (after login or from profile)
+    @PostMapping("/2fa/setup")
+    public ResponseEntity<?> setup2fa(@RequestParam String identifier) {
+        try {
+            User user = userRepository.findByEmail(identifier).orElse(null);
+            if (user == null) user = userRepository.findByPhone(identifier).orElse(null);
+            if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+
+            // generate secret
+            String secret = totpService.createSecret();
+            user.setTotpSecret(secret);
+            user.setTotpEnabled(true);
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("secret", secret));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error setting up 2FA: " + e.getMessage());
+        }
+    }
+
+    // Verify TOTP code during login second step
+    @PostMapping("/2fa/verify")
+    public ResponseEntity<?> verify2fa(@RequestParam String identifier, @RequestParam int code) {
+        try {
+            User user = userRepository.findByEmail(identifier).orElse(null);
+            if (user == null) user = userRepository.findByPhone(identifier).orElse(null);
+            if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            if (user.getTotpSecret() == null) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("2FA not enabled for user");
+
+            boolean ok = totpService.authorize(user.getTotpSecret(), code);
+            if (!ok) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid 2FA code");
+
+            // success — generate JWT and return user details
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+            final String token = jwtTokenUtil.generateToken(userDetails);
+            AuthResponse response = new AuthResponse(
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    user.getRole(),
+                    token
+            );
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error verifying 2FA: " + e.getMessage());
+        }
+    }
+
+    // Request a one-time token sent via EMAIL or SMS (for customers who prefer method-based 2FA)
+    @PostMapping("/2fa/request")
+    public ResponseEntity<?> request2fa(@RequestParam String identifier, @RequestParam(defaultValue = "EMAIL") String method) {
+        try {
+            User user = userRepository.findByEmail(identifier).orElse(null);
+            if (user == null) user = userRepository.findByPhone(identifier).orElse(null);
+            if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+
+            // Only enforce for customers (not staff/admin/oauth logins) — leaving role checks flexible for now
+            twoFactorService.generateAndSendToken(user, method);
+
+            return ResponseEntity.ok(Map.of("sent", true, "method", method));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error requesting 2FA token: " + e.getMessage());
+        }
+    }
+
+    // Verify a method-based 2FA token (EMAIL/SMS)
+    @PostMapping("/2fa/verify-method")
+    public ResponseEntity<?> verify2faMethod(@RequestParam String identifier, @RequestParam String token) {
+        try {
+            User user = userRepository.findByEmail(identifier).orElse(null);
+            if (user == null) user = userRepository.findByPhone(identifier).orElse(null);
+            if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+
+            boolean ok = twoFactorService.verifyToken(user, token);
+            if (!ok) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
+
+            // success — generate JWT and return user details
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+            final String tokenJwt = jwtTokenUtil.generateToken(userDetails);
+            AuthResponse response = new AuthResponse(
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    user.getRole(),
+                    tokenJwt
+            );
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error verifying 2FA token: " + e.getMessage());
+        }
     }
 
     @PostMapping("/register")
@@ -212,23 +313,35 @@ public class AuthController {
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody AuthRequest authRequest) {
         try {
             // Authenticate the user
-            User authenticatedUser = authService.authenticateUser(authRequest.getEmail(), authRequest.getPassword());
+            // The AuthRequest.identifier may be an email or a phone. We still authenticate via AuthService which expects email;
+            // try to resolve identifier to an email if it's a phone.
+            String identifier = authRequest.getIdentifier();
+            String loginEmail = identifier;
+            if (!identifier.contains("@")) {
+                // assume phone -> try to find user by phone
+                var uopt = userRepository.findByPhone(identifier);
+                if (uopt.isPresent()) loginEmail = uopt.get().getEmail();
+            }
+            logger.debug("authenticateUser: identifier={}, resolvedEmail={}", identifier, loginEmail);
+            User authenticatedUser = authService.authenticateUser(loginEmail, authRequest.getPassword());
 
-            // Generate JWT token
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticatedUser.getEmail());
-            final String token = jwtTokenUtil.generateToken(userDetails);
-            
-            // Create response
-            AuthResponse response = new AuthResponse(
-                    authenticatedUser.getId(),
-                    authenticatedUser.getFirstName(),
-                    authenticatedUser.getLastName(),
-                    authenticatedUser.getEmail(),
-                    authenticatedUser.getRole(),
-                    token
-            );
+            // Only allow customers to use this public/customer login endpoint.
+            // Staff/admin/driver/tracking manager must use the staff portal (/staff-login).
+            if (authenticatedUser.getRole() != com.reliablecarriers.Reliable.Carriers.model.UserRole.CUSTOMER) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Access denied. Use the staff portal to sign in for staff accounts.");
+            }
 
-            return ResponseEntity.ok(response);
+            // For customers, always present a second-factor stage so the client can offer method choices
+            // (email or SMS) or TOTP if they've enabled it. Frontend will call /api/auth/2fa/request
+            // to actually send a method-based token, or /2fa/verify to verify TOTP.
+            return ResponseEntity.ok(Map.of(
+                    "requires2fa", true,
+                    "email", authenticatedUser.getEmail(),
+                    "phone", authenticatedUser.getPhone(),
+                    "totpEnabled", Boolean.TRUE.equals(authenticatedUser.getTotpEnabled())
+            ));
+
         } catch (UsernameNotFoundException | BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
         } catch (Exception e) {
@@ -236,11 +349,44 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/staff-login-test")
+    public ResponseEntity<?> authenticateStaffTest(@RequestBody Map<String, Object> request) {
+        try {
+            logger.debug("authenticateStaffTest: Received request={}", request);
+            return ResponseEntity.ok(Map.of("received", request));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/staff-login-raw")
+    public ResponseEntity<?> authenticateStaffRaw(@RequestBody String rawRequest) {
+        try {
+            logger.debug("authenticateStaffRaw: Received raw request={}", rawRequest);
+            return ResponseEntity.ok(Map.of("rawRequest", rawRequest));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/staff-login")
     public ResponseEntity<?> authenticateStaff(@Valid @RequestBody AuthRequest authRequest, HttpServletRequest request) {
         try {
+            // Debug logging
+            logger.debug("authenticateStaff: Received authRequest={}", authRequest);
+            logger.debug("authenticateStaff: identifier={}, password={}", 
+                authRequest.getIdentifier(), 
+                authRequest.getPassword() != null ? "[PROVIDED]" : "[NULL]");
+            
             // Authenticate the user
-            User authenticatedUser = authService.authenticateUser(authRequest.getEmail(), authRequest.getPassword());
+            String identifier = authRequest.getIdentifier();
+            String loginEmail = identifier;
+            if (!identifier.contains("@")) {
+                var uopt = userRepository.findByPhone(identifier);
+                if (uopt.isPresent()) loginEmail = uopt.get().getEmail();
+            }
+            logger.debug("authenticateStaff: identifier={}, resolvedEmail={}", identifier, loginEmail);
+            User authenticatedUser = authService.authenticateUser(loginEmail, authRequest.getPassword());
 
             // Check if user has staff role (ADMIN, STAFF, DRIVER, TRACKING_MANAGER)
             if (authenticatedUser.getRole() != UserRole.ADMIN && 
@@ -250,27 +396,17 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied. Staff portal is for authorized personnel only.");
             }
 
-            // Generate JWT token
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticatedUser.getEmail());
-            final String token = jwtTokenUtil.generateToken(userDetails);
-            
-            // Create session for web access
-            HttpSession session = request.getSession(true);
-            session.setAttribute("user", authenticatedUser);
-            session.setAttribute("userRole", authenticatedUser.getRole().name());
-            session.setAttribute("jwtToken", token);
-            
-            // Create response
-            AuthResponse response = new AuthResponse(
-                    authenticatedUser.getId(),
-                    authenticatedUser.getFirstName(),
-                    authenticatedUser.getLastName(),
-                    authenticatedUser.getEmail(),
-                    authenticatedUser.getRole(),
-                    token
-            );
-
-            return ResponseEntity.ok(response);
+            // For staff logins, require two-factor authentication as well.
+            // Return a requires2fa payload so the client can initiate method-based token sending
+            // or prompt for TOTP if enabled. After verifying via /api/auth/2fa/verify-method or /2fa/verify,
+            // the server will issue the JWT/session.
+            return ResponseEntity.ok(Map.of(
+                    "requires2fa", true,
+                    "email", authenticatedUser.getEmail(),
+                    "phone", authenticatedUser.getPhone(),
+                    "totpEnabled", Boolean.TRUE.equals(authenticatedUser.getTotpEnabled()),
+                    "role", authenticatedUser.getRole().name()
+            ));
         } catch (UsernameNotFoundException | BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
         } catch (Exception e) {
@@ -323,6 +459,8 @@ public class AuthController {
             "existingHashMatches", encoder.matches(password, existingHash)
         ));
     }
+
+    // ... oauth2 success handled by Oauth2SuccessController
 
     @GetMapping("/fix-passwords")
     public ResponseEntity<?> fixPasswords() {

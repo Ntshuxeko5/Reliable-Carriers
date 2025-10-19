@@ -4,41 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Dashboard - Reliable Carriers</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'brand': {
-                            50: '#fefce8',
-                            100: '#fef9c3',
-                            200: '#fef08a',
-                            300: '#fde047',
-                            400: '#facc15',
-                            500: '#dbb714',
-                            600: '#ca8a04',
-                            700: '#a16207',
-                            800: '#854d0e',
-                            900: '#713f12',
-                        },
-                        'brand-blue': {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#071c91',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="/css/tailwind-production.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .glass-effect {
@@ -81,7 +47,7 @@
                     <span>Reliable Carriers</span>
                 </a>
                 <div class="hidden md:flex space-x-8">
-                    <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <a href="/customer" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
                     <a href="/customer/track" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
@@ -95,6 +61,9 @@
                     </a>
                     <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-store mr-2"></i>Business
+                    </a>
+                    <a href="/customer/profile" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-user-edit mr-2"></i>Edit Profile
                     </a>
                     <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-question-circle mr-2"></i>Help
@@ -111,7 +80,7 @@
             <!-- Mobile menu -->
             <div class="md:hidden hidden" id="mobileMenu">
                 <div class="py-4 space-y-4">
-                    <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <a href="/customer" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
                     <a href="/customer/track" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
@@ -126,6 +95,9 @@
                     <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-store mr-2"></i>Business
                     </a>
+                    <a href="/customer/profile" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-user-edit mr-2"></i>Edit Profile
+                    </a>
                     <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-question-circle mr-2"></i>Help
                     </a>
@@ -138,17 +110,34 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="bg-grey max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-800">
+    <div class="bg-gray-50 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-800">
         <!-- Welcome Section -->
-        <div class="bg- grey text-center mb-12">
-            <div class="bg-grey glass-effect rounded-3xl p-8 mb-8 hover-lift">
+        <div class="bg-white text-center mb-12">
+            <div class="bg-white glass-effect rounded-3xl p-8 mb-8 hover-lift shadow-lg">
+                <!-- Profile Picture for Authenticated Users -->
+                <div th:if="${isAuthenticated}" class="flex justify-center mb-6">
+                    <div class="relative">
+                        <div class="w-24 h-24 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg mx-auto">
+                            <img th:src="${user?.profilePicture ?: '/images/default-avatar.svg'}" 
+                                 alt="Profile Picture" 
+                                 class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                </div>
                 <h1 class="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
-                    <span class="gradient-text">Welcome to Your</span>
+                    <span class="gradient-text">Welcome</span>
+                    <span th:if="${isAuthenticated}" th:text="' ' + ${userName}" class="text-brand-600"></span>
+                    <span th:if="${!isAuthenticated}" class="text-brand-600">to Your</span>
                     <br>
                     <span class="text-black">Package Dashboard</span>
                 </h1>
                 <p class="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
-                    Track your packages, create quotes, and manage your shipments - all without needing an account!
+                    <span th:if="${isAuthenticated}">
+                        Track your packages, create quotes, and manage your shipments from your personal dashboard!
+                    </span>
+                    <span th:if="${!isAuthenticated}">
+                        Track your packages, create quotes, and manage your shipments - all without needing an account!
+                    </span>
                 </p>
                 <div class="max-w-2xl mx-auto">
                     <form class="flex flex-col sm:flex-row gap-4" action="/customer/track" method="post">
@@ -168,7 +157,7 @@
             <h2 class="text-4xl font-bold text-black mb-8 text-center">
                 <i class="fas fa-bolt mr-3 gradient-text"></i>Quick Actions
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <a href="/customer/track" class="group">
                     <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
                         <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
@@ -187,6 +176,15 @@
                         <p class="text-gray-300">Get instant shipping quotes for your packages</p>
                     </div>
                 </a>
+                <button onclick="openBookingModal()" class="group">
+                    <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
+                        <div class="text-6xl mb-4 text-green-500 group-hover:text-green-400 transition-colors duration-300">
+                            <i class="fas fa-shipping-fast"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-black mb-3">Book Service</h3>
+                        <p class="text-gray-300">Quick booking with saved profile information</p>
+                    </div>
+                </button>
                 <a href="/customer/packages" class="group">
                     <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
                         <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
@@ -313,13 +311,29 @@
             </div>
         </div>
 
+        <!-- Recent Packages Section for Authenticated Users -->
+        <div th:if="${isAuthenticated}" class="mb-12">
+            <h2 class="text-4xl font-bold text-black mb-8 text-center">
+                <i class="fas fa-boxes mr-3 gradient-text"></i>Your Recent Packages
+            </h2>
+            <div class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 rounded-2xl p-6 text-white">
+                <div class="text-center">
+                    <h3 class="text-2xl font-bold mb-4">Quick Package Access</h3>
+                    <p class="text-brand-200 mb-6">View and track all your packages in one place</p>
+                    <a href="/customer/packages" class="bg-white text-brand-600 px-8 py-4 rounded-full font-bold hover:bg-brand-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center">
+                        <i class="fas fa-boxes mr-2"></i>View All Packages
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- Contact Section -->
         <div class="text-center">
             <div class="glass-effect rounded-3xl p-8 hover-lift">
                 <h3 class="text-3xl font-bold text-black mb-6">Need Help?</h3>
                 <p class="text-xl text-gray-200 mb-8">Our customer support team is here to help you with any questions or concerns.</p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="/customer/help" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-reliable-700 hover:to-reliable-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                    <a href="/customer/help" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
                         <i class="fas fa-question-circle mr-2"></i>Help Center
                     </a>
                     <a href="/customer/contact" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-full font-bold hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">

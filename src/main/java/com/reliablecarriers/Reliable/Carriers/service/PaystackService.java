@@ -21,7 +21,7 @@ public interface PaystackService {
     /**
      * Create a payment request from existing payment
      */
-    PaystackRequest createPaymentRequest(Payment payment, String callbackUrl);
+    PaystackRequest createPaymentRequest(Payment payment, String callbackUrl, String redirectUrl);
     
     /**
      * Process payment verification and update payment status
@@ -34,14 +34,14 @@ public interface PaystackService {
     String generatePaymentReference();
     
     /**
-     * Convert amount to kobo (Paystack expects amount in kobo)
+     * Convert amount to cents (Paystack expects amount in cents for ZAR)
      */
-    BigDecimal convertToKobo(BigDecimal amount);
+    BigDecimal convertToCents(BigDecimal amount);
     
     /**
-     * Convert amount from kobo to naira
+     * Convert amount from cents to ZAR
      */
-    BigDecimal convertFromKobo(Long amountInKobo);
+    BigDecimal convertFromCents(Long amountInCents);
     
     /**
      * Get Paystack public key for frontend

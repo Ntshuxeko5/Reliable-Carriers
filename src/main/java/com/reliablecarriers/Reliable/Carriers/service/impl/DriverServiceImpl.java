@@ -7,7 +7,6 @@ import com.reliablecarriers.Reliable.Carriers.repository.ShipmentRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.VehicleRepository;
 import com.reliablecarriers.Reliable.Carriers.service.DriverService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -21,7 +20,6 @@ public class DriverServiceImpl implements DriverService {
     private final DriverLocationRepository driverLocationRepository;
     private final ShipmentRepository shipmentRepository;
 
-    @Autowired
     public DriverServiceImpl(UserRepository userRepository,
                            VehicleRepository vehicleRepository,
                            DriverLocationRepository driverLocationRepository,

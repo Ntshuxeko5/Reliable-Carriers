@@ -4,79 +4,287 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Quote - Reliable Carriers</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'brand': {
-                            50: '#fefce8',
-                            100: '#fef9c3',
-                            200: '#fef08a',
-                            300: '#fde047',
-                            400: '#facc15',
-                            500: '#dbb714',
-                            600: '#ca8a04',
-                            700: '#a16207',
-                            800: '#854d0e',
-                            900: '#713f12',
-                        },
-                        'brand-blue': {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#071c91',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="/css/tailwind-production.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Google Maps (loaded only if API key is configured) -->
-    <script th:if="${@environment.getProperty('google.maps.api.key')}" th:inline="javascript">
+    <script th:inline="javascript">
         (function(){
-            var key = /*[[${@environment.getProperty('google.maps.api.key')}]]*/ 'YOUR_API_KEY';
-            if (key && key !== 'your-google-maps-api-key') {
-                var s = document.createElement('script');
-                s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(key) + '&libraries=places&region=za';
-                s.async = true;
-                s.defer = true;
-                document.head.appendChild(s);
+            var key = /*[[${@environment.getProperty('google.maps.api.key')}]]*/ null;
+            console.log('Google Maps API key from server:', key);
+            console.log('Key type:', typeof key);
+            console.log('Key length:', key ? key.length : 'null');
+            
+            // Always try to load Google Maps with the configured key or fallback
+            var apiKey = key && key !== 'your-google-maps-api-key' && key !== '' && key !== null ? key : 'AIzaSyDLgjJj0Ou8dO1CHzKzJWtbP59QlafVgBY';
+            
+            console.log('Using API key:', apiKey.substring(0, 10) + '...');
+            
+            var s = document.createElement('script');
+            s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(apiKey) + '&libraries=places&region=za&callback=initGoogleMaps';
+            s.async = true;
+            s.defer = true;
+            s.onload = function() {
+                console.log('Google Maps script loaded successfully');
                 window.__MAPS_ENABLED__ = true;
-            } else {
+            };
+            s.onerror = function() {
+                console.error('Failed to load Google Maps script');
                 window.__MAPS_ENABLED__ = false;
-            }
+            };
+            document.head.appendChild(s);
         })();
     </script>
     <style>
+        /* Enhanced Glass Effect */
         .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
+        /* Enhanced Hover Effects */
         .hover-lift {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
         
         .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
         }
         
+        .hover-lift::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .hover-lift:hover::before {
+            left: 100%;
+        }
+        
+        /* Enhanced Gradient Text */
         .gradient-text {
-            background: linear-gradient(135deg, #fde047, #facc15);
+            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: gradient-shift 3s ease-in-out infinite;
+        }
+        
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        /* Modern Card Styles */
+        .modern-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .modern-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Enhanced Form Styling */
+        .form-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-input:focus {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* Service Option Cards */
+        .service-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+            border-radius: 16px;
+            border: 2px solid transparent;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: #0ea5e9;
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.2);
+        }
+        
+        .service-card.recommended {
+            border-color: #10b981;
+            background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
+        }
+        
+        .service-card.recommended::before {
+            content: 'RECOMMENDED';
+            position: absolute;
+            top: 10px;
+            right: -30px;
+            background: #10b981;
+            color: white;
+            padding: 4px 40px;
+            font-size: 12px;
+            font-weight: bold;
+            transform: rotate(45deg);
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+        }
+        
+        /* Enhanced Button Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        /* Loading Animation */
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Enhanced Map Container */
+        .map-container {
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Quote Result Animation */
+        .quote-result {
+            animation: slideInUp 0.6s ease-out;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Enhanced Alert Styles */
+        .alert {
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 10px 0;
+            font-weight: 500;
+            animation: slideInRight 0.4s ease-out;
+        }
+        
+        .alert.success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        
+        .alert.error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        
+        .alert.info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Responsive Design Enhancements */
+        @media (max-width: 768px) {
+            .hover-lift:hover {
+                transform: translateY(-4px) scale(1.01);
+            }
+            
+            .service-card:hover {
+                transform: translateY(-4px) scale(1.01);
+            }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #0284c7 0%, #075985 100%);
         }
     </style>
 
@@ -169,7 +377,7 @@
                     <div>
                <label class="block text-gray-800 font-medium mb-2">Pickup Address</label>
                <input id="pickupAddress" type="text" 
-                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
+                   class="w-full px-6 py-4 form-input text-gray-900 placeholder-gray-400 focus:outline-none transition-all duration-300" 
                                placeholder="Enter pickup address" required>
                                     <input type="hidden" id="pickupLat" />
                                     <input type="hidden" id="pickupLng" />
@@ -177,7 +385,7 @@
                     <div>
                <label class="block text-gray-800 font-medium mb-2">Delivery Address</label>
                <input id="deliveryAddress" type="text" 
-                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
+                   class="w-full px-6 py-4 form-input text-gray-900 placeholder-gray-400 focus:outline-none transition-all duration-300" 
                                placeholder="Enter delivery address" required>
                                     <input type="hidden" id="deliveryLat" />
                                     <input type="hidden" id="deliveryLng" />
@@ -212,6 +420,48 @@
                            placeholder="you@example.com" required>
                 </div>
                 
+                <!-- Insurance Options -->
+                <div class="mb-6">
+                    <label class="block text-gray-800 font-medium mb-3">Insurance Coverage (Optional)</label>
+                    <div class="space-y-3">
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-brand-400 transition-all duration-300">
+                            <input type="radio" name="insurance" value="none" class="mr-3 text-brand-500" checked>
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-800">No Insurance</div>
+                                <div class="text-sm text-gray-600">Standard coverage included</div>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">R0.00</div>
+                        </label>
+                        
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-brand-400 transition-all duration-300">
+                            <input type="radio" name="insurance" value="basic" class="mr-3 text-brand-500">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-800">Basic Coverage</div>
+                                <div class="text-sm text-gray-600">Up to R1,000 coverage</div>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">R15.00</div>
+                        </label>
+                        
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-brand-400 transition-all duration-300">
+                            <input type="radio" name="insurance" value="standard" class="mr-3 text-brand-500">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-800">Standard Coverage</div>
+                                <div class="text-sm text-gray-600">Up to R5,000 coverage</div>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">R35.00</div>
+                        </label>
+                        
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-brand-400 transition-all duration-300">
+                            <input type="radio" name="insurance" value="premium" class="mr-3 text-brand-500">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-800">Premium Coverage</div>
+                                <div class="text-sm text-gray-600">Up to R10,000 coverage</div>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">R65.00</div>
+                        </label>
+                    </div>
+                </div>
+                
                 <div class="mb-6">
                     <label class="flex items-center text-gray-800">
                         <input class="form-check-input mr-3" type="checkbox" value="1" id="useCurrentLocation">
@@ -221,11 +471,11 @@
                 
                 <div class="flex flex-col sm:flex-row gap-4 mb-8">
             <button type="button" onclick="previewRoute()" 
-                class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                class="btn-primary px-8 py-4 rounded-full font-bold flex items-center justify-center hover-lift">
                         <i class="fas fa-map mr-2"></i>Preview Route
                     </button>
             <button type="submit" 
-                class="bg-gradient-to-r from-brand-500 to-brand-600 text-white px-8 py-4 rounded-full font-bold hover:from-brand-600 hover:to-brand-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                class="btn-primary px-8 py-4 rounded-full font-bold flex items-center justify-center hover-lift">
                         <i class="fas fa-magic mr-2"></i>Get Quote
                     </button>
                     <a href="/customer/dashboard" 
@@ -258,7 +508,7 @@
                     <!-- Service Options -->
                     <div id="serviceOptions" class="mb-6">
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">Choose Your Service:</h4>
-                        <div id="serviceOptionsList" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div id="serviceOptionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <!-- Service options will be populated here -->
                         </div>
                     </div>
@@ -471,13 +721,41 @@
         let currentQuote = null;
         let selectedService = null;
 
+        // Global callback function for Google Maps API
+        function initGoogleMaps() {
+            console.log('Google Maps API loaded successfully');
+            initMap();
+        }
+
+        // Fallback function to load Google Maps with hardcoded key
+        function loadGoogleMapsFallback() {
+            console.log('Attempting to load Google Maps with fallback method...');
+            const fallbackKey = 'AIzaSyDLgjJj0Ou8dO1CHzKzJWtbP59QlafVgBY';
+            var s = document.createElement('script');
+            s.src = 'https://maps.googleapis.com/maps/api/js?key=' + fallbackKey + '&libraries=places&region=za&callback=initGoogleMaps';
+            s.async = true;
+            s.defer = true;
+            s.onload = function() {
+                console.log('Google Maps fallback script loaded successfully');
+                window.__MAPS_ENABLED__ = true;
+            };
+            s.onerror = function() {
+                console.error('Failed to load Google Maps fallback script');
+            };
+            document.head.appendChild(s);
+        }
+
         function initMap() {
             if (!window.__MAPS_ENABLED__ || typeof google === 'undefined' || !google.maps) {
+                console.log('Google Maps not available, using fallback methods');
                 // Maps not available; hide preview UI gracefully
                 const preview = document.getElementById('mapPreview');
                 if (preview) preview.style.display = 'none';
                 return;
             }
+            
+            console.log('Initializing Google Maps...');
+            
             // Initialize map centered on Johannesburg
             map = new google.maps.Map(document.getElementById('map'), {
                 center: { lat: -26.2041, lng: 28.0473 },
@@ -506,6 +784,7 @@
                 if (place.geometry) {
                     document.getElementById('pickupLat').value = place.geometry.location.lat();
                     document.getElementById('pickupLng').value = place.geometry.location.lng();
+                    console.log('Pickup coordinates set:', place.geometry.location.lat(), place.geometry.location.lng());
                 }
             });
 
@@ -514,66 +793,230 @@
                 if (place.geometry) {
                     document.getElementById('deliveryLat').value = place.geometry.location.lat();
                     document.getElementById('deliveryLng').value = place.geometry.location.lng();
+                    console.log('Delivery coordinates set:', place.geometry.location.lat(), place.geometry.location.lng());
                 }
             });
+            
+            console.log('Google Maps initialization completed');
         }
 
         function previewRoute() {
-            if (!window.__MAPS_ENABLED__ || typeof google === 'undefined' || !google.maps) {
-                alert('Map preview is unavailable (missing Google Maps API key). You can still get a quote.');
-                return;
-            }
             const pickup = document.getElementById('pickupAddress').value;
             const delivery = document.getElementById('deliveryAddress').value;
             
             if (!pickup || !delivery) {
-                alert('Please enter both pickup and delivery addresses');
+                showAlert('Please enter both pickup and delivery addresses', 'error');
                 return;
             }
-
+            
+            console.log('Previewing route from', pickup, 'to', delivery);
+            
+            // Check if Google Maps is available
+            if (window.__MAPS_ENABLED__ && typeof google !== 'undefined' && google.maps && directionsService && directionsRenderer) {
+                console.log('Using Google Maps for route calculation');
+                // Use Google Maps for accurate distance and route calculation
+                calculateRouteWithGoogleMaps(pickup, delivery);
+            } else {
+                console.log('Google Maps not available, using fallback calculation');
+                // Fallback to estimated distance calculation
+                const estimatedDistance = calculateEstimatedDistance(pickup, delivery);
+                
+                // Show route information
+                document.getElementById('routeDistance').textContent = estimatedDistance.toFixed(1);
+                document.getElementById('routeDuration').textContent = estimateDuration(estimatedDistance);
+                document.getElementById('mapPreview').style.display = 'block';
+                
+                showAlert(`Estimated distance: ${estimatedDistance.toFixed(1)} km. Duration: ${estimateDuration(estimatedDistance)} (Using fallback calculation)`, 'info');
+            }
+        }
+        
+        function calculateRouteWithGoogleMaps(pickup, delivery) {
+            if (!directionsService || !directionsRenderer) {
+                showAlert('Google Maps not properly initialized', 'error');
+                return;
+            }
+            
             const request = {
                 origin: pickup,
                 destination: delivery,
                 travelMode: google.maps.TravelMode.DRIVING,
-                unitSystem: google.maps.UnitSystem.METRIC
+                unitSystem: google.maps.UnitSystem.METRIC,
+                avoidHighways: false,
+                avoidTolls: false
             };
-
+            
             directionsService.route(request, function(result, status) {
-                if (status === 'OK') {
+                if (status === google.maps.DirectionsStatus.OK) {
+                    // Display the route on the map
                     directionsRenderer.setDirections(result);
                     
+                    // Get distance and duration from the result
                     const route = result.routes[0];
                     const leg = route.legs[0];
+                    const distance = leg.distance.value / 1000; // Convert to km
+                    const duration = leg.duration.value; // Duration in seconds
                     
-                    document.getElementById('routeDistance').textContent = (leg.distance.value / 1000).toFixed(1);
-                    document.getElementById('routeDuration').textContent = leg.duration.text;
+                    // Update the display
+                    document.getElementById('routeDistance').textContent = distance.toFixed(1);
+                    document.getElementById('routeDuration').textContent = formatDuration(duration);
                     document.getElementById('mapPreview').style.display = 'block';
                     
-                    // Update hidden coordinate fields
-                    document.getElementById('pickupLat').value = leg.start_location.lat();
-                    document.getElementById('pickupLng').value = leg.start_location.lng();
-                    document.getElementById('deliveryLat').value = leg.end_location.lat();
-                    document.getElementById('deliveryLng').value = leg.end_location.lng();
+                    // Show success message
+                    showAlert(`Route calculated: ${distance.toFixed(1)} km. Duration: ${formatDuration(duration)}`, 'success');
+                    
+                    // Update hidden form fields with coordinates
+                    if (leg.start_location) {
+                        document.getElementById('pickupLat').value = leg.start_location.lat();
+                        document.getElementById('pickupLng').value = leg.start_location.lng();
+                    }
+                    if (leg.end_location) {
+                        document.getElementById('deliveryLat').value = leg.end_location.lat();
+                        document.getElementById('deliveryLng').value = leg.end_location.lng();
+                    }
                 } else {
-                    alert('Could not calculate route: ' + status);
+                    // Fallback to estimated calculation if Google Maps fails
+                    console.error('Google Maps route calculation failed:', status);
+                    const estimatedDistance = calculateEstimatedDistance(pickup, delivery);
+                    
+                    document.getElementById('routeDistance').textContent = estimatedDistance.toFixed(1);
+                    document.getElementById('routeDuration').textContent = estimateDuration(estimatedDistance);
+                    document.getElementById('mapPreview').style.display = 'block';
+                    
+                    showAlert(`Estimated distance: ${estimatedDistance.toFixed(1)} km. Duration: ${estimateDuration(estimatedDistance)} (Google Maps unavailable)`, 'info');
                 }
             });
+        }
+        
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (hours > 0) {
+                return hours + 'h ' + minutes + 'm';
+            } else {
+                return minutes + 'm';
+            }
+        }
+        
+        function calculateEstimatedDistance(address1, address2) {
+            // Enhanced distance estimation with more South African locations
+            const lower1 = address1.toLowerCase();
+            const lower2 = address2.toLowerCase();
+            
+            // Major cities array for same-city detection
+            const majorCities = [
+                'johannesburg', 'jhb', 'pretoria', 'cape town', 'durban', 'sandton', 'midrand', 'soweto',
+                'centurion', 'randburg', 'roodepoort', 'kempton park', 'boksburg', 'benoni', 'germiston',
+                'alberton', 'krugersdorp', 'fourways', 'rosebank', 'melville', 'parktown', 'houghton',
+                'bedfordview', 'edenvale', 'brakpan', 'springs', 'katlehong', 'vanderbijlpark', 'vereeniging',
+                'port elizabeth', 'bloemfontein', 'nelspruit', 'polokwane', 'kimberley', 'richards bay',
+                'east london', 'george'
+            ];
+            
+            // Check for same city
+            for (const city of majorCities) {
+                if (lower1.includes(city) && lower2.includes(city)) {
+                    return 10.0; // Intra-city distance
+                }
+            }
+            
+            // Specific inter-city distances (more accurate)
+            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('pretoria')) return 55.0;
+            if (lower1.includes('pretoria') && (lower2.includes('johannesburg') || lower2.includes('jhb'))) return 55.0;
+            
+            if (lower1.includes('sandton') && lower2.includes('midrand')) return 20.0;
+            if (lower1.includes('midrand') && lower2.includes('sandton')) return 20.0;
+            
+            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('soweto')) return 25.0;
+            if (lower1.includes('soweto') && (lower2.includes('johannesburg') || lower2.includes('jhb'))) return 25.0;
+            
+            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('sandton')) return 15.0;
+            if (lower1.includes('sandton') && (lower2.includes('johannesburg') || lower2.includes('jhb'))) return 15.0;
+            
+            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('centurion')) return 45.0;
+            if (lower1.includes('centurion') && (lower2.includes('johannesburg') || lower2.includes('jhb'))) return 45.0;
+            
+            if (lower1.includes('pretoria') && lower2.includes('centurion')) return 15.0;
+            if (lower1.includes('centurion') && lower2.includes('pretoria')) return 15.0;
+            
+            // Cross-province distances
+            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('cape town')) return 1400.0;
+            if ((lower2.includes('johannesburg') || lower2.includes('jhb')) && lower1.includes('cape town')) return 1400.0;
+            
+            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('durban')) return 550.0;
+            if ((lower2.includes('johannesburg') || lower2.includes('jhb')) && lower1.includes('durban')) return 550.0;
+            
+            // Default fallback based on region
+            if (lower1.includes('gauteng') || lower2.includes('gauteng')) return 30.0;
+            
+            return 50.0; // Default for unknown routes
+        }
+        
+        function estimateDuration(distanceKm) {
+            // Estimate travel time based on distance
+            // Assuming average speed of 40 km/h in city traffic
+            const hours = distanceKm / 40;
+            if (hours < 1) {
+                return Math.round(hours * 60) + ' min';
+            } else {
+                const wholeHours = Math.floor(hours);
+                const minutes = Math.round((hours - wholeHours) * 60);
+                return wholeHours + 'h ' + minutes + 'm';
+            }
+        }
+
+        // Alert system
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${
+                type === 'success' ? 'bg-green-500 text-white' : 
+                type === 'error' ? 'bg-red-500 text-white' : 
+                type === 'info' ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white'
+            }`;
+            alertDiv.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
         }
 
         function displayServiceOptions(services) {
             const container = document.getElementById('serviceOptionsList');
             container.innerHTML = '';
             
+            // Check if services is defined and is an array
+            if (!services || !Array.isArray(services)) {
+                console.error('Services is not defined or not an array:', services);
+                container.innerHTML = '<div class="text-center text-gray-500 p-4">No service options available</div>';
+                return;
+            }
+            
+            if (services.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 p-4">No service options available</div>';
+                return;
+            }
+            
+            console.log('Displaying', services.length, 'service options');
+            
             services.forEach((service, index) => {
                 const serviceCard = document.createElement('div');
-                serviceCard.className = `bg-white rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 border ${service.isRecommended ? 'border-brand-400 ring-1 ring-brand-200' : 'border-gray-100'}`;
+                serviceCard.className = `service-card p-6 cursor-pointer hover-lift ${service.isRecommended ? 'recommended' : ''}`;
                 serviceCard.innerHTML = `
                     <div class="text-center text-gray-900">
-                        <div class="text-2xl font-bold text-gray-900 mb-2">R${service.cost}</div>
-                        <div class="text-sm text-gray-700 mb-2">${service.serviceType}</div>
-                        <div class="text-xs text-gray-500 mb-3">${service.description}</div>
-                        <div class="text-xs text-brand-600">${service.estimatedDeliveryTime}</div>
-                        ${service.isRecommended ? '<div class="text-xs text-brand-600 font-bold mt-1">RECOMMENDED</div>' : ''}
+                        <div class="text-3xl font-bold text-gray-900 mb-3">R${service.cost}</div>
+                        <div class="text-lg font-semibold text-gray-800 mb-2">${service.serviceType}</div>
+                        <div class="text-sm text-gray-600 mb-4">${service.description}</div>
+                        <div class="text-sm text-blue-600 font-medium">${service.estimatedDeliveryTime}</div>
+                        ${service.isRecommended ? '<div class="text-xs text-green-600 font-bold mt-2 bg-green-100 px-2 py-1 rounded-full inline-block">RECOMMENDED</div>' : ''}
                     </div>
                 `;
                 
@@ -624,16 +1067,47 @@
 
         async function processPaystackPayment() {
             try {
+                const selectedInsurance = document.querySelector('input[name="insurance"]:checked').value;
+                const insuranceCosts = {
+                    'none': 0,
+                    'basic': 15,
+                    'standard': 35,
+                    'premium': 65
+                };
+                const insuranceCost = insuranceCosts[selectedInsurance] || 0;
+                const totalAmount = selectedService.cost + insuranceCost;
+                
+                // Use authenticated user's email if available, otherwise use form email
+                let userEmail = document.getElementById('senderEmail').value;
+                const jwt = sessionStorage.getItem('jwtToken') || sessionStorage.getItem('token');
+                if (jwt) {
+                    // Try to get user email from JWT token or use a default
+                    try {
+                        const payload = JSON.parse(atob(jwt.split('.')[1]));
+                        if (payload.sub || payload.email) {
+                            userEmail = payload.sub || payload.email;
+                        }
+                    } catch (e) {
+                        // Keep form email if JWT parsing fails
+                    }
+                }
+                
                 const paymentData = {
                     shipmentId: currentQuote.quoteId,
-                    amount: selectedService.cost,
-                    email: document.getElementById('senderEmail').value,
-                    serviceType: selectedService.serviceType
+                    amount: totalAmount,
+                    email: userEmail,
+                    serviceType: selectedService.serviceType,
+                    insuranceType: selectedInsurance,
+                    insuranceCost: insuranceCost
                 };
-                
+
+                // Attach Authorization header if JWT token present (logged-in user)
+                const headers = { 'Content-Type': 'application/json' };
+                if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
+
                 const response = await fetch('/api/paystack/initialize', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify(paymentData)
                 });
                 
@@ -675,9 +1149,14 @@
                     paymentMethod: 'EFT'
                 };
                 
+                // Include Authorization header for authenticated users
+                const jwtForShipment = sessionStorage.getItem('jwtToken') || sessionStorage.getItem('token');
+                const shipmentHeaders = { 'Content-Type': 'application/json' };
+                if (jwtForShipment) shipmentHeaders['Authorization'] = 'Bearer ' + jwtForShipment;
+
                 const response = await fetch(`/api/customer/quote/${currentQuote.quoteId}/create-shipment`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: shipmentHeaders,
                     body: JSON.stringify(shipmentData)
                 });
                 
@@ -759,6 +1238,15 @@
             submitBtn.disabled = true;
             
             const useLoc = document.getElementById('useCurrentLocation').checked;
+            // Get selected insurance
+            const selectedInsurance = document.querySelector('input[name="insurance"]:checked').value;
+            const insuranceCosts = {
+                'none': 0,
+                'basic': 15,
+                'standard': 35,
+                'premium': 65
+            };
+            
             const payload = {
                 senderName: 'Customer',
                 senderEmail: document.getElementById('senderEmail').value,
@@ -775,7 +1263,9 @@
                 deliveryZipCode: '0001',
                 deliveryCountry: 'South Africa',
                 weight: parseFloat(document.getElementById('weight').value),
-                serviceType: 'OVERNIGHT'
+                serviceType: 'OVERNIGHT',
+                insuranceType: selectedInsurance,
+                insuranceCost: insuranceCosts[selectedInsurance]
             };
             
             // Add coordinates if available
@@ -803,29 +1293,44 @@
                     body: JSON.stringify(payload)
                 });
                 
-                const responseData = await resp.json();
+                if (!resp.ok) throw new Error('Failed to get quote');
                 
-                if (!resp.ok) {
-                    throw new Error(responseData.error || 'Failed to get quote');
-                }
+                const response = await resp.json();
+                console.log('Quote response data:', response);
                 
-                if (responseData.success && responseData.data) {
-                    currentQuote = responseData.data;
-                    
-                    // Display service options
-                    displayServiceOptions(currentQuote.availableServices);
-                    
-                    // Show quote results
-                    document.getElementById('quoteResult').style.display = 'block';
-                    
-                    // Scroll to results
-                    document.getElementById('quoteResult').scrollIntoView({ behavior: 'smooth' });
+                // Handle different response structures
+                let data, availableServices;
+                if (response.success && response.data) {
+                    // Wrapped response structure
+                    data = response.data;
+                    availableServices = data.availableServices;
+                    console.log('Using wrapped response structure');
                 } else {
-                    throw new Error(responseData.error || 'Invalid response format');
+                    // Direct response structure
+                    data = response;
+                    availableServices = data.availableServices;
+                    console.log('Using direct response structure');
                 }
+                
+                console.log('Final data object:', data);
+                console.log('Final availableServices:', availableServices);
+                console.log('AvailableServices type:', typeof availableServices);
+                console.log('AvailableServices is array:', Array.isArray(availableServices));
+                
+                currentQuote = data;
+                
+                // Display service options
+                displayServiceOptions(availableServices);
+                
+                // Show quote results
+                document.getElementById('quoteResult').style.display = 'block';
+                
+                // Scroll to results
+                document.getElementById('quoteResult').scrollIntoView({ behavior: 'smooth' });
                 
             } catch (e) {
                 console.error('Quote creation error:', e);
+                console.error('Error details:', e.message, e.stack);
                 alert('Could not create quote: ' + e.message);
             } finally {
                 submitBtn.innerHTML = originalText;
@@ -838,7 +1343,35 @@
 
         // Initialize when page loads
         window.onload = function() {
-            initMap();
+            console.log('Page loaded, checking Google Maps availability...');
+            console.log('__MAPS_ENABLED__:', window.__MAPS_ENABLED__);
+            console.log('google object:', typeof google);
+            
+            // Try to initialize immediately
+            if (window.__MAPS_ENABLED__ && typeof google !== 'undefined' && google.maps) {
+                console.log('Google Maps available immediately');
+                initMap();
+            } else {
+                console.log('Google Maps not immediately available, waiting...');
+                // Wait a bit for Google Maps to load
+                setTimeout(function() {
+                    console.log('After timeout - __MAPS_ENABLED__:', window.__MAPS_ENABLED__);
+                    console.log('After timeout - google object:', typeof google);
+                    if (window.__MAPS_ENABLED__ && typeof google !== 'undefined' && google.maps) {
+                        console.log('Google Maps became available after timeout');
+                        initMap();
+                    } else {
+                        console.log('Google Maps still not available after timeout');
+                        // Try to load Google Maps with a hardcoded key as fallback
+                        loadGoogleMapsFallback();
+                    }
+                }, 3000);
+            }
+            // Prefill sender email if user is logged in
+            try {
+                const userEmail = sessionStorage.getItem('userEmail') || sessionStorage.getItem('pending2faEmail');
+                if (userEmail) document.getElementById('senderEmail').value = userEmail;
+            } catch (e) {}
         };
     </script>
 </body>

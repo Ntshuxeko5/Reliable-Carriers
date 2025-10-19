@@ -195,7 +195,21 @@ public class WebController {
     }
 
     @GetMapping("/payment")
-    public String payment() {
+    public String payment(Model model) {
+        // Get current user information
+        try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
+                String email = auth.getName();
+                // You can add user lookup here if needed
+                model.addAttribute("userEmail", email);
+                model.addAttribute("isAuthenticated", true);
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "payment";
     }
     
@@ -208,8 +222,14 @@ public class WebController {
     public String customerDashboard() {
         return "customer/dashboard";
     }
+    
     @GetMapping("/payment-success")
     public String paymentSuccess() {
         return "payment-success";
+    }
+
+    @GetMapping("/booking-confirmation")
+    public String bookingConfirmation() {
+        return "booking-confirmation";
     }
 }

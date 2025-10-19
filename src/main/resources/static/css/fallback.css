@@ -1,0 +1,218 @@
+/* Fallback CSS for Reliable Carriers */
+/* This ensures basic styling works even if Tailwind fails to load */
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f9fafb;
+    color: #374151;
+    line-height: 1.6;
+}
+
+/* Header styles */
+header {
+    background: linear-gradient(135deg, #075985 0%, #0c4a6e 100%);
+    color: white;
+    padding: 1rem 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+nav {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+nav .flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: #fde047;
+}
+
+/* Button styles */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #ca8a04 0%, #a16207 100%);
+    transform: translateY(-1px);
+}
+
+/* Container styles */
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Card styles */
+.card {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin: 1rem 0;
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+}
+
+/* Utility classes */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+
+.p-4 { padding: 1rem; }
+.p-6 { padding: 1.5rem; }
+.p-8 { padding: 2rem; }
+
+.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+.py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+.hidden { display: none; }
+.block { display: block; }
+
+/* Color utilities */
+.text-white { color: white; }
+.text-gray-600 { color: #4b5563; }
+.text-gray-800 { color: #1f2937; }
+
+.bg-white { background-color: white; }
+.bg-gray-50 { background-color: #f9fafb; }
+.bg-gray-100 { background-color: #f3f4f6; }
+
+/* Reliable brand colors */
+.text-reliable-600 { color: #0284c7; }
+.text-reliable-yellow-400 { color: #facc15; }
+
+.bg-reliable-600 { background-color: #0284c7; }
+.bg-reliable-700 { background-color: #0369a1; }
+.bg-reliable-800 { background-color: #075985; }
+.bg-reliable-900 { background-color: #0c4a6e; }
+
+.from-reliable-800 { background-color: #075985; }
+.to-reliable-900 { background-color: #0c4a6e; }
+
+.hover\:text-reliable-yellow-300:hover { color: #fde047; }
+
+/* Responsive design */
+@media (max-width: 768px) {
+    nav .hidden { display: none; }
+    .container { padding: 0 0.5rem; }
+    .card { padding: 1rem; }
+}
+
+/* Animation utilities */
+.transition-colors { transition: color 0.3s; }
+.duration-300 { transition-duration: 300ms; }
+
+/* Font Awesome fallback */
+.fas::before {
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+}
+
+/* Payment specific styles */
+.payment-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.payment-button {
+    width: 100%;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.payment-button:hover {
+    background: linear-gradient(135deg, #ca8a04 0%, #a16207 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(234, 179, 8, 0.4);
+}
+
+.payment-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}

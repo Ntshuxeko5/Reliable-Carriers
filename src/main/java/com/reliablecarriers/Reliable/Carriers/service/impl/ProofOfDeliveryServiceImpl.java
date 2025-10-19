@@ -7,19 +7,16 @@ import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
 import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
 import com.reliablecarriers.Reliable.Carriers.service.ProofOfDeliveryService;
 import com.reliablecarriers.Reliable.Carriers.service.ShipmentService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class ProofOfDeliveryServiceImpl implements ProofOfDeliveryService {
@@ -42,7 +39,7 @@ public class ProofOfDeliveryServiceImpl implements ProofOfDeliveryService {
     @Value("${app.pod.id-verification.enabled:true}")
     private boolean idVerificationEnabled;
 
-    @Autowired
+    // constructor injection used; removed unnecessary @Autowired
     public ProofOfDeliveryServiceImpl(ProofOfDeliveryRepository podRepository,
                                     ShipmentRepository shipmentRepository,
                                     UserRepository userRepository,

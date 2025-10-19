@@ -6,7 +6,7 @@ import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+// removed unused import
 
 public class MovingServiceResponse {
     

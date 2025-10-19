@@ -4,6 +4,7 @@ import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
 import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.model.MovingService;
+import com.reliablecarriers.Reliable.Carriers.model.Booking;
 
 import java.util.Date;
 
@@ -53,6 +54,13 @@ public interface NotificationService {
     // Custom notifications
     void sendCustomEmailNotification(String to, String subject, String message);
     void sendCustomSmsNotification(String phoneNumber, String message);
+    
+    // Booking-related notifications
+    void sendBookingConfirmationNotification(Booking booking);
+    void sendBookingCancellationNotification(Booking booking);
+    void sendBookingStatusUpdateNotification(Booking booking, String oldStatus, String newStatus);
+    void sendBookingPaymentConfirmationNotification(Booking booking);
+    void sendBookingPaymentFailedNotification(Booking booking);
     
     // Notification preferences
     void updateNotificationPreferences(User user, boolean emailEnabled, boolean smsEnabled);

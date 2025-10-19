@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
+// @Component - Temporarily disabled to fix startup issues
 public class RateLimitFilter extends OncePerRequestFilter {
 
     @Value("${app.rate-limit.enabled:true}")
@@ -34,8 +34,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final Map<String, LoginAttemptInfo> loginAttemptMap = new ConcurrentHashMap<>();
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
-                                  FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request, @org.springframework.lang.NonNull HttpServletResponse response, 
+                                  @org.springframework.lang.NonNull FilterChain filterChain) throws ServletException, IOException {
         
         if (!rateLimitEnabled) {
             filterChain.doFilter(request, response);

@@ -134,15 +134,18 @@
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Name:</span>
-                                <span class="font-medium" id="customerName">John Doe</span>
+                                <span class="font-medium" id="customerName">
+                                    <span th:if="${isAuthenticated}">Authenticated User</span>
+                                    <span th:if="${!isAuthenticated}">Guest User</span>
+                                </span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Email:</span>
-                                <span class="font-medium" id="customerEmail">john@example.com</span>
+                                <span class="font-medium" id="customerEmail" th:text="${userEmail ?: 'Not provided'}">Not provided</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Phone:</span>
-                                <span class="font-medium" id="customerPhone">+234 801 234 5678</span>
+                                <span class="font-medium" id="customerPhone">Not provided</span>
                             </div>
                         </div>
                     </div>
@@ -343,10 +346,16 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        showPaymentSuccess({
+                        // Redirect to payment success page with tracking information
+                        const params = new URLSearchParams({
                             reference: reference,
-                            transaction: 'TXN_' + Date.now()
+                            tracking: data.trackingNumber || '',
+                            amount: data.amount || '',
+                            service: data.serviceType || '',
+                            email: data.customerEmail || '',
+                            status: data.paymentStatus || 'COMPLETED'
                         });
+                        window.location.href = `/payment-success?${params.toString()}`;
                     } else {
                         showPaymentFailed();
                     }

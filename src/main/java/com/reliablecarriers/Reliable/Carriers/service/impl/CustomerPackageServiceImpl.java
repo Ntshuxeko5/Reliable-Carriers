@@ -9,6 +9,7 @@ import com.reliablecarriers.Reliable.Carriers.repository.ShipmentRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.ShipmentTrackingRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.VehicleRepository;
 import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
+import com.reliablecarriers.Reliable.Carriers.service.GoogleMapsService;
 import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
 import com.reliablecarriers.Reliable.Carriers.service.PricingService;
 import com.reliablecarriers.Reliable.Carriers.service.UserService;
@@ -29,6 +30,7 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
     private final UserService userService;
     private final NotificationService notificationService;
     private final PricingService pricingService;
+    private final GoogleMapsService googleMapsService;
     
     // In-memory storage for quotes (in production, this should be in a database)
     private final Map<String, QuoteResponse> quoteStorage = new ConcurrentHashMap<>();
@@ -40,13 +42,15 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
                                     VehicleRepository vehicleRepository,
                                     UserService userService,
                                     NotificationService notificationService,
-                                    PricingService pricingService) {
+                                    PricingService pricingService,
+                                    @Autowired(required = false) GoogleMapsService googleMapsService) {
         this.shipmentRepository = shipmentRepository;
         this.trackingRepository = trackingRepository;
         this.vehicleRepository = vehicleRepository;
         this.userService = userService;
         this.notificationService = notificationService;
         this.pricingService = pricingService;
+        this.googleMapsService = googleMapsService;
     }
 
     @Override
@@ -94,11 +98,21 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
             QuoteResponse quote = new QuoteResponse();
             quote.setQuoteId(quoteId);
             quote.setTrackingNumber("TEMP_" + quoteId); // Temporary tracking number
-            quote.setTotalCost(recommendedService.getCost());
-            quote.setBaseCost(calculateBaseCost(request));
-            quote.setServiceFee(calculateServiceFee(request, recommendedService.getServiceType()));
-            quote.setInsuranceFee(BigDecimal.ZERO); // Default no insurance
-            quote.setFuelSurcharge(calculateFuelSurcharge(request));
+            
+            // Calculate all fees
+            BigDecimal baseCost = calculateBaseCost(request);
+            BigDecimal serviceFee = calculateServiceFee(request, recommendedService.getServiceType());
+            BigDecimal insuranceFee = calculateInsuranceFee(request);
+            BigDecimal fuelSurcharge = calculateFuelSurcharge(request);
+            
+            // Calculate total cost including insurance
+            BigDecimal totalCost = baseCost.add(serviceFee).add(insuranceFee).add(fuelSurcharge);
+            
+            quote.setTotalCost(totalCost);
+            quote.setBaseCost(baseCost);
+            quote.setServiceFee(serviceFee);
+            quote.setInsuranceFee(insuranceFee);
+            quote.setFuelSurcharge(fuelSurcharge);
             quote.setServiceType(recommendedService.getServiceType());
             quote.setEstimatedDeliveryTime(recommendedService.getEstimatedDeliveryTime());
             quote.setEstimatedDeliveryDate(calculateEstimatedDeliveryDate(recommendedService.getServiceType()));
@@ -471,6 +485,16 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
                 false
             ));
             
+            // Moving service options
+            BigDecimal movingCost = pricingService.calculateMovingServicePrice(ServiceType.FURNITURE, estimateDistanceKm(request));
+            options.add(new QuoteResponse.ServiceOption(
+                ServiceType.FURNITURE, 
+                movingCost, 
+                "3-5 business days", 
+                "Professional moving service with insurance", 
+                false
+            ));
+            
             System.out.println("Service options calculated: " + options.size());
             return options;
             
@@ -499,6 +523,15 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
                 new BigDecimal("140.00"), 
                 "1-2 business days", 
                 "Fastest delivery option", 
+                false
+            ));
+            
+            // Moving service fallback
+            fallbackOptions.add(new QuoteResponse.ServiceOption(
+                ServiceType.FURNITURE, 
+                new BigDecimal("200.00"), 
+                "3-5 business days", 
+                "Professional moving service with insurance", 
                 false
             ));
             
@@ -535,8 +568,43 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
         BigDecimal base = calculateBaseCost(request);
         return base.multiply(new BigDecimal("0.05")).setScale(2, java.math.RoundingMode.HALF_UP);
     }
+    
+    private BigDecimal calculateInsuranceFee(CustomerPackageRequest request) {
+        // Calculate insurance fee based on request
+        if (request.getInsuranceCost() != null) {
+            return request.getInsuranceCost();
+        }
+        
+        // Default insurance calculation based on insurance type
+        String insuranceType = request.getInsuranceType();
+        if (insuranceType == null || "none".equals(insuranceType)) {
+            return BigDecimal.ZERO;
+        }
+        
+        switch (insuranceType) {
+            case "basic": return new BigDecimal("15.00");
+            case "standard": return new BigDecimal("35.00");
+            case "premium": return new BigDecimal("65.00");
+            default: return BigDecimal.ZERO;
+        }
+    }
 
     private double estimateDistanceKm(CustomerPackageRequest request) {
+        // Try Google Maps API first if addresses are available and service is configured
+        if (googleMapsService != null && request.getPickupAddress() != null && request.getDeliveryAddress() != null) {
+            try {
+                GoogleMapsService.DistanceResult result = googleMapsService.calculateDistance(
+                    request.getPickupAddress(), 
+                    request.getDeliveryAddress()
+                );
+                if (result != null) {
+                    return result.getDistanceKm();
+                }
+            } catch (Exception e) {
+                System.err.println("Google Maps API call failed, falling back to other methods: " + e.getMessage());
+            }
+        }
+        
         // Haversine if coords present; otherwise approximate within Gauteng (Johannesburg-centric)
         if (request.getPickupLatitude() != null && request.getPickupLongitude() != null 
                 && request.getDeliveryLatitude() != null && request.getDeliveryLongitude() != null) {

@@ -4,12 +4,11 @@ import com.reliablecarriers.Reliable.Carriers.service.AuditService;
 import com.reliablecarriers.Reliable.Carriers.service.CustomUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureException;
+import org.springframework.lang.NonNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,15 +25,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Value("${jwt.secret:reliablecarrierssecretkey}")
     private String jwtSecret;
 
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
 
-    @Autowired
-    private AuditService auditService;
+    private final AuditService auditService;
+
+    public JwtAuthenticationFilter(CustomUserDetailsService userDetailsService, AuditService auditService) {
+        this.userDetailsService = userDetailsService;
+        this.auditService = auditService;
+    }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
-                                  FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         
         try {
             final String authHeader = request.getHeader("Authorization");
@@ -61,14 +63,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         "JWT authentication successful for user: " + userEmail);
                 }
             }
-        } catch (SignatureException e) {
-            // Log invalid token attempt
-            auditService.logAction("API_ACCESS", "AUTH", null, "FAILED", 
-                "Invalid JWT token: " + e.getMessage());
         } catch (Exception e) {
-            // Log other authentication errors
-            auditService.logAction("API_ACCESS", "AUTH", null, "ERROR", 
-                "JWT authentication error: " + e.getMessage());
+            // Log any authentication error (invalid token, parsing error, etc.)
+            auditService.logAction("API_ACCESS", "AUTH", null, "FAILED", "JWT authentication error: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

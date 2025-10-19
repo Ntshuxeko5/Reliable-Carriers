@@ -1,14 +1,12 @@
 package com.reliablecarriers.Reliable.Carriers.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class AuthRequest {
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
-    private String email;
+    @NotBlank(message = "Email or phone is required")
+    private String identifier;
 
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
@@ -19,18 +17,18 @@ public class AuthRequest {
     }
 
     // Constructor with fields
-    public AuthRequest(String email, String password) {
-        this.email = email;
+    public AuthRequest(String identifier, String password) {
+        this.identifier = identifier;
         this.password = password;
     }
 
     // Getters and Setters
-    public String getEmail() {
-        return email;
+    public String getIdentifier() {
+        return identifier;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     public String getPassword() {

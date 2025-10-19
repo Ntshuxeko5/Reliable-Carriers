@@ -1,12 +1,15 @@
 package com.reliablecarriers.Reliable.Carriers.controller;
 
 import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageResponse;
+import com.reliablecarriers.Reliable.Carriers.model.User;
+import com.reliablecarriers.Reliable.Carriers.service.AuthService;
 import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -14,15 +17,33 @@ import java.util.List;
 public class CustomerWebController {
 
     private final CustomerPackageService customerPackageService;
+    private final AuthService authService;
 
     @Autowired
-    public CustomerWebController(CustomerPackageService customerPackageService) {
+    public CustomerWebController(CustomerPackageService customerPackageService, AuthService authService) {
         this.customerPackageService = customerPackageService;
+        this.authService = authService;
     }
 
     // Main customer dashboard
     @GetMapping
-    public String customerDashboard() {
+    public String customerDashboard(Model model) {
+        try {
+            // Get current user information
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userPhone", currentUser.getPhone());
+                model.addAttribute("isAuthenticated", true);
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            // If there's an error getting current user, treat as not authenticated
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/dashboard";
     }
 
@@ -58,7 +79,34 @@ public class CustomerWebController {
 
     // Package management by email
     @GetMapping("/packages")
-    public String managePackages() {
+    public String managePackages(Model model) {
+        // Check if user is authenticated
+        User currentUser = authService.getCurrentUser();
+        if (currentUser != null) {
+            // User is logged in, automatically load their packages
+            try {
+                List<CustomerPackageResponse> packages = customerPackageService.getPackagesByEmail(currentUser.getEmail());
+                if (packages != null && !packages.isEmpty()) {
+                    model.addAttribute("packages", packages);
+                    model.addAttribute("email", currentUser.getEmail());
+                    model.addAttribute("found", true);
+                    model.addAttribute("isAuthenticated", true);
+                } else {
+                    model.addAttribute("packages", new ArrayList<>());
+                    model.addAttribute("email", currentUser.getEmail());
+                    model.addAttribute("found", false);
+                    model.addAttribute("isAuthenticated", true);
+                }
+            } catch (Exception e) {
+                model.addAttribute("packages", new ArrayList<>());
+                model.addAttribute("email", currentUser.getEmail());
+                model.addAttribute("found", false);
+                model.addAttribute("isAuthenticated", true);
+            }
+        } else {
+            // User is not logged in
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/packages";
     }
 
@@ -69,9 +117,19 @@ public class CustomerWebController {
             model.addAttribute("packages", packages);
             model.addAttribute("email", email);
             model.addAttribute("found", true);
+            
+            // Check if the email matches the logged-in user
+            User currentUser = authService.getCurrentUser();
+            model.addAttribute("isAuthenticated", currentUser != null);
+            if (currentUser != null) {
+                model.addAttribute("isOwnEmail", currentUser.getEmail().equals(email));
+            }
         } catch (Exception e) {
             model.addAttribute("found", false);
             model.addAttribute("error", "No packages found for this email");
+            
+            User currentUser = authService.getCurrentUser();
+            model.addAttribute("isAuthenticated", currentUser != null);
         }
         return "customer/packages";
     }
@@ -203,5 +261,11 @@ public class CustomerWebController {
     @GetMapping("/contact")
     public String contact() {
         return "customer/contact";
+    }
+
+    // Profile page
+    @GetMapping("/profile")
+    public String profile() {
+        return "customer/profile";
     }
 }

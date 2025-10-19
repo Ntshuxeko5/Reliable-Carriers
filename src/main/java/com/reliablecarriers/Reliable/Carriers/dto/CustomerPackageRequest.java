@@ -1,7 +1,7 @@
 package com.reliablecarriers.Reliable.Carriers.dto;
 
 import jakarta.validation.constraints.*;
-import java.math.BigDecimal;
+// removed unused import
 
 public class CustomerPackageRequest {
     
@@ -86,6 +86,10 @@ public class CustomerPackageRequest {
     
     // Service Information
     private String serviceType;
+    
+    // Insurance Information
+    private String insuranceType;
+    private java.math.BigDecimal insuranceCost;
     
     // Optional: For existing customers with accounts
     private Long customerId;
@@ -335,5 +339,21 @@ public class CustomerPackageRequest {
 
     public void setDeliveryLongitude(Double deliveryLongitude) {
         this.deliveryLongitude = deliveryLongitude;
+    }
+
+    public String getInsuranceType() {
+        return insuranceType;
+    }
+
+    public void setInsuranceType(String insuranceType) {
+        this.insuranceType = insuranceType;
+    }
+
+    public java.math.BigDecimal getInsuranceCost() {
+        return insuranceCost;
+    }
+
+    public void setInsuranceCost(java.math.BigDecimal insuranceCost) {
+        this.insuranceCost = insuranceCost;
     }
 }

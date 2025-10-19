@@ -115,4 +115,14 @@ public interface DriverWorkboardService {
      * Get real-time package tracking updates
      */
     List<Map<String, Object>> getRealTimeUpdates(Long driverId);
+    
+    /**
+     * Accept a package assignment
+     */
+    boolean acceptPackage(Long driverId, Long packageId);
+    
+    /**
+     * Reject a package assignment
+     */
+    boolean rejectPackage(Long driverId, Long packageId, String reason);
 }

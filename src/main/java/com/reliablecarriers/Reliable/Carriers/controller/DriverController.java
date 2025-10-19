@@ -3,7 +3,7 @@ package com.reliablecarriers.Reliable.Carriers.controller;
 import com.reliablecarriers.Reliable.Carriers.dto.DriverResponse;
 import com.reliablecarriers.Reliable.Carriers.model.UserRole;
 import com.reliablecarriers.Reliable.Carriers.service.DriverService;
-import org.springframework.beans.factory.annotation.Autowired;
+ 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +18,6 @@ public class DriverController {
 
     private final DriverService driverService;
 
-    @Autowired
     public DriverController(DriverService driverService) {
         this.driverService = driverService;
     }

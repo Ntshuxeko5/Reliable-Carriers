@@ -1,7 +1,6 @@
 package com.reliablecarriers.Reliable.Carriers.config;
 
 import com.reliablecarriers.Reliable.Carriers.model.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,8 +19,8 @@ import java.util.Collections;
 public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request, @org.springframework.lang.NonNull HttpServletResponse response, @org.springframework.lang.NonNull FilterChain chain)
+        throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
         

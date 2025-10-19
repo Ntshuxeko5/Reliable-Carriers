@@ -4,6 +4,7 @@ import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
 import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.model.MovingService;
+import com.reliablecarriers.Reliable.Carriers.model.Booking;
 import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
 import org.springframework.stereotype.Service;
 
@@ -199,5 +200,139 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public boolean isSmsNotificationEnabled(User user) {
         return true; // Default to enabled
+    }
+    
+    // Booking-related notifications
+    @Override
+    public void sendBookingConfirmationNotification(Booking booking) {
+        String subject = "Booking Confirmed - " + booking.getBookingNumber();
+        String message = String.format(
+            "Dear %s,\n\n" +
+            "Your booking has been confirmed successfully!\n\n" +
+            "Booking Details:\n" +
+            "- Booking Number: %s\n" +
+            "- Service Type: %s\n" +
+            "- Total Amount: R%.2f\n" +
+            "- Pickup Address: %s, %s, %s\n" +
+            "- Delivery Address: %s, %s, %s\n" +
+            "- Tracking Number: %s\n\n" +
+            "Thank you for choosing Reliable Carriers!\n\n" +
+            "Best regards,\n" +
+            "Reliable Carriers Team",
+            booking.getCustomerName(),
+            booking.getBookingNumber(),
+            booking.getServiceType(),
+            booking.getTotalAmount(),
+            booking.getPickupAddress(),
+            booking.getPickupCity(),
+            booking.getPickupState(),
+            booking.getDeliveryAddress(),
+            booking.getDeliveryCity(),
+            booking.getDeliveryState(),
+            booking.getTrackingNumber() != null ? booking.getTrackingNumber() : "Will be assigned soon"
+        );
+        
+        sendCustomEmailNotification(booking.getCustomerEmail(), subject, message);
+        sendCustomSmsNotification(booking.getCustomerPhone(), 
+            "Booking " + booking.getBookingNumber() + " confirmed! Track at: reliablecarriers.co.za/tracking");
+    }
+    
+    @Override
+    public void sendBookingCancellationNotification(Booking booking) {
+        String subject = "Booking Cancelled - " + booking.getBookingNumber();
+        String message = String.format(
+            "Dear %s,\n\n" +
+            "Your booking has been cancelled.\n\n" +
+            "Booking Details:\n" +
+            "- Booking Number: %s\n" +
+            "- Service Type: %s\n" +
+            "- Amount Refunded: R%.2f\n\n" +
+            "If you have any questions, please contact our customer service.\n\n" +
+            "Best regards,\n" +
+            "Reliable Carriers Team",
+            booking.getCustomerName(),
+            booking.getBookingNumber(),
+            booking.getServiceType(),
+            booking.getTotalAmount()
+        );
+        
+        sendCustomEmailNotification(booking.getCustomerEmail(), subject, message);
+        sendCustomSmsNotification(booking.getCustomerPhone(), 
+            "Booking " + booking.getBookingNumber() + " cancelled. Refund will be processed within 3-5 business days.");
+    }
+    
+    @Override
+    public void sendBookingStatusUpdateNotification(Booking booking, String oldStatus, String newStatus) {
+        String subject = "Booking Status Update - " + booking.getBookingNumber();
+        String message = String.format(
+            "Dear %s,\n\n" +
+            "Your booking status has been updated.\n\n" +
+            "Booking Details:\n" +
+            "- Booking Number: %s\n" +
+            "- Previous Status: %s\n" +
+            "- New Status: %s\n" +
+            "- Tracking Number: %s\n\n" +
+            "You can track your package at: reliablecarriers.co.za/tracking\n\n" +
+            "Best regards,\n" +
+            "Reliable Carriers Team",
+            booking.getCustomerName(),
+            booking.getBookingNumber(),
+            oldStatus,
+            newStatus,
+            booking.getTrackingNumber() != null ? booking.getTrackingNumber() : "Will be assigned soon"
+        );
+        
+        sendCustomEmailNotification(booking.getCustomerEmail(), subject, message);
+    }
+    
+    @Override
+    public void sendBookingPaymentConfirmationNotification(Booking booking) {
+        String subject = "Payment Confirmed - " + booking.getBookingNumber();
+        String message = String.format(
+            "Dear %s,\n\n" +
+            "Your payment has been processed successfully!\n\n" +
+            "Payment Details:\n" +
+            "- Booking Number: %s\n" +
+            "- Payment Reference: %s\n" +
+            "- Amount Paid: R%.2f\n" +
+            "- Payment Date: %s\n\n" +
+            "Your booking is now confirmed and we will begin processing your shipment.\n\n" +
+            "Best regards,\n" +
+            "Reliable Carriers Team",
+            booking.getCustomerName(),
+            booking.getBookingNumber(),
+            booking.getPaymentReference(),
+            booking.getTotalAmount(),
+            booking.getPaymentDate()
+        );
+        
+        sendCustomEmailNotification(booking.getCustomerEmail(), subject, message);
+        sendCustomSmsNotification(booking.getCustomerPhone(), 
+            "Payment confirmed for booking " + booking.getBookingNumber() + ". Amount: R" + booking.getTotalAmount());
+    }
+    
+    @Override
+    public void sendBookingPaymentFailedNotification(Booking booking) {
+        String subject = "Payment Failed - " + booking.getBookingNumber();
+        String message = String.format(
+            "Dear %s,\n\n" +
+            "Unfortunately, your payment could not be processed.\n\n" +
+            "Booking Details:\n" +
+            "- Booking Number: %s\n" +
+            "- Amount: R%.2f\n" +
+            "- Payment Reference: %s\n\n" +
+            "Please try again or contact our customer service for assistance.\n" +
+            "You can retry payment at: reliablecarriers.co.za/payment\n\n" +
+            "Best regards,\n" +
+            "Reliable Carriers Team",
+            booking.getCustomerName(),
+            booking.getBookingNumber(),
+            booking.getTotalAmount(),
+            booking.getPaymentReference()
+        );
+        
+        sendCustomEmailNotification(booking.getCustomerEmail(), subject, message);
+        sendCustomSmsNotification(booking.getCustomerPhone(), 
+            "Payment failed for booking " + booking.getBookingNumber() + ". Please retry or contact support.");
     }
 }

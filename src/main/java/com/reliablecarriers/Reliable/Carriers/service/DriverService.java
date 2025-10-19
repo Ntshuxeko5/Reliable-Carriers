@@ -1,7 +1,7 @@
 package com.reliablecarriers.Reliable.Carriers.service;
 
 import com.reliablecarriers.Reliable.Carriers.dto.DriverResponse;
-import com.reliablecarriers.Reliable.Carriers.model.User;
+// Removed unused import
 import com.reliablecarriers.Reliable.Carriers.model.UserRole;
 
 import java.util.List;
