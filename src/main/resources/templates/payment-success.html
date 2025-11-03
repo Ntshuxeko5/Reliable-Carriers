@@ -4,413 +4,322 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Successful - Reliable Carriers</title>
-    <link href="/css/tailwind-production.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @media print {
-            .no-print { display: none !important; }
-            .print-break { page-break-before: always; }
-        }
-        .receipt-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
+        .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .success-animation { animation: successPulse 2s ease-in-out infinite; }
+        .code-highlight { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+        @keyframes successPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-lg no-print">
+<body class="gradient-bg min-h-screen">
+    <!-- Confetti Animation -->
+    <div id="confetti" class="confetti"></div>
+
+    <!-- Header -->
+    <header class="bg-white/10 backdrop-blur-md border-b border-white/20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
+            <div class="flex justify-between items-center py-4">
                 <div class="flex items-center">
-                    <a href="/" class="flex-shrink-0 flex items-center">
-                        <img class="h-8 w-auto" src="/images/logo.png" alt="Reliable Carriers">
-                        <span class="ml-2 text-xl font-bold text-gray-900">Reliable Carriers</span>
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
                     </a>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="/" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Home</a>
-                    <a href="/tracking" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Track Package</a>
+                <div class="text-white">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span class="font-medium">Payment Successful</span>
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Success Content -->
-    <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-        <div class="receipt-container">
-            <!-- Success Header -->
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Success Message -->
+        <div class="text-center mb-8">
+            <div class="success-animation inline-block mb-4">
+                <i class="fas fa-check-circle text-6xl text-white"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-white mb-2">Payment Successful!</h1>
+            <p class="text-xl text-green-100">Your package is ready for pickup</p>
+        </div>
+
+        <!-- Booking Details Card -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8 mb-8 hover-lift">
             <div class="text-center mb-8">
-                <!-- Success Icon -->
-                <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
-                    <i class="fas fa-check text-4xl text-green-600"></i>
-                </div>
-                
-                <!-- Success Message -->
-                <h1 class="text-4xl font-bold text-gray-900 mb-4">Payment Successful!</h1>
-                <p class="text-lg text-gray-600 mb-8">
-                    Your payment has been processed successfully. Your shipment is being prepared for dispatch.
-                </p>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-receipt mr-2 text-blue-600"></i>Booking Confirmation
+                </h2>
+                <p class="text-gray-600">Keep this information for your records</p>
             </div>
 
-            <!-- Digital Receipt -->
-            <div class="bg-white rounded-lg shadow-lg p-8 mb-8" id="digitalReceipt">
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Digital Receipt</h2>
-                    <p class="text-gray-600">Reliable Carriers</p>
-                    <p class="text-sm text-gray-500" id="receiptDate">Receipt Date: Loading...</p>
-                </div>
-
-                <!-- Payment Information -->
-                <div class="border-b border-gray-200 pb-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Information</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm text-gray-600">Reference Number:</p>
-                            <p class="font-mono font-medium" id="paymentReference">Loading...</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Payment Date:</p>
-                            <p class="font-medium" id="paymentDate">Loading...</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Amount Paid:</p>
-                            <p class="font-bold text-xl text-green-600" id="paymentAmount">Loading...</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Payment Method:</p>
-                            <p class="font-medium">Credit Card (Paystack)</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Status:</p>
-                            <p class="font-medium text-green-600">✓ Completed</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Service Type:</p>
-                            <p class="font-medium" id="serviceType">Loading...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Package Information -->
-                <div class="border-b border-gray-200 pb-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Package Information</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm text-gray-600">Tracking Number:</p>
-                            <p class="font-mono font-bold text-xl text-blue-600" id="trackingNumber">Loading...</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Package Status:</p>
-                            <p class="font-medium text-orange-600">Preparing for Dispatch</p>
-                        </div>
-                        <div class="col-span-2">
-                            <p class="text-sm text-gray-600">Estimated Delivery:</p>
-                            <p class="font-medium" id="estimatedDelivery">Calculating...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Customer Information -->
-                <div class="border-b border-gray-200 pb-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Customer Information</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm text-gray-600">Customer Email:</p>
-                            <p class="font-medium" id="customerEmail">Loading...</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Contact Phone:</p>
-                            <p class="font-medium" id="customerPhone">Loading...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Shipping Details -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Shipping Details</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2">Pickup Address</h4>
-                            <div class="text-sm text-gray-600">
-                                <p id="pickupAddress">Loading...</p>
-                                <p id="pickupCity">Loading...</p>
-                                <p id="pickupCountry">Loading...</p>
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Booking Information -->
+                <div class="space-y-6">
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-info-circle mr-2 text-blue-600"></i>Booking Details
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Booking Number:</span>
+                                <span class="font-bold text-gray-800" id="bookingNumber">RC1234567890</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Customer:</span>
+                                <span class="font-semibold text-gray-800" id="customerName">John Doe</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Service:</span>
+                                <span class="font-semibold text-gray-800" id="serviceType">Express Delivery</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Amount:</span>
+                                <span class="font-bold text-green-600" id="totalAmount">R250.00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Status:</span>
+                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium" id="status">Pending Pickup</span>
                             </div>
                         </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2">Delivery Address</h4>
-                            <div class="text-sm text-gray-600">
-                                <p id="deliveryAddress">Loading...</p>
-                                <p id="deliveryCity">Loading...</p>
-                                <p id="deliveryCountry">Loading...</p>
+                    </div>
+
+                    <!-- Delivery Addresses -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Delivery Addresses
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <i class="fas fa-hand-holding-box text-blue-500 mt-1 mr-3"></i>
+                                <div>
+                                    <div class="text-sm text-gray-600 font-medium">Pickup Address:</div>
+                                    <div class="text-gray-800" id="pickupAddress">123 Main Street, Johannesburg</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-truck text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <div class="text-sm text-gray-600 font-medium">Delivery Address:</div>
+                                    <div class="text-gray-800" id="deliveryAddress">456 Oak Avenue, Pretoria</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Receipt Footer -->
-                <div class="text-center text-sm text-gray-500 border-t border-gray-200 pt-6">
-                    <p>Thank you for choosing Reliable Carriers!</p>
-                    <p>For support, contact us at support@reliablecarriers.com</p>
-                    <p>This is your official receipt. Please save this page for your records.</p>
+                <!-- Verification Codes -->
+                <div class="space-y-6">
+                    <div class="code-highlight rounded-xl p-6 border-2 border-yellow-300">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-key mr-2 text-yellow-600"></i>Verification Codes
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="text-center">
+                                <div class="text-sm text-gray-600 mb-2">Pickup Code</div>
+                                <div class="text-3xl font-bold text-gray-800 bg-white rounded-lg p-4 border-2 border-yellow-400" id="pickupCode">P123456</div>
+                                <div class="text-xs text-gray-500 mt-2">Show this code to the driver during pickup</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-sm text-gray-600 mb-2">Delivery Code</div>
+                                <div class="text-3xl font-bold text-gray-800 bg-white rounded-lg p-4 border-2 border-yellow-400" id="deliveryCode">D789012</div>
+                                <div class="text-xs text-gray-500 mt-2">Show this code to the driver during delivery</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Next Steps -->
+                    <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-list-check mr-2 text-blue-600"></i>What Happens Next?
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex items-start">
+                                <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                                    <span class="text-white text-xs font-bold">1</span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-gray-800">Driver Assignment</div>
+                                    <div class="text-sm text-gray-600">A driver will be assigned to your package</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center mr-3 mt-0.5">
+                                    <span class="text-white text-xs font-bold">2</span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-gray-800">Pickup Notification</div>
+                                    <div class="text-sm text-gray-600">You'll receive a notification when pickup is scheduled</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center mr-3 mt-0.5">
+                                    <span class="text-white text-xs font-bold">3</span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-gray-800">Live Tracking</div>
+                                    <div class="text-sm text-gray-600">Track your package in real-time</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Action Buttons -->
-            <div class="space-y-4 no-print">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button onclick="trackPackage()" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition duration-200">
-                        <i class="fas fa-search mr-2"></i>
-                        Track Package
-                    </button>
-                    <button onclick="printReceipt()" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition duration-200">
-                        <i class="fas fa-print mr-2"></i>
-                        Print Receipt
-                    </button>
-                    <button onclick="goHome()" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition duration-200">
-                        <i class="fas fa-home mr-2"></i>
-                        Return Home
-                    </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="trackPackage()" class="bg-white hover:bg-gray-50 text-gray-800 font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg">
+                    <i class="fas fa-map-marked-alt mr-2"></i>
+                    Track Package
+                </button>
+                <button onclick="downloadReceipt()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg">
+                    <i class="fas fa-download mr-2"></i>
+                    Download Receipt
+                </button>
+                <button onclick="goHome()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg">
+                    <i class="fas fa-home mr-2"></i>
+                    Go Home
+                </button>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="mt-8 text-center">
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-white mb-4">Need Help?</h3>
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6 text-white">
+                    <div class="flex items-center">
+                        <i class="fas fa-phone mr-2"></i>
+                        <span>+27 11 123 4567</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-envelope mr-2"></i>
+                        <span>support@reliablecarriers.co.za</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-clock mr-2"></i>
+                        <span>24/7 Support</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8 no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center">
-                <p class="text-gray-400">&copy; 2024 Reliable Carriers. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
     <script>
-        // Global variables to store payment data
-        let paymentData = {};
-        
-        // Get payment details from URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const reference = urlParams.get('reference');
-        const tracking = urlParams.get('tracking');
-        const amount = urlParams.get('amount');
-        const service = urlParams.get('service');
-        
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set current date
-            const now = new Date();
-            document.getElementById('receiptDate').textContent = `Receipt Date: ${now.toLocaleDateString()}`;
-            document.getElementById('paymentDate').textContent = now.toLocaleDateString();
+        // Load booking details from URL parameters
+        function loadBookingDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingId = urlParams.get('bookingId');
+            const reference = urlParams.get('reference');
             
-            // Set reference if available
-            if (reference) {
-                document.getElementById('paymentReference').textContent = reference;
-                paymentData.reference = reference;
-                // Fetch detailed payment information
-                fetchPaymentDetails(reference);
+            if (bookingId) {
+                // Fetch booking details from backend
+                fetch(`/api/payment/booking/${bookingId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data) {
+                            updateBookingDisplay(data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading booking details:', error);
+                        // Fallback to URL parameters
+                        loadFromUrlParams();
+                    });
             } else {
-                document.getElementById('paymentReference').textContent = 'Not available';
-            }
-            
-            // Set tracking number if available from URL
-            if (tracking) {
-                document.getElementById('trackingNumber').textContent = tracking;
-                paymentData.trackingNumber = tracking;
-            }
-            
-            // Set amount if available from URL
-            if (amount) {
-                document.getElementById('paymentAmount').textContent = `R${amount}`;
-                paymentData.amount = amount;
-            }
-            
-            // Set service type if available from URL
-            if (service) {
-                document.getElementById('serviceType').textContent = service;
-                paymentData.serviceType = service;
-            }
-            
-            // Calculate estimated delivery
-            calculateEstimatedDelivery();
-        });
-        
-        async function fetchPaymentDetails(reference) {
-            try {
-                const response = await fetch(`/api/paystack/verify?reference=${reference}`);
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    // Update payment information
-                    paymentData = { ...paymentData, ...data };
-                    
-                    // Update amount if not set from URL
-                    if (!amount && data.amount) {
-                        document.getElementById('paymentAmount').textContent = `R${data.amount}`;
-                    }
-                    
-                    // Update tracking number if not set from URL
-                    if (!tracking && data.trackingNumber) {
-                        document.getElementById('trackingNumber').textContent = data.trackingNumber;
-                    }
-                    
-                    // Update service type if not set from URL
-                    if (!service && data.serviceType) {
-                        document.getElementById('serviceType').textContent = data.serviceType;
-                    }
-                    
-                    // Update customer information
-                    if (data.customerEmail) {
-                        document.getElementById('customerEmail').textContent = data.customerEmail;
-                    }
-                    
-                    // Update shipping details if available
-                    if (data.pickupAddress) {
-                        document.getElementById('pickupAddress').textContent = data.pickupAddress;
-                    }
-                    if (data.pickupCity) {
-                        document.getElementById('pickupCity').textContent = data.pickupCity;
-                    }
-                    if (data.pickupCountry) {
-                        document.getElementById('pickupCountry').textContent = data.pickupCountry;
-                    }
-                    if (data.deliveryAddress) {
-                        document.getElementById('deliveryAddress').textContent = data.deliveryAddress;
-                    }
-                    if (data.deliveryCity) {
-                        document.getElementById('deliveryCity').textContent = data.deliveryCity;
-                    }
-                    if (data.deliveryCountry) {
-                        document.getElementById('deliveryCountry').textContent = data.deliveryCountry;
-                    }
-                    
-                } else {
-                    console.warn('Payment verification failed:', data.message);
-                    // Set default values
-                    setDefaultValues();
-                }
-            } catch (error) {
-                console.error('Error fetching payment details:', error);
-                // Set default values
-                setDefaultValues();
+                loadFromUrlParams();
             }
         }
-        
-        function setDefaultValues() {
-            // Set default customer information
-            document.getElementById('customerEmail').textContent = 'customer@example.com';
-            document.getElementById('customerPhone').textContent = 'Not provided';
+
+        function loadFromUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
             
-            // Set default shipping details
-            document.getElementById('pickupAddress').textContent = 'Pickup Address';
-            document.getElementById('pickupCity').textContent = 'Pickup City';
-            document.getElementById('pickupCountry').textContent = 'South Africa';
-            document.getElementById('deliveryAddress').textContent = 'Delivery Address';
-            document.getElementById('deliveryCity').textContent = 'Delivery City';
-            document.getElementById('deliveryCountry').textContent = 'South Africa';
+            // Update display with URL parameters
+            document.getElementById('bookingNumber').textContent = urlParams.get('bookingNumber') || 'RC1234567890';
+            document.getElementById('customerName').textContent = urlParams.get('customerName') || 'Guest User';
+            document.getElementById('serviceType').textContent = urlParams.get('serviceType') || 'Express Delivery';
+            document.getElementById('totalAmount').textContent = urlParams.get('totalAmount') || 'R250.00';
+            document.getElementById('pickupAddress').textContent = urlParams.get('pickupAddress') || '123 Main Street, Johannesburg';
+            document.getElementById('deliveryAddress').textContent = urlParams.get('deliveryAddress') || '456 Oak Avenue, Pretoria';
+            document.getElementById('pickupCode').textContent = urlParams.get('pickupCode') || 'P123456';
+            document.getElementById('deliveryCode').textContent = urlParams.get('deliveryCode') || 'D789012';
         }
-        
-        function calculateEstimatedDelivery() {
-            const serviceType = paymentData.serviceType || document.getElementById('serviceType').textContent;
-            const now = new Date();
-            let deliveryDays = 3; // Default
-            
-            // Calculate based on service type
-            switch (serviceType) {
-                case 'OVERNIGHT':
-                case 'EXPRESS':
-                    deliveryDays = 1;
-                    break;
-                case 'SAME_DAY':
-                    deliveryDays = 0;
-                    break;
-                case 'ECONOMY':
-                case 'STANDARD':
-                    deliveryDays = 3;
-                    break;
-                case 'INTERNATIONAL':
-                    deliveryDays = 7;
-                    break;
-            }
-            
-            const deliveryDate = new Date(now.getTime() + (deliveryDays * 24 * 60 * 60 * 1000));
-            const deliveryText = deliveryDays === 0 ? 'Same day delivery' : 
-                               deliveryDays === 1 ? 'Next business day' : 
-                               `${deliveryDays} business days`;
-            
-            document.getElementById('estimatedDelivery').textContent = `${deliveryText} (${deliveryDate.toLocaleDateString()})`;
+
+        function updateBookingDisplay(data) {
+            document.getElementById('bookingNumber').textContent = data.bookingNumber || 'RC1234567890';
+            document.getElementById('customerName').textContent = data.customerName || 'Guest User';
+            document.getElementById('serviceType').textContent = data.serviceType || 'Express Delivery';
+            document.getElementById('totalAmount').textContent = 'R' + (data.totalAmount || '250.00');
+            document.getElementById('pickupAddress').textContent = data.pickupAddress || '123 Main Street, Johannesburg';
+            document.getElementById('deliveryAddress').textContent = data.deliveryAddress || '456 Oak Avenue, Pretoria';
+            document.getElementById('pickupCode').textContent = data.pickupCode || 'P123456';
+            document.getElementById('deliveryCode').textContent = data.deliveryCode || 'D789012';
+            document.getElementById('status').textContent = data.status || 'Pending Pickup';
         }
-        
+
+        // Action functions
         function trackPackage() {
-            const trackingNumber = paymentData.trackingNumber || document.getElementById('trackingNumber').textContent;
-            if (trackingNumber && trackingNumber !== 'Loading...') {
-                window.location.href = `/tracking/${trackingNumber}`;
-            } else {
-                window.location.href = '/tracking';
-            }
+            const bookingNumber = document.getElementById('bookingNumber').textContent;
+            window.location.href = `/track?bookingNumber=${bookingNumber}`;
         }
-        
-        function printReceipt() {
-            window.print();
+
+        function downloadReceipt() {
+            const bookingNumber = document.getElementById('bookingNumber').textContent;
+            window.open(`/api/receipt/${bookingNumber}`, '_blank');
         }
-        
+
         function goHome() {
             window.location.href = '/';
         }
-        
-        // Handle the payment data from your JSON
-        function processPaymentData(data) {
-            if (data.reference) paymentData.reference = data.reference;
-            if (data.trackingNumber) paymentData.trackingNumber = data.trackingNumber;
-            if (data.amount) paymentData.amount = data.amount;
-            if (data.serviceType) paymentData.serviceType = data.serviceType;
-            if (data.message) paymentData.message = data.message;
-            if (data.paymentStatus) paymentData.paymentStatus = data.paymentStatus;
+
+        // Create confetti animation
+        function createConfetti() {
+            const confettiContainer = document.getElementById('confetti');
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
             
-            // Update the page with the data
-            updatePageWithPaymentData();
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'absolute';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-10px';
+                confetti.style.borderRadius = '50%';
+                confetti.style.animation = `fall ${Math.random() * 3 + 2}s linear forwards`;
+                
+                confettiContainer.appendChild(confetti);
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
         }
-        
-        function updatePageWithPaymentData() {
-            if (paymentData.reference) {
-                document.getElementById('paymentReference').textContent = paymentData.reference;
+
+        // Add CSS for confetti animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fall {
+                to {
+                    transform: translateY(100vh) rotate(360deg);
+                }
             }
-            if (paymentData.trackingNumber) {
-                document.getElementById('trackingNumber').textContent = paymentData.trackingNumber;
-            }
-            if (paymentData.amount) {
-                document.getElementById('paymentAmount').textContent = `R${paymentData.amount}`;
-            }
-            if (paymentData.serviceType) {
-                document.getElementById('serviceType').textContent = paymentData.serviceType;
-                calculateEstimatedDelivery();
-            }
-        }
-        
-        // Auto-process payment data if available in URL parameters
-        if (reference && tracking && amount && service) {
-            processPaymentData({
-                "reference": reference,
-                "serviceType": service,
-                "amount": amount,
-                "message": "Payment verification completed",
-                "trackingNumber": tracking,
-                "paymentStatus": "COMPLETED",
-                "status": "success"
-            });
-        }
-        
-        // Example usage with your JSON data:
-        // processPaymentData({
-        //     "reference": "PAY_1636BDED-633",
-        //     "serviceType": "OVERNIGHT",
-        //     "amount": 150.00,
-        //     "message": "Payment verification completed",
-        //     "trackingNumber": "RC1760780229388924",
-        //     "paymentStatus": "COMPLETED",
-        //     "status": "success"
-        // });
+        `;
+        document.head.appendChild(style);
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBookingDetails();
+            createConfetti();
+        });
     </script>
 </body>
 </html>

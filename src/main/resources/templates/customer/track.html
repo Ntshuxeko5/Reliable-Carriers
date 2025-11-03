@@ -5,241 +5,621 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Track Package - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- WebSocket Support -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <!-- Google Maps API -->
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places,geometry&callback=initGoogleMaps'" async defer></script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'brand': {
-                            50: '#fefce8',
-                            100: '#fef9c3',
-                            200: '#fef08a',
-                            300: '#fde047',
-                            400: '#facc15',
-                            500: '#dbb714',
-                            600: '#ca8a04',
-                            700: '#a16207',
-                            800: '#854d0e',
-                            900: '#713f12',
+                        'reliable-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
+                            800: '#1e3a8a', 900: '#1e40af',
                         },
-                        'brand-blue': {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#071c91',
+                        'reliable-yellow': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
                         }
                     }
                 }
             }
         }
     </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Status Bar Styles */
+        .status-bar {
+            background: linear-gradient(90deg, #e5e7eb 0%, #e5e7eb 100%);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
         }
         
-        .hover-lift {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        .status-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #1e40af);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            position: relative;
         }
         
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        .status-progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
         }
         
-        .gradient-text {
-            background: linear-gradient(135deg, #fde047, #facc15);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Timeline Styles */
+        .timeline-item {
+            position: relative;
+            padding-left: 3rem;
+            margin-bottom: 2rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0.75rem;
+            top: 0;
+            bottom: -2rem;
+            width: 2px;
+            background: #e5e7eb;
+        }
+        
+        .timeline-item:last-child::before {
+            display: none;
+        }
+        
+        .timeline-item.completed::before {
+            background: #3b82f6;
+        }
+        
+        .timeline-item.current::before {
+            background: linear-gradient(to bottom, #3b82f6 0%, #e5e7eb 100%);
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: 0;
+            top: 0.25rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            background: #e5e7eb;
+            border: 3px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+        
+        .timeline-item.completed .timeline-marker {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .timeline-item.current .timeline-marker {
+            background: #3b82f6;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* Status-specific colors */
+        .status-pending { color: #6b7280; }
+        .status-processing { color: #f59e0b; }
+        .status-in-transit { color: #3b82f6; }
+        .status-out-for-delivery { color: #10b981; }
+        .status-delivered { color: #059669; }
+        .status-returned { color: #ef4444; }
+        .status-exception { color: #dc2626; }
+        
+        /* Real-time indicator */
+        .real-time-indicator {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
         }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header sticky top-0 z-50">
+    <nav class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
-                            <rect x="4" y="20" width="40" height="20" rx="2" />
-                            <rect x="44" y="28" width="12" height="8" rx="1" />
-                            <circle cx="18" cy="44" r="4" fill="white" />
-                            <circle cx="46" cy="44" r="4" fill="white" />
-                        </svg>
-                    </span>
-                    <span>Reliable Carriers</span>
-                </a>
-                <div class="hidden md:flex space-x-8">
-                    <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-home mr-2"></i>Dashboard
-                    </a>
-                    <a href="/customer/track" class="text-brand-300 hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-search mr-2"></i>Track Package
-                    </a>
-                    <a href="/customer/quote" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-calculator mr-2"></i>Get Quote
-                    </a>
-                    <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-boxes mr-2"></i>My Packages
-                    </a>
-                    <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
-                    <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-question-circle mr-2"></i>Help
-                    </a>
-                    <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-envelope mr-2"></i>Contact
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-reliable-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
                     </a>
                 </div>
-                <!-- Mobile menu button -->
-                <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
-            </div>
-            <!-- Mobile menu -->
-            <div class="md:hidden hidden" id="mobileMenu">
-                <div class="py-4 space-y-4">
-                    <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-home mr-2"></i>Dashboard
-                    </a>
-                    <a href="/customer/track" class="block text-brand-300 hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-search mr-2"></i>Track Package
-                    </a>
-                    <a href="/customer/quote" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-calculator mr-2"></i>Get Quote
-                    </a>
-                    <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-boxes mr-2"></i>My Packages
-                    </a>
-                    <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
-                    <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-question-circle mr-2"></i>Help
-                    </a>
-                    <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-envelope mr-2"></i>Contact
-                    </a>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a>
+                    <a href="/services" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Services</a>
+                    <a href="/pricing" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Pricing</a>
+                    <a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a>
+                    <a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a>
+                    <a href="/tracking" class="text-white bg-reliable-yellow-400 text-reliable-blue-800 px-3 py-1 rounded-lg font-medium">Track Package</a>
+                    <a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a>
                 </div>
             </div>
         </div>
     </nav>
 
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                <span class="gradient-text">Track Your Package</span>
+            </h1>
+            <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+                Get real-time updates on your shipment's location and delivery status
+            </p>
+        </div>
+    </section>
+
     <!-- Main Content -->
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-800">
-        <div class="glass-effect rounded-3xl p-8 hover-lift">
-            <div class="text-center mb-8">
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                    <i class="fas fa-search mr-3 gradient-text"></i>Track Package
-                </h1>
-                <p class="text-xl text-gray-700">Enter your tracking number to get real-time updates on your package</p>
-            </div>
-            
-            <form method="post" action="/customer/track" class="mb-8">
-                <div class="flex flex-col sm:flex-row gap-4">
-              <input name="trackingNumber" type="text" 
-                  class="flex-1 px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
-                  placeholder="Enter tracking number (e.g., RC12345678)" required>
-                    <button type="submit" class="bg-gradient-to-r from-brand-500 to-brand-600 text-white px-8 py-4 rounded-full font-bold hover:from-brand-600 hover:to-brand-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
-                        <i class="fas fa-search mr-2"></i>Track Package
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Search Section -->
+        <div class="glass-effect rounded-2xl p-8 mb-8">
+            <div class="max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+                    <i class="fas fa-search mr-3 gradient-text"></i>Enter Tracking Number
+                </h2>
+                <div class="flex gap-4">
+                    <input type="text" id="trackingNumber" placeholder="Enter your tracking number (e.g., RC123456789ZA)" 
+                           class="flex-1 px-6 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg">
+                    <button onclick="trackPackage()" id="trackBtn" 
+                            class="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300 flex items-center">
+                        <i class="fas fa-search mr-2"></i>Track
                     </button>
+                </div>
+                <p class="text-sm text-gray-500 mt-3 text-center">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Don't have a tracking number? <a href="/quote" class="text-blue-600 hover:underline">Create a shipment</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Tracking Results -->
+        <div id="trackingResults" class="hidden">
+            <!-- Package Info Card -->
+            <div class="glass-effect rounded-2xl p-8 mb-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                            <i class="fas fa-box mr-3 gradient-text"></i>Package Information
+                        </h2>
+                        <p class="text-gray-600">Tracking Number: <span id="displayTrackingNumber" class="font-mono font-semibold"></span></p>
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Current Status</div>
+                                <div id="currentStatus" class="text-lg font-semibold"></div>
                             </div>
-                        </form>
-            
-            <div th:if="${error}" class="bg-red-500/20 border border-red-500/30 text-red-200 px-6 py-4 rounded-2xl mb-6" th:text="${error}"></div>
-            
-            <div th:if="${found}" class="space-y-6">
-                <div class="bg-white/10 rounded-2xl p-6">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">
-                        <i class="fas fa-box mr-2 text-brand-400"></i>Package Details
-                    </h3>
-                    <div class="bg-gray-100 rounded-xl p-4">
-                        <pre class="text-gray-800 text-sm overflow-x-auto" th:text="${#objects.toJson(package)}"></pre>
+                            <div class="w-4 h-4 rounded-full real-time-indicator" id="statusIndicator"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="mb-8">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Delivery Progress</span>
+                        <span class="text-sm text-gray-500" id="progressText">0% Complete</span>
+                    </div>
+                    <div class="status-bar">
+                        <div class="status-progress" id="statusProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Package Details -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-500 mb-1">Pickup Location</div>
+                        <div class="font-semibold text-gray-900" id="pickupLocation">-</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-500 mb-1">Delivery Location</div>
+                        <div class="font-semibold text-gray-900" id="deliveryLocation">-</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-500 mb-1">Estimated Delivery</div>
+                        <div class="font-semibold text-gray-900" id="estimatedDelivery">-</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-500 mb-1">Service Type</div>
+                        <div class="font-semibold text-gray-900" id="serviceType">-</div>
                     </div>
                 </div>
             </div>
-            
-            <div class="text-center mt-8">
-                <a href="/customer/dashboard" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto w-fit">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
-                </a>
+
+            <!-- Live Tracking Map -->
+            <div class="glass-effect rounded-2xl p-8 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">
+                        <i class="fas fa-map-marked-alt mr-3 gradient-text"></i>Live Tracking Map
+                    </h3>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                        <span class="text-sm text-gray-600" id="liveStatus">Live Updates Active</span>
+                    </div>
+                </div>
+                <div id="liveTrackingMap" style="height: 500px; width: 100%; border-radius: 12px; overflow: hidden;"></div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="glass-effect rounded-2xl p-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-route mr-3 gradient-text"></i>Delivery Timeline
+                </h3>
+                <div id="timeline" class="space-y-0">
+                    <!-- Timeline items will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Driver Information (if available) -->
+            <div id="driverInfo" class="glass-effect rounded-2xl p-8 mt-8 hidden">
+                <h3 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-user-tie mr-3 gradient-text"></i>Driver Information
+                </h3>
+                <div class="flex items-center space-x-4">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-2xl text-blue-600"></i>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-900" id="driverName">-</div>
+                        <div class="text-sm text-gray-500" id="driverPhone">-</div>
+                        <div class="text-sm text-gray-500" id="vehicleInfo">-</div>
+                    </div>
+                    <div class="ml-auto">
+                        <button onclick="callDriver()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-300">
+                            <i class="fas fa-phone mr-2"></i>Call Driver
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Results State -->
+        <div id="noResults" class="hidden text-center py-16">
+            <div class="glass-effect rounded-2xl p-12">
+                <i class="fas fa-search text-6xl text-gray-300 mb-6"></i>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">No Package Found</h3>
+                <p class="text-gray-600 mb-8">We couldn't find a package with that tracking number. Please check the number and try again.</p>
+                <button onclick="clearSearch()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                    <i class="fas fa-arrow-left mr-2"></i>Try Again
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
-                    <h3 class="text-xl font-bold mb-4 text-brand-400">Reliable Carriers</h3>
-                    <p class="text-gray-300">Your trusted partner for reliable package delivery and tracking services.</p>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Quick Links</h4>
-                    <ul class="space-y-2 text-gray-300">
-                        <li><a href="/customer/track" class="hover:text-brand-400 transition-colors">Track Package</a></li>
-                        <li><a href="/customer/quote" class="hover:text-brand-400 transition-colors">Get Quote</a></li>
-                        <li><a href="/customer/packages" class="hover:text-brand-400 transition-colors">My Packages</a></li>
-                        <li><a href="/customer/help" class="hover:text-brand-400 transition-colors">Help Center</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Services</h4>
-                    <ul class="space-y-2 text-gray-300">
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Express Delivery</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">National Shipping</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Moving Services</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Load Transport</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Contact Info</h4>
-                    <div class="space-y-2 text-gray-300">
-                        <p><i class="fas fa-phone mr-2"></i>+27 11 123 4567</p>
-                        <p><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</p>
-                        <p><i class="fas fa-map-marker-alt mr-2"></i>Johannesburg, South Africa</p>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-shipping-fast text-2xl text-reliable-yellow-400 mr-2"></i>
+                        <span class="text-xl font-bold">Reliable Carriers</span>
                     </div>
+                    <p class="text-gray-400">Your trusted partner for all courier and logistics needs.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Standard Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Economy Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">International</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Company</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="/careers" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="/news" class="hover:text-white transition-colors">News</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Support</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/help-center" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="/tracking" class="hover:text-white transition-colors">Track Package</a></li>
+                        <li><a href="/terms" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
                 </div>
             </div>
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
                 <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
     <script>
-        // Mobile menu toggle
-        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
-            const mobileMenu = document.getElementById('mobileMenu');
-            mobileMenu.classList.toggle('hidden');
+        // Sample tracking data (in real app, this would come from API)
+        const sampleTrackingData = {
+            'RC123456789ZA': {
+                trackingNumber: 'RC123456789ZA',
+                status: 'out-for-delivery',
+                statusText: 'Out for Delivery',
+                progress: 85,
+                pickupLocation: 'Cape Town, Western Cape',
+                deliveryLocation: 'Johannesburg, Gauteng',
+                estimatedDelivery: 'Today by 6:00 PM',
+                serviceType: 'Express Delivery',
+                driver: {
+                    name: 'John Smith',
+                    phone: '+27 82 123 4567',
+                    vehicle: 'Toyota Hilux - RC123GP'
+                },
+                timeline: [
+                    {
+                        status: 'pending',
+                        title: 'Package Received',
+                        description: 'Package received at Cape Town facility',
+                        timestamp: '2024-01-15 08:30',
+                        completed: true
+                    },
+                    {
+                        status: 'processing',
+                        title: 'Processing',
+                        description: 'Package is being processed and prepared for shipment',
+                        timestamp: '2024-01-15 09:15',
+                        completed: true
+                    },
+                    {
+                        status: 'in-transit',
+                        title: 'In Transit',
+                        description: 'Package is on its way to Johannesburg',
+                        timestamp: '2024-01-15 14:20',
+                        completed: true
+                    },
+                    {
+                        status: 'out-for-delivery',
+                        title: 'Out for Delivery',
+                        description: 'Package is out for delivery in your area',
+                        timestamp: '2024-01-16 10:45',
+                        completed: false,
+                        current: true
+                    },
+                    {
+                        status: 'delivered',
+                        title: 'Delivered',
+                        description: 'Package has been delivered successfully',
+                        timestamp: '',
+                        completed: false
+                    }
+                ]
+            }
+        };
+
+        // Global variables for live tracking
+        let liveTracker = null;
+        let googleMapsLoaded = false;
+
+        // Initialize Google Maps when loaded
+        window.initGoogleMaps = function() {
+            googleMapsLoaded = true;
+            console.log('Google Maps loaded');
+        };
+
+        // Track package function
+        function trackPackage() {
+            const trackingNumber = document.getElementById('trackingNumber').value.trim().toUpperCase();
+            
+            if (!trackingNumber) {
+                alert('Please enter a tracking number');
+                return;
+            }
+
+            // Show loading state
+            const trackBtn = document.getElementById('trackBtn');
+            const originalText = trackBtn.innerHTML;
+            trackBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Tracking...';
+            trackBtn.disabled = true;
+
+            // Call real API
+            fetch(`/api/customer/live-tracking/${trackingNumber}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        displayTrackingResults(data.data);
+                        // Initialize live tracking
+                        if (googleMapsLoaded && typeof LivePackageTracker !== 'undefined') {
+                            if (liveTracker) {
+                                liveTracker.destroy();
+                            }
+                            liveTracker = new LivePackageTracker(trackingNumber);
+                            liveTracker.init();
+                        }
+                    } else {
+                        showNoResults();
+                    }
+                })
+                .catch(error => {
+                    console.error('Tracking error:', error);
+                    showNoResults();
+                })
+                .finally(() => {
+                    // Reset button
+                    trackBtn.innerHTML = originalText;
+                    trackBtn.disabled = false;
+                });
+        }
+
+        // Display tracking results
+        function displayTrackingResults(data) {
+            // Hide no results, show results
+            document.getElementById('noResults').classList.add('hidden');
+            document.getElementById('trackingResults').classList.remove('hidden');
+
+            // Update package info
+            document.getElementById('displayTrackingNumber').textContent = data.trackingNumber;
+            document.getElementById('currentStatus').textContent = data.statusText;
+            document.getElementById('currentStatus').className = `text-lg font-semibold status-${data.status}`;
+            document.getElementById('pickupLocation').textContent = data.pickupLocation;
+            document.getElementById('deliveryLocation').textContent = data.deliveryLocation;
+            document.getElementById('estimatedDelivery').textContent = data.estimatedDelivery;
+            document.getElementById('serviceType').textContent = data.serviceType;
+
+            // Update progress bar
+            const progressBar = document.getElementById('statusProgress');
+            const progressText = document.getElementById('progressText');
+            progressBar.style.width = `${data.progress}%`;
+            progressText.textContent = `${data.progress}% Complete`;
+
+            // Update status indicator
+            const statusIndicator = document.getElementById('statusIndicator');
+            statusIndicator.className = `w-4 h-4 rounded-full status-${data.status}`;
+            if (data.status === 'out-for-delivery' || data.status === 'in-transit') {
+                statusIndicator.classList.add('real-time-indicator');
+            }
+
+            // Update timeline
+            updateTimeline(data.timeline);
+
+            // Show driver info if available
+            if (data.driver) {
+                document.getElementById('driverInfo').classList.remove('hidden');
+                document.getElementById('driverName').textContent = data.driver.name;
+                document.getElementById('driverPhone').textContent = data.driver.phone;
+                document.getElementById('vehicleInfo').textContent = data.driver.vehicle;
+            }
+
+            // Start real-time updates if package is in transit
+            if (data.status === 'in-transit' || data.status === 'out-for-delivery') {
+                startRealTimeUpdates();
+            }
+        }
+
+        // Update timeline
+        function updateTimeline(timeline) {
+            const timelineContainer = document.getElementById('timeline');
+            timelineContainer.innerHTML = timeline.map((item, index) => {
+                const isCompleted = item.completed;
+                const isCurrent = item.current;
+                const statusClass = isCompleted ? 'completed' : (isCurrent ? 'current' : '');
+                
+                return `
+                    <div class="timeline-item ${statusClass}">
+                        <div class="timeline-marker">
+                            <i class="fas fa-${getStatusIcon(item.status)} text-xs"></i>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-semibold text-gray-900">${item.title}</h4>
+                                <span class="text-sm text-gray-500">${item.timestamp}</span>
+                            </div>
+                            <p class="text-gray-600">${item.description}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Get status icon
+        function getStatusIcon(status) {
+            const icons = {
+                'pending': 'clock',
+                'processing': 'cog',
+                'in-transit': 'truck',
+                'out-for-delivery': 'shipping-fast',
+                'delivered': 'check-circle',
+                'returned': 'undo',
+                'exception': 'exclamation-triangle'
+            };
+            return icons[status] || 'circle';
+        }
+
+        // Show no results
+        function showNoResults() {
+            document.getElementById('trackingResults').classList.add('hidden');
+            document.getElementById('noResults').classList.remove('hidden');
+        }
+
+        // Clear search
+        function clearSearch() {
+            document.getElementById('trackingNumber').value = '';
+            document.getElementById('trackingResults').classList.add('hidden');
+            document.getElementById('noResults').classList.add('hidden');
+        }
+
+        // Call driver
+        function callDriver() {
+            const phone = document.getElementById('driverPhone').textContent;
+            if (phone && phone !== '-') {
+                window.location.href = `tel:${phone}`;
+            }
+        }
+
+        // Start real-time updates
+        function startRealTimeUpdates() {
+            // In a real app, this would use WebSocket or polling
+            console.log('Starting real-time updates...');
+            
+            // Simulate real-time updates every 30 seconds
+            setInterval(() => {
+                console.log('Updating tracking data...');
+                // In real app, fetch latest data from API
+            }, 30000);
+        }
+
+        // Handle Enter key in tracking input
+        document.getElementById('trackingNumber').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                trackPackage();
+            }
         });
 
-        // Add form validation
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                const trackingInput = this.querySelector('input[name="trackingNumber"]');
-                if (trackingInput && trackingInput.value.trim() === '') {
-                    e.preventDefault();
-                    alert('Please enter a tracking number');
-                    trackingInput.focus();
-                }
-            });
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if tracking number is in URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackingNumber = urlParams.get('tracking');
+            if (trackingNumber) {
+                document.getElementById('trackingNumber').value = trackingNumber;
+                trackPackage();
+            }
         });
     </script>
+    
+    <!-- Live Tracking JavaScript -->
+    <script src="/js/live-tracking.js"></script>
 </body>
 </html>
-
-

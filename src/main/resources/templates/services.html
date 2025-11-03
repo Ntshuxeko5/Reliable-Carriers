@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Services - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
+                            800: '#1e3a8a', 900: '#1e40af',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .service-card { transition: all 0.3s ease; }
+        .service-card:hover { transform: translateY(-10px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-reliable-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a>
+                    <a href="/services" class="text-white bg-reliable-yellow-400 text-reliable-blue-800 px-3 py-1 rounded-lg font-medium">Services</a>
+                    <a href="/pricing" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Pricing</a>
+                    <a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a>
+                    <a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a>
+                    <a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a>
+                    <a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+                <span class="gradient-text">Professional</span>
+                <br>Courier Services
+            </h1>
+            <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+                From same-day delivery to international shipping, we provide comprehensive logistics solutions for individuals and businesses.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/quote" class="bg-reliable-yellow-400 text-reliable-blue-800 px-8 py-4 rounded-lg font-bold text-lg hover:bg-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-calculator mr-2"></i>Get Instant Quote
+                </a>
+                <a href="/contact" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-reliable-blue-800 transition-colors duration-300">
+                    <i class="fas fa-phone mr-2"></i>Contact Us
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Overview -->
+    <section class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Our Services</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    We offer a comprehensive range of courier and logistics services tailored to meet your specific needs.
+                </p>
+            </div>
+
+            <!-- Service Categories -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                <!-- Express Delivery -->
+                <div class="service-card glass-effect rounded-2xl p-8 text-center">
+                    <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-bolt text-3xl text-red-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Express Delivery</h3>
+                    <p class="text-gray-600 mb-6">Same-day and next-day delivery for urgent packages across South Africa.</p>
+                    <ul class="text-left space-y-2 mb-6">
+                        <li class="flex items-center text-gray-600">
+                            <i class="fas fa-check text-green-500 mr-2"></i>
+                            Same-day delivery
+                        </li>
+                        <li class="flex items-center text-gray-600">
+                            <i class="fas fa-check text-green-500 mr-2"></i>
+                            Real-time tracking
+                        </li>
+                        <li class="flex items-center text-gray-600">
+                            <i class="fas fa-check text-green-500 mr-2"></i>
+                            Priority handling
+                        </li>
+                    </ul>
+                    <div class="text-2xl font-bold text-gray-900 mb-2">From R89</div>
+                    <a href="/quote" class="block w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-300">
+                        Get Quote
+                    </a>
+                </div>
+
+                <!-- Standard Delivery -->
+                <div class="service-card glass-effect rounded-2xl p-8 text-center">
+                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-truck text-3xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Standard Delivery</h3>
+                    <p class="text-gray-600 mb-6">Reliable 2-3 day delivery service for regular packages and documents.</p>
+                    <ul class="text-left space-y-2 mb-6">
+                        <li class="flex items-center text-gray-600">
+                            <i class="fas fa-check text-green-500 mr-2"></i>
+                            2-3 day delivery
+                        </li>
+                        <li class="flex items-center text-gray-600">
+                            <i class="fas fa-check text-green-500 mr-2"></i>
+                            Package tracking
+                        </li>
+                        <li class="flex items-center text-gray-600">
+                            <i class="fas fa-check text-green-500 mr-2"></i>
+                            Insurance included
+                        </li>
+                    </ul>
+                    <div class="text-2xl font-bold text-gray-900 mb-2">From R45</div>
+                    <a href="/quote" class="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                        Get Quote
+                    </a>
+                </div>
+
+                <!-- Economy Delivery -->
+                <div class="service-card glass-effect rounded-2xl p-8 text-center">
+                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-shipping-fast text-3xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Economy Delivery</h3>
+                    <p class="text-gray-600 mb-6">Cost-effective 4-7 day delivery for non-urgent packages and bulk shipments.</p>
+                    <ul class="text-left space-y-2 mb-6">
+                        <li class="flex items-center text-gray-600">
+                            <i class="fas fa-check text-green-500 mr-2"></i>
+                            4-7 day delivery
+                        </li>
+                        <li class="flex items-center text-gray-600">
+                            <i class="fas fa-check text-green-500 mr-2"></i>
+                            Bulk discounts
+                        </li>
+                        <li class="flex items-center text-gray-600">
+                            <i class="fas fa-check text-green-500 mr-2"></i>
+                            Basic tracking
+                        </li>
+                    </ul>
+                    <div class="text-2xl font-bold text-gray-900 mb-2">From R25</div>
+                    <a href="/quote" class="block w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors duration-300">
+                        Get Quote
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Specialized Services -->
+    <section class="py-20 bg-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Specialized Services</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Tailored solutions for specific industries and requirements.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Medical & Pharmaceutical -->
+                <div class="glass-effect rounded-2xl p-6 text-center hover-lift">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-heartbeat text-2xl text-red-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Medical & Pharmaceutical</h3>
+                    <p class="text-gray-600 text-sm">Temperature-controlled delivery for medical supplies and pharmaceuticals.</p>
+                </div>
+
+                <!-- Legal Documents -->
+                <div class="glass-effect rounded-2xl p-6 text-center hover-lift">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-gavel text-2xl text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Legal Documents</h3>
+                    <p class="text-gray-600 text-sm">Secure delivery of legal documents with proof of delivery.</p>
+                </div>
+
+                <!-- E-commerce -->
+                <div class="glass-effect rounded-2xl p-6 text-center hover-lift">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shopping-cart text-2xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">E-commerce</h3>
+                    <p class="text-gray-600 text-sm">Integrated shipping solutions for online retailers and marketplaces.</p>
+                </div>
+
+                <!-- International -->
+                <div class="glass-effect rounded-2xl p-6 text-center hover-lift">
+                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-globe text-2xl text-yellow-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">International</h3>
+                    <p class="text-gray-600 text-sm">Worldwide shipping with customs clearance and documentation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Business Solutions -->
+    <section class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Business Solutions</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Comprehensive logistics solutions designed for businesses of all sizes.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-3xl font-bold text-gray-900 mb-6">Why Choose Reliable Carriers for Your Business?</h3>
+                    <div class="space-y-6">
+                        <div class="flex items-start">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                                <i class="fas fa-chart-line text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-semibold text-gray-900 mb-2">Advanced Analytics</h4>
+                                <p class="text-gray-600">Comprehensive reporting and analytics to optimize your shipping operations.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                                <i class="fas fa-plug text-green-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-semibold text-gray-900 mb-2">API Integration</h4>
+                                <p class="text-gray-600">Seamless integration with your existing systems and workflows.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                                <i class="fas fa-users text-purple-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-semibold text-gray-900 mb-2">Dedicated Support</h4>
+                                <p class="text-gray-600">24/7 customer support and dedicated account management.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                                <i class="fas fa-shield-alt text-yellow-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-semibold text-gray-900 mb-2">Enterprise Security</h4>
+                                <p class="text-gray-600">Advanced security features including biometric authentication and fraud detection.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-effect rounded-2xl p-8">
+                    <h4 class="text-2xl font-bold text-gray-900 mb-6">Get Started Today</h4>
+                    <div class="space-y-4">
+                        <a href="/business/dashboard" class="block w-full bg-blue-600 text-white py-4 rounded-lg font-semibold text-center hover:bg-blue-700 transition-colors duration-300">
+                            <i class="fas fa-building mr-2"></i>Business Portal
+                        </a>
+                        <a href="/contact" class="block w-full border-2 border-blue-600 text-blue-600 py-4 rounded-lg font-semibold text-center hover:bg-blue-600 hover:text-white transition-colors duration-300">
+                            <i class="fas fa-phone mr-2"></i>Speak to Sales
+                        </a>
+                        <a href="/pricing" class="block w-full text-blue-600 py-4 rounded-lg font-semibold text-center hover:bg-blue-50 transition-colors duration-300">
+                            <i class="fas fa-tag mr-2"></i>View Pricing Plans
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl font-bold text-white mb-6">
+                Ready to Get Started?
+            </h2>
+            <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+                Join thousands of satisfied customers who trust Reliable Carriers for their shipping needs.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/quote" class="bg-reliable-yellow-400 text-reliable-blue-800 px-8 py-4 rounded-lg font-bold text-lg hover:bg-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-calculator mr-2"></i>Get Instant Quote
+                </a>
+                <a href="/register" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-reliable-blue-800 transition-colors duration-300">
+                    <i class="fas fa-user-plus mr-2"></i>Create Account
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-shipping-fast text-2xl text-reliable-yellow-400 mr-2"></i>
+                        <span class="text-xl font-bold">Reliable Carriers</span>
+                    </div>
+                    <p class="text-gray-400">Your trusted partner for all courier and logistics needs.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Standard Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Economy Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">International</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Company</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="/careers" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="/news" class="hover:text-white transition-colors">News</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Support</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/help" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="/tracking" class="hover:text-white transition-colors">Track Package</a></li>
+                        <li><a href="/terms" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

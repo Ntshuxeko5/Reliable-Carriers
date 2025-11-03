@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Dashboard - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Reliable Carriers">
+    <link rel="apple-touch-icon" href="/images/icon-192x192.png">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
+                            800: '#1e3a8a', 900: '#1e40af',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .dark-mode { background-color: #1a1a1a; color: #e5e5e5; }
+        .dark-mode .glass-effect { background: rgba(0, 0, 0, 0.3); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-reliable-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/business/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a>
+                    <a href="/business/analytics" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Analytics</a>
+                    <a href="/business/shipments" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Shipments</a>
+                    <a href="/business/team" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Team</a>
+                    <a href="/business/billing" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Billing</a>
+                    <a href="/business/settings" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Settings</a>
+                    <button id="darkModeToggle" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Section -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                <span class="gradient-text">Business Dashboard</span>
+            </h1>
+            <p class="text-xl text-gray-600">Manage your shipments, track performance, and grow your business</p>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-effect rounded-2xl p-6 hover-lift">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-boxes text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Shipments</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalShipments">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-2xl p-6 hover-lift">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-check-circle text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Delivered Today</p>
+                        <p class="text-2xl font-bold text-gray-900" id="deliveredToday">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-2xl p-6 hover-lift">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <i class="fas fa-clock text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">In Transit</p>
+                        <p class="text-2xl font-bold text-gray-900" id="inTransit">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-2xl p-6 hover-lift">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <i class="fas fa-dollar-sign text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Monthly Spend</p>
+                        <p class="text-2xl font-bold text-gray-900" id="monthlySpend">R0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="glass-effect rounded-2xl p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-bolt mr-3 gradient-text"></i>Quick Actions
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="/business/shipments/new" class="group">
+                        <div class="bg-blue-50 rounded-xl p-6 text-center hover:bg-blue-100 transition-colors duration-300">
+                            <i class="fas fa-plus text-3xl text-blue-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
+                            <h3 class="font-semibold text-gray-900">New Shipment</h3>
+                        </div>
+                    </a>
+                    <a href="/business/analytics" class="group">
+                        <div class="bg-green-50 rounded-xl p-6 text-center hover:bg-green-100 transition-colors duration-300">
+                            <i class="fas fa-chart-line text-3xl text-green-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
+                            <h3 class="font-semibold text-gray-900">View Analytics</h3>
+                        </div>
+                    </a>
+                    <a href="/business/team" class="group">
+                        <div class="bg-purple-50 rounded-xl p-6 text-center hover:bg-purple-100 transition-colors duration-300">
+                            <i class="fas fa-users text-3xl text-purple-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
+                            <h3 class="font-semibold text-gray-900">Manage Team</h3>
+                        </div>
+                    </a>
+                    <a href="/business/billing" class="group">
+                        <div class="bg-yellow-50 rounded-xl p-6 text-center hover:bg-yellow-100 transition-colors duration-300">
+                            <i class="fas fa-credit-card text-3xl text-yellow-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
+                            <h3 class="font-semibold text-gray-900">Billing</h3>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="glass-effect rounded-2xl p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-history mr-3 gradient-text"></i>Recent Activity
+                </h2>
+                <div class="space-y-4" id="recentActivity">
+                    <!-- Activity items will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipment Status Overview -->
+        <div class="glass-effect rounded-2xl p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-chart-pie mr-3 gradient-text"></i>Shipment Status Overview
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-box text-3xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900">Pending</h3>
+                    <p class="text-3xl font-bold text-blue-600" id="pendingCount">0</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-24 h-24 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-truck text-3xl text-yellow-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900">In Transit</h3>
+                    <p class="text-3xl font-bold text-yellow-600" id="inTransitCount">0</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-24 h-24 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-3xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900">Delivered</h3>
+                    <p class="text-3xl font-bold text-green-600" id="deliveredCount">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA Install Prompt -->
+    <div id="pwaInstallPrompt" class="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm hidden">
+        <div class="flex items-center">
+            <i class="fas fa-download text-blue-600 text-2xl mr-3"></i>
+            <div>
+                <h3 class="font-semibold text-gray-900">Install App</h3>
+                <p class="text-sm text-gray-600">Get quick access to your dashboard</p>
+            </div>
+            <button id="installBtn" class="ml-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">Install</button>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode functionality
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+        
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const icon = darkModeToggle.querySelector('i');
+            icon.classList.toggle('fa-moon');
+            icon.classList.toggle('fa-sun');
+            localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
+        });
+
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            body.classList.add('dark-mode');
+            darkModeToggle.querySelector('i').classList.remove('fa-moon');
+            darkModeToggle.querySelector('i').classList.add('fa-sun');
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/business/dashboard/metrics');
+                const data = await response.json();
+                
+                document.getElementById('totalShipments').textContent = data.totalShipments || 0;
+                document.getElementById('deliveredToday').textContent = data.deliveredToday || 0;
+                document.getElementById('inTransit').textContent = data.inTransit || 0;
+                document.getElementById('monthlySpend').textContent = 'R' + (data.monthlySpend || 0);
+                document.getElementById('pendingCount').textContent = data.pendingCount || 0;
+                document.getElementById('inTransitCount').textContent = data.inTransitCount || 0;
+                document.getElementById('deliveredCount').textContent = data.deliveredCount || 0;
+                
+                // Load recent activity
+                loadRecentActivity(data.recentActivity || []);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function loadRecentActivity(activities) {
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = activities.map(activity => `
+                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-${activity.icon} text-blue-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">${activity.title}</p>
+                        <p class="text-xs text-gray-500">${activity.time}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // PWA Install functionality
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('pwaInstallPrompt').classList.remove('hidden');
+        });
+
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                document.getElementById('pwaInstallPrompt').classList.add('hidden');
+            }
+        });
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+</html>
+
+

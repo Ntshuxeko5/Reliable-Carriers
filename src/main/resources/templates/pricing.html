@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing Plans - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
+                            800: '#1e3a8a', 900: '#1e40af',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .pricing-card { transition: all 0.3s ease; }
+        .pricing-card:hover { transform: translateY(-10px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+        .popular-badge { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-reliable-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a>
+                    <a href="/services" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Services</a>
+                    <a href="/pricing" class="text-white bg-reliable-yellow-400 text-reliable-blue-800 px-3 py-1 rounded-lg font-medium">Pricing</a>
+                    <a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a>
+                    <a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a>
+                    <a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a>
+                    <a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+                <span class="gradient-text">Simple, Transparent</span>
+                <br>Pricing
+            </h1>
+            <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+                Choose the perfect plan for your shipping needs. No hidden fees, no surprises.
+            </p>
+        </div>
+    </section>
+
+    <!-- Pricing Toggle -->
+    <section class="py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-center mb-12">
+                <div class="bg-gray-200 rounded-lg p-1">
+                    <button id="individualToggle" class="px-6 py-3 rounded-lg font-semibold transition-colors duration-300 bg-white text-gray-900 shadow-sm">
+                        Individual
+                    </button>
+                    <button id="businessToggle" class="px-6 py-3 rounded-lg font-semibold transition-colors duration-300 text-gray-600 hover:text-gray-900">
+                        Business
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Individual Pricing -->
+    <section id="individualPricing" class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Individual Plans</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Perfect for personal use and small businesses getting started.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Basic Plan -->
+                <div class="pricing-card glass-effect rounded-2xl p-8 text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Basic</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-bold text-gray-900">R0</span>
+                        <span class="text-gray-600">/month</span>
+                    </div>
+                    <p class="text-gray-600 mb-8">Perfect for occasional shipping needs</p>
+                    <ul class="space-y-4 mb-8 text-left">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Up to 5 shipments/month</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Basic tracking</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Email notifications</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Standard support</span>
+                        </li>
+                    </ul>
+                    <a href="/register" class="block w-full bg-gray-600 text-white py-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-300">
+                        Get Started
+                    </a>
+                </div>
+
+                <!-- Standard Plan -->
+                <div class="pricing-card glass-effect rounded-2xl p-8 text-center relative">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="popular-badge text-white px-4 py-2 rounded-full text-sm font-semibold">
+                            Most Popular
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Standard</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-bold text-gray-900">R99</span>
+                        <span class="text-gray-600">/month</span>
+                    </div>
+                    <p class="text-gray-600 mb-8">Great for regular shippers</p>
+                    <ul class="space-y-4 mb-8 text-left">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Up to 25 shipments/month</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Enhanced tracking</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>SMS + Email notifications</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Priority support</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>5% discount on shipping</span>
+                        </li>
+                    </ul>
+                    <a href="/register" class="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                        Get Started
+                    </a>
+                </div>
+
+                <!-- Premium Plan -->
+                <div class="pricing-card glass-effect rounded-2xl p-8 text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Premium</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-bold text-gray-900">R299</span>
+                        <span class="text-gray-600">/month</span>
+                    </div>
+                    <p class="text-gray-600 mb-8">For power users and small businesses</p>
+                    <ul class="space-y-4 mb-8 text-left">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Unlimited shipments</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Live driver tracking</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Advanced analytics</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>API access</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>10% discount on shipping</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Dedicated support</span>
+                        </li>
+                    </ul>
+                    <a href="/register" class="block w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-300">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Business Pricing -->
+    <section id="businessPricing" class="py-20 hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Business Plans</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Scalable solutions for growing businesses and enterprises.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Business Starter -->
+                <div class="pricing-card glass-effect rounded-2xl p-8 text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Business Starter</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-bold text-gray-900">R299</span>
+                        <span class="text-gray-600">/month</span>
+                    </div>
+                    <p class="text-gray-600 mb-8">Perfect for small businesses</p>
+                    <ul class="space-y-4 mb-8 text-left">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Up to 100 shipments/month</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Team management (5 users)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Basic analytics</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Bulk shipping</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>5% discount on shipping</span>
+                        </li>
+                    </ul>
+                    <a href="/contact" class="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                        Contact Sales
+                    </a>
+                </div>
+
+                <!-- Business Professional -->
+                <div class="pricing-card glass-effect rounded-2xl p-8 text-center relative">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="popular-badge text-white px-4 py-2 rounded-full text-sm font-semibold">
+                            Most Popular
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Business Professional</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-bold text-gray-900">R999</span>
+                        <span class="text-gray-600">/month</span>
+                    </div>
+                    <p class="text-gray-600 mb-8">For growing businesses</p>
+                    <ul class="space-y-4 mb-8 text-left">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Up to 500 shipments/month</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Team management (25 users)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Advanced analytics</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>API access</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Custom integrations</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>10% discount on shipping</span>
+                        </li>
+                    </ul>
+                    <a href="/contact" class="block w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors duration-300">
+                        Contact Sales
+                    </a>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="pricing-card glass-effect rounded-2xl p-8 text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Enterprise</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-bold text-gray-900">R2,999</span>
+                        <span class="text-gray-600">/month</span>
+                    </div>
+                    <p class="text-gray-600 mb-8">For large corporations</p>
+                    <ul class="space-y-4 mb-8 text-left">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Unlimited shipments</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Unlimited team members</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Live driver tracking</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Custom reporting</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>White-label solutions</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>15% discount on shipping</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Dedicated account manager</span>
+                        </li>
+                    </ul>
+                    <a href="/contact" class="block w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-300">
+                        Contact Sales
+                    </a>
+                </div>
+
+                <!-- Premium Enterprise -->
+                <div class="pricing-card glass-effect rounded-2xl p-8 text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Premium Enterprise</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-bold text-gray-900">Custom</span>
+                    </div>
+                    <p class="text-gray-600 mb-8">Tailored solutions</p>
+                    <ul class="space-y-4 mb-8 text-left">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Everything in Enterprise</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>VIP support</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Same-day delivery</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Custom delivery windows</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Dedicated driver assignment</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>20% discount on shipping</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>24/7 phone support</span>
+                        </li>
+                    </ul>
+                    <a href="/contact" class="block w-full bg-yellow-600 text-white py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors duration-300">
+                        Contact Sales
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Comparison -->
+    <section class="py-20 bg-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Feature Comparison</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Compare features across all our plans to find the perfect fit.
+                </p>
+            </div>
+
+            <div class="glass-effect rounded-2xl p-8 overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-4 px-6 font-semibold text-gray-900">Features</th>
+                            <th class="text-center py-4 px-6 font-semibold text-gray-900">Basic</th>
+                            <th class="text-center py-4 px-6 font-semibold text-gray-900">Standard</th>
+                            <th class="text-center py-4 px-6 font-semibold text-gray-900">Premium</th>
+                            <th class="text-center py-4 px-6 font-semibold text-gray-900">Business</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr>
+                            <td class="py-4 px-6 text-gray-900">Monthly Shipments</td>
+                            <td class="py-4 px-6 text-center text-gray-600">5</td>
+                            <td class="py-4 px-6 text-center text-gray-600">25</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Unlimited</td>
+                            <td class="py-4 px-6 text-center text-gray-600">100+</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 px-6 text-gray-900">Package Tracking</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Basic</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Enhanced</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Live</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Live + Analytics</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 px-6 text-gray-900">Notifications</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Email</td>
+                            <td class="py-4 px-6 text-center text-gray-600">SMS + Email</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Real-time</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Real-time + Push</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 px-6 text-gray-900">Analytics</td>
+                            <td class="py-4 px-6 text-center text-gray-600">-</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Basic</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Advanced</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Advanced + Custom</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 px-6 text-gray-900">API Access</td>
+                            <td class="py-4 px-6 text-center text-gray-600">-</td>
+                            <td class="py-4 px-6 text-center text-gray-600">-</td>
+                            <td class="py-4 px-6 text-center text-gray-600">✓</td>
+                            <td class="py-4 px-6 text-center text-gray-600">✓</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 px-6 text-gray-900">Team Management</td>
+                            <td class="py-4 px-6 text-center text-gray-600">-</td>
+                            <td class="py-4 px-6 text-center text-gray-600">-</td>
+                            <td class="py-4 px-6 text-center text-gray-600">-</td>
+                            <td class="py-4 px-6 text-center text-gray-600">✓</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 px-6 text-gray-900">Support</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Standard</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Priority</td>
+                            <td class="py-4 px-6 text-center text-gray-600">Dedicated</td>
+                            <td class="py-4 px-6 text-center text-gray-600">24/7</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Frequently Asked Questions</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Everything you need to know about our pricing and plans.
+                </p>
+            </div>
+
+            <div class="max-w-3xl mx-auto space-y-8">
+                <div class="glass-effect rounded-2xl p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Can I change my plan anytime?</h3>
+                    <p class="text-gray-600">Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any billing differences.</p>
+                </div>
+                <div class="glass-effect rounded-2xl p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">What happens if I exceed my monthly limit?</h3>
+                    <p class="text-gray-600">If you exceed your monthly shipment limit, additional shipments will be charged at our standard rates. We'll notify you when you're approaching your limit.</p>
+                </div>
+                <div class="glass-effect rounded-2xl p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Do you offer custom pricing for large volumes?</h3>
+                    <p class="text-gray-600">Yes, we offer custom pricing for businesses with high shipping volumes. Contact our sales team to discuss your specific needs and get a tailored quote.</p>
+                </div>
+                <div class="glass-effect rounded-2xl p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Is there a setup fee?</h3>
+                    <p class="text-gray-600">No, there are no setup fees for any of our plans. You only pay the monthly subscription fee and shipping costs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl font-bold text-white mb-6">
+                Ready to Get Started?
+            </h2>
+            <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+                Choose your plan and start shipping with confidence today.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/register" class="bg-reliable-yellow-400 text-reliable-blue-800 px-8 py-4 rounded-lg font-bold text-lg hover:bg-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-user-plus mr-2"></i>Start Free Trial
+                </a>
+                <a href="/contact" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-reliable-blue-800 transition-colors duration-300">
+                    <i class="fas fa-phone mr-2"></i>Contact Sales
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-shipping-fast text-2xl text-reliable-yellow-400 mr-2"></i>
+                        <span class="text-xl font-bold">Reliable Carriers</span>
+                    </div>
+                    <p class="text-gray-400">Your trusted partner for all courier and logistics needs.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Standard Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Economy Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">International</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Company</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="/careers" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="/news" class="hover:text-white transition-colors">News</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Support</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/help" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="/tracking" class="hover:text-white transition-colors">Track Package</a></li>
+                        <li><a href="/terms" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Pricing toggle functionality
+        const individualToggle = document.getElementById('individualToggle');
+        const businessToggle = document.getElementById('businessToggle');
+        const individualPricing = document.getElementById('individualPricing');
+        const businessPricing = document.getElementById('businessPricing');
+
+        individualToggle.addEventListener('click', () => {
+            individualToggle.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+            individualToggle.classList.remove('text-gray-600');
+            businessToggle.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+            businessToggle.classList.add('text-gray-600');
+            individualPricing.classList.remove('hidden');
+            businessPricing.classList.add('hidden');
+        });
+
+        businessToggle.addEventListener('click', () => {
+            businessToggle.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+            businessToggle.classList.remove('text-gray-600');
+            individualToggle.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+            individualToggle.classList.add('text-gray-600');
+            businessPricing.classList.remove('hidden');
+            individualPricing.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
+
+

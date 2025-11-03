@@ -5,51 +5,299 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Dashboard - Reliable Carriers</title>
     <link href="/css/tailwind-production.css" rel="stylesheet">
+    <!-- Dark Mode Styles -->
+    <link rel="stylesheet" th:href="@{/css/dark-mode.css}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#dbb714',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- WebSocket and SockJS for real-time updates -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
+
+        /* Enhanced glass effect with better visibility */
         .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        
+
+        /* Enhanced hover effects */
         .hover-lift {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
-        
+
         .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
         }
-        
+
+        /* Enhanced gradient text */
         .gradient-text {
-            background: linear-gradient(135deg, #fde047, #facc15);
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+
+        /* Modern card styles with better shadows */
+        .modern-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .modern-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Enhanced service cards */
+        .service-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+            border-radius: 16px;
+            border: 2px solid transparent;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .service-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: #0ea5e9;
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.2);
+        }
+
+        /* Enhanced quick action cards */
+        .quick-action-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-action-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .quick-action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .quick-action-card:hover::before {
+            left: 100%;
+        }
+
+        /* Enhanced feature cards */
+        .feature-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Enhanced service type cards */
+        .service-type-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-type-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Enhanced welcome section */
+        .welcome-section {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .welcome-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Enhanced contact section */
+        .contact-section {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .contact-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Enhanced package access section */
+        .package-access-section {
+            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(14, 165, 233, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .package-access-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(14, 165, 233, 0.4);
+        }
+
+        /* Enhanced button styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        /* Enhanced form styling */
+        .form-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-input:focus {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Enhanced profile picture */
+        .profile-picture {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .profile-picture:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Responsive design enhancements */
+        @media (max-width: 768px) {
+            .hover-lift:hover {
+                transform: translateY(-4px) scale(1.01);
+            }
+
+            .service-card:hover {
+                transform: translateY(-4px) scale(1.01);
+            }
         }
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header sticky top-0 z-50">
+    </head>
+    <body style="background-color: #f8f9fa;" class="font-sans text-black">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
-                            <rect x="4" y="20" width="40" height="20" rx="2" />
-                            <rect x="44" y="28" width="12" height="8" rx="1" />
-                            <circle cx="18" cy="44" r="4" fill="white" />
-                            <circle cx="46" cy="44" r="4" fill="white" />
-                        </svg>
-                    </span>
-                    <span>Reliable Carriers</span>
+                <a href="/customer" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
+                    <img src="/images/Reliable 1.png" alt="Reliable Carriers Logo" style="height:50px; width:auto;">
                 </a>
                 <div class="hidden md:flex space-x-8">
-                    <a href="/customer" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-home mr-2"></i>Dashboard
-                    </a>
+
                     <a href="/customer/track" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-search mr-2"></i>Track Package
                     </a>
@@ -62,14 +310,17 @@
                     <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-store mr-2"></i>Business
                     </a>
-                    <a href="/customer/profile" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-user-edit mr-2"></i>Edit Profile
-                    </a>
                     <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-question-circle mr-2"></i>Help
                     </a>
                     <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                    <a href="/customer/profile" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-user-edit mr-2"></i>Edit Profile
+                    </a>
+                    <a href="/" class="flex items-center text-white hover:text-brand-300 hover:no-underline transition-colors duration-300 font-medium ml-auto ">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
                     </a>
                 </div>
                 <!-- Mobile menu button -->
@@ -77,10 +328,11 @@
                     <i class="fas fa-bars text-xl"></i>
                 </button>
             </div>
-            <!-- Mobile menu -->
+
+            <!-- Mobile Menu -->
             <div class="md:hidden hidden" id="mobileMenu">
                 <div class="py-4 space-y-4">
-                    <a href="/customer" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
                     <a href="/customer/track" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
@@ -95,14 +347,17 @@
                     <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-store mr-2"></i>Business
                     </a>
-                    <a href="/customer/profile" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-user-edit mr-2"></i>Edit Profile
-                    </a>
                     <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-question-circle mr-2"></i>Help
                     </a>
                     <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                    <a href="/customer/profile" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-user-edit mr-2"></i>Edit Profile
+                    </a>
+                    <a href="/logout" class="block text-white hover:text-brand-300 hover:no-underline transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
                     </a>
                 </div>
             </div>
@@ -112,26 +367,29 @@
     <!-- Main Content -->
     <div class="bg-gray-50 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-800">
         <!-- Welcome Section -->
-        <div class="bg-white text-center mb-12">
-            <div class="bg-white glass-effect rounded-3xl p-8 mb-8 hover-lift shadow-lg">
+        <div class="text-center mb-12">
+            <div class="welcome-section p-8 mb-8 hover-lift">
                 <!-- Profile Picture for Authenticated Users -->
                 <div th:if="${isAuthenticated}" class="flex justify-center mb-6">
                     <div class="relative">
-                        <div class="w-24 h-24 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg mx-auto">
-                            <img th:src="${user?.profilePicture ?: '/images/default-avatar.svg'}" 
-                                 alt="Profile Picture" 
+                        <div class="w-24 h-24 rounded-full overflow-hidden bg-gray-200 border-4 border-white profile-picture mx-auto">
+                            <img th:src="${user?.profilePicture ?: '/images/default-avatar.svg'}"
+                                 alt="Profile Picture"
                                  class="w-full h-full object-cover">
+                        </div>
+                        <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
+                            <i class="fas fa-check text-white text-sm"></i>
                         </div>
                     </div>
                 </div>
                 <h1 class="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
                     <span class="gradient-text">Welcome</span>
-                    <span th:if="${isAuthenticated}" th:text="' ' + ${userName}" class="text-brand-600"></span>
-                    <span th:if="${!isAuthenticated}" class="text-brand-600">to Your</span>
+                    <span th:if="${isAuthenticated}" th:text="' ' + ${userName}" class="text-blue-600"></span>
+                    <span th:if="${!isAuthenticated}" class="text-blue-600">to Your</span>
                     <br>
-                    <span class="text-black">Package Dashboard</span>
+                    <span class="text-gray-800">Package Dashboard</span>
                 </h1>
-                <p class="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
+                <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
                     <span th:if="${isAuthenticated}">
                         Track your packages, create quotes, and manage your shipments from your personal dashboard!
                     </span>
@@ -139,12 +397,44 @@
                         Track your packages, create quotes, and manage your shipments - all without needing an account!
                     </span>
                 </p>
+                
+                <!-- Quick Stats for Authenticated Users -->
+                <div th:if="${isAuthenticated}" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-blue-100 text-sm">Total Packages</p>
+                                <p class="text-3xl font-bold">12</p>
+                            </div>
+                            <i class="fas fa-boxes text-4xl text-blue-200"></i>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-green-100 text-sm">Delivered</p>
+                                <p class="text-3xl font-bold">8</p>
+                            </div>
+                            <i class="fas fa-check-circle text-4xl text-green-200"></i>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-purple-100 text-sm">In Transit</p>
+                                <p class="text-3xl font-bold">4</p>
+                            </div>
+                            <i class="fas fa-truck text-4xl text-purple-200"></i>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="max-w-2xl mx-auto">
                     <form class="flex flex-col sm:flex-row gap-4" action="/customer/track" method="post">
-                        <input type="text" class="flex-1 px-6 py-4 rounded-full border-2 border-grey/20 bg-white/10 text-black placeholder-gray-300 focus:border-brand-400 focus:outline-none transition-all duration-300"
-                               name="trackingNumber" placeholder="Enter tracking number (e.g., RC12345678)" 
+                        <input type="text" class="form-input flex-1 px-6 py-4 text-gray-900 placeholder-gray-500"
+                               name="trackingNumber" placeholder="Enter tracking number (e.g., RC12345678)"
                                required>
-                        <button type="submit" class="bg-gradient-to-r from-brand-500 to-brand-600 text-black px-8 py-4 rounded-full font-bold hover:from-brand-600 hover:to-brand-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <button type="submit" class="btn-primary px-8 py-4 font-bold flex items-center justify-center">
                             <i class="fas fa-search mr-2"></i>Track Package
                         </button>
                     </form>
@@ -152,89 +442,82 @@
             </div>
         </div>
 
+
         <!-- Quick Actions -->
         <div class="mb-12">
             <h2 class="text-4xl font-bold text-black mb-8 text-center">
                 <i class="fas fa-bolt mr-3 gradient-text"></i>Quick Actions
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                <a href="/customer/track" class="group">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <a href="/customer/tier-aware-track" class="group">
                     <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
-                        <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
+                        <div class="text-6xl mb-4 text-yellow-400 group-hover:text-yellow-300 transition-colors duration-300">
                             <i class="fas fa-search"></i>
                         </div>
                         <h3 class="text-xl font-bold text-black mb-3">Track Package</h3>
-                        <p class="text-gray-300">Track any package using its tracking number</p>
+                        <p class="text-black">Track any package using its tracking number</p>
                     </div>
                 </a>
-                <a href="/customer/quote" class="group">
+                <a href="/customer/quote-logged-in" class="group">
                     <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
-                        <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
+                        <div class="text-6xl mb-4 text-yellow-400 group-hover:text-yellow-300 transition-colors duration-300">
                             <i class="fas fa-calculator"></i>
                         </div>
                         <h3 class="text-xl font-bold text-black mb-3">Get Quote</h3>
-                        <p class="text-gray-300">Get instant shipping quotes for your packages</p>
+                        <p class="text-black">Get instant shipping quotes for your packages</p>
                     </div>
                 </a>
-                <button onclick="openBookingModal()" class="group">
-                    <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
-                        <div class="text-6xl mb-4 text-green-500 group-hover:text-green-400 transition-colors duration-300">
-                            <i class="fas fa-shipping-fast"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-black mb-3">Book Service</h3>
-                        <p class="text-gray-300">Quick booking with saved profile information</p>
-                    </div>
-                </button>
                 <a href="/customer/packages" class="group">
                     <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
-                        <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
+                        <div class="text-6xl mb-4 text-yellow-400 group-hover:text-yellow-300 transition-colors duration-300">
                             <i class="fas fa-boxes"></i>
                         </div>
                         <h3 class="text-xl font-bold text-black mb-3">My Packages</h3>
-                        <p class="text-gray-300">View all your packages by email address</p>
+                        <p class="text-black">View all your packages by email address</p>
                     </div>
                 </a>
                 <a href="/customer/store" class="group">
                     <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
-                        <div class="text-6xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
+                        <div class="text-6xl mb-4 text-yellow-400 group-hover:text-yellow-300 transition-colors duration-300">
                             <i class="fas fa-store"></i>
                         </div>
                         <h3 class="text-xl font-bold text-black mb-3">Business Shipping</h3>
-                        <p class="text-gray-300">Send multiple packages to different customers</p>
+                        <p class="text-black">Send multiple packages to different customers</p>
                     </div>
                 </a>
             </div>
         </div>
 
-        <!-- Features Section -->
+        <!-- Why Choose Our Service? -->
         <div class="mb-12">
             <h2 class="text-4xl font-bold text-black mb-8 text-center">
                 <i class="fas fa-star mr-3 gradient-text"></i>Why Choose Our Service?
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
-                    <div class="text-6xl mb-6 text-brand-400">
+                    <div class="text-6xl mb-6 text-yellow-400">
                         <i class="fas fa-user-shield"></i>
                     </div>
                     <h3 class="text-2xl font-bold text-black mb-4">No Account Required</h3>
-                    <p class="text-gray-300">Track packages and create quotes without registration. Just use your email or phone number.</p>
+                    <p class="text-black">Track packages and create quotes without registration. Just use your email or phone number.</p>
                 </div>
                 <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
-                    <div class="text-6xl mb-6 text-brand-400">
+                    <div class="text-6xl mb-6 text-yellow-400">
                         <i class="fas fa-bell"></i>
                     </div>
                     <h3 class="text-2xl font-bold text-black mb-4">Real-time Notifications</h3>
-                    <p class="text-gray-300">Get SMS and email updates about your package status automatically.</p>
+                    <p class="text-black">Get SMS and email updates about your package status automatically.</p>
                 </div>
                 <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
-                    <div class="text-6xl mb-6 text-brand-400">
+                    <div class="text-6xl mb-6 text-yellow-400">
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <h3 class="text-2xl font-bold text-black mb-4">Complete Tracking</h3>
-                    <p class="text-gray-300">View detailed tracking information, driver details, and delivery estimates.</p>
+                    <p class="text-black">View detailed tracking information, driver details, and delivery estimates.</p>
                 </div>
             </div>
         </div>
+
 
         <!-- Service Types -->
         <div class="mb-12">
@@ -313,14 +596,105 @@
 
         <!-- Recent Packages Section for Authenticated Users -->
         <div th:if="${isAuthenticated}" class="mb-12">
-            <h2 class="text-4xl font-bold text-black mb-8 text-center">
+            <h2 class="text-4xl font-bold text-gray-800 mb-8 text-center">
                 <i class="fas fa-boxes mr-3 gradient-text"></i>Your Recent Packages
             </h2>
-            <div class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 rounded-2xl p-6 text-white">
+            
+            <!-- Recent Packages Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-check text-green-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">RC12345678</h3>
+                                <p class="text-sm text-gray-600">Delivered</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Delivered</span>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>From:</span>
+                            <span>Johannesburg</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>To:</span>
+                            <span>Cape Town</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Delivered:</span>
+                            <span>2 days ago</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-truck text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">RC12345679</h3>
+                                <p class="text-sm text-gray-600">In Transit</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">In Transit</span>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>From:</span>
+                            <span>Durban</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>To:</span>
+                            <span>Pretoria</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>ETA:</span>
+                            <span>Tomorrow</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-clock text-yellow-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">RC12345680</h3>
+                                <p class="text-sm text-gray-600">Processing</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">Processing</span>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>From:</span>
+                            <span>Port Elizabeth</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>To:</span>
+                            <span>Bloemfontein</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Status:</span>
+                            <span>Picked up</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="package-access-section p-6 text-white hover-lift">
                 <div class="text-center">
                     <h3 class="text-2xl font-bold mb-4">Quick Package Access</h3>
-                    <p class="text-brand-200 mb-6">View and track all your packages in one place</p>
-                    <a href="/customer/packages" class="bg-white text-brand-600 px-8 py-4 rounded-full font-bold hover:bg-brand-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center">
+                    <p class="text-blue-100 mb-6">View and track all your packages in one place</p>
+                    <a href="/customer/packages" class="bg-white text-blue-600 px-8 py-4 rounded-full font-bold hover:bg-blue-50 transition-all duration-300 transform hover:scale-105 inline-flex items-center">
                         <i class="fas fa-boxes mr-2"></i>View All Packages
                     </a>
                 </div>
@@ -331,9 +705,9 @@
         <div class="text-center">
             <div class="glass-effect rounded-3xl p-8 hover-lift">
                 <h3 class="text-3xl font-bold text-black mb-6">Need Help?</h3>
-                <p class="text-xl text-gray-200 mb-8">Our customer support team is here to help you with any questions or concerns.</p>
+                <p class="text-xl text-black mb-8">Our customer support team is here to help you with any questions or concerns.</p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="/customer/help" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                    <a href="/customer/help" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-reliable-700 hover:to-reliable-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
                         <i class="fas fa-question-circle mr-2"></i>Help Center
                     </a>
                     <a href="/customer/contact" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-full font-bold hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
@@ -345,7 +719,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white mt-16">
+    <footer class="bg-gray-900 text-black mt-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
@@ -379,7 +753,7 @@
                     </div>
                 </div>
             </div>
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-black-300">
                 <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
             </div>
         </div>
@@ -421,6 +795,195 @@
         window.addEventListener('load', function() {
             document.body.classList.add('loaded');
         });
+
+        // Real-time tracking functionality
+        let stompClient = null;
+        let isConnected = false;
+
+        // Initialize WebSocket connection
+        function initializeRealtimeTracking() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function(frame) {
+                console.log('Connected to WebSocket: ' + frame);
+                isConnected = true;
+
+                // Subscribe to package updates
+                subscribeToPackageUpdates();
+
+                // Show connection status
+                showConnectionStatus('Connected', 'success');
+            }, function(error) {
+                console.error('WebSocket connection error: ' + error);
+                isConnected = false;
+                showConnectionStatus('Disconnected', 'error');
+
+                // Retry connection after 5 seconds
+                setTimeout(initializeRealtimeTracking, 5000);
+            });
+        }
+
+        // Subscribe to package updates
+        function subscribeToPackageUpdates() {
+            if (!stompClient || !isConnected) return;
+
+            // Subscribe to general package updates
+            stompClient.subscribe('/topic/package-updates', function(message) {
+                const update = JSON.parse(message.body);
+                handlePackageUpdate(update);
+            });
+
+            // Subscribe to customer-specific packages
+            const customerEmail = getCurrentCustomerEmail();
+            if (customerEmail) {
+                stompClient.subscribe('/topic/customer-packages/' + customerEmail, function(message) {
+                    const packageData = JSON.parse(message.body);
+                    updatePackageDisplay(packageData);
+                });
+            }
+        }
+
+        // Handle package status updates
+        function handlePackageUpdate(update) {
+            console.log('Package update received:', update);
+
+            // Update package status in UI
+            updatePackageStatus(update.trackingNumber, update.status, update.location, update.notes);
+
+            // Show notification
+            showPackageNotification(update);
+        }
+
+        // Update package status in the UI
+        function updatePackageStatus(trackingNumber, status, location, notes) {
+            // Find package element by tracking number
+            const packageElements = document.querySelectorAll('[data-tracking="' + trackingNumber + '"]');
+
+            packageElements.forEach(element => {
+                // Update status badge
+                const statusBadge = element.querySelector('.status-badge');
+                if (statusBadge) {
+                    statusBadge.textContent = getStatusText(status);
+                    statusBadge.className = 'status-badge ' + getStatusClass(status);
+                }
+
+                // Update location if provided
+                if (location) {
+                    const locationElement = element.querySelector('.package-location');
+                    if (locationElement) {
+                        locationElement.textContent = location;
+                    }
+                }
+
+                // Update timestamp
+                const timestampElement = element.querySelector('.package-timestamp');
+                if (timestampElement) {
+                    timestampElement.textContent = new Date().toLocaleString();
+                }
+            });
+        }
+
+        // Show package notification
+        function showPackageNotification(update) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-white border-l-4 border-blue-500 p-4 rounded-lg shadow-lg z-50 max-w-sm';
+            notification.innerHTML = `
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-package text-blue-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h4 class="text-sm font-medium text-gray-900">Package Update</h4>
+                        <p class="text-sm text-gray-600">${update.trackingNumber}</p>
+                        <p class="text-sm text-gray-500">Status: ${getStatusText(update.status)}</p>
+                        ${update.location ? `<p class="text-xs text-gray-400">Location: ${update.location}</p>` : ''}
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 10000);
+        }
+
+        // Get status text for display
+        function getStatusText(status) {
+            const statusMap = {
+                'PENDING': 'Pending',
+                'ASSIGNED': 'Assigned to Driver',
+                'PICKED_UP': 'Picked Up',
+                'IN_TRANSIT': 'In Transit',
+                'OUT_FOR_DELIVERY': 'Out for Delivery',
+                'DELIVERED': 'Delivered',
+                'FAILED_DELIVERY': 'Delivery Failed',
+                'CANCELLED': 'Cancelled'
+            };
+            return statusMap[status] || status;
+        }
+
+        // Get status CSS class
+        function getStatusClass(status) {
+            const classMap = {
+                'PENDING': 'bg-yellow-100 text-yellow-800',
+                'ASSIGNED': 'bg-blue-100 text-blue-800',
+                'PICKED_UP': 'bg-green-100 text-green-800',
+                'IN_TRANSIT': 'bg-blue-100 text-blue-800',
+                'OUT_FOR_DELIVERY': 'bg-purple-100 text-purple-800',
+                'DELIVERED': 'bg-green-100 text-green-800',
+                'FAILED_DELIVERY': 'bg-red-100 text-red-800',
+                'CANCELLED': 'bg-gray-100 text-gray-800'
+            };
+            return classMap[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        // Show connection status
+        function showConnectionStatus(message, type) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.className = 'text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
+            }
+        }
+
+        // Get current customer email (you'll need to implement this based on your auth system)
+        function getCurrentCustomerEmail() {
+            // This should return the current logged-in customer's email
+            // You can get this from a global variable, localStorage, or make an API call
+            return window.currentCustomerEmail || null;
+        }
+
+        // Update package display with new data
+        function updatePackageDisplay(packageData) {
+            console.log('Updating package display:', packageData);
+            // Implement package display update logic here
+        }
+
+        // Initialize real-time tracking when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeRealtimeTracking();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (stompClient && isConnected) {
+                stompClient.disconnect();
+            }
+        });
     </script>
+    <!-- Dark Mode Script -->
+    <script th:src="@{/js/dark-mode.js}"></script>
+    <!-- Dashboard Enhancements -->
+    <script src="/js/dashboard-enhancements.js"></script>
+    <!-- Web Push Notifications -->
+    <script src="/js/web-push.js"></script>
 </body>
 </html>

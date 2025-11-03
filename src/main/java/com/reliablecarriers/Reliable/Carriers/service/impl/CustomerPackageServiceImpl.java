@@ -5,6 +5,7 @@ import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageResponse;
 import com.reliablecarriers.Reliable.Carriers.dto.QuoteResponse;
 import com.reliablecarriers.Reliable.Carriers.model.*;
 import com.reliablecarriers.Reliable.Carriers.model.Vehicle;
+import com.reliablecarriers.Reliable.Carriers.repository.QuoteRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.ShipmentRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.ShipmentTrackingRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.VehicleRepository;
@@ -27,19 +28,20 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
     private final ShipmentRepository shipmentRepository;
     private final ShipmentTrackingRepository trackingRepository;
     private final VehicleRepository vehicleRepository;
+    private final QuoteRepository quoteRepository;
     private final UserService userService;
     private final NotificationService notificationService;
     private final PricingService pricingService;
     private final GoogleMapsService googleMapsService;
     
-    // In-memory storage for quotes (in production, this should be in a database)
-    private final Map<String, QuoteResponse> quoteStorage = new ConcurrentHashMap<>();
+    // In-memory storage for quote requests (for backward compatibility)
     private final Map<String, CustomerPackageRequest> quoteRequests = new ConcurrentHashMap<>();
 
     @Autowired
     public CustomerPackageServiceImpl(ShipmentRepository shipmentRepository,
                                     ShipmentTrackingRepository trackingRepository,
                                     VehicleRepository vehicleRepository,
+                                    QuoteRepository quoteRepository,
                                     UserService userService,
                                     NotificationService notificationService,
                                     PricingService pricingService,
@@ -47,6 +49,7 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
         this.shipmentRepository = shipmentRepository;
         this.trackingRepository = trackingRepository;
         this.vehicleRepository = vehicleRepository;
+        this.quoteRepository = quoteRepository;
         this.userService = userService;
         this.notificationService = notificationService;
         this.pricingService = pricingService;
@@ -101,7 +104,7 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
             
             // Calculate all fees
             BigDecimal baseCost = calculateBaseCost(request);
-            BigDecimal serviceFee = calculateServiceFee(request, recommendedService.getServiceType());
+            BigDecimal serviceFee = calculateServiceFee(request, ServiceType.valueOf(recommendedService.getServiceType()));
             BigDecimal insuranceFee = calculateInsuranceFee(request);
             BigDecimal fuelSurcharge = calculateFuelSurcharge(request);
             
@@ -115,7 +118,7 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
             quote.setFuelSurcharge(fuelSurcharge);
             quote.setServiceType(recommendedService.getServiceType());
             quote.setEstimatedDeliveryTime(recommendedService.getEstimatedDeliveryTime());
-            quote.setEstimatedDeliveryDate(calculateEstimatedDeliveryDate(recommendedService.getServiceType()));
+            quote.setEstimatedDeliveryDate(calculateEstimatedDeliveryDate(ServiceType.valueOf(recommendedService.getServiceType())));
             quote.setAvailableServices(availableServices);
             quote.setDistanceKm(estimateDistanceKm(request));
             quote.setPickupAddress(formatAddress(request.getPickupAddress(), request.getPickupCity(), request.getPickupState()));
@@ -126,11 +129,42 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
             quote.setQuoteExpiryDate(calculateQuoteExpiryDate());
             quote.setActive(true);
             
-            // Store quote for later retrieval
-            quoteStorage.put(quoteId, quote);
+            // Store quote in database
+            Quote quoteEntity = new Quote();
+            quoteEntity.setQuoteId(quoteId);
+            quoteEntity.setCustomerEmail(request.getSenderEmail());
+            quoteEntity.setPickupAddress(request.getPickupAddress());
+            quoteEntity.setPickupCity(request.getPickupCity());
+            quoteEntity.setPickupState(request.getPickupState());
+            quoteEntity.setPickupZipCode(request.getPickupZipCode());
+            quoteEntity.setPickupCountry(request.getPickupCountry());
+            quoteEntity.setDeliveryAddress(request.getDeliveryAddress());
+            quoteEntity.setDeliveryCity(request.getDeliveryCity());
+            quoteEntity.setDeliveryState(request.getDeliveryState());
+            quoteEntity.setDeliveryZipCode(request.getDeliveryZipCode());
+            quoteEntity.setDeliveryCountry(request.getDeliveryCountry());
+            quoteEntity.setWeight(request.getWeight());
+            quoteEntity.setDimensions(request.getDimensions());
+            quoteEntity.setDescription(request.getDescription());
+            quoteEntity.setTotalCost(totalCost);
+            quoteEntity.setBaseCost(baseCost);
+            quoteEntity.setServiceFee(serviceFee);
+            quoteEntity.setInsuranceFee(insuranceFee);
+            quoteEntity.setFuelSurcharge(fuelSurcharge);
+            quoteEntity.setServiceType(ServiceType.valueOf(recommendedService.getServiceType()));
+            quoteEntity.setEstimatedDeliveryTime(recommendedService.getEstimatedDeliveryTime());
+            quoteEntity.setEstimatedDeliveryDate(calculateEstimatedDeliveryDate(ServiceType.valueOf(recommendedService.getServiceType())));
+            quoteEntity.setDistanceKm(estimateDistanceKm(request));
+            quoteEntity.setExpiryDate(calculateQuoteExpiryDate());
+            quoteEntity.setIsActive(true);
+            
+            // Save to database
+            quoteRepository.save(quoteEntity);
+            
+            // Store request for backward compatibility
             quoteRequests.put(quoteId, request);
             
-            System.out.println("Quote created successfully: " + quoteId);
+            System.out.println("Quote created and saved to database: " + quoteId);
             return quote;
             
         } catch (Exception e) {
@@ -142,9 +176,17 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
 
     @Override
     public Shipment createShipmentFromQuote(String quoteId, CustomerPackageRequest request) {
-        QuoteResponse quote = quoteStorage.get(quoteId);
-        if (quote == null || !quote.isActive()) {
-            throw new RuntimeException("Invalid or expired quote");
+        // Retrieve quote from database
+        Quote quoteEntity = quoteRepository.findByQuoteId(quoteId)
+                .orElseThrow(() -> new RuntimeException("Quote not found"));
+        
+        if (!quoteEntity.getIsActive()) {
+            throw new RuntimeException("Quote is no longer active");
+        }
+        
+        // Check if quote has expired
+        if (quoteEntity.getExpiryDate().before(new Date())) {
+            throw new RuntimeException("Quote has expired");
         }
         
         // Create or find sender user
@@ -170,10 +212,10 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
         shipment.setWeight(request.getWeight());
         shipment.setDimensions(request.getDimensions());
         shipment.setDescription(request.getDescription());
-        shipment.setShippingCost(quote.getTotalCost());
-        shipment.setServiceType(quote.getServiceType());
+        shipment.setShippingCost(quoteEntity.getTotalCost());
+        shipment.setServiceType(quoteEntity.getServiceType());
         shipment.setStatus(ShipmentStatus.PENDING);
-        shipment.setEstimatedDeliveryDate(quote.getEstimatedDeliveryDate());
+        shipment.setEstimatedDeliveryDate(quoteEntity.getEstimatedDeliveryDate());
         
         // Save shipment
         Shipment savedShipment = shipmentRepository.save(shipment);
@@ -189,8 +231,11 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
             System.out.println("Notification failed for shipment " + savedShipment.getTrackingNumber() + ": " + e.getMessage());
         }
         
-        // Remove quote from storage
-        quoteStorage.remove(quoteId);
+        // Mark quote as inactive in database
+        quoteEntity.setIsActive(false);
+        quoteRepository.save(quoteEntity);
+        
+        // Remove request from memory storage
         quoteRequests.remove(quoteId);
         
         return savedShipment;
@@ -455,43 +500,47 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
             System.out.println("Calculating service options...");
             List<QuoteResponse.ServiceOption> options = new ArrayList<>();
             
-            // Economy service
+            // Calculate distance for moving services
+            double distanceKm = estimateDistanceKm(request);
+            System.out.println("Estimated distance: " + distanceKm + " km");
+            
+            // Economy courier service (Gauteng only)
             BigDecimal economyCost = pricingService.calculateCourierPrice(ServiceType.ECONOMY);
             options.add(new QuoteResponse.ServiceOption(
-                ServiceType.ECONOMY, 
+                ServiceType.ECONOMY.toString(), 
                 economyCost, 
-                "5-7 business days", 
-                "Most economical option", 
+                "2-3 business days", 
+                "Most economical option for Gauteng", 
                 false
             ));
             
-            // Standard service
-            BigDecimal standardCost = pricingService.calculateCourierPrice(ServiceType.OVERNIGHT);
+            // Overnight courier service (Gauteng only)
+            BigDecimal overnightCost = pricingService.calculateCourierPrice(ServiceType.OVERNIGHT);
             options.add(new QuoteResponse.ServiceOption(
-                ServiceType.OVERNIGHT, 
-                standardCost, 
-                "3-5 business days", 
-                "Balanced speed and cost", 
+                ServiceType.OVERNIGHT.toString(), 
+                overnightCost, 
+                "Next business day", 
+                "Balanced speed and cost for Gauteng", 
                 true
             ));
             
-            // Express service
-            BigDecimal expressCost = pricingService.calculateCourierPrice(ServiceType.SAME_DAY);
+            // Same day courier service (Gauteng only)
+            BigDecimal sameDayCost = pricingService.calculateCourierPrice(ServiceType.SAME_DAY);
             options.add(new QuoteResponse.ServiceOption(
-                ServiceType.SAME_DAY, 
-                expressCost, 
-                "1-2 business days", 
-                "Fastest delivery option", 
+                ServiceType.SAME_DAY.toString(), 
+                sameDayCost, 
+                "Same day delivery", 
+                "Fastest delivery option for Gauteng", 
                 false
             ));
             
-            // Moving service options
-            BigDecimal movingCost = pricingService.calculateMovingServicePrice(ServiceType.FURNITURE, estimateDistanceKm(request));
+            // Moving service (distance-based pricing)
+            BigDecimal movingCost = pricingService.calculateMovingServicePrice(ServiceType.FURNITURE, distanceKm);
             options.add(new QuoteResponse.ServiceOption(
-                ServiceType.FURNITURE, 
+                ServiceType.FURNITURE.toString(), 
                 movingCost, 
                 "3-5 business days", 
-                "Professional moving service with insurance", 
+                "Professional moving service with insurance (R550 for 20km, R25/km thereafter)", 
                 false
             ));
             
@@ -505,21 +554,21 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
             // Return default options if pricing service fails
             List<QuoteResponse.ServiceOption> fallbackOptions = new ArrayList<>();
             fallbackOptions.add(new QuoteResponse.ServiceOption(
-                ServiceType.ECONOMY, 
+                ServiceType.ECONOMY.toString(), 
                 new BigDecimal("100.00"), 
                 "5-7 business days", 
                 "Most economical option", 
                 false
             ));
             fallbackOptions.add(new QuoteResponse.ServiceOption(
-                ServiceType.OVERNIGHT, 
+                ServiceType.OVERNIGHT.toString(), 
                 new BigDecimal("120.00"), 
                 "3-5 business days", 
                 "Balanced speed and cost", 
                 true
             ));
             fallbackOptions.add(new QuoteResponse.ServiceOption(
-                ServiceType.SAME_DAY, 
+                ServiceType.SAME_DAY.toString(), 
                 new BigDecimal("140.00"), 
                 "1-2 business days", 
                 "Fastest delivery option", 
@@ -528,7 +577,7 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
             
             // Moving service fallback
             fallbackOptions.add(new QuoteResponse.ServiceOption(
-                ServiceType.FURNITURE, 
+                ServiceType.FURNITURE.toString(), 
                 new BigDecimal("200.00"), 
                 "3-5 business days", 
                 "Professional moving service with insurance", 
@@ -593,16 +642,26 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
         // Try Google Maps API first if addresses are available and service is configured
         if (googleMapsService != null && request.getPickupAddress() != null && request.getDeliveryAddress() != null) {
             try {
+                System.out.println("Attempting Google Maps API call for distance calculation...");
+                System.out.println("From: " + request.getPickupAddress());
+                System.out.println("To: " + request.getDeliveryAddress());
+                
                 GoogleMapsService.DistanceResult result = googleMapsService.calculateDistance(
                     request.getPickupAddress(), 
                     request.getDeliveryAddress()
                 );
                 if (result != null) {
+                    System.out.println("Google Maps API returned distance: " + result.getDistanceKm() + " km");
                     return result.getDistanceKm();
+                } else {
+                    System.out.println("Google Maps API returned null result");
                 }
             } catch (Exception e) {
                 System.err.println("Google Maps API call failed, falling back to other methods: " + e.getMessage());
+                e.printStackTrace();
             }
+        } else {
+            System.out.println("Google Maps API not available or addresses missing");
         }
         
         // Haversine if coords present; otherwise approximate within Gauteng (Johannesburg-centric)
@@ -614,12 +673,43 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
         // Fallback: heuristic distance based on different city names
         String fromCity = safeLower(request.getPickupCity());
         String toCity = safeLower(request.getDeliveryCity());
-        if (fromCity.equals(toCity)) return 10.0; // intra-city avg
-        // Common Gauteng pairs
-        if ((fromCity.contains("johannesburg") && toCity.contains("pretoria")) || (fromCity.contains("pretoria") && toCity.contains("johannesburg"))) return 55.0;
-        if ((fromCity.contains("sandton") && toCity.contains("midrand")) || (fromCity.contains("midrand") && toCity.contains("sandton"))) return 20.0;
-        if ((fromCity.contains("johannesburg") && toCity.contains("soweto")) || (fromCity.contains("soweto") && toCity.contains("johannesburg"))) return 25.0;
-        // Default fallback
+        
+        System.out.println("Using fallback distance calculation for: " + fromCity + " to " + toCity);
+        
+        if (fromCity.equals(toCity)) {
+            System.out.println("Same city, using 10km estimate");
+            return 10.0; // intra-city avg
+        }
+        
+        // Common Gauteng pairs with more accurate distances
+        if ((fromCity.contains("johannesburg") && toCity.contains("pretoria")) || (fromCity.contains("pretoria") && toCity.contains("johannesburg"))) {
+            System.out.println("Johannesburg-Pretoria route: 55km");
+            return 55.0;
+        }
+        if ((fromCity.contains("sandton") && toCity.contains("midrand")) || (fromCity.contains("midrand") && toCity.contains("sandton"))) {
+            System.out.println("Sandton-Midrand route: 20km");
+            return 20.0;
+        }
+        if ((fromCity.contains("johannesburg") && toCity.contains("soweto")) || (fromCity.contains("soweto") && toCity.contains("johannesburg"))) {
+            System.out.println("Johannesburg-Soweto route: 25km");
+            return 25.0;
+        }
+        if ((fromCity.contains("johannesburg") && toCity.contains("sandton")) || (fromCity.contains("sandton") && toCity.contains("johannesburg"))) {
+            System.out.println("Johannesburg-Sandton route: 15km");
+            return 15.0;
+        }
+        if ((fromCity.contains("pretoria") && toCity.contains("midrand")) || (fromCity.contains("midrand") && toCity.contains("pretoria"))) {
+            System.out.println("Pretoria-Midrand route: 35km");
+            return 35.0;
+        }
+        
+        // Default fallback based on province
+        if (fromCity.contains("gauteng") || toCity.contains("gauteng")) {
+            System.out.println("Gauteng province route: 30km");
+            return 30.0;
+        }
+        
+        System.out.println("Unknown route, using default 30km");
         return 30.0;
     }
 

@@ -1,69 +1,70 @@
 package com.reliablecarriers.Reliable.Carriers.service;
 
+import com.reliablecarriers.Reliable.Carriers.model.Booking;
+import com.reliablecarriers.Reliable.Carriers.model.MovingService;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
 import com.reliablecarriers.Reliable.Carriers.model.User;
-import com.reliablecarriers.Reliable.Carriers.model.MovingService;
-import com.reliablecarriers.Reliable.Carriers.model.Booking;
 
 import java.util.Date;
+import java.util.List;
 
+/**
+ * Notification Service Interface
+ * Simplified interface matching existing usage patterns
+ */
 public interface NotificationService {
     
-    // Shipment-related notifications
+    // Basic notifications
+    void sendCustomSmsNotification(String phoneNumber, String message);
+    void sendCustomEmailNotification(String email, String subject, String message);
+    
+    // Existing method signatures from NotificationServiceImpl
     void sendShipmentCreatedNotification(Shipment shipment);
-    void sendShipmentStatusUpdateNotification(Shipment shipment, ShipmentStatus oldStatus, ShipmentStatus newStatus, String location);
+    void sendShipmentStatusUpdateNotification(Shipment shipment, ShipmentStatus oldStatus, ShipmentStatus newStatus, String additionalInfo);
     void sendShipmentPickedUpNotification(Shipment shipment, String driverName);
-    void sendShipmentInTransitNotification(Shipment shipment, String driverName, String currentLocation);
-    void sendShipmentOutForDeliveryNotification(Shipment shipment, String driverName, String estimatedTime);
+    void sendShipmentInTransitNotification(Shipment shipment, String currentLocation, String estimatedArrival);
+    void sendShipmentOutForDeliveryNotification(Shipment shipment, String driverName, String estimatedDeliveryTime);
     void sendShipmentDeliveredNotification(Shipment shipment, String driverName, String deliveryTime);
     void sendShipmentFailedDeliveryNotification(Shipment shipment, String reason, String nextAttempt);
     void sendShipmentCancelledNotification(Shipment shipment, String reason);
     
-    // Driver-related notifications
+    // Driver notifications
     void sendDriverAssignedNotification(Shipment shipment, User driver);
-    void sendDriverLocationUpdateNotification(Shipment shipment, String driverName, String location);
+    void sendDriverLocationUpdateNotification(Shipment shipment, String latitude, String longitude);
     void sendDriverOfflineNotification(User driver, String lastKnownLocation);
     void sendDriverOnlineNotification(User driver);
     
-    // Moving Service Notifications
+    // Moving service notifications
     void sendMovingServiceCreatedNotification(MovingService movingService);
     void sendDriverAssignedToMovingServiceNotification(MovingService movingService, User driver);
-    void sendMovingServiceStatusUpdateNotification(MovingService movingService, ShipmentStatus oldStatus, ShipmentStatus newStatus, String notes);
+    void sendMovingServiceStatusUpdateNotification(MovingService movingService, ShipmentStatus oldStatus, ShipmentStatus newStatus, String additionalInfo);
     void sendMovingServiceScheduledNotification(MovingService movingService, Date scheduledDate);
     void sendMovingServiceCompletedNotification(MovingService movingService, String completionNotes);
-    void sendMovingServiceCancelledNotification(MovingService movingService, String cancellationReason);
+    void sendMovingServiceCancelledNotification(MovingService movingService, String reason);
     
-    // Tracking manager notifications
+    // Admin and tracking notifications
     void sendTrackingAlertToManager(String alertType, String message, Shipment shipment);
-    void sendDeliveryDelayAlert(Shipment shipment, String reason, String newEstimatedTime);
-    void sendDriverPerformanceAlert(User driver, String metric, String value);
-    
-    // Customer service notifications
+    void sendDeliveryDelayAlert(Shipment shipment, String reason, String newEstimatedDelivery);
+    void sendDriverPerformanceAlert(User driver, String alertType, String details);
     void sendCustomerServiceNotification(String customerEmail, String subject, String message);
     void sendCustomerFeedbackRequest(Shipment shipment);
+    void sendSystemMaintenanceNotification(String startTime, String endTime);
+    void sendSystemErrorNotification(String errorType, String errorDetails);
     
-    // System notifications
-    void sendSystemMaintenanceNotification(String message, String scheduledTime);
-    void sendSystemErrorNotification(String error, String affectedService);
+    // Bulk operations
+    void sendBulkStatusUpdateNotifications(List<Shipment> shipments, ShipmentStatus newStatus);
+    void sendBulkDeliveryReminders(List<Shipment> shipments);
     
-    // Bulk notifications
-    void sendBulkStatusUpdateNotifications(java.util.List<Shipment> shipments, ShipmentStatus status);
-    void sendBulkDeliveryReminders(java.util.List<Shipment> shipments);
+    // Preferences
+    void updateNotificationPreferences(User user, boolean emailEnabled, boolean smsEnabled);
+    boolean isEmailNotificationEnabled(User user);
+    boolean isSmsNotificationEnabled(User user);
     
-    // Custom notifications
-    void sendCustomEmailNotification(String to, String subject, String message);
-    void sendCustomSmsNotification(String phoneNumber, String message);
-    
-    // Booking-related notifications
+    // Booking notifications
     void sendBookingConfirmationNotification(Booking booking);
     void sendBookingCancellationNotification(Booking booking);
     void sendBookingStatusUpdateNotification(Booking booking, String oldStatus, String newStatus);
     void sendBookingPaymentConfirmationNotification(Booking booking);
     void sendBookingPaymentFailedNotification(Booking booking);
-    
-    // Notification preferences
-    void updateNotificationPreferences(User user, boolean emailEnabled, boolean smsEnabled);
-    boolean isEmailNotificationEnabled(User user);
-    boolean isSmsNotificationEnabled(User user);
 }

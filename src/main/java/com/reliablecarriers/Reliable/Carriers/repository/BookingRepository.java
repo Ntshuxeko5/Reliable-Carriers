@@ -3,6 +3,7 @@ package com.reliablecarriers.Reliable.Carriers.repository;
 import com.reliablecarriers.Reliable.Carriers.model.Booking;
 import com.reliablecarriers.Reliable.Carriers.model.BookingStatus;
 import com.reliablecarriers.Reliable.Carriers.model.ServiceType;
+import com.reliablecarriers.Reliable.Carriers.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -34,6 +35,20 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
      * Find bookings by status
      */
     List<Booking> findByStatusOrderByCreatedAtDesc(BookingStatus status);
+    
+    List<Booking> findByStatusAndDriverIsNull(BookingStatus status);
+    
+    List<Booking> findByDriverIdAndStatusIn(Long driverId, List<BookingStatus> statuses);
+    
+    long countByDriverAndStatusIn(User driver, List<BookingStatus> statuses);
+    
+    List<Booking> findByStatusAndDriverOrderByCreatedAtDesc(BookingStatus status, User driver);
+    
+    List<Booking> findByDriverOrderByCreatedAtDesc(User driver);
+    
+    List<Booking> findAllByOrderByCreatedAtDesc();
+    
+    long countByStatusIn(List<BookingStatus> statuses);
     
     /**
      * Find bookings by service type

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Registration - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="mx-auto h-20 w-20 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-full flex items-center justify-center mb-6">
+                <i class="fas fa-building text-white text-3xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Business Registration</h1>
+            <p class="text-xl text-gray-600">Register your business and get access to bulk shipping, API integration, and more</p>
+        </div>
+
+        <!-- Benefits Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-check-circle text-green-500 mr-2"></i>Business Benefits
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="flex items-start">
+                    <i class="fas fa-code text-blue-600 mr-3 mt-1"></i>
+                    <div>
+                        <h3 class="font-medium text-gray-900">API Integration</h3>
+                        <p class="text-sm text-gray-600">Integrate with your systems</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-boxes text-blue-600 mr-3 mt-1"></i>
+                    <div>
+                        <h3 class="font-medium text-gray-900">Bulk Shipping</h3>
+                        <p class="text-sm text-gray-600">Send multiple packages easily</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-chart-line text-blue-600 mr-3 mt-1"></i>
+                    <div>
+                        <h3 class="font-medium text-gray-900">Analytics Dashboard</h3>
+                        <p class="text-sm text-gray-600">Track your shipping metrics</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-credit-card text-blue-600 mr-3 mt-1"></i>
+                    <div>
+                        <h3 class="font-medium text-gray-900">Credit Terms</h3>
+                        <p class="text-sm text-gray-600">Net 30 payment terms</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-percent text-blue-600 mr-3 mt-1"></i>
+                    <div>
+                        <h3 class="font-medium text-gray-900">5% Discount</h3>
+                        <p class="text-sm text-gray-600">On all shipments</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <i class="fas fa-headset text-blue-600 mr-3 mt-1"></i>
+                    <div>
+                        <h3 class="font-medium text-gray-900">Priority Support</h3>
+                        <p class="text-sm text-gray-600">Dedicated business support</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registration Form -->
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <form id="businessRegisterForm" class="space-y-6">
+                <!-- Contact Person Information -->
+                <div class="border-b border-gray-200 pb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-user text-blue-600 mr-2"></i>Contact Person Information
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="firstName" class="block text-sm font-medium text-gray-700 mb-2">
+                                First Name *
+                            </label>
+                            <input id="firstName" name="firstName" type="text" required 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Contact person's first name">
+                        </div>
+                        <div>
+                            <label for="lastName" class="block text-sm font-medium text-gray-700 mb-2">
+                                Last Name *
+                            </label>
+                            <input id="lastName" name="lastName" type="text" required 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Contact person's last name">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                Business Email *
+                            </label>
+                            <input id="email" name="email" type="email" required 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="business@example.com">
+                        </div>
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                                Phone Number *
+                            </label>
+                            <input id="phone" name="phone" type="tel" required pattern="[0-9+\s()-]+"
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="+27123456789">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Business Information -->
+                <div class="border-b border-gray-200 pb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-building text-blue-600 mr-2"></i>Business Information
+                    </h3>
+                    <div class="space-y-6">
+                        <div>
+                            <label for="businessName" class="block text-sm font-medium text-gray-700 mb-2">
+                                Business Name *
+                            </label>
+                            <input id="businessName" name="businessName" type="text" required 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Your Business Name (Pty) Ltd">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="registrationNumber" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Registration Number *
+                                </label>
+                                <input id="registrationNumber" name="registrationNumber" type="text" required 
+                                       class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="e.g., CK123456789">
+                                <p class="text-xs text-gray-500 mt-1">CIPC registration number</p>
+                            </div>
+                            <div>
+                                <label for="taxId" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tax ID / VAT Number *
+                                </label>
+                                <input id="taxId" name="taxId" type="text" required 
+                                       class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="e.g., IT1234567890">
+                                <p class="text-xs text-gray-500 mt-1">SARS tax/VAT registration</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Business Address -->
+                <div class="border-b border-gray-200 pb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>Business Address
+                    </h3>
+                    <div class="space-y-6">
+                        <div>
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                                Street Address *
+                            </label>
+                            <input id="address" name="address" type="text" required 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="123 Business Street">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="city" class="block text-sm font-medium text-gray-700 mb-2">
+                                    City *
+                                </label>
+                                <input id="city" name="city" type="text" required 
+                                       class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="Johannesburg">
+                            </div>
+                            <div>
+                                <label for="state" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Province *
+                                </label>
+                                <input id="state" name="state" type="text" required 
+                                       class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="Gauteng">
+                            </div>
+                            <div>
+                                <label for="zipCode" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Postal Code *
+                                </label>
+                                <input id="zipCode" name="zipCode" type="text" required 
+                                       class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="2000">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="country" class="block text-sm font-medium text-gray-700 mb-2">
+                                Country *
+                            </label>
+                            <input id="country" name="country" type="text" required 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   value="South Africa" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="border-b border-gray-200 pb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-lock text-blue-600 mr-2"></i>Account Security
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                                Password *
+                            </label>
+                            <input id="password" name="password" type="password" required 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Create a secure password">
+                            <p class="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
+                        </div>
+                        <div>
+                            <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                                Confirm Password *
+                            </label>
+                            <input id="confirmPassword" name="confirmPassword" type="password" required 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Confirm your password">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <input id="terms" name="terms" type="checkbox" required
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1">
+                        <label for="terms" class="ml-3 text-sm text-gray-700">
+                            I agree to the <a href="/terms" class="text-blue-600 hover:underline">Terms of Service</a> 
+                            and <a href="/privacy" class="text-blue-600 hover:underline">Privacy Policy</a> *
+                        </label>
+                    </div>
+                    <div class="flex items-start">
+                        <input id="waiver" name="waiver" type="checkbox" required
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1">
+                        <label for="waiver" class="ml-3 text-sm text-gray-700">
+                            I acknowledge and accept the <a href="/docs/liability-waiver.pdf" target="_blank" class="text-blue-600 hover:underline">Liability Waiver</a> *
+                        </label>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Note:</strong> Your business account will be pending verification. 
+                            Once verified, you'll have access to API keys, credit terms, and all business features.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div>
+                    <button type="submit" 
+                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-building mr-2"></i>
+                        Register Business Account
+                    </button>
+                </div>
+            </form>
+
+            <!-- 2FA Verification Stage -->
+            <div id="otpStage" class="hidden mt-8">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Verify Your Business Account</h2>
+                    <p class="text-gray-600">We've sent a verification code to your business email. Please enter it below.</p>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">Verification Code</label>
+                    <input type="text" id="otpCode" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Enter 6-digit code" maxlength="6" required>
+                </div>
+                <div class="mb-6">
+                    <button id="verifyOtpBtn" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors">
+                        Verify Business Account
+                    </button>
+                </div>
+                <div class="text-center">
+                    <button id="resendCodeBtn" class="text-blue-600 hover:text-blue-700 font-medium">
+                        Resend Code
+                    </button>
+                </div>
+            </div>
+
+            <!-- Login Link -->
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-600">
+                    Already have a business account? 
+                    <a href="/login" class="font-medium text-blue-600 hover:text-blue-700">
+                        Sign in here
+                    </a>
+                </p>
+                <p class="text-sm text-gray-600 mt-2">
+                    Need a personal account? 
+                    <a href="/register" class="font-medium text-blue-600 hover:text-blue-700">
+                        Register as individual
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="fixed top-4 right-4 z-50"></div>
+
+    <script>
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `p-4 rounded-lg shadow-lg mb-4 ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        document.getElementById('businessRegisterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                password: formData.get('password'),
+                confirmPassword: formData.get('confirmPassword'),
+                address: formData.get('address'),
+                city: formData.get('city'),
+                state: formData.get('state'),
+                zipCode: formData.get('zipCode'),
+                country: formData.get('country'),
+                isBusiness: true,
+                businessName: formData.get('businessName'),
+                registrationNumber: formData.get('registrationNumber'),
+                taxId: formData.get('taxId'),
+                role: 'CUSTOMER',
+                waiverAccepted: formData.get('waiver') === 'on'
+            };
+
+            if (data.password !== data.confirmPassword) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.requires2fa) {
+                    document.getElementById('businessRegisterForm').classList.add('hidden');
+                    document.getElementById('otpStage').classList.remove('hidden');
+                } else if (result.error) {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Registration failed. Please try again.', 'error');
+            }
+        });
+
+        document.getElementById('verifyOtpBtn')?.addEventListener('click', async () => {
+            const code = document.getElementById('otpCode').value;
+            const email = document.getElementById('email').value;
+            
+            try {
+                const response = await fetch('/api/auth/register/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('Business account registered successfully! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/customer/dashboard';
+                    }, 2000);
+                } else {
+                    showAlert(result.error || 'Verification failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Verification failed. Please try again.', 'error');
+            }
+        });
+
+        document.getElementById('resendCodeBtn')?.addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            try {
+                await fetch('/api/auth/register/resend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                showAlert('Verification code resent to your email', 'success');
+            } catch (error) {
+                showAlert('Failed to resend code', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+

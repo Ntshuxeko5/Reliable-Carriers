@@ -34,9 +34,6 @@ public class FileUploadServiceImpl implements FileUploadService {
         "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"
     );
 
-    private static final List<String> DOCUMENT_TYPES = Arrays.asList(
-        "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
 
     @Override
     public String uploadFile(MultipartFile file, String directory) throws IOException {

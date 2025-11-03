@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,12 +67,12 @@ public class DriverLocationController {
         // Set vehicle if provided
         if (request.getVehicleId() != null) {
             Vehicle vehicle = vehicleService.getVehicleById(request.getVehicleId());
-            driverLocation.setVehicle(vehicle);
+            driverLocation.setVehicle(vehicle.getRegistrationNumber()); // Convert Vehicle to String
         }
         
         // Set timestamp if provided, otherwise it will be set in the service
         if (request.getTimestamp() != null) {
-            driverLocation.setTimestamp(request.getTimestamp());
+            driverLocation.setTimestamp(LocalDateTime.now()); // Convert Date to LocalDateTime
         }
 
         // Save the driver location
@@ -132,8 +132,8 @@ public class DriverLocationController {
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN') or (hasRole('DRIVER') and @authService.isCurrentUser(#driverId))")
     public ResponseEntity<List<DriverLocationResponse>> getDriverLocationsByDriverAndTimeRange(
             @PathVariable Long driverId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date startTime,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date endTime) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
         
         User driver = userService.getUserById(driverId);
         List<DriverLocation> locations = driverLocationService.getDriverLocationsByDriverAndTimeRange(driver, startTime, endTime);
@@ -195,10 +195,10 @@ public class DriverLocationController {
         
         if (request.getVehicleId() != null) {
             Vehicle vehicle = vehicleService.getVehicleById(request.getVehicleId());
-            driverLocationDetails.setVehicle(vehicle);
+            driverLocationDetails.setVehicle(vehicle.getRegistrationNumber()); // Convert Vehicle to String
         }
         
-        driverLocationDetails.setTimestamp(request.getTimestamp());
+        driverLocationDetails.setTimestamp(LocalDateTime.now()); // Convert Date to LocalDateTime
         
         // Update the driver location
         DriverLocation updatedLocation = driverLocationService.updateDriverLocation(id, driverLocationDetails);

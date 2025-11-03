@@ -5,43 +5,744 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Driver Workboard - Reliable Carriers</title>
     
-    <!-- Tailwind CSS with custom colors -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'reliable': {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind CSS Production -->
+    <link href="/css/tailwind-production.css" rel="stylesheet">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Google Maps API -->
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
     
     <!-- Signature Pad -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0ea5e9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Reliable Carriers Driver">
+    <link rel="apple-touch-icon" href="/images/Reliable 1.png">
+    
+    <!-- Custom CSS for missing Tailwind classes -->
+    <style>
+        /* Custom reliable color palette */
+        .bg-reliable-50 { background-color: #f0f9ff; }
+        .bg-reliable-100 { background-color: #e0f2fe; }
+        .bg-reliable-200 { background-color: #bae6fd; }
+        .bg-reliable-300 { background-color: #7dd3fc; }
+        .bg-reliable-400 { background-color: #38bdf8; }
+        .bg-reliable-500 { background-color: #0ea5e9; }
+        .bg-reliable-600 { background-color: #0284c7; }
+        .bg-reliable-700 { background-color: #0369a1; }
+        .bg-reliable-800 { background-color: #075985; }
+        .bg-reliable-900 { background-color: #0c4a6e; }
+        
+        .text-reliable-600 { color: #0284c7; }
+        .text-reliable-700 { color: #0369a1; }
+        
+        .border-reliable-200 { border-color: #bae6fd; }
+        .border-reliable-500 { border-color: #0ea5e9; }
+        
+        .hover\:bg-reliable-700:hover { background-color: #0369a1; }
+        .hover\:border-reliable-500:hover { border-color: #0ea5e9; }
+        
+        .focus\:ring-reliable-500:focus { 
+            --tw-ring-color: #0ea5e9;
+            box-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+        }
+        
+        /* Map container styles */
+        #map {
+            height: 24rem; /* 384px */
+            width: 100%;
+            border-radius: 0.5rem;
+        }
+        
+        /* Fullscreen map styles */
+        #fullscreenMap {
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            #fullscreenMapModal {
+                z-index: 9999;
+            }
+            
+            .fullscreen-controls {
+                padding: 0.5rem;
+            }
+            
+            .fullscreen-controls button {
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            #routeInstructionsPanel {
+                max-height: 50vh;
+                overflow-y: auto;
+            }
+        }
+        
+        /* Touch-friendly controls */
+        .touch-control {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        /* Navigation status animation */
+        #navigationStatus {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Destination marker styles */
+        .destination-marker {
+            background-color: #10b981;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        /* Uber-like navigation styles */
+        .navigation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .route-step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .navigation-controls {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1rem;
+        }
+        
+        .driver-status-indicator {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .driver-status-indicator::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #10b981, #3b82f6, #10b981);
+            border-radius: 50%;
+            z-index: -1;
+            animation: rotate 2s linear infinite;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Enhanced map controls */
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .map-control-btn {
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .map-control-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .map-control-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        /* Real-time tracking indicator */
+        .tracking-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .tracking-indicator.offline {
+            background: rgba(239, 68, 68, 0.9);
+        }
+        
+        /* Package status indicators */
+        .package-status-pending {
+            border-left: 4px solid #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+        
+        .package-status-picked-up {
+            border-left: 4px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        .package-status-delivered {
+            border-left: 4px solid #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        /* Enhanced pickup/delivery modal */
+        .pickup-delivery-modal {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        
+        .pickup-delivery-content {
+            background: white;
+            border-radius: 1rem;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        /* Code verification styles */
+        .code-input {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            letter-spacing: 0.2rem;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .code-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .code-input.valid {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .code-input.invalid {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        /* Photo capture styles */
+        .photo-capture-container {
+            position: relative;
+            background: #f3f4f6;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .photo-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+        }
+        
+        .camera-controls {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .camera-btn {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .camera-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+        
+        /* Dark mode support */
+        .dark-mode {
+            background: #1a1a1a;
+            color: #e5e5e5;
+        }
+        
+        .dark-mode .bg-white {
+            background: #2d2d2d !important;
+            color: #e5e5e5;
+        }
+        
+        .dark-mode .text-gray-900 {
+            color: #e5e5e5 !important;
+        }
+        
+        .dark-mode .text-gray-800 {
+            color: #e5e5e5 !important;
+        }
+        
+        .dark-mode .text-gray-700 {
+            color: #d1d5db !important;
+        }
+        
+        .dark-mode .text-gray-600 {
+            color: #9ca3af !important;
+        }
+        
+        .dark-mode .bg-gray-50 {
+            background: #2d2d2d !important;
+        }
+        
+        .dark-mode .bg-gray-100 {
+            background: #374151 !important;
+        }
+        
+        /* Fullscreen map improvements */
+        #fullscreenMapModal {
+            z-index: 9999;
+        }
+        
+        #fullscreenMap {
+            z-index: 1;
+        }
+        
+        /* Route line styles */
+        .route-line {
+            stroke: #3b82f6;
+            stroke-width: 4;
+            stroke-opacity: 0.8;
+        }
+        
+        /* Custom marker styles */
+        .current-location-marker {
+            background-color: #3b82f6;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .route-marker {
+            background-color: #3b82f6;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        /* Animation classes */
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Ensure map is visible */
+        .leaflet-container {
+            height: 100%;
+            width: 100%;
+            border-radius: 0.5rem;
+        }
+        
+        /* Fix for missing utility classes */
+        .max-h-64 { max-height: 16rem; }
+        .max-h-\[90vh\] { max-height: 90vh; }
+        .max-w-md { max-width: 28rem; }
+        .max-w-lg { max-width: 32rem; }
+        .max-w-7xl { max-width: 80rem; }
+        
+        .overflow-y-auto { overflow-y: auto; }
+        .cursor-crosshair { cursor: crosshair; }
+        .cursor-pointer { cursor: pointer; }
+        
+        /* Grid and flex utilities */
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+        .lg\:col-span-2 { grid-column: span 2 / span 2; }
+        .lg\:col-span-1 { grid-column: span 1 / span 1; }
+        
+        /* Responsive utilities */
+        @media (min-width: 640px) {
+            .sm\:px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+            .sm\:flex-row { flex-direction: row; }
+        }
+        
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        }
+        
+        @media (min-width: 1024px) {
+            .lg\:px-8 { padding-left: 2rem; padding-right: 2rem; }
+        }
+        
+        /* Ensure proper spacing and layout */
+        .space-x-1 > * + * { margin-left: 0.25rem; }
+        .space-x-2 > * + * { margin-left: 0.5rem; }
+        .space-x-3 > * + * { margin-left: 0.75rem; }
+        .space-x-4 > * + * { margin-left: 1rem; }
+        .space-x-8 > * + * { margin-left: 2rem; }
+        
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .space-y-6 > * + * { margin-top: 1.5rem; }
+        .space-y-8 > * + * { margin-top: 2rem; }
+        
+        /* Text utilities */
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
+        
+        /* Color utilities */
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-700 { color: #374151; }
+        .text-gray-800 { color: #1f2937; }
+        .text-gray-900 { color: #111827; }
+        
+        .bg-gray-50 { background-color: #f9fafb; }
+        .bg-gray-100 { background-color: #f3f4f6; }
+        .bg-gray-200 { background-color: #e5e7eb; }
+        .bg-gray-500 { background-color: #6b7280; }
+        .bg-gray-600 { background-color: #4b5563; }
+        .bg-gray-700 { background-color: #374151; }
+        .bg-gray-800 { background-color: #1f2937; }
+        .bg-gray-900 { background-color: #111827; }
+        
+        .border-gray-200 { border-color: #e5e7eb; }
+        .border-gray-300 { border-color: #d1d5db; }
+        
+        .hover\:bg-gray-100:hover { background-color: #f3f4f6; }
+        .hover\:bg-gray-700:hover { background-color: #374151; }
+        .hover\:text-gray-600:hover { color: #4b5563; }
+        
+        /* Status colors */
+        .bg-green-100 { background-color: #dcfce7; }
+        .bg-green-500 { background-color: #22c55e; }
+        .bg-green-600 { background-color: #16a34a; }
+        .bg-green-700 { background-color: #15803d; }
+        .text-green-500 { color: #22c55e; }
+        .text-green-600 { color: #16a34a; }
+        .text-green-800 { color: #166534; }
+        
+        .bg-blue-100 { background-color: #dbeafe; }
+        .bg-blue-500 { background-color: #3b82f6; }
+        .bg-blue-600 { background-color: #2563eb; }
+        .bg-blue-700 { background-color: #1d4ed8; }
+        .text-blue-500 { color: #3b82f6; }
+        .text-blue-600 { color: #2563eb; }
+        .text-blue-800 { color: #1e40af; }
+        
+        .bg-yellow-100 { background-color: #fef3c7; }
+        .bg-yellow-500 { background-color: #eab308; }
+        .bg-yellow-600 { background-color: #ca8a04; }
+        .text-yellow-500 { color: #eab308; }
+        .text-yellow-600 { color: #ca8a04; }
+        .text-yellow-800 { color: #92400e; }
+        
+        .bg-red-100 { background-color: #fee2e2; }
+        .bg-red-500 { background-color: #ef4444; }
+        .bg-red-600 { background-color: #dc2626; }
+        .bg-red-700 { background-color: #b91c1c; }
+        .text-red-500 { color: #ef4444; }
+        .text-red-600 { color: #dc2626; }
+        .text-red-800 { color: #991b1b; }
+        
+        .bg-purple-100 { background-color: #f3e8ff; }
+        .bg-purple-500 { background-color: #a855f7; }
+        .bg-purple-600 { background-color: #9333ea; }
+        .text-purple-500 { color: #a855f7; }
+        .text-purple-600 { color: #9333ea; }
+        .text-purple-800 { color: #6b21a8; }
+        
+        /* White and transparent */
+        .bg-white { background-color: #ffffff; }
+        .text-white { color: #ffffff; }
+        .border-white { border-color: #ffffff; }
+        .border-white\/20 { border-color: rgba(255, 255, 255, 0.2); }
+        
+        /* Layout utilities */
+        .flex { display: flex; }
+        .grid { display: grid; }
+        .hidden { display: none; }
+        .block { display: block; }
+        .inline-flex { display: inline-flex; }
+        
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-end { justify-content: flex-end; }
+        
+        .flex-1 { flex: 1 1 0%; }
+        .flex-col { flex-direction: column; }
+        
+        /* Positioning */
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .fixed { position: fixed; }
+        .sticky { position: sticky; }
+        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+        .top-4 { top: 1rem; }
+        .right-4 { right: 1rem; }
+        .top-0 { top: 0; }
+        .z-50 { z-index: 50; }
+        .z-60 { z-index: 60; }
+        .z-70 { z-index: 70; }
+        
+        /* Sizing */
+        .w-3 { width: 0.75rem; }
+        .w-10 { width: 2.5rem; }
+        .w-12 { width: 3rem; }
+        .w-full { width: 100%; }
+        .h-3 { height: 0.75rem; }
+        .h-12 { height: 3rem; }
+        .h-48 { height: 12rem; }
+        .h-96 { height: 24rem; }
+        .min-h-screen { min-height: 100vh; }
+        
+        /* Spacing */
+        .p-0 { padding: 0; }
+        .p-3 { padding: 0.75rem; }
+        .p-4 { padding: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .p-8 { padding: 2rem; }
+        .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .px-8 { padding-left: 2rem; padding-right: 2rem; }
+        .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+        .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+        .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+        
+        .m-4 { margin: 1rem; }
+        .mx-4 { margin-left: 1rem; margin-right: 1rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mr-1 { margin-right: 0.25rem; }
+        .mr-2 { margin-right: 0.5rem; }
+        .ml-4 { margin-left: 1rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-8 { margin-top: 2rem; }
+        .mt-16 { margin-top: 4rem; }
+        
+        /* Border and rounded */
+        .border { border-width: 1px; }
+        .border-2 { border-width: 2px; }
+        .border-b { border-bottom-width: 1px; }
+        .border-dashed { border-style: dashed; }
+        .rounded { border-radius: 0.25rem; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-xl { border-radius: 0.75rem; }
+        .rounded-2xl { border-radius: 1rem; }
+        .rounded-full { border-radius: 9999px; }
+        
+        /* Shadow */
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        
+        /* Transitions */
+        .transition-colors { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .duration-200 { transition-duration: 200ms; }
+        .duration-300 { transition-duration: 300ms; }
+        
+        /* Focus states */
+        .focus\:outline-none:focus { outline: 2px solid transparent; outline-offset: 2px; }
+        .focus\:ring-1:focus { --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color); --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color); box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000); }
+        .focus\:ring-2:focus { --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color); --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color); box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000); }
+        
+        /* Hover states */
+        .hover\:bg-gray-100:hover { background-color: #f3f4f6; }
+        .hover\:bg-gray-700:hover { background-color: #374151; }
+        .hover\:text-gray-600:hover { color: #4b5563; }
+        .hover\:text-gray-900:hover { color: #111827; }
+        .hover\:scale-105:hover { transform: scale(1.05); }
+        
+        /* Transform */
+        .transform { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)); }
+        
+        /* Object fit */
+        .object-cover { object-fit: cover; }
+        
+        /* Cursor */
+        .cursor-pointer { cursor: pointer; }
+        .cursor-crosshair { cursor: crosshair; }
+        
+        /* Overflow */
+        .overflow-hidden { overflow: hidden; }
+        .overflow-y-auto { overflow-y: auto; }
+        
+        /* Text alignment */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        
+        /* Line height */
+        .leading-tight { line-height: 1.25; }
+        .leading-normal { line-height: 1.5; }
+        .leading-relaxed { line-height: 1.625; }
+        
+        /* Letter spacing */
+        .tracking-tight { letter-spacing: -0.025em; }
+        .tracking-normal { letter-spacing: 0em; }
+        .tracking-wide { letter-spacing: 0.025em; }
+        
+        /* Background gradients */
+        .bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)); }
+        .bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-stops)); }
+        .from-reliable-50 { --tw-gradient-from: #f0f9ff; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(240, 249, 255, 0)); }
+        .to-reliable-100 { --tw-gradient-to: #e0f2fe; }
+        .from-blue-600 { --tw-gradient-from: #2563eb; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(37, 99, 235, 0)); }
+        .to-blue-700 { --tw-gradient-to: #1d4ed8; }
+        .from-green-600 { --tw-gradient-from: #16a34a; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(22, 163, 74, 0)); }
+        .to-green-700 { --tw-gradient-to: #15803d; }
+        .from-purple-600 { --tw-gradient-from: #9333ea; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(147, 51, 234, 0)); }
+        .to-purple-700 { --tw-gradient-to: #7c3aed; }
+        
+        /* Opacity */
+        .bg-opacity-50 { background-color: rgba(0, 0, 0, 0.5); }
+        
+        /* Ensure map container is properly sized */
+        .leaflet-container {
+            height: 24rem !important;
+            width: 100% !important;
+            z-index: 1 !important;
+        }
+        
+        /* Ensure map doesn't interfere with modals */
+        .leaflet-map-pane {
+            z-index: 1 !important;
+        }
+        
+        .leaflet-control-container {
+            z-index: 2 !important;
+        }
+        
+        /* Fix for missing responsive classes */
+        @media (min-width: 640px) {
+            .sm\:px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+            .sm\:flex-row { flex-direction: row; }
+        }
+        
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        }
+        
+        @media (min-width: 1024px) {
+            .lg\:px-8 { padding-left: 2rem; padding-right: 2rem; }
+            .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+            .lg\:col-span-2 { grid-column: span 2 / span 2; }
+            .lg\:col-span-1 { grid-column: span 1 / span 1; }
+        }
+    </style>
 </head>
 <body class="bg-gradient-to-br from-reliable-50 to-reliable-100 min-h-screen">
     
-    <!-- Header -->
+    <!-- Enhanced Header with Uber-like Features -->
     <header class="bg-white shadow-lg border-b border-reliable-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
@@ -52,15 +753,43 @@
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">Driver Workboard</h1>
                         <p class="text-sm text-gray-600">Manage your packages and deliveries</p>
+                        <div id="loadingStatus" class="text-sm text-blue-600 hidden mt-1">
+                            <i class="fas fa-spinner fa-spin mr-1"></i>Loading data...
+                        </div>
                     </div>
                 </div>
                 
                 <div class="flex items-center space-x-4">
+                    <!-- Driver Status Indicator -->
+                    <div id="driverStatusIndicator" class="driver-status-indicator">
+                        <div class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            <i class="fas fa-circle mr-1"></i>Online
+                        </div>
+                    </div>
+                    
+                    <!-- Real-time tracking indicator -->
+                    <div id="trackingIndicator" class="tracking-indicator">
+                        <i class="fas fa-satellite-dish"></i>
+                        <span>Live Tracking</span>
+                    </div>
+                    
                     <div class="text-right">
                         <p class="text-sm text-gray-600">Current Time</p>
                         <p class="font-semibold text-gray-900" id="currentTime"></p>
                     </div>
-                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    
+                    <!-- Dark Mode Toggle -->
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="darkModeToggle" class="sr-only">
+                        <div class="relative">
+                            <div class="w-12 h-6 bg-gray-600 rounded-full shadow-inner"></div>
+                            <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300 ease-in-out"></div>
+                        </div>
+                        <span class="ml-2 text-gray-600">
+                            <i class="fas fa-moon"></i>
+                        </span>
+                    </label>
+                    
                     <button onclick="window.location.href='/driver/dashboard'" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
                         <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
                     </button>
@@ -138,14 +867,65 @@
                                 <button onclick="getCurrentLocation()" class="bg-reliable-600 hover:bg-reliable-700 text-white px-3 py-1 rounded-lg text-sm transition-colors duration-200">
                                     <i class="fas fa-location-arrow mr-1"></i>My Location
                                 </button>
+                                <button onclick="showRoutePreview()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm transition-colors duration-200">
+                                    <i class="fas fa-route mr-1"></i>Route Preview
+                                </button>
                                 <button onclick="refreshWorkboard()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg text-sm transition-colors duration-200">
                                     <i class="fas fa-sync-alt mr-1"></i>Refresh
+                                </button>
+                                <button onclick="loadWorkboardData()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm transition-colors duration-200 ml-2">
+                                    <i class="fas fa-download mr-1"></i>Load Data
+                                </button>
+                                <button onclick="debugPackages()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg text-sm transition-colors duration-200 ml-2">
+                                    <i class="fas fa-bug mr-1"></i>Debug
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <div class="p-0">
+                    <div class="p-0 relative">
                         <div id="map" class="h-96 rounded-b-2xl"></div>
+                        
+                        <!-- Enhanced Map Controls -->
+                        <div class="map-controls">
+                            <button id="fullscreenBtn" class="map-control-btn" onclick="enterFullscreenMap()" title="Fullscreen Map">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button id="navigationBtn" class="map-control-btn" onclick="toggleNavigation()" title="Toggle Navigation">
+                                <i class="fas fa-navigation"></i>
+                            </button>
+                            <button id="trafficBtn" class="map-control-btn" onclick="toggleTraffic()" title="Toggle Traffic">
+                                <i class="fas fa-car"></i>
+                            </button>
+                            <button id="satelliteBtn" class="map-control-btn" onclick="toggleSatellite()" title="Toggle Satellite View">
+                                <i class="fas fa-satellite"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Navigation Status Overlay -->
+                        <div id="navigationStatus" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-reliable-600 text-white px-4 py-2 rounded-lg shadow-lg hidden">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-navigation"></i>
+                                <span id="navigationText">Navigation Active</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Route Instructions Panel -->
+                        <div id="routeInstructionsPanel" class="absolute bottom-4 left-4 right-4 bg-white rounded-lg shadow-lg p-4 hidden">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-bold text-gray-900">Route Instructions</h4>
+                                <button onclick="hideRouteInstructions()" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div id="routeInstructionsContent" class="text-sm text-gray-600">
+                                <!-- Route instructions will be loaded here -->
+                            </div>
+                        </div>
+                        <!-- Fullscreen Map Toggle Button -->
+                        <button id="fullscreenMapBtn" onclick="toggleFullscreenMap()" 
+                                class="absolute top-4 right-4 bg-reliable-600 hover:bg-reliable-700 text-white p-2 rounded-lg shadow-lg z-50 transition-colors duration-200">
+                            <i class="fas fa-expand text-sm"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -172,14 +952,28 @@
                             </div>
                         </div>
                     </div>
-                    <div class="p-4">
-                        <div id="availablePackages" class="space-y-3 max-h-64 overflow-y-auto">
-                            <div class="text-center text-gray-500 py-4">
-                                <i class="fas fa-spinner fa-spin text-xl"></i>
-                                <p class="mt-2">Loading available packages...</p>
+                        <div class="p-4">
+                            <!-- Batch Actions Toolbar -->
+                            <div id="batchActionsToolbar" class="hidden mb-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+                                <span class="text-sm font-medium text-blue-900">
+                                    <span id="selectedCount">0</span> package(s) selected
+                                </span>
+                                <div class="flex space-x-2">
+                                    <button onclick="batchAssignPackages()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-3 rounded transition-colors">
+                                        <i class="fas fa-plus-circle mr-1"></i>Assign Selected
+                                    </button>
+                                    <button onclick="clearSelection()" class="bg-gray-500 hover:bg-gray-600 text-white text-xs py-1 px-3 rounded transition-colors">
+                                        <i class="fas fa-times mr-1"></i>Clear
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="availablePackages" class="space-y-3 max-h-64 overflow-y-auto">
+                                <div class="text-center text-gray-500 py-4">
+                                    <i class="fas fa-spinner fa-spin text-xl"></i>
+                                    <p class="mt-2">Loading available packages...</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
                 </div>
                 
                 <!-- Assigned Packages -->
@@ -190,6 +984,26 @@
                         </h3>
                     </div>
                     <div class="p-4">
+                        <!-- Batch Actions Toolbar for Assigned Packages -->
+                        <div id="batchActionsAssignedToolbar" class="hidden mb-4 p-3 bg-purple-50 rounded-lg flex items-center justify-between">
+                            <span class="text-sm font-medium text-purple-900">
+                                <span id="selectedAssignedCount">0</span> package(s) selected
+                            </span>
+                            <div class="flex space-x-2">
+                                <button onclick="batchPickupSelected()" class="bg-green-600 hover:bg-green-700 text-white text-xs py-1 px-3 rounded transition-colors">
+                                    <i class="fas fa-hand-holding-box mr-1"></i>Pickup Selected
+                                </button>
+                                <button onclick="batchDeliverSelected()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded transition-colors">
+                                    <i class="fas fa-truck mr-1"></i>Deliver Selected
+                                </button>
+                                <button onclick="optimizeRouteForSelected()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-3 rounded transition-colors">
+                                    <i class="fas fa-route mr-1"></i>Optimize Route
+                                </button>
+                                <button onclick="clearSelectionAssigned()" class="bg-gray-500 hover:bg-gray-600 text-white text-xs py-1 px-3 rounded transition-colors">
+                                    <i class="fas fa-times mr-1"></i>Clear
+                                </button>
+                            </div>
+                        </div>
                         <div id="assignedPackages" class="space-y-3 max-h-64 overflow-y-auto">
                             <div class="text-center text-gray-500 py-4">
                                 <i class="fas fa-spinner fa-spin text-xl"></i>
@@ -207,11 +1021,17 @@
                         </h3>
                     </div>
                     <div class="p-4 space-y-3">
-                        <button onclick="showNearbyPackages()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm transition-colors duration-200">
-                            <i class="fas fa-search-location mr-2"></i>Find Nearby Packages
+                        <button onclick="showPackagesOnMap()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm transition-colors duration-200">
+                            <i class="fas fa-map-marked-alt mr-2"></i>Show Packages on Map
                         </button>
-                        <button onclick="showOptimizedRoute()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm transition-colors duration-200">
-                            <i class="fas fa-route mr-2"></i>Optimized Route
+                        <button onclick="optimizePickupRoute()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm transition-colors duration-200">
+                            <i class="fas fa-route mr-2"></i>Optimize Pickup Route
+                        </button>
+                        <button onclick="optimizeDeliveryRoute()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm transition-colors duration-200">
+                            <i class="fas fa-route mr-2"></i>Optimize Delivery Route
+                        </button>
+                        <button onclick="showNearbyPackages()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg text-sm transition-colors duration-200">
+                            <i class="fas fa-search-location mr-2"></i>Find Nearby Packages
                         </button>
                         <button onclick="showTodaySummary()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-sm transition-colors duration-200">
                             <i class="fas fa-chart-bar mr-2"></i>Today's Summary
@@ -223,7 +1043,7 @@
     </div>
 
     <!-- Signature Modal -->
-    <div id="signatureModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div id="signatureModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-60 flex items-center justify-center">
         <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Capture Signature</h3>
@@ -251,7 +1071,7 @@
     </div>
 
     <!-- Photo Modal -->
-    <div id="photoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div id="photoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-60 flex items-center justify-center">
         <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Capture Photo</h3>
@@ -289,7 +1109,7 @@
     </div>
 
     <!-- Pickup Modal -->
-    <div id="pickupModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div id="pickupModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-60 flex items-center justify-center">
         <div class="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Package Pickup</h3>
@@ -309,8 +1129,16 @@
                 </div>
                 
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Customer Verification Code</label>
+                    <input type="text" id="customerPickupCode" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-reliable-500" 
+                           placeholder="Enter code provided by customer" required>
+                    <p class="text-xs text-gray-500 mt-1">Ask the customer for their pickup verification code</p>
+                </div>
+                
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Pickup Notes</label>
-                    <textarea id="pickupNotes" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-reliable-500"></textarea>
+                    <textarea id="pickupNotes" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-reliable-500" 
+                              placeholder="Any additional notes about the pickup..."></textarea>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">
@@ -350,7 +1178,7 @@
     </div>
 
     <!-- Delivery Modal -->
-    <div id="deliveryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div id="deliveryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-60 flex items-center justify-center">
         <div class="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Package Delivery</h3>
@@ -383,6 +1211,13 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Recipient ID Number</label>
                     <input type="text" id="recipientIdNumber" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Customer Delivery Code</label>
+                    <input type="text" id="customerDeliveryCode" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-reliable-500" 
+                           placeholder="Enter code provided by customer" required>
+                    <p class="text-xs text-gray-500 mt-1">Ask the customer for their delivery verification code</p>
                 </div>
                 
                 <div>
@@ -439,6 +1274,9 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- WebSocket and SockJS for real-time updates -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     
     <script>
         let map;
@@ -449,14 +1287,228 @@
         let capturedSignature = null;
         let capturedPhoto = null;
         let stream = null;
+        let markers = {}; // Initialize markers object
         
-        // Initialize map
+    <!-- WebSocket and SockJS for real-time updates -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    
+    <script>
+        let map;
+        let currentLocation = null;
+        let signaturePad;
+        let currentModal = null;
+        let currentPackageId = null;
+        let capturedSignature = null;
+        let capturedPhoto = null;
+        let stream = null;
+        let markers = {}; // Initialize markers object
+        let directionsService;
+        let directionsRenderer;
+        let watchId = null;
+        
+        // Real-time tracking variables
+        let stompClient = null;
+        let isConnected = false;
+        let driverId = null;
+        
+        // Initialize Google Maps
         function initMap() {
-            map = L.map('map').setView([-26.2041, 28.0473], 10); // Default to Johannesburg
+            // Initialize map centered on Johannesburg
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 10,
+                center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            });
+
+            // Initialize services
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                draggable: false,
+                map: map
+            });
+
+            // Get current location
+            getCurrentLocation();
+        }
+        
+        // Get current location
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        currentLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        // Update map view
+                        map.setCenter(currentLocation);
+                        map.setZoom(15);
+                        
+                        // Add current location marker
+                        if (markers.currentLocation) {
+                            markers.currentLocation.setMap(null);
+                        }
+                        
+                        markers.currentLocation = new google.maps.Marker({
+                            position: currentLocation,
+                            map: map,
+                            title: 'Your Location',
+                            icon: {
+                                url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                            }
+                        });
+                        
+                        // Start location tracking
+                        startLocationTracking();
+                    },
+                    function(error) {
+                        console.error('Error getting location:', error);
+                        alert('Unable to get your location. Please enable location services.');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+
+        // Start location tracking
+        function startLocationTracking() {
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(
+                    function(position) {
+                        currentLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        // Update current location marker
+                        if (markers.currentLocation) {
+                            markers.currentLocation.setPosition(currentLocation);
+                        }
+                        
+                        // Send location update to server
+                        updateDriverLocation(currentLocation);
+                    },
+                    function(error) {
+                        console.error('Location tracking error:', error);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    }
+                );
+            }
+        }
+
+        // Navigate to package
+        function navigateToPackage(packageId) {
+            const pkg = packages.find(p => p.id === packageId);
+            if (!pkg || !currentLocation) {
+                showNotification('Current location not available. Please enable location services.', 'error');
+                return;
+            }
+
+            const destination = pkg.isCurrentlyCarrying ? pkg.deliveryAddress : pkg.pickupAddress;
             
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            directionsService.route({
+                origin: currentLocation,
+                destination: destination,
+                travelMode: google.maps.TravelMode.DRIVING
+            }, (result, status) => {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(result);
+                    showNotification(`Navigation started to ${pkg.trackingNumber}`, 'success');
+                } else {
+                    console.error('Directions request failed:', status);
+                    showNotification('Could not calculate route. Please check addresses.', 'error');
+                }
+            });
+        }
+
+        // Mark package as picked up
+        function markAsPickedUp(packageId) {
+            const pkg = packages.find(p => p.id === packageId);
+            if (!pkg) return;
+
+            if (confirm(`Mark package ${pkg.trackingNumber} as picked up?`)) {
+                // Update package status
+                pkg.isCurrentlyCarrying = true;
+                pkg.status = 'PICKED_UP';
+                
+                // Refresh the display
+                loadWorkboardData();
+                
+                // Show success message
+                showNotification(`Package ${pkg.trackingNumber} marked as picked up!`, 'success');
+                
+                // In a real app, this would send an API request to update the backend
+                updatePackageStatusOnServer(packageId, 'PICKED_UP');
+            }
+        }
+
+        // Mark package as delivered
+        function markAsDelivered(packageId) {
+            const pkg = packages.find(p => p.id === packageId);
+            if (!pkg) return;
+
+            if (confirm(`Mark package ${pkg.trackingNumber} as delivered?`)) {
+                // Update package status
+                pkg.isCurrentlyCarrying = false;
+                pkg.status = 'DELIVERED';
+                
+                // Refresh the display
+                loadWorkboardData();
+                
+                // Show success message
+                showNotification(`Package ${pkg.trackingNumber} marked as delivered!`, 'success');
+                
+                // In a real app, this would send an API request to update the backend
+                updatePackageStatusOnServer(packageId, 'DELIVERED');
+            }
+        }
+
+        // Update package status on server
+        async function updatePackageStatusOnServer(packageId, status) {
+            try {
+                const response = await fetch(`/api/driver/packages/${packageId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                    },
+                    body: JSON.stringify({ status: status })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update package status');
+                }
+            } catch (error) {
+                console.error('Error updating package status:', error);
+                showNotification('Failed to update package status. Please try again.', 'error');
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-3 rounded-lg text-white font-medium z-50 transition-all duration-300 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
         }
         
         // Signature Pad functionality
@@ -606,6 +1658,9 @@
             capturedSignature = null;
             capturedPhoto = null;
             
+            // Clear customer code
+            document.getElementById('customerPickupCode').value = '';
+            
             document.getElementById('pickupModal').classList.remove('hidden');
         }
         
@@ -627,6 +1682,9 @@
             capturedSignature = null;
             capturedPhoto = null;
             
+            // Clear customer code
+            document.getElementById('customerDeliveryCode').value = '';
+            
             document.getElementById('deliveryModal').classList.remove('hidden');
         }
         
@@ -637,7 +1695,29 @@
         // Load package details
         async function loadPackageDetails(packageId, modalType) {
             try {
-                const response = await fetch(`/api/driver/workboard/packages/${packageId}/details`);
+                const token = getToken();
+                if (!token) {
+                    console.error('No authentication token available');
+                    return;
+                }
+                
+                const response = await fetch(`/api/driver/workboard/packages/${packageId}/details`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.error('Authentication failed, redirecting to login');
+                        window.location.href = '/login';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const packageData = await response.json();
                 
                 const detailsHtml = `
@@ -651,8 +1731,12 @@
                             <span>${packageData.recipientName || 'N/A'}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="font-medium">Address:</span>
-                            <span>${packageData.deliveryAddress || 'N/A'}</span>
+                            <span class="font-medium">Pickup Address:</span>
+                            <span class="text-right text-xs">${packageData.pickupAddress || 'N/A'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium">Delivery Address:</span>
+                            <span class="text-right text-xs">${packageData.deliveryAddress || 'N/A'}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="font-medium">Status:</span>
@@ -664,8 +1748,20 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="font-medium">Description:</span>
-                            <span>${packageData.description || 'N/A'}</span>
+                            <span class="text-right text-xs">${packageData.description || 'N/A'}</span>
                         </div>
+                        ${packageData.customerPickupCode ? `
+                            <div class="flex justify-between">
+                                <span class="font-medium">Pickup Code:</span>
+                                <span class="font-mono text-sm bg-yellow-100 px-2 py-1 rounded">${packageData.customerPickupCode}</span>
+                            </div>
+                        ` : ''}
+                        ${packageData.customerDeliveryCode ? `
+                            <div class="flex justify-between">
+                                <span class="font-medium">Delivery Code:</span>
+                                <span class="font-mono text-sm bg-green-100 px-2 py-1 rounded">${packageData.customerDeliveryCode}</span>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
                 
@@ -687,6 +1783,7 @@
             formData.append('driverId', getCurrentDriverId());
             formData.append('packageId', document.getElementById('pickupPackageId').value);
             formData.append('pickupNotes', document.getElementById('pickupNotes').value);
+            formData.append('customerPickupCode', document.getElementById('customerPickupCode').value);
             
             if (capturedSignature) {
                 // Convert base64 to blob
@@ -708,6 +1805,9 @@
             try {
                 const response = await fetch(`/api/driver/workboard/packages/${document.getElementById('pickupPackageId').value}/pickup`, {
                     method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    },
                     body: formData
                 });
                 
@@ -736,6 +1836,7 @@
             formData.append('recipientIdNumber', document.getElementById('recipientIdNumber').value);
             formData.append('deliveryMethod', document.getElementById('deliveryMethod').value);
             formData.append('deliveryNotes', document.getElementById('deliveryNotes').value);
+            formData.append('customerDeliveryCode', document.getElementById('customerDeliveryCode').value);
             
             if (capturedSignature) {
                 // Convert base64 to blob
@@ -757,6 +1858,9 @@
             try {
                 const response = await fetch(`/api/driver/workboard/packages/${document.getElementById('deliveryPackageId').value}/deliver`, {
                     method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    },
                     body: formData
                 });
                 
@@ -844,29 +1948,121 @@
         // Load workboard data
         async function loadWorkboardData() {
             try {
+                console.log('Loading workboard data...');
+                
+                // Show loading status
+                const loadingStatus = document.getElementById('loadingStatus');
+                if (loadingStatus) {
+                    loadingStatus.classList.remove('hidden');
+                }
+                
                 const params = new URLSearchParams();
                 if (currentLocation) {
                     params.append('currentLat', currentLocation.lat);
                     params.append('currentLng', currentLocation.lng);
+                    console.log('Current location:', currentLocation);
                 }
                 
+                // Add authentication headers
+                const token = getToken();
+                if (!token) {
+                    console.error('No authentication token found');
+                    showNotification('Authentication required. Please log in again.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                    return;
+                }
+                
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                };
+                
+                console.log('Loading workboard data with headers:', headers);
+                
                 // Load workboard stats
-                const statsResponse = await fetch(`/api/driver/workboard/stats?${params}`);
+                const statsResponse = await fetch(`/api/driver/workboard/stats?${params}`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                console.log('Stats response:', statsResponse.status, statsResponse.statusText);
+                
+                if (!statsResponse.ok) {
+                    console.error('Stats API error:', statsResponse.status, statsResponse.statusText);
+                    
+                    // Check if it's an authentication error
+                    if (statsResponse.status === 401 || statsResponse.status === 403) {
+                        showNotification('Authentication failed. Please log in again.', 'error');
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    showNotification('Error loading workboard stats: ' + statsResponse.statusText, 'error');
+                    return;
+                }
+                
                 const stats = await statsResponse.json();
+                console.log('Stats data:', stats);
                 updateWorkboardStats(stats);
                 
                 // Load available packages
-                const availableResponse = await fetch(`/api/driver/workboard/available-packages?${params}`);
+                const availableResponse = await fetch(`/api/driver/workboard/available-packages?${params}`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                console.log('Available packages response:', availableResponse.status, availableResponse.statusText);
+                
+                if (!availableResponse.ok) {
+                    console.error('Available packages API error:', availableResponse.status, availableResponse.statusText);
+                    showNotification('Error loading available packages: ' + availableResponse.statusText, 'error');
+                    return;
+                }
+                
                 const availablePackages = await availableResponse.json();
+                console.log('Available packages data:', availablePackages);
+                console.log('Available packages count:', availablePackages.length);
+                
+                if (availablePackages.length === 0) {
+                    console.log('No available packages found. This could mean:');
+                    console.log('1. No packages in PENDING status');
+                    console.log('2. All packages are already assigned to drivers');
+                    console.log('3. No packages exist in the database');
+                }
+                
                 updateAvailablePackages(availablePackages);
                 
                 // Load assigned packages
-                const assignedResponse = await fetch(`/api/driver/workboard/assigned-packages?${params}`);
+                const assignedResponse = await fetch(`/api/driver/workboard/assigned-packages?${params}`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                console.log('Assigned packages response:', assignedResponse.status, assignedResponse.statusText);
+                
+                if (!assignedResponse.ok) {
+                    console.error('Assigned packages API error:', assignedResponse.status, assignedResponse.statusText);
+                    showNotification('Error loading assigned packages: ' + assignedResponse.statusText, 'error');
+                    return;
+                }
+                
                 const assignedPackages = await assignedResponse.json();
+                console.log('Assigned packages data:', assignedPackages);
                 updateAssignedPackages(assignedPackages);
+                
+                // Hide loading status on success
+                hideLoadingStatus();
                 
             } catch (error) {
                 console.error('Error loading workboard data:', error);
+                showNotification('Error loading workboard data: ' + error.message, 'error');
+                
+                // Hide loading status on error
+                hideLoadingStatus();
             }
         }
         
@@ -893,26 +2089,33 @@
             }
             
             container.innerHTML = packages.map(pkg => `
-                <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors duration-200" 
-                     onclick="requestPackagePickup(${pkg.id})"
+                <div class="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors duration-200 package-item"
+                     data-package-id="${pkg.id}"
                      data-tracking="${pkg.trackingNumber}"
                      data-recipient="${pkg.recipientName}"
                      data-weight="${pkg.weight}"
                      data-distance="${pkg.distanceFromCurrentLocation || 0}">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h4 class="font-semibold text-gray-900 text-sm">${pkg.trackingNumber}</h4>
-                            <p class="text-xs text-gray-600">${pkg.recipientName}</p>
-                            <p class="text-xs text-gray-500">${pkg.deliveryCity}, ${pkg.deliveryState}</p>
-                            <div class="flex items-center space-x-2 mt-1">
-                                <span class="text-xs text-gray-400">
-                                    <i class="fas fa-weight-hanging mr-1"></i>${pkg.weight || 0} kg
-                                </span>
-                                ${pkg.distanceFromCurrentLocation ? `
+                    <div class="flex items-start space-x-2 mb-3">
+                        <input type="checkbox" 
+                               class="package-checkbox mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                               data-package-id="${pkg.id}"
+                               onchange="updateBatchSelection()">
+                        <div class="flex-1 flex justify-between items-start">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 text-sm">${pkg.trackingNumber}</h4>
+                                <p class="text-xs text-gray-600">${pkg.recipientName}</p>
+                                <p class="text-xs text-gray-500">${pkg.deliveryAddress || 'Address not available'}</p>
+                                <p class="text-xs text-gray-500">${pkg.deliveryCity || ''}, ${pkg.deliveryState || ''}</p>
+                                <div class="flex items-center space-x-2 mt-1">
                                     <span class="text-xs text-gray-400">
-                                        <i class="fas fa-map-marker-alt mr-1"></i>${pkg.distanceFromCurrentLocation.toFixed(1)} km
+                                        <i class="fas fa-weight-hanging mr-1"></i>${pkg.weight || 0} kg
                                     </span>
-                                ` : ''}
+                                    ${pkg.distanceFromCurrentLocation ? `
+                                        <span class="text-xs text-gray-400">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>${pkg.distanceFromCurrentLocation.toFixed(1)} km
+                                        </span>
+                                    ` : ''}
+                                </div>
                             </div>
                         </div>
                         <div class="text-right">
@@ -927,6 +2130,22 @@
                                 </div>
                             ` : ''}
                         </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-2">
+                        <button onclick="navigateToPackage(${pkg.id})" 
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                            <i class="fas fa-route mr-1"></i>Navigate
+                        </button>
+                        <button onclick="requestPackagePickup(${pkg.id})" 
+                                class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                            <i class="fas fa-hand-holding-box mr-1"></i>Pickup
+                        </button>
+                        <button onclick="showPackageDetails(${pkg.id})" 
+                                class="bg-gray-600 hover:bg-gray-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -947,18 +2166,24 @@
             }
             
             container.innerHTML = packages.map(pkg => `
-                <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors duration-200" 
-                     onclick="showPackageActions(${pkg.id})"
+                <div class="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors duration-200 package-item-assigned"
+                     data-package-id="${pkg.id}"
                      data-tracking="${pkg.trackingNumber}"
                      data-recipient="${pkg.recipientName}"
                      data-status="${pkg.status}"
                      data-weight="${pkg.weight}"
                      data-distance="${pkg.distanceFromCurrentLocation || 0}">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h4 class="font-semibold text-gray-900 text-sm">${pkg.trackingNumber}</h4>
+                    <div class="flex items-start space-x-2 mb-3">
+                        <input type="checkbox" 
+                               class="package-checkbox-assigned mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                               data-package-id="${pkg.id}"
+                               onchange="updateBatchSelectionAssigned()">
+                        <div class="flex-1 flex justify-between items-start">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 text-sm">${pkg.trackingNumber}</h4>
                             <p class="text-xs text-gray-600">${pkg.recipientName}</p>
-                            <p class="text-xs text-gray-500">${pkg.deliveryCity}, ${pkg.deliveryState}</p>
+                            <p class="text-xs text-gray-500">${pkg.deliveryAddress || 'Address not available'}</p>
+                            <p class="text-xs text-gray-500">${pkg.deliveryCity || ''}, ${pkg.deliveryState || ''}</p>
                             <div class="flex items-center space-x-2 mt-1">
                                 <span class="text-xs text-gray-400">
                                     <i class="fas fa-weight-hanging mr-1"></i>${pkg.weight || 0} kg
@@ -974,6 +2199,7 @@
                                     </span>
                                 ` : ''}
                             </div>
+                            </div>
                         </div>
                         <div class="text-right">
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -988,27 +2214,143 @@
                                     </span>
                                 </div>
                             ` : ''}
-                            ${pkg.status === 'ASSIGNED' ? `
-                                <div class="mt-2 flex space-x-1">
-                                    <button onclick="acceptPackage(${pkg.id})" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition-colors duration-200">
-                                        <i class="fas fa-check mr-1"></i>Accept
-                                    </button>
-                                    <button onclick="rejectPackage(${pkg.id})" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition-colors duration-200">
-                                        <i class="fas fa-times mr-1"></i>Reject
-                                    </button>
-                                </div>
-                            ` : ''}
                         </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-2">
+                        <button onclick="navigateToPackage(${pkg.id})" 
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                            <i class="fas fa-route mr-1"></i>Navigate
+                        </button>
+                        ${pkg.status === 'ASSIGNED' ? `
+                            <button onclick="acceptPackage(${pkg.id})" 
+                                    class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                <i class="fas fa-check mr-1"></i>Accept
+                            </button>
+                            <button onclick="rejectPackage(${pkg.id})" 
+                                    class="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                <i class="fas fa-times mr-1"></i>Reject
+                            </button>
+                        ` : pkg.status === 'IN_TRANSIT' ? `
+                            <button onclick="markAsDelivered(${pkg.id})" 
+                                    class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                <i class="fas fa-truck mr-1"></i>Deliver
+                            </button>
+                        ` : `
+                            <button onclick="markAsPickedUp(${pkg.id})" 
+                                    class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                <i class="fas fa-hand-holding-box mr-1"></i>Pickup
+                            </button>
+                        `}
+                        <button onclick="showPackageDetails(${pkg.id})" 
+                                class="bg-gray-600 hover:bg-gray-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
                     </div>
                 </div>
             `).join('');
+            
+            // Update map with assigned packages
+            updateMapWithPackages(packages);
+            
+            // Update fullscreen map if active
+            updateFullscreenMap();
+            
+            // Auto-enter fullscreen on mobile when packages are assigned
+            autoEnterFullscreenOnRoute();
+        }
+        
+        // Update map with packages
+        function updateMapWithPackages(packages) {
+            // Initialize markers if not already done
+            if (!markers) {
+                markers = {};
+            }
+            
+            // Clear existing package markers
+            Object.keys(markers).forEach(key => {
+                if (key !== 'currentLocation') {
+                    map.removeLayer(markers[key]);
+                    delete markers[key];
+                }
+            });
+            
+            // Add package markers to map
+            packages.forEach(pkg => {
+                const coords = getPackageCoordinates(pkg);
+                if (coords) {
+                    const markerColor = pkg.status === 'IN_TRANSIT' ? '#10b981' : '#f59e0b';
+                    const icon = L.divIcon({
+                        className: 'package-marker',
+                        html: `<div style="background-color: ${markerColor}; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+                        iconSize: [16, 16],
+                        iconAnchor: [8, 8]
+                    });
+                    
+                    const marker = L.marker([coords.lat, coords.lng], { icon })
+                        .bindPopup(createPackagePopup(pkg))
+                        .addTo(map);
+                    
+                    markers[`package_${pkg.id}`] = marker;
+                }
+            });
+            
+            // Fit map to show all packages
+            if (packages.length > 0) {
+                const group = new L.featureGroup(Object.values(markers));
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+        
+        // Get package coordinates (simplified - in real app, you'd geocode addresses)
+        function getPackageCoordinates(pkg) {
+            // For demo purposes, generate coordinates near Johannesburg
+            if (pkg.status === 'PENDING' || pkg.status === 'ASSIGNED') {
+                // Pickup location
+                return {
+                    lat: -26.2041 + (Math.random() - 0.5) * 0.1,
+                    lng: 28.0473 + (Math.random() - 0.5) * 0.1
+                };
+            } else {
+                // Delivery location
+                return {
+                    lat: -26.2041 + (Math.random() - 0.5) * 0.1,
+                    lng: 28.0473 + (Math.random() - 0.5) * 0.1
+                };
+            }
+        }
+        
+        // Create package popup
+        function createPackagePopup(pkg) {
+            return `
+                <div class="package-popup">
+                    <h4 class="font-bold text-gray-900">${pkg.trackingNumber}</h4>
+                    <p class="text-sm text-gray-700">${pkg.recipientName}</p>
+                    <p class="text-xs text-gray-600">${pkg.deliveryAddress}</p>
+                    <div class="mt-2">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            pkg.status === 'IN_TRANSIT' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }">
+                            ${pkg.status === 'IN_TRANSIT' ? 'In Vehicle' : 'To Pickup'}
+                        </span>
+                    </div>
+                    <button onclick="showPackageActions(${pkg.id})" 
+                            class="w-full mt-2 bg-reliable-600 hover:bg-reliable-700 text-white py-1 px-3 rounded text-xs transition-colors duration-200">
+                        View Details
+                    </button>
+                </div>
+            `;
         }
         
         // Request package pickup
         async function requestPackagePickup(packageId) {
             try {
                 const response = await fetch(`/api/driver/workboard/packages/${packageId}/request-pickup`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
                 });
                 
                 if (response.ok) {
@@ -1041,7 +2383,12 @@
             }
             
             try {
-                const response = await fetch(`/api/driver/workboard/nearby-packages?currentLat=${currentLocation.lat}&currentLng=${currentLocation.lng}&radius=5.0`);
+                const response = await fetch(`/api/driver/workboard/nearby-packages?currentLat=${currentLocation.lat}&currentLng=${currentLocation.lng}&radius=5.0`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
                 const packages = await response.json();
                 
                 if (packages.length === 0) {
@@ -1058,6 +2405,41 @@
             }
         }
         
+        async function showRoutePreview() {
+            try {
+                if (!currentLocation) {
+                    showNotification('Location not available. Please enable GPS first.', 'error');
+                    return;
+                }
+                
+                // Get available packages for route preview
+                const params = new URLSearchParams();
+                params.append('currentLat', currentLocation.lat);
+                params.append('currentLng', currentLocation.lng);
+                params.append('maxDistance', '50'); // 50km radius
+                
+                const response = await fetch(`/api/driver/workboard/available-packages?${params}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+                const packages = await response.json();
+                
+                if (packages.length === 0) {
+                    showNotification('No packages available within 50km radius', 'info');
+                    return;
+                }
+                
+                // Display route preview with available packages
+                displayRoutePreview(packages);
+                showNotification(`Route preview showing ${packages.length} available packages within 50km`, 'success');
+            } catch (error) {
+                console.error('Error fetching route preview:', error);
+                showNotification('Error fetching route preview', 'error');
+            }
+        }
+        
         async function showOptimizedRoute() {
             try {
                 const params = new URLSearchParams();
@@ -1066,7 +2448,12 @@
                     params.append('currentLng', currentLocation.lng);
                 }
                 
-                const response = await fetch(`/api/driver/workboard/optimized-route?${params}`);
+                const response = await fetch(`/api/driver/workboard/optimized-route?${params}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
                 const route = await response.json();
                 
                 if (route.length === 0) {
@@ -1085,7 +2472,12 @@
         
         async function showTodaySummary() {
             try {
-                const response = await fetch('/api/driver/workboard/today-summary');
+                const response = await fetch('/api/driver/workboard/today-summary', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
                 const summary = await response.json();
                 
                 // Display summary in a modal
@@ -1093,6 +2485,491 @@
             } catch (error) {
                 console.error('Error fetching today summary:', error);
                 showNotification('Error fetching today summary', 'error');
+            }
+        }
+
+        // Multi-select functionality
+        let selectedPackageIds = new Set();
+        let selectedAssignedPackageIds = new Set();
+
+        function updateBatchSelection() {
+            const checkboxes = document.querySelectorAll('.package-checkbox:checked');
+            selectedPackageIds = new Set(Array.from(checkboxes).map(cb => parseInt(cb.dataset.packageId)));
+            
+            const toolbar = document.getElementById('batchActionsToolbar');
+            const countSpan = document.getElementById('selectedCount');
+            
+            if (selectedPackageIds.size > 0) {
+                toolbar.classList.remove('hidden');
+                countSpan.textContent = selectedPackageIds.size;
+            } else {
+                toolbar.classList.add('hidden');
+            }
+        }
+
+        function updateBatchSelectionAssigned() {
+            const checkboxes = document.querySelectorAll('.package-checkbox-assigned:checked');
+            selectedAssignedPackageIds = new Set(Array.from(checkboxes).map(cb => parseInt(cb.dataset.packageId)));
+            
+            const toolbar = document.getElementById('batchActionsAssignedToolbar');
+            const countSpan = document.getElementById('selectedAssignedCount');
+            
+            if (selectedAssignedPackageIds.size > 0) {
+                toolbar.classList.remove('hidden');
+                countSpan.textContent = selectedAssignedPackageIds.size;
+            } else {
+                toolbar.classList.add('hidden');
+            }
+        }
+
+        function clearSelection() {
+            document.querySelectorAll('.package-checkbox').forEach(cb => cb.checked = false);
+            selectedPackageIds.clear();
+            document.getElementById('batchActionsToolbar').classList.add('hidden');
+        }
+
+        function clearSelectionAssigned() {
+            document.querySelectorAll('.package-checkbox-assigned').forEach(cb => cb.checked = false);
+            selectedAssignedPackageIds.clear();
+            document.getElementById('batchActionsAssignedToolbar').classList.add('hidden');
+        }
+
+        async function batchAssignPackages() {
+            if (selectedPackageIds.size === 0) {
+                showNotification('Please select at least one package', 'error');
+                return;
+            }
+
+            try {
+                const packageIds = Array.from(selectedPackageIds);
+                showNotification(`Assigning ${packageIds.length} package(s)...`, 'info');
+                
+                for (const packageId of packageIds) {
+                    await fetch(`/api/driver/workboard/assign-package`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + getToken()
+                        },
+                        body: JSON.stringify({ packageId: packageId })
+                    });
+                }
+                
+                showNotification(`Successfully assigned ${packageIds.length} package(s)`, 'success');
+                clearSelection();
+                loadWorkboardData();
+            } catch (error) {
+                console.error('Error in batch assign:', error);
+                showNotification('Error assigning packages', 'error');
+            }
+        }
+
+        async function batchPickupSelected() {
+            if (selectedAssignedPackageIds.size === 0) {
+                showNotification('Please select at least one package', 'error');
+                return;
+            }
+
+            try {
+                const packageIds = Array.from(selectedAssignedPackageIds);
+                const params = new URLSearchParams();
+                packageIds.forEach(id => params.append('packageIds', id));
+                if (currentLocation) {
+                    params.append('currentLat', currentLocation.lat);
+                    params.append('currentLng', currentLocation.lng);
+                }
+
+                const response = await fetch(`/api/driver/workboard/packages/batch-pickup?${params}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    clearSelectionAssigned();
+                    loadWorkboardData();
+                } else {
+                    showNotification(result.message || 'Error in batch pickup', 'error');
+                }
+            } catch (error) {
+                console.error('Error in batch pickup:', error);
+                showNotification('Error picking up packages', 'error');
+            }
+        }
+
+        async function batchDeliverSelected() {
+            if (selectedAssignedPackageIds.size === 0) {
+                showNotification('Please select at least one package', 'error');
+                return;
+            }
+
+            try {
+                const packageIds = Array.from(selectedAssignedPackageIds);
+                const params = new URLSearchParams();
+                packageIds.forEach(id => params.append('packageIds', id));
+                if (currentLocation) {
+                    params.append('currentLat', currentLocation.lat);
+                    params.append('currentLng', currentLocation.lng);
+                }
+
+                const response = await fetch(`/api/driver/workboard/packages/batch-deliver?${params}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    clearSelectionAssigned();
+                    loadWorkboardData();
+                } else {
+                    showNotification(result.message || 'Error in batch delivery', 'error');
+                }
+            } catch (error) {
+                console.error('Error in batch delivery:', error);
+                showNotification('Error delivering packages', 'error');
+            }
+        }
+
+        async function showPackagesOnMap() {
+            if (!currentLocation) {
+                showNotification('Please enable location services', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/driver/workboard/packages-on-map?currentLat=${currentLocation.lat}&currentLng=${currentLocation.lng}&radius=50.0`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                const mapData = await response.json();
+                displayPackagesOnMap(mapData);
+                showNotification(`Showing ${mapData.assignedCount || 0} assigned and ${mapData.nearbyCount || 0} nearby packages`, 'success');
+            } catch (error) {
+                console.error('Error fetching packages on map:', error);
+                showNotification('Error loading packages on map', 'error');
+            }
+        }
+
+        function displayPackagesOnMap(mapData) {
+            // Clear existing package markers
+            Object.keys(markers).forEach(key => {
+                if (key !== 'currentLocation' && markers[key]) {
+                    markers[key].setMap(null);
+                    delete markers[key];
+                }
+            });
+
+            // Add package markers
+            if (mapData.markers && mapData.markers.length > 0) {
+                const bounds = new google.maps.LatLngBounds();
+                
+                mapData.markers.forEach(markerData => {
+                    const lat = markerData.isAssigned && markerData.status === 'IN_TRANSIT' 
+                        ? markerData.deliveryLat 
+                        : markerData.pickupLat;
+                    const lng = markerData.isAssigned && markerData.status === 'IN_TRANSIT'
+                        ? markerData.deliveryLng
+                        : markerData.pickupLng;
+                    
+                    if (!lat || !lng) return;
+
+                    const marker = new google.maps.Marker({
+                        position: { lat: lat, lng: lng },
+                        map: map,
+                        title: markerData.trackingNumber,
+                        icon: {
+                            url: markerData.isAssigned 
+                                ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                                : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+                            scaledSize: new google.maps.Size(32, 32)
+                        }
+                    });
+
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div class="text-sm">
+                                <strong>${markerData.trackingNumber}</strong><br>
+                                <strong>Status:</strong> ${markerData.status}<br>
+                                <strong>Pickup:</strong> ${markerData.pickupAddress}<br>
+                                <strong>Delivery:</strong> ${markerData.deliveryAddress}<br>
+                                ${markerData.distance ? `<strong>Distance:</strong> ${markerData.distance.toFixed(1)} km<br>` : ''}
+                                <button onclick="focusOnPackage(${markerData.id})" class="mt-2 bg-blue-600 text-white px-2 py-1 rounded text-xs">View Details</button>
+                            </div>
+                        `
+                    });
+
+                    marker.addListener('click', () => {
+                        infoWindow.open(map, marker);
+                    });
+
+                    markers[`package_${markerData.id}`] = marker;
+                    bounds.extend(marker.getPosition());
+                });
+
+                // Fit map to show all markers
+                if (mapData.markers.length > 0) {
+                    map.fitBounds(bounds);
+                }
+            }
+        }
+
+        async function optimizePickupRoute() {
+            if (!currentLocation) {
+                showNotification('Please enable location services', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/driver/workboard/optimized-route-with-waypoints?currentLat=${currentLocation.lat}&currentLng=${currentLocation.lng}&routeType=pickup`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                const routeData = await response.json();
+                displayOptimizedRouteOnMap(routeData, 'pickup');
+                showNotification(`Optimized pickup route: ${routeData.totalDistance?.toFixed(1) || 0} km, ${routeData.estimatedTime || 0} minutes`, 'success');
+            } catch (error) {
+                console.error('Error optimizing pickup route:', error);
+                showNotification('Error optimizing pickup route', 'error');
+            }
+        }
+
+        async function optimizeDeliveryRoute() {
+            if (!currentLocation) {
+                showNotification('Please enable location services', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/driver/workboard/optimized-route-with-waypoints?currentLat=${currentLocation.lat}&currentLng=${currentLocation.lng}&routeType=delivery`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                const routeData = await response.json();
+                displayOptimizedRouteOnMap(routeData, 'delivery');
+                showNotification(`Optimized delivery route: ${routeData.totalDistance?.toFixed(1) || 0} km, ${routeData.estimatedTime || 0} minutes`, 'success');
+            } catch (error) {
+                console.error('Error optimizing delivery route:', error);
+                showNotification('Error optimizing delivery route', 'error');
+            }
+        }
+
+        async function optimizeRouteForSelected() {
+            if (selectedAssignedPackageIds.size === 0) {
+                showNotification('Please select at least one package', 'error');
+                return;
+            }
+
+            if (!currentLocation) {
+                showNotification('Please enable location services', 'error');
+                return;
+            }
+
+            // Get packages to optimize
+            const response = await fetch(`/api/driver/workboard/optimized-route-with-waypoints?currentLat=${currentLocation.lat}&currentLng=${currentLocation.lng}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + getToken()
+                }
+            });
+
+            const routeData = await response.json();
+            // Filter to only selected packages
+            const filteredWaypoints = routeData.waypoints?.filter(wp => 
+                selectedAssignedPackageIds.has(wp.packageId)
+            ) || [];
+
+            if (filteredWaypoints.length === 0) {
+                showNotification('No valid packages selected for route optimization', 'error');
+                return;
+            }
+
+            displaySelectedPackagesRoute(filteredWaypoints);
+            showNotification(`Optimized route for ${filteredWaypoints.length} selected package(s)`, 'success');
+        }
+
+        function displayOptimizedRouteOnMap(routeData, routeType) {
+            if (!routeData.waypoints || routeData.waypoints.length === 0) {
+                showNotification('No waypoints in route', 'error');
+                return;
+            }
+
+            // Clear existing directions
+            directionsRenderer.setDirections({ routes: [] });
+
+            if (!currentLocation) {
+                showNotification('Current location not available', 'error');
+                return;
+            }
+
+            // Build waypoints for Google Maps Directions
+            const waypoints = routeData.waypoints.slice(0, -1).map(wp => ({
+                location: { lat: wp.lat, lng: wp.lng },
+                stopover: true
+            }));
+
+            const destination = routeData.waypoints[routeData.waypoints.length - 1];
+
+            directionsService.route({
+                origin: currentLocation,
+                destination: { lat: destination.lat, lng: destination.lng },
+                waypoints: waypoints,
+                optimizeWaypoints: true,
+                travelMode: google.maps.TravelMode.DRIVING
+            }, (result, status) => {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(result);
+                    
+                    // Add markers for each waypoint
+                    routeData.waypoints.forEach((wp, index) => {
+                        const marker = new google.maps.Marker({
+                            position: { lat: wp.lat, lng: wp.lng },
+                            map: map,
+                            label: {
+                                text: (index + 1).toString(),
+                                color: 'white',
+                                fontWeight: 'bold'
+                            },
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 8,
+                                fillColor: routeType === 'pickup' ? '#10b981' : '#3b82f6',
+                                fillOpacity: 1,
+                                strokeColor: 'white',
+                                strokeWeight: 2
+                            }
+                        });
+
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `
+                                <div class="text-sm">
+                                    <strong>Stop ${index + 1}</strong><br>
+                                    <strong>Type:</strong> ${wp.type}<br>
+                                    <strong>Tracking:</strong> ${wp.trackingNumber}<br>
+                                    <strong>Address:</strong> ${wp.address}
+                                </div>
+                            `
+                        });
+
+                        marker.addListener('click', () => {
+                            infoWindow.open(map, marker);
+                        });
+                    });
+
+                    showNotification(`Route optimized: ${routeData.totalDistance?.toFixed(1) || 0} km, ${routeData.estimatedTime || 0} min`, 'success');
+                } else {
+                    console.error('Directions request failed:', status);
+                    showNotification('Could not calculate optimized route', 'error');
+                }
+            });
+        }
+
+        function displaySelectedPackagesRoute(waypoints) {
+            if (waypoints.length === 0 || !currentLocation) return;
+
+            const googleWaypoints = waypoints.slice(0, -1).map(wp => ({
+                location: { lat: wp.lat, lng: wp.lng },
+                stopover: true
+            }));
+
+            const destination = waypoints[waypoints.length - 1];
+
+            directionsService.route({
+                origin: currentLocation,
+                destination: { lat: destination.lat, lng: destination.lng },
+                waypoints: googleWaypoints,
+                optimizeWaypoints: true,
+                travelMode: google.maps.TravelMode.DRIVING
+            }, (result, status) => {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(result);
+                    showNotification('Route optimized for selected packages', 'success');
+                } else {
+                    showNotification('Could not optimize route', 'error');
+                }
+            });
+        }
+
+        function focusOnPackage(packageId) {
+            // Find and center on package
+            const markerKey = `package_${packageId}`;
+            if (markers[markerKey]) {
+                map.setCenter(markers[markerKey].getPosition());
+                map.setZoom(15);
+            }
+        }
+        
+        // Display route preview with available packages
+        function displayRoutePreview(packages) {
+            // Clear existing markers except current location
+            map.eachLayer((layer) => {
+                if (layer instanceof L.Marker && layer.options.title !== 'Current Location') {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            // Add 50km radius circle
+            if (currentLocation) {
+                const radiusCircle = L.circle([currentLocation.lat, currentLocation.lng], {
+                    radius: 50000, // 50km in meters
+                    color: '#3b82f6',
+                    fillColor: '#3b82f6',
+                    fillOpacity: 0.1,
+                    weight: 2
+                }).addTo(map);
+            }
+            
+            // Add package markers
+            packages.forEach((pkg, index) => {
+                const marker = L.marker([pkg.pickupLat || -26.2041, pkg.pickupLng || 28.0473], {
+                    icon: L.divIcon({
+                        className: 'route-marker',
+                        html: `<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${index + 1}</div>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    })
+                }).addTo(map);
+                
+                marker.bindPopup(`
+                    <div class="text-sm">
+                        <strong>Available Package ${index + 1}</strong><br>
+                        <strong>${pkg.trackingNumber}</strong><br>
+                        <strong>From:</strong> ${pkg.senderName}<br>
+                        <strong>To:</strong> ${pkg.recipientName}<br>
+                        <strong>Pickup:</strong> ${pkg.pickupAddress}<br>
+                        <strong>Delivery:</strong> ${pkg.deliveryAddress}<br>
+                        <strong>Distance:</strong> ${pkg.distance ? pkg.distance.toFixed(1) + ' km' : 'Unknown'}<br>
+                        <span class="text-xs text-gray-500">${pkg.formattedStatus}</span>
+                        <div class="mt-2">
+                            <button onclick="assignPackage('${pkg.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs">Assign to Me</button>
+                        </div>
+                    </div>
+                `);
+            });
+            
+            // Fit map to show all markers and radius
+            if (packages.length > 0) {
+                const group = new L.featureGroup(packages.map(pkg => 
+                    L.marker([pkg.pickupLat || -26.2041, pkg.pickupLng || 28.0473])
+                ));
+                if (currentLocation) {
+                    group.addLayer(L.marker([currentLocation.lat, currentLocation.lng]));
+                }
+                map.fitBounds(group.getBounds().pad(0.1));
             }
         }
         
@@ -1136,10 +3013,38 @@
             }
         }
         
+        // Assign package to current driver
+        async function assignPackage(packageId) {
+            try {
+                const response = await fetch(`/api/driver/workboard/assign-package`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + getToken()
+                    },
+                    body: JSON.stringify({
+                        packageId: packageId
+                    })
+                });
+                
+                if (response.ok) {
+                    showNotification('Package assigned successfully!', 'success');
+                    // Refresh the workboard to show updated assignments
+                    refreshWorkboard();
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || 'Failed to assign package', 'error');
+                }
+            } catch (error) {
+                console.error('Error assigning package:', error);
+                showNotification('Error assigning package', 'error');
+            }
+        }
+        
         // Show today summary modal
         function showTodaySummaryModal(summary) {
             const modalHtml = `
-                <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                <div class="fixed inset-0 bg-black bg-opacity-50 z-60 flex items-center justify-center">
                     <div class="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-bold text-gray-900">Today's Summary</h3>
@@ -1196,7 +3101,7 @@
         // Show notification
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white ${
+            notification.className = `fixed top-4 right-4 z-70 px-6 py-3 rounded-lg text-white ${
                 type === 'success' ? 'bg-green-500' : 
                 type === 'error' ? 'bg-red-500' : 
                 type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
@@ -1209,6 +3114,14 @@
             setTimeout(() => {
                 notification.remove();
             }, 3000);
+        }
+        
+        // Hide loading status
+        function hideLoadingStatus() {
+            const loadingStatus = document.getElementById('loadingStatus');
+            if (loadingStatus) {
+                loadingStatus.classList.add('hidden');
+            }
         }
         
         // Refresh workboard
@@ -1238,6 +3151,11 @@
                 if (result.success) {
                     showNotification('Package accepted successfully!', 'success');
                     refreshWorkboard();
+                    
+                    // Show optimized route after accepting package
+                    setTimeout(() => {
+                        showOptimizedRoute();
+                    }, 1000);
                 } else {
                     showNotification(result.message || 'Failed to accept package', 'error');
                 }
@@ -1277,25 +3195,795 @@
 
         // Get auth token
         function getToken() {
-            return localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
+            const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
+            if (!token) {
+                console.warn('No authentication token found. Driver may not be logged in.');
+                showNotification('Please log in to access the workboard', 'error');
+                // Redirect to login page
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            }
+            return token;
         }
 
+        // Enhanced JavaScript for Uber-like Navigation and Photo Verification
+        
+        // Global variables for enhanced features
+        let pickupSignaturePad, deliverySignaturePad;
+        let packageCamera, deliveryCamera;
+        let packageStream, deliveryStream;
+        let currentPickupPackage = null;
+        let currentDeliveryPackage = null;
+        let navigationActive = false;
+        let trafficLayer = null;
+        let satelliteLayer = null;
+        let currentMapLayer = 'standard';
+        
+        // Initialize enhanced features
+        function initEnhancedFeatures() {
+            // Initialize signature pads
+            if (document.getElementById('pickupSignaturePad')) {
+                pickupSignaturePad = new SignaturePad(document.getElementById('pickupSignaturePad'));
+            }
+            if (document.getElementById('deliverySignaturePad')) {
+                deliverySignaturePad = new SignaturePad(document.getElementById('deliverySignaturePad'));
+            }
+            
+            // Initialize dark mode
+            initDarkMode();
+            
+            // Initialize real-time tracking
+            initRealTimeTracking();
+            
+            // Initialize navigation features
+            initNavigationFeatures();
+        }
+        
+        // Dark Mode Toggle
+        function initDarkMode() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const body = document.body;
+            const toggleSlider = document.querySelector('#darkModeToggle + div > div:last-child');
+            
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            if (currentTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (darkModeToggle) darkModeToggle.checked = true;
+                if (toggleSlider) {
+                    toggleSlider.style.transform = 'translateX(1.5rem)';
+                    toggleSlider.style.backgroundColor = '#3b82f6';
+                }
+            }
+            
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener('change', function() {
+                    if (this.checked) {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('theme', 'dark');
+                        if (toggleSlider) {
+                            toggleSlider.style.transform = 'translateX(1.5rem)';
+                            toggleSlider.style.backgroundColor = '#3b82f6';
+                        }
+                    } else {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('theme', 'light');
+                        if (toggleSlider) {
+                            toggleSlider.style.transform = 'translateX(0)';
+                            toggleSlider.style.backgroundColor = '#ffffff';
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Real-time tracking initialization
+        function initRealTimeTracking() {
+            // Update tracking indicator
+            updateTrackingIndicator();
+            
+            // Start location tracking
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(
+                    function(position) {
+                        updateDriverLocation(position.coords.latitude, position.coords.longitude);
+                        updateTrackingIndicator(true);
+                    },
+                    function(error) {
+                        console.error('Location tracking error:', error);
+                        updateTrackingIndicator(false);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+                );
+            }
+        }
+        
+        // Update tracking indicator
+        function updateTrackingIndicator(isOnline = true) {
+            const indicator = document.getElementById('trackingIndicator');
+            if (indicator) {
+                if (isOnline) {
+                    indicator.classList.remove('offline');
+                    indicator.innerHTML = '<i class="fas fa-satellite-dish"></i><span>Live Tracking</span>';
+                } else {
+                    indicator.classList.add('offline');
+                    indicator.innerHTML = '<i class="fas fa-wifi"></i><span>Offline</span>';
+                }
+            }
+        }
+        
+        // Navigation features
+        function initNavigationFeatures() {
+            // Initialize navigation controls
+            initNavigationControls();
+        }
+        
+        // Initialize navigation controls
+        function initNavigationControls() {
+            // Add event listeners for navigation buttons
+            const navigationBtn = document.getElementById('navigationBtn');
+            if (navigationBtn) {
+                navigationBtn.addEventListener('click', toggleNavigation);
+            }
+            
+            const trafficBtn = document.getElementById('trafficBtn');
+            if (trafficBtn) {
+                trafficBtn.addEventListener('click', toggleTraffic);
+            }
+            
+            const satelliteBtn = document.getElementById('satelliteBtn');
+            if (satelliteBtn) {
+                satelliteBtn.addEventListener('click', toggleSatellite);
+            }
+        }
+        
+        // Toggle navigation mode
+        function toggleNavigation() {
+            navigationActive = !navigationActive;
+            const btn = document.getElementById('navigationBtn');
+            const status = document.getElementById('navigationStatus');
+            
+            if (navigationActive) {
+                btn.classList.add('active');
+                status.classList.remove('hidden');
+                showNotification('Navigation mode activated', 'success');
+            } else {
+                btn.classList.remove('active');
+                status.classList.add('hidden');
+                showNotification('Navigation mode deactivated', 'info');
+            }
+        }
+        
+        // Toggle traffic layer
+        function toggleTraffic() {
+            const btn = document.getElementById('trafficBtn');
+            
+            if (!trafficLayer) {
+                // Add traffic layer (this would need to be implemented with your map provider)
+                trafficLayer = true;
+                btn.classList.add('active');
+                showNotification('Traffic layer enabled', 'success');
+            } else {
+                // Remove traffic layer
+                trafficLayer = false;
+                btn.classList.remove('active');
+                showNotification('Traffic layer disabled', 'info');
+            }
+        }
+        
+        // Toggle satellite view
+        function toggleSatellite() {
+            const btn = document.getElementById('satelliteBtn');
+            
+            if (currentMapLayer === 'standard') {
+                currentMapLayer = 'satellite';
+                btn.classList.add('active');
+                showNotification('Satellite view enabled', 'success');
+            } else {
+                currentMapLayer = 'standard';
+                btn.classList.remove('active');
+                showNotification('Standard view enabled', 'info');
+            }
+        }
+        
+        // Enhanced pickup modal functions
+        function openPickupModal(packageId) {
+            currentPickupPackage = packageId;
+            const modal = document.getElementById('pickupModal');
+            modal.classList.remove('hidden');
+            
+            // Load package details
+            loadPickupPackageDetails(packageId);
+            
+            // Initialize signature pad
+            if (pickupSignaturePad) {
+                pickupSignaturePad.clear();
+            }
+        }
+        
+        function closePickupModal() {
+            const modal = document.getElementById('pickupModal');
+            modal.classList.add('hidden');
+            
+            // Stop camera if running
+            stopPackageCamera();
+            
+            // Clear form
+            document.getElementById('collectionCodeInput').value = '';
+            document.getElementById('pickupNotes').value = '';
+            if (pickupSignaturePad) {
+                pickupSignaturePad.clear();
+            }
+        }
+        
+        function loadPickupPackageDetails(packageId) {
+            // Load package details for pickup
+            const detailsContainer = document.getElementById('pickupPackageDetails');
+            detailsContainer.innerHTML = `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-2">Package Details</h4>
+                    <p class="text-sm text-gray-600">Loading package information...</p>
+                </div>
+            `;
+        }
+        
+        // Photo capture functions for pickup
+        function startPackageCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    packageStream = stream;
+                    packageCamera = document.getElementById('packageCamera');
+                    packageCamera.srcObject = stream;
+                    packageCamera.classList.remove('hidden');
+                    document.getElementById('packagePhotoPlaceholder').classList.add('hidden');
+                    document.getElementById('packageCaptureBtn').classList.remove('hidden');
+                })
+                .catch(error => {
+                    console.error('Camera access error:', error);
+                    showNotification('Camera access denied', 'error');
+                });
+        }
+        
+        function capturePackagePhoto() {
+            const canvas = document.getElementById('packageCanvas');
+            const context = canvas.getContext('2d');
+            const video = document.getElementById('packageCamera');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            // Show captured photo
+            const photoImg = document.getElementById('packagePhotoImg');
+            photoImg.src = canvas.toDataURL('image/jpeg');
+            document.getElementById('packagePhotoPreview').classList.remove('hidden');
+            document.getElementById('packageCamera').classList.add('hidden');
+            document.getElementById('packageCaptureBtn').classList.add('hidden');
+            document.getElementById('packageRetakeBtn').classList.remove('hidden');
+            
+            // Stop camera
+            stopPackageCamera();
+        }
+        
+        function retakePackagePhoto() {
+            document.getElementById('packagePhotoPreview').classList.add('hidden');
+            document.getElementById('packagePhotoPlaceholder').classList.remove('hidden');
+            document.getElementById('packageRetakeBtn').classList.add('hidden');
+            startPackageCamera();
+        }
+        
+        function stopPackageCamera() {
+            if (packageStream) {
+                packageStream.getTracks().forEach(track => track.stop());
+                packageStream = null;
+            }
+        }
+        
+        // Enhanced delivery modal functions
+        function openDeliveryModal(packageId) {
+            currentDeliveryPackage = packageId;
+            const modal = document.getElementById('deliveryModal');
+            modal.classList.remove('hidden');
+            
+            // Load package details
+            loadDeliveryPackageDetails(packageId);
+            
+            // Initialize signature pad
+            if (deliverySignaturePad) {
+                deliverySignaturePad.clear();
+            }
+        }
+        
+        function closeDeliveryModal() {
+            const modal = document.getElementById('deliveryModal');
+            modal.classList.add('hidden');
+            
+            // Stop camera if running
+            stopDeliveryCamera();
+            
+            // Clear form
+            document.getElementById('dropoffCodeInput').value = '';
+            document.getElementById('deliveryNotes').value = '';
+            if (deliverySignaturePad) {
+                deliverySignaturePad.clear();
+            }
+        }
+        
+        function loadDeliveryPackageDetails(packageId) {
+            // Load package details for delivery
+            const detailsContainer = document.getElementById('deliveryPackageDetails');
+            detailsContainer.innerHTML = `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-2">Package Details</h4>
+                    <p class="text-sm text-gray-600">Loading package information...</p>
+                </div>
+            `;
+        }
+        
+        // Photo capture functions for delivery
+        function startDeliveryCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    deliveryStream = stream;
+                    deliveryCamera = document.getElementById('deliveryCamera');
+                    deliveryCamera.srcObject = stream;
+                    deliveryCamera.classList.remove('hidden');
+                    document.getElementById('deliveryPhotoPlaceholder').classList.add('hidden');
+                    document.getElementById('deliveryCaptureBtn').classList.remove('hidden');
+                })
+                .catch(error => {
+                    console.error('Camera access error:', error);
+                    showNotification('Camera access denied', 'error');
+                });
+        }
+        
+        function captureDeliveryPhoto() {
+            const canvas = document.getElementById('deliveryCanvas');
+            const context = canvas.getContext('2d');
+            const video = document.getElementById('deliveryCamera');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            // Show captured photo
+            const photoImg = document.getElementById('deliveryPhotoImg');
+            photoImg.src = canvas.toDataURL('image/jpeg');
+            document.getElementById('deliveryPhotoPreview').classList.remove('hidden');
+            document.getElementById('deliveryCamera').classList.add('hidden');
+            document.getElementById('deliveryCaptureBtn').classList.add('hidden');
+            document.getElementById('deliveryRetakeBtn').classList.remove('hidden');
+            
+            // Stop camera
+            stopDeliveryCamera();
+        }
+        
+        function retakeDeliveryPhoto() {
+            document.getElementById('deliveryPhotoPreview').classList.add('hidden');
+            document.getElementById('deliveryPhotoPlaceholder').classList.remove('hidden');
+            document.getElementById('deliveryRetakeBtn').classList.add('hidden');
+            startDeliveryCamera();
+        }
+        
+        function stopDeliveryCamera() {
+            if (deliveryStream) {
+                deliveryStream.getTracks().forEach(track => track.stop());
+                deliveryStream = null;
+            }
+        }
+        
+        // Signature functions
+        function clearPickupSignature() {
+            if (pickupSignaturePad) {
+                pickupSignaturePad.clear();
+            }
+        }
+        
+        function clearDeliverySignature() {
+            if (deliverySignaturePad) {
+                deliverySignaturePad.clear();
+            }
+        }
+        
+        // Confirm pickup with enhanced verification
+        async function confirmPickup() {
+            const collectionCode = document.getElementById('collectionCodeInput').value;
+            const notes = document.getElementById('pickupNotes').value;
+            
+            // Validate collection code
+            if (!collectionCode) {
+                showNotification('Please enter collection code', 'error');
+                return;
+            }
+            
+            // Check if photo was taken
+            const photoTaken = document.getElementById('packagePhotoPreview').classList.contains('hidden') === false;
+            if (!photoTaken) {
+                showNotification('Please take package photo', 'error');
+                return;
+            }
+            
+            // Check if signature was provided
+            if (pickupSignaturePad && pickupSignaturePad.isEmpty()) {
+                showNotification('Please provide customer signature', 'error');
+                return;
+            }
+            
+            try {
+                // Create FormData for file upload
+                const formData = new FormData();
+                formData.append('collectionCode', collectionCode);
+                formData.append('pickupNotes', notes);
+                
+                // Add signature
+                if (pickupSignaturePad && !pickupSignaturePad.isEmpty()) {
+                    const signatureData = pickupSignaturePad.toDataURL();
+                    formData.append('signature', signatureData);
+                }
+                
+                // Add photo
+                const canvas = document.getElementById('packageCanvas');
+                canvas.toBlob(blob => {
+                    formData.append('packagePhoto', blob, 'package-photo.jpg');
+                    
+                    // Submit pickup
+                    submitPickup(formData);
+                }, 'image/jpeg', 0.8);
+                
+            } catch (error) {
+                console.error('Pickup confirmation error:', error);
+                showNotification('Failed to confirm pickup', 'error');
+            }
+        }
+        
+        // Confirm delivery with enhanced verification
+        async function confirmDelivery() {
+            const dropoffCode = document.getElementById('dropoffCodeInput').value;
+            const notes = document.getElementById('deliveryNotes').value;
+            
+            // Validate dropoff code
+            if (!dropoffCode) {
+                showNotification('Please enter drop-off code', 'error');
+                return;
+            }
+            
+            // Check if photo was taken
+            const photoTaken = document.getElementById('deliveryPhotoPreview').classList.contains('hidden') === false;
+            if (!photoTaken) {
+                showNotification('Please take delivery photo', 'error');
+                return;
+            }
+            
+            // Check if signature was provided
+            if (deliverySignaturePad && deliverySignaturePad.isEmpty()) {
+                showNotification('Please provide customer signature', 'error');
+                return;
+            }
+            
+            try {
+                // Create FormData for file upload
+                const formData = new FormData();
+                formData.append('dropOffCode', dropoffCode);
+                formData.append('deliveryNotes', notes);
+                
+                // Add signature
+                if (deliverySignaturePad && !deliverySignaturePad.isEmpty()) {
+                    const signatureData = deliverySignaturePad.toDataURL();
+                    formData.append('signature', signatureData);
+                }
+                
+                // Add photo
+                const canvas = document.getElementById('deliveryCanvas');
+                canvas.toBlob(blob => {
+                    formData.append('deliveryPhoto', blob, 'delivery-photo.jpg');
+                    
+                    // Submit delivery
+                    submitDelivery(formData);
+                }, 'image/jpeg', 0.8);
+                
+            } catch (error) {
+                console.error('Delivery confirmation error:', error);
+                showNotification('Failed to confirm delivery', 'error');
+            }
+        }
+        
+        // Submit pickup to backend
+        async function submitPickup(formData) {
+            try {
+                const response = await fetch(`/api/driver/workboard/packages/${currentPickupPackage}/pickup`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+                
+                if (response.ok) {
+                    showNotification('Package picked up successfully', 'success');
+                    closePickupModal();
+                    loadWorkboardData(); // Refresh workboard
+                } else {
+                    const error = await response.text();
+                    showNotification('Pickup failed: ' + error, 'error');
+                }
+            } catch (error) {
+                console.error('Pickup submission error:', error);
+                showNotification('Failed to submit pickup', 'error');
+            }
+        }
+        
+        // Submit delivery to backend
+        async function submitDelivery(formData) {
+            try {
+                const response = await fetch(`/api/driver/workboard/packages/${currentDeliveryPackage}/deliver`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+                
+                if (response.ok) {
+                    showNotification('Package delivered successfully', 'success');
+                    closeDeliveryModal();
+                    loadWorkboardData(); // Refresh workboard
+                } else {
+                    const error = await response.text();
+                    showNotification('Delivery failed: ' + error, 'error');
+                }
+            } catch (error) {
+                console.error('Delivery submission error:', error);
+                showNotification('Failed to submit delivery', 'error');
+            }
+        }
+        
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication first
+            const token = getToken();
+            if (!token) {
+                return; // getToken() will handle the redirect
+            }
+            
             initMap();
             getCurrentLocation();
+            initEnhancedFeatures();
             
             // Update time every second
             updateCurrentTime();
             setInterval(updateCurrentTime, 1000);
             
-            // Refresh data every 30 seconds
-            setInterval(refreshWorkboard, 30000);
+            // Load initial data once
+            loadWorkboardData();
+            
+            // Only refresh data every 5 minutes (300000ms) instead of 30 seconds
+            setInterval(refreshWorkboard, 300000);
             
             // Add event listeners for search and filter
             document.getElementById('packageSearch').addEventListener('input', filterPackages);
             document.getElementById('packageFilter').addEventListener('change', filterPackages);
         });
+        
+        // Initialize WebSocket connection for driver workboard
+        function initializeRealtimeTracking() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('Driver WebSocket connected: ' + frame);
+                isConnected = true;
+                
+                // Get driver ID from token or API
+                driverId = getCurrentDriverId();
+                
+                // Subscribe to workboard updates
+                subscribeToWorkboardUpdates();
+                
+                // Subscribe to driver location updates
+                subscribeToLocationUpdates();
+                
+                // Show connection status
+                showNotification('Real-time updates connected', 'success');
+            }, function(error) {
+                console.error('Driver WebSocket connection error: ' + error);
+                isConnected = false;
+                showNotification('Real-time updates disconnected', 'error');
+                
+                // Retry connection after 5 seconds
+                setTimeout(initializeRealtimeTracking, 5000);
+            });
+        }
+        
+        // Subscribe to workboard updates
+        function subscribeToWorkboardUpdates() {
+            if (!stompClient || !isConnected || !driverId) return;
+            
+            // Subscribe to driver-specific workboard updates
+            stompClient.subscribe('/topic/workboard/' + driverId, function(message) {
+                const update = JSON.parse(message.body);
+                handleWorkboardUpdate(update);
+            });
+            
+            // Subscribe to general package updates
+            stompClient.subscribe('/topic/package-updates', function(message) {
+                const update = JSON.parse(message.body);
+                handlePackageUpdate(update);
+            });
+        }
+        
+        // Subscribe to location updates
+        function subscribeToLocationUpdates() {
+            if (!stompClient || !isConnected) return;
+            
+            // Subscribe to all driver locations
+            stompClient.subscribe('/topic/driver-locations', function(message) {
+                const location = JSON.parse(message.body);
+                updateDriverLocationOnMap(location);
+            });
+        }
+        
+        // Handle workboard updates
+        function handleWorkboardUpdate(update) {
+            console.log('Workboard update received:', update);
+            
+            switch (update.type) {
+                case 'NEW_PACKAGE':
+                    showNotification('New package available for pickup', 'info');
+                    refreshWorkboard();
+                    break;
+                case 'PACKAGE_ASSIGNED':
+                    showNotification('Package assigned to you', 'success');
+                    refreshWorkboard();
+                    break;
+                case 'PACKAGE_STATUS_CHANGE':
+                    showNotification('Package status updated', 'info');
+                    refreshWorkboard();
+                    break;
+                case 'LOCATION_UPDATE':
+                    updateDriverLocationOnMap(update.data);
+                    break;
+                default:
+                    console.log('Unknown workboard update type:', update.type);
+            }
+        }
+        
+        // Handle package updates
+        function handlePackageUpdate(update) {
+            console.log('Package update received:', update);
+            
+            // Update package status in UI if it's one of our packages
+            const packageElements = document.querySelectorAll('[data-tracking="' + update.trackingNumber + '"]');
+            if (packageElements.length > 0) {
+                updatePackageStatusInUI(update.trackingNumber, update.status, update.location);
+            }
+        }
+        
+        // Update driver location on map
+        function updateDriverLocationOnMap(location) {
+            if (!map) return;
+            
+            // Update driver marker on map
+            if (location.driverId && location.lat && location.lng) {
+                // Remove existing driver marker
+                if (markers['driver_' + location.driverId]) {
+                    map.removeLayer(markers['driver_' + location.driverId]);
+                }
+                
+                // Add new driver marker
+                const driverMarker = L.marker([location.lat, location.lng], {
+                    icon: L.divIcon({
+                        className: 'driver-marker',
+                        html: '<div style="background-color: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    })
+                }).addTo(map);
+                
+                driverMarker.bindPopup(`
+                    <div class="text-center">
+                        <strong>Driver Location</strong><br>
+                        <small>${location.address || 'Location updated'}</small>
+                    </div>
+                `);
+                
+                markers['driver_' + location.driverId] = driverMarker;
+            }
+        }
+        
+        // Update package status in UI
+        function updatePackageStatusInUI(trackingNumber, status, location) {
+            const packageElements = document.querySelectorAll('[data-tracking="' + trackingNumber + '"]');
+            
+            packageElements.forEach(element => {
+                // Update status badge
+                const statusBadge = element.querySelector('.status-badge');
+                if (statusBadge) {
+                    statusBadge.textContent = getStatusText(status);
+                    statusBadge.className = 'status-badge ' + getStatusClass(status);
+                }
+                
+                // Update location if provided
+                if (location) {
+                    const locationElement = element.querySelector('.package-location');
+                    if (locationElement) {
+                        locationElement.textContent = location;
+                    }
+                }
+                
+                // Update timestamp
+                const timestampElement = element.querySelector('.package-timestamp');
+                if (timestampElement) {
+                    timestampElement.textContent = new Date().toLocaleString();
+                }
+            });
+        }
+        
+        // Send location update to server
+        function sendLocationUpdate(lat, lng, address) {
+            if (!stompClient || !isConnected || !driverId) return;
+            
+            const locationData = {
+                driverId: driverId,
+                lat: lat,
+                lng: lng,
+                address: address,
+                timestamp: Date.now()
+            };
+            
+            stompClient.send('/app/driver-location', {}, JSON.stringify(locationData));
+        }
+        
+        // Send package status update
+        function sendPackageStatusUpdate(trackingNumber, status, location, notes) {
+            if (!stompClient || !isConnected) return;
+            
+            const update = {
+                trackingNumber: trackingNumber,
+                status: status,
+                location: location,
+                notes: notes,
+                timestamp: Date.now()
+            };
+            
+            stompClient.send('/app/package-status', {}, JSON.stringify(update));
+        }
+        
+        // Get current driver ID
+        function getCurrentDriverId() {
+            // This should return the current driver's ID
+            // You can get this from a global variable, localStorage, or make an API call
+            return window.currentDriverId || 1; // Default for testing
+        }
+        
+        // Get status text for display
+        function getStatusText(status) {
+            const statusMap = {
+                'PENDING': 'Pending',
+                'ASSIGNED': 'Assigned',
+                'PICKED_UP': 'Picked Up',
+                'IN_TRANSIT': 'In Transit',
+                'OUT_FOR_DELIVERY': 'Out for Delivery',
+                'DELIVERED': 'Delivered',
+                'FAILED_DELIVERY': 'Delivery Failed',
+                'CANCELLED': 'Cancelled'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // Get status CSS class
+        function getStatusClass(status) {
+            const classMap = {
+                'PENDING': 'bg-yellow-100 text-yellow-800',
+                'ASSIGNED': 'bg-blue-100 text-blue-800',
+                'PICKED_UP': 'bg-green-100 text-green-800',
+                'IN_TRANSIT': 'bg-blue-100 text-blue-800',
+                'OUT_FOR_DELIVERY': 'bg-purple-100 text-purple-800',
+                'DELIVERED': 'bg-green-100 text-green-800',
+                'FAILED_DELIVERY': 'bg-red-100 text-red-800',
+                'CANCELLED': 'bg-gray-100 text-gray-800'
+            };
+            return classMap[status] || 'bg-gray-100 text-gray-800';
+        }
         
         // Filter packages based on search and filter criteria
         function filterPackages() {
@@ -1332,6 +4020,558 @@
                     return true;
             }
         }
+        
+        // Fullscreen Map Functionality
+        let fullscreenMap = null;
+        let isFullscreen = false;
+        
+        function toggleFullscreenMap() {
+            if (isFullscreen) {
+                exitFullscreenMap();
+            } else {
+                enterFullscreenMap();
+            }
+        }
+        
+        function enterFullscreenMap() {
+            isFullscreen = true;
+            document.getElementById('fullscreenMapModal').classList.remove('hidden');
+            
+            // Initialize fullscreen map
+            setTimeout(() => {
+                if (!fullscreenMap) {
+                    fullscreenMap = L.map('fullscreenMap').setView([-26.2041, 28.0473], 12);
+                    
+                    // Add tile layer
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(fullscreenMap);
+                    
+                    // Enable mobile navigation
+                    enableMobileNavigation();
+                    
+                    // Copy current map markers to fullscreen map
+                    copyMapMarkersToFullscreen();
+                } else {
+                    fullscreenMap.invalidateSize();
+                }
+            }, 200);
+            
+            // Update button icon
+            document.getElementById('fullscreenMapBtn').innerHTML = '<i class="fas fa-compress text-sm"></i>';
+        }
+        
+        function exitFullscreenMap() {
+            isFullscreen = false;
+            document.getElementById('fullscreenMapModal').classList.add('hidden');
+            
+            // Update button icon
+            document.getElementById('fullscreenMapBtn').innerHTML = '<i class="fas fa-expand text-sm"></i>';
+        }
+        
+        function copyMapMarkersToFullscreen() {
+            if (!fullscreenMap) return;
+            
+            // Copy current location marker
+            if (currentLocation) {
+                const currentMarker = L.marker([currentLocation.lat, currentLocation.lng], {
+                    icon: L.divIcon({
+                        className: 'current-location-marker',
+                        html: '<div style="background-color: #ef4444; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    })
+                }).addTo(fullscreenMap);
+                
+                currentMarker.bindPopup('<div class="text-center"><strong>Your Location</strong></div>');
+            }
+            
+            // Copy package markers
+            if (markers && Object.keys(markers).length > 0) {
+                Object.keys(markers).forEach(key => {
+                    if (key !== 'currentLocation' && markers[key]) {
+                        const marker = markers[key];
+                        const latlng = marker.getLatLng();
+                        const popup = marker.getPopup();
+                        
+                        const newMarker = L.marker(latlng, {
+                            icon: marker.options.icon
+                        }).addTo(fullscreenMap);
+                        
+                        if (popup) {
+                            newMarker.bindPopup(popup.getContent());
+                        }
+                    }
+                });
+                
+                // Fit bounds to show all markers
+                const group = new L.featureGroup(Object.values(markers).filter(marker => marker));
+                if (group.getLayers().length > 0) {
+                    fullscreenMap.fitBounds(group.getBounds().pad(0.1));
+                }
+            }
+        }
+        
+        function centerOnCurrentLocation() {
+            if (fullscreenMap && currentLocation) {
+                fullscreenMap.setView([currentLocation.lat, currentLocation.lng], 15);
+                showNotification('Centered on your location', 'info');
+            } else {
+                showNotification('Location not available', 'error');
+            }
+        }
+        
+        function showRouteInstructions() {
+            const panel = document.getElementById('routeInstructionsPanel');
+            const content = document.getElementById('routeInstructionsContent');
+            
+            // Generate route instructions based on assigned packages
+            const assignedPackages = document.querySelectorAll('#assignedPackages .bg-gray-50');
+            let instructions = '<div class="space-y-2">';
+            
+            if (assignedPackages.length === 0) {
+                instructions += '<p class="text-gray-500">No packages assigned for delivery</p>';
+            } else {
+                instructions += '<h5 class="font-semibold text-gray-900 mb-2">Delivery Route:</h5>';
+                
+                assignedPackages.forEach((pkg, index) => {
+                    const tracking = pkg.querySelector('h4').textContent;
+                    const recipient = pkg.querySelector('p').textContent;
+                    const address = pkg.querySelectorAll('p')[1].textContent;
+                    
+                    instructions += `
+                        <div class="border-l-2 border-reliable-600 pl-3 py-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-reliable-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">${index + 1}</span>
+                                <div>
+                                    <p class="font-medium text-gray-900">${tracking}</p>
+                                    <p class="text-sm text-gray-600">${recipient}</p>
+                                    <p class="text-xs text-gray-500">${address}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            instructions += '</div>';
+            content.innerHTML = instructions;
+            panel.classList.remove('hidden');
+        }
+        
+        function hideRouteInstructions() {
+            document.getElementById('routeInstructionsPanel').classList.add('hidden');
+        }
+        
+        function toggleMapLayers() {
+            // Toggle between different map layers
+            showNotification('Map layers toggled', 'info');
+        }
+        
+        // Update fullscreen map when packages change
+        function updateFullscreenMap() {
+            if (isFullscreen && fullscreenMap) {
+                // Clear existing markers
+                fullscreenMap.eachLayer((layer) => {
+                    if (layer instanceof L.Marker) {
+                        fullscreenMap.removeLayer(layer);
+                    }
+                });
+                
+                // Copy updated markers
+                copyMapMarkersToFullscreen();
+            }
+        }
+        
+        // Add navigation status indicator
+        function showNavigationStatus() {
+            document.getElementById('navigationStatus').classList.remove('hidden');
+        }
+        
+        function hideNavigationStatus() {
+            document.getElementById('navigationStatus').classList.add('hidden');
+        }
+        
+        // Enhanced mobile support
+        function enableMobileNavigation() {
+            // Add touch gestures for mobile
+            if (fullscreenMap) {
+                fullscreenMap.doubleClickZoom.disable();
+                fullscreenMap.scrollWheelZoom.disable();
+            }
+        }
+        
+        // Auto-enter fullscreen on mobile when route is active
+        function autoEnterFullscreenOnRoute() {
+            const assignedPackages = document.querySelectorAll('#assignedPackages .bg-gray-50');
+            if (assignedPackages.length > 0 && window.innerWidth < 768) {
+                // Auto-enter fullscreen on mobile when packages are assigned
+                if (!isFullscreen) {
+                    enterFullscreenMap();
+                    showNavigationStatus();
+                }
+            }
+        }
+        
+        // Debug packages function
+        async function debugPackages() {
+            try {
+                const token = getToken();
+                if (!token) {
+                    console.error('No authentication token available');
+                    return;
+                }
+                
+                const response = await fetch('/api/driver/workboard/debug/all-packages', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    console.error('Debug API error:', response.status, response.statusText);
+                    return;
+                }
+                
+                const debugInfo = await response.json();
+                console.log('=== PACKAGE DEBUG INFO ===');
+                console.log('Total packages:', debugInfo.totalPackages);
+                console.log('Status counts:', debugInfo.statusCounts);
+                console.log('Assigned driver counts:', debugInfo.assignedDriverCounts);
+                console.log('Pending packages:', debugInfo.pendingPackages);
+                console.log('Assigned packages:', debugInfo.assignedPackages);
+                console.log('Pending not assigned:', debugInfo.pendingNotAssigned);
+                console.log('Sample packages:', debugInfo.samplePackages);
+                console.log('========================');
+                
+                // Show debug info in a notification
+                const debugText = `Total: ${debugInfo.totalPackages}, Pending: ${debugInfo.pendingPackages}, Assigned: ${debugInfo.assignedPackages}, Pending Not Assigned: ${debugInfo.pendingNotAssigned}`;
+                showNotification(debugText, 'info');
+                
+            } catch (error) {
+                console.error('Error in debugPackages:', error);
+                showNotification('Debug failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Show route to specific address
+        function showRouteToAddress(packageId, address, lat, lng) {
+            if (!currentLocation) {
+                showNotification('Location not available. Please enable GPS.', 'error');
+                return;
+            }
+            
+            if (!lat || !lng || lat === 0 || lng === 0) {
+                showNotification('Address coordinates not available. Cannot show route.', 'error');
+                return;
+            }
+            
+            // Enter fullscreen map for navigation
+            if (!isFullscreen) {
+                enterFullscreenMap();
+            }
+            
+            // Show route on both maps
+            showRouteToDestination(currentLocation.lat, currentLocation.lng, lat, lng, address);
+            
+            showNotification(`Navigating to: ${address}`, 'info');
+        }
+        
+        // Show route between two points
+        function showRouteToDestination(startLat, startLng, endLat, endLng, destinationName) {
+            // Clear existing routes
+            if (window.routeLayer) {
+                if (map) map.removeLayer(window.routeLayer);
+                if (fullscreenMap) fullscreenMap.removeLayer(window.routeLayer);
+            }
+            
+            // Create route line
+            const routeLine = L.polyline([
+                [startLat, startLng],
+                [endLat, endLng]
+            ], {
+                color: '#3b82f6',
+                weight: 4,
+                opacity: 0.8
+            });
+            
+            // Add route to main map
+            if (map) {
+                window.routeLayer = routeLine.addTo(map);
+                map.fitBounds(routeLine.getBounds().pad(0.1));
+            }
+            
+            // Add route to fullscreen map
+            if (fullscreenMap) {
+                const fullscreenRoute = L.polyline([
+                    [startLat, startLng],
+                    [endLat, endLng]
+                ], {
+                    color: '#3b82f6',
+                    weight: 6,
+                    opacity: 0.9
+                }).addTo(fullscreenMap);
+                
+                fullscreenMap.fitBounds(fullscreenRoute.getBounds().pad(0.1));
+            }
+            
+            // Add destination marker
+            const destinationMarker = L.marker([endLat, endLng], {
+                icon: L.divIcon({
+                    className: 'destination-marker',
+                    html: `<div style="background-color: #10b981; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">📍</div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            });
+            
+            if (map) destinationMarker.addTo(map);
+            if (fullscreenMap) destinationMarker.addTo(fullscreenMap);
+            
+            destinationMarker.bindPopup(`
+                <div class="text-center">
+                    <strong>Destination</strong><br>
+                    <small>${destinationName || 'Package Location'}</small>
+                </div>
+            `);
+            
+            // Calculate and show distance
+            const distance = calculateDistanceInternal(startLat, startLng, endLat, endLng);
+            showNotification(`Route to ${destinationName || 'destination'}: ${distance.toFixed(1)} km`, 'info');
+        }
     </script>
+
+    <!-- Enhanced Pickup Modal with Photo Verification -->
+    <div id="pickupModal" class="pickup-delivery-modal fixed inset-0 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="pickup-delivery-content w-full max-w-md">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-900">Package Pickup</h3>
+                        <button onclick="closePickupModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Package Details -->
+                    <div id="pickupPackageDetails" class="mb-6">
+                        <!-- Package details will be loaded here -->
+                    </div>
+                    
+                    <!-- Collection Code Verification -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Collection Code</label>
+                        <input type="text" id="collectionCodeInput" class="code-input w-full" 
+                               placeholder="Enter collection code" maxlength="6">
+                        <div id="codeValidationMessage" class="text-sm mt-2 hidden"></div>
+                    </div>
+                    
+                    <!-- Photo Capture -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Package Photo</label>
+                        <div class="photo-capture-container">
+                            <video id="packageCamera" class="photo-preview hidden" autoplay></video>
+                            <canvas id="packageCanvas" class="photo-preview hidden"></canvas>
+                            <div id="packagePhotoPreview" class="photo-preview hidden">
+                                <img id="packagePhotoImg" class="w-full h-full object-cover rounded-lg">
+                            </div>
+                            <div id="packagePhotoPlaceholder" class="photo-preview flex items-center justify-center bg-gray-100">
+                                <div class="text-center">
+                                    <i class="fas fa-camera text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-gray-500">Take package photo</p>
+                                </div>
+                            </div>
+                            <div class="camera-controls">
+                                <button id="packageCameraBtn" class="camera-btn" onclick="startPackageCamera()">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                                <button id="packageCaptureBtn" class="camera-btn hidden" onclick="capturePackagePhoto()">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                                <button id="packageRetakeBtn" class="camera-btn hidden" onclick="retakePackagePhoto()">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Signature -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Customer Signature</label>
+                        <div class="border-2 border-gray-300 rounded-lg">
+                            <canvas id="pickupSignaturePad" width="400" height="200"></canvas>
+                        </div>
+                        <button onclick="clearPickupSignature()" class="mt-2 text-sm text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-eraser mr-1"></i>Clear Signature
+                        </button>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Pickup Notes</label>
+                        <textarea id="pickupNotes" class="w-full p-3 border border-gray-300 rounded-lg" 
+                                  rows="3" placeholder="Any additional notes about the pickup..."></textarea>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-3">
+                        <button onclick="confirmPickup()" id="confirmPickupBtn" 
+                                class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-check mr-2"></i>Confirm Pickup
+                        </button>
+                        <button onclick="closePickupModal()" 
+                                class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Enhanced Delivery Modal with Photo Verification -->
+    <div id="deliveryModal" class="pickup-delivery-modal fixed inset-0 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="pickup-delivery-content w-full max-w-md">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-900">Package Delivery</h3>
+                        <button onclick="closeDeliveryModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Package Details -->
+                    <div id="deliveryPackageDetails" class="mb-6">
+                        <!-- Package details will be loaded here -->
+                    </div>
+                    
+                    <!-- Drop-off Code Verification -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Drop-off Code</label>
+                        <input type="text" id="dropoffCodeInput" class="code-input w-full" 
+                               placeholder="Enter drop-off code" maxlength="6">
+                        <div id="deliveryCodeValidationMessage" class="text-sm mt-2 hidden"></div>
+                    </div>
+                    
+                    <!-- Photo Capture -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Photo</label>
+                        <div class="photo-capture-container">
+                            <video id="deliveryCamera" class="photo-preview hidden" autoplay></video>
+                            <canvas id="deliveryCanvas" class="photo-preview hidden"></canvas>
+                            <div id="deliveryPhotoPreview" class="photo-preview hidden">
+                                <img id="deliveryPhotoImg" class="w-full h-full object-cover rounded-lg">
+                            </div>
+                            <div id="deliveryPhotoPlaceholder" class="photo-preview flex items-center justify-center bg-gray-100">
+                                <div class="text-center">
+                                    <i class="fas fa-camera text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-gray-500">Take delivery photo</p>
+                                </div>
+                            </div>
+                            <div class="camera-controls">
+                                <button id="deliveryCameraBtn" class="camera-btn" onclick="startDeliveryCamera()">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                                <button id="deliveryCaptureBtn" class="camera-btn hidden" onclick="captureDeliveryPhoto()">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                                <button id="deliveryRetakeBtn" class="camera-btn hidden" onclick="retakeDeliveryPhoto()">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Signature -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Customer Signature</label>
+                        <div class="border-2 border-gray-300 rounded-lg">
+                            <canvas id="deliverySignaturePad" width="400" height="200"></canvas>
+                        </div>
+                        <button onclick="clearDeliverySignature()" class="mt-2 text-sm text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-eraser mr-1"></i>Clear Signature
+                        </button>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Notes</label>
+                        <textarea id="deliveryNotes" class="w-full p-3 border border-gray-300 rounded-lg" 
+                                  rows="3" placeholder="Any additional notes about the delivery..."></textarea>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-3">
+                        <button onclick="confirmDelivery()" id="confirmDeliveryBtn" 
+                                class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-check mr-2"></i>Confirm Delivery
+                        </button>
+                        <button onclick="closeDeliveryModal()" 
+                                class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Map Modal -->
+    <div id="fullscreenMapModal" class="fixed inset-0 bg-black z-70 hidden">
+        <div class="h-full w-full relative">
+            <!-- Fullscreen Map Container -->
+            <div id="fullscreenMap" class="h-full w-full"></div>
+            
+            <!-- Fullscreen Map Controls -->
+            <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-50">
+                <!-- Back Button -->
+                <button onclick="exitFullscreenMap()" 
+                        class="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+                
+                <!-- Route Controls -->
+                <div class="flex space-x-2">
+                    <button onclick="centerOnCurrentLocation()" 
+                            class="bg-reliable-600 hover:bg-reliable-700 text-white p-2 rounded-lg shadow-lg transition-colors duration-200">
+                        <i class="fas fa-location-arrow"></i>
+                    </button>
+                    <button onclick="showRouteInstructions()" 
+                            class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg shadow-lg transition-colors duration-200">
+                        <i class="fas fa-route"></i>
+                    </button>
+                    <button onclick="toggleMapLayers()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-lg transition-colors duration-200">
+                        <i class="fas fa-layer-group"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Route Instructions Panel -->
+            <div id="routeInstructionsPanel" class="absolute bottom-4 left-4 right-4 bg-white rounded-lg shadow-lg p-4 hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-bold text-gray-900">Route Instructions</h4>
+                    <button onclick="hideRouteInstructions()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="routeInstructionsContent" class="text-sm text-gray-600">
+                    <!-- Route instructions will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Navigation Status -->
+            <div id="navigationStatus" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-reliable-600 text-white px-4 py-2 rounded-lg shadow-lg hidden">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-navigation"></i>
+                    <span id="navigationText">Navigation Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

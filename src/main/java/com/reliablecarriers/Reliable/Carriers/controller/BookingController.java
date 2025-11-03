@@ -106,13 +106,21 @@ public class BookingController {
                 // Payment successful, confirm booking
                 BookingResponse confirmedBooking = bookingService.confirmBooking(bookingId, reference);
                 
-                // Create payment record
+                // Create payment record linked to booking
                 Payment payment = new Payment();
                 payment.setAmount(confirmedBooking.getTotalAmount());
                 payment.setPaymentMethod(PaymentMethod.PAYSTACK);
                 payment.setStatus(PaymentStatus.COMPLETED);
                 payment.setTransactionId(reference);
+                payment.setReference(reference);
                 payment.setPaymentDate(new Date());
+                
+                // Link payment to booking
+                Booking booking = bookingService.getBookingEntityById(bookingId);
+                if (booking != null) {
+                    payment.setBooking(booking);
+                }
+                
                 paymentService.createPayment(payment);
                 
                 Map<String, Object> response = new HashMap<>();

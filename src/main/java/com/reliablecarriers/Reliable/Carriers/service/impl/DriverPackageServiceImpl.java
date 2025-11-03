@@ -4,7 +4,6 @@ import com.reliablecarriers.Reliable.Carriers.dto.DriverPackageInfo;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
 import com.reliablecarriers.Reliable.Carriers.model.User;
-import com.reliablecarriers.Reliable.Carriers.model.UserRole;
 import com.reliablecarriers.Reliable.Carriers.repository.ShipmentRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
 import com.reliablecarriers.Reliable.Carriers.service.DriverPackageService;
@@ -198,7 +197,8 @@ public class DriverPackageServiceImpl implements DriverPackageService {
 
     @Override
     public DriverPackageInfo updatePackageStatus(Long packageId, String newStatus, String location, String notes) {
-        Shipment shipment = shipmentService.getShipmentById(packageId);
+        // Get shipment to validate it exists
+        shipmentService.getShipmentById(packageId);
         
         ShipmentStatus status;
         try {

@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places'"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-truck text-2xl"></i>
+                    <div>
+                        <h1 class="text-xl font-bold">Driver Dashboard</h1>
+                        <p class="text-blue-200" id="driverName">Welcome, Driver</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <div class="text-sm text-blue-200">Status</div>
+                        <div class="font-semibold" id="driverStatus">Available</div>
+                    </div>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-box text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Available Packages</p>
+                        <p class="text-2xl font-semibold" id="availableCount">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-clipboard-check text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Assigned</p>
+                        <p class="text-2xl font-semibold" id="assignedCount">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <i class="fas fa-truck-loading text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">In Transit</p>
+                        <p class="text-2xl font-semibold" id="transitCount">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Completed Today</p>
+                        <p class="text-2xl font-semibold" id="completedCount">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Tabs -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex">
+                    <button onclick="showTab('available')" id="availableTab" 
+                            class="tab-button active px-6 py-3 text-sm font-medium border-b-2 border-blue-500 text-blue-600">
+                        Available Packages
+                    </button>
+                    <button onclick="showTab('assigned')" id="assignedTab" 
+                            class="tab-button px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        My Assignments
+                    </button>
+                    <button onclick="showTab('navigation')" id="navigationTab" 
+                            class="tab-button px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        Navigation
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Available Packages Tab -->
+            <div id="availableContent" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Available Packages</h3>
+                    <button onclick="refreshAvailablePackages()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div id="availablePackages" class="space-y-4">
+                    <!-- Available packages will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Assigned Packages Tab -->
+            <div id="assignedContent" class="tab-content p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">My Assigned Packages</h3>
+                    <button onclick="refreshAssignedPackages()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div id="assignedPackages" class="space-y-4">
+                    <!-- Assigned packages will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Navigation Tab -->
+            <div id="navigationContent" class="tab-content p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Navigation & Location</h3>
+                    <button onclick="updateLocation()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-location-arrow mr-2"></i>Update Location
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold mb-3">Current Location</h4>
+                        <div id="currentLocation" class="bg-gray-100 p-4 rounded">
+                            <p class="text-sm text-gray-600">Getting location...</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-3">Active Route</h4>
+                        <div id="activeRoute" class="bg-gray-100 p-4 rounded">
+                            <p class="text-sm text-gray-600">No active route</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <div id="navigationMap" style="height: 400px;" class="rounded-lg border"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Package Action Modal -->
+    <div id="packageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="modalTitle" class="text-lg font-semibold">Package Action</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div id="modalContent">
+                        <!-- Modal content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="toastMessage">Success!</span>
+        </div>
+    </div>
+
+    <script>
+        let currentDriverId = 1; // This would come from authentication
+        let map;
+        let currentLocationMarker;
+        let directionsService;
+        let directionsRenderer;
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+            loadDashboardData();
+            getCurrentLocation();
+            
+            // Refresh data every 30 seconds
+            setInterval(loadDashboardData, 30000);
+        });
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                button.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Content').classList.remove('hidden');
+            
+            // Add active class to selected tab
+            const activeTab = document.getElementById(tabName + 'Tab');
+            activeTab.classList.add('active', 'border-blue-500', 'text-blue-600');
+            activeTab.classList.remove('border-transparent', 'text-gray-500');
+            
+            // Load tab-specific data
+            if (tabName === 'available') {
+                refreshAvailablePackages();
+            } else if (tabName === 'assigned') {
+                refreshAssignedPackages();
+            }
+        }
+
+        // Load dashboard statistics
+        async function loadDashboardData() {
+            try {
+                // Load available packages count
+                const availableResponse = await fetch(`/api/driver/packages/available?driverId=${currentDriverId}`);
+                const availablePackages = await availableResponse.json();
+                document.getElementById('availableCount').textContent = availablePackages.length;
+
+                // Load assigned packages count
+                const assignedResponse = await fetch(`/api/driver/packages/assigned?driverId=${currentDriverId}`);
+                const assignedPackages = await assignedResponse.json();
+                
+                let assignedCount = 0;
+                let transitCount = 0;
+                let completedCount = 0;
+                
+                assignedPackages.forEach(pkg => {
+                    if (pkg.status === 'ASSIGNED') {
+                        assignedCount++;
+                    } else if (pkg.status === 'IN_TRANSIT' || pkg.status === 'OUT_FOR_DELIVERY') {
+                        transitCount++;
+                    } else if (pkg.status === 'DELIVERED') {
+                        completedCount++;
+                    }
+                });
+                
+                document.getElementById('assignedCount').textContent = assignedCount;
+                document.getElementById('transitCount').textContent = transitCount;
+                document.getElementById('completedCount').textContent = completedCount;
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Refresh available packages
+        async function refreshAvailablePackages() {
+            try {
+                const response = await fetch(`/api/driver/packages/available?driverId=${currentDriverId}`);
+                const packages = await response.json();
+                
+                const container = document.getElementById('availablePackages');
+                container.innerHTML = '';
+                
+                if (packages.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-8">No available packages at the moment</p>';
+                    return;
+                }
+                
+                packages.forEach(pkg => {
+                    const packageCard = createAvailablePackageCard(pkg);
+                    container.appendChild(packageCard);
+                });
+                
+            } catch (error) {
+                console.error('Error loading available packages:', error);
+                showToast('Error loading available packages', 'error');
+            }
+        }
+
+        // Refresh assigned packages
+        async function refreshAssignedPackages() {
+            try {
+                const response = await fetch(`/api/driver/packages/assigned?driverId=${currentDriverId}`);
+                const packages = await response.json();
+                
+                const container = document.getElementById('assignedPackages');
+                container.innerHTML = '';
+                
+                if (packages.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-8">No assigned packages</p>';
+                    return;
+                }
+                
+                packages.forEach(pkg => {
+                    const packageCard = createAssignedPackageCard(pkg);
+                    container.appendChild(packageCard);
+                });
+                
+            } catch (error) {
+                console.error('Error loading assigned packages:', error);
+                showToast('Error loading assigned packages', 'error');
+            }
+        }
+
+        // Create available package card
+        function createAvailablePackageCard(pkg) {
+            const card = document.createElement('div');
+            card.className = 'border rounded-lg p-4 hover:shadow-md transition-shadow';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="font-semibold">${pkg.trackingNumber}</h4>
+                        <p class="text-sm text-gray-600">${pkg.serviceType}</p>
+                    </div>
+                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Available</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm mb-4">
+                    <div>
+                        <p class="text-gray-600">Pickup:</p>
+                        <p class="font-medium">${pkg.pickupAddress}, ${pkg.pickupCity}</p>
+                        <p class="text-gray-500">${pkg.pickupContact} (${pkg.pickupPhone})</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Delivery:</p>
+                        <p class="font-medium">${pkg.deliveryAddress}, ${pkg.deliveryCity}</p>
+                        <p class="text-gray-500">${pkg.deliveryContact} (${pkg.deliveryPhone})</p>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        Weight: ${pkg.weight}kg | Amount: R${pkg.totalAmount}
+                    </div>
+                    <button onclick="acceptPackage(${pkg.bookingId})" 
+                            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm">
+                        <i class="fas fa-check mr-1"></i>Accept Package
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Create assigned package card
+        function createAssignedPackageCard(pkg) {
+            const card = document.createElement('div');
+            card.className = 'border rounded-lg p-4 hover:shadow-md transition-shadow';
+            
+            const statusColors = {
+                'ASSIGNED': 'bg-yellow-100 text-yellow-800',
+                'PICKED_UP': 'bg-blue-100 text-blue-800',
+                'IN_TRANSIT': 'bg-purple-100 text-purple-800',
+                'OUT_FOR_DELIVERY': 'bg-orange-100 text-orange-800',
+                'DELIVERED': 'bg-green-100 text-green-800'
+            };
+            
+            const actionButtons = getActionButtons(pkg);
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="font-semibold">${pkg.trackingNumber}</h4>
+                        <p class="text-sm text-gray-600">${pkg.serviceType}</p>
+                    </div>
+                    <span class="${statusColors[pkg.status]} text-xs px-2 py-1 rounded">${pkg.status.replace('_', ' ')}</span>
+                </div>
+                <div class="text-sm mb-4">
+                    <p class="text-gray-600 mb-1">Next Action: <span class="font-medium">${pkg.nextAction}</span></p>
+                    <p class="text-gray-600">Location: <span class="font-medium">${pkg.actionLocation}</span></p>
+                </div>
+                <div class="flex justify-between items-center">
+                    <button onclick="navigateToLocation('${pkg.actionLocation}')" 
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                        <i class="fas fa-map-marker-alt mr-1"></i>Navigate
+                    </button>
+                    <div class="space-x-2">
+                        ${actionButtons}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Get action buttons based on package status
+        function getActionButtons(pkg) {
+            switch (pkg.status) {
+                case 'ASSIGNED':
+                    return `
+                        <button onclick="initiatePickup(${pkg.bookingId})" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-box mr-1"></i>Pickup
+                        </button>
+                    `;
+                case 'PICKED_UP':
+                case 'IN_TRANSIT':
+                    return `
+                        <button onclick="markOutForDelivery(${pkg.bookingId})" 
+                                class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-truck mr-1"></i>Out for Delivery
+                        </button>
+                    `;
+                case 'OUT_FOR_DELIVERY':
+                    return `
+                        <button onclick="initiateDelivery(${pkg.bookingId})" 
+                                class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-hand-holding-box mr-1"></i>Deliver
+                        </button>
+                    `;
+                default:
+                    return '';
+            }
+        }
+
+        // Package Actions
+        async function acceptPackage(bookingId) {
+            try {
+                const response = await fetch(`/api/driver/packages/${bookingId}/accept?driverId=${currentDriverId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Package accepted successfully!');
+                    refreshAvailablePackages();
+                    refreshAssignedPackages();
+                    loadDashboardData();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error accepting package:', error);
+                showToast('Error accepting package', 'error');
+            }
+        }
+
+        async function initiatePickup(bookingId) {
+            const code = prompt('Enter pickup code:');
+            if (!code) return;
+            
+            try {
+                const response = await fetch(`/api/driver/packages/${bookingId}/pickup/initiate?driverId=${currentDriverId}&pickupCode=${code}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showPickupModal(bookingId);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error initiating pickup:', error);
+                showToast('Error initiating pickup', 'error');
+            }
+        }
+
+        async function markOutForDelivery(bookingId) {
+            const estimatedTime = prompt('Estimated delivery time (e.g., "2 hours", "Today 3 PM"):');
+            if (!estimatedTime) return;
+            
+            try {
+                const response = await fetch(`/api/driver/packages/${bookingId}/out-for-delivery?driverId=${currentDriverId}&estimatedDeliveryTime=${encodeURIComponent(estimatedTime)}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Package marked as out for delivery!');
+                    refreshAssignedPackages();
+                    loadDashboardData();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error marking out for delivery:', error);
+                showToast('Error updating package status', 'error');
+            }
+        }
+
+        async function initiateDelivery(bookingId) {
+            const code = prompt('Enter delivery code:');
+            if (!code) return;
+            
+            try {
+                const response = await fetch(`/api/driver/packages/${bookingId}/delivery/verify?driverId=${currentDriverId}&deliveryCode=${code}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showDeliveryModal(bookingId);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error verifying delivery code:', error);
+                showToast('Error verifying delivery code', 'error');
+            }
+        }
+
+        // Modal Functions
+        function showPickupModal(bookingId) {
+            document.getElementById('modalTitle').textContent = 'Complete Pickup';
+            document.getElementById('modalContent').innerHTML = `
+                <form onsubmit="completePickup(event, ${bookingId})">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Signature (draw below):</label>
+                            <canvas id="signatureCanvas" width="400" height="150" class="border rounded"></canvas>
+                            <button type="button" onclick="clearSignature()" class="text-sm text-blue-500 mt-1">Clear</button>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Package Photo:</label>
+                            <input type="file" id="pickupPhoto" accept="image/*" capture="camera" class="w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Notes (optional):</label>
+                            <textarea id="pickupNotes" rows="3" class="w-full border rounded px-3 py-2"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 border rounded">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded">Complete Pickup</button>
+                        </div>
+                    </div>
+                </form>
+            `;
+            
+            initializeSignatureCanvas();
+            document.getElementById('packageModal').classList.remove('hidden');
+        }
+
+        function showDeliveryModal(bookingId) {
+            document.getElementById('modalTitle').textContent = 'Complete Delivery';
+            document.getElementById('modalContent').innerHTML = `
+                <form onsubmit="completeDelivery(event, ${bookingId})">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Recipient Name:</label>
+                            <input type="text" id="recipientName" required class="w-full border rounded px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Recipient ID Number (optional):</label>
+                            <input type="text" id="recipientId" class="w-full border rounded px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Signature (draw below):</label>
+                            <canvas id="signatureCanvas" width="400" height="150" class="border rounded"></canvas>
+                            <button type="button" onclick="clearSignature()" class="text-sm text-blue-500 mt-1">Clear</button>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Delivery Photo:</label>
+                            <input type="file" id="deliveryPhoto" accept="image/*" capture="camera" class="w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Notes (optional):</label>
+                            <textarea id="deliveryNotes" rows="3" class="w-full border rounded px-3 py-2"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 border rounded">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-purple-500 text-white rounded">Complete Delivery</button>
+                        </div>
+                    </div>
+                </form>
+            `;
+            
+            initializeSignatureCanvas();
+            document.getElementById('packageModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('packageModal').classList.add('hidden');
+        }
+
+        // Signature Canvas
+        let isDrawing = false;
+        let signatureCanvas;
+        let signatureCtx;
+
+        function initializeSignatureCanvas() {
+            signatureCanvas = document.getElementById('signatureCanvas');
+            signatureCtx = signatureCanvas.getContext('2d');
+            
+            signatureCanvas.addEventListener('mousedown', startDrawing);
+            signatureCanvas.addEventListener('mousemove', draw);
+            signatureCanvas.addEventListener('mouseup', stopDrawing);
+            signatureCanvas.addEventListener('touchstart', startDrawing);
+            signatureCanvas.addEventListener('touchmove', draw);
+            signatureCanvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = signatureCanvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            signatureCtx.beginPath();
+            signatureCtx.moveTo(x, y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const rect = signatureCanvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            signatureCtx.lineTo(x, y);
+            signatureCtx.stroke();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function clearSignature() {
+            signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+        }
+
+        // Complete Actions
+        async function completePickup(event, bookingId) {
+            event.preventDefault();
+            
+            const signature = signatureCanvas.toDataURL();
+            const photo = document.getElementById('pickupPhoto').files[0];
+            const notes = document.getElementById('pickupNotes').value;
+            
+            const formData = new FormData();
+            formData.append('driverId', currentDriverId);
+            formData.append('signature', signature);
+            formData.append('notes', notes);
+            if (photo) formData.append('pickupPhoto', photo);
+            
+            try {
+                const response = await fetch(`/api/driver/packages/${bookingId}/pickup/complete`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Pickup completed successfully!');
+                    closeModal();
+                    refreshAssignedPackages();
+                    loadDashboardData();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error completing pickup:', error);
+                showToast('Error completing pickup', 'error');
+            }
+        }
+
+        async function completeDelivery(event, bookingId) {
+            event.preventDefault();
+            
+            const recipientName = document.getElementById('recipientName').value;
+            const recipientId = document.getElementById('recipientId').value;
+            const signature = signatureCanvas.toDataURL();
+            const photo = document.getElementById('deliveryPhoto').files[0];
+            const notes = document.getElementById('deliveryNotes').value;
+            
+            const formData = new FormData();
+            formData.append('driverId', currentDriverId);
+            formData.append('recipientName', recipientName);
+            formData.append('recipientIdNumber', recipientId);
+            formData.append('signature', signature);
+            formData.append('notes', notes);
+            if (photo) formData.append('deliveryPhoto', photo);
+            
+            try {
+                const response = await fetch(`/api/driver/packages/${bookingId}/delivery/complete`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Delivery completed successfully!');
+                    closeModal();
+                    refreshAssignedPackages();
+                    loadDashboardData();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error completing delivery:', error);
+                showToast('Error completing delivery', 'error');
+            }
+        }
+
+        // Maps and Navigation
+        function initializeMap() {
+            map = new google.maps.Map(document.getElementById('navigationMap'), {
+                zoom: 13,
+                center: { lat: -26.2041, lng: 28.0473 } // Johannesburg
+            });
+            
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+        }
+
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    const location = { lat: lat, lng: lng };
+                    
+                    if (currentLocationMarker) {
+                        currentLocationMarker.setMap(null);
+                    }
+                    
+                    currentLocationMarker = new google.maps.Marker({
+                        position: location,
+                        map: map,
+                        title: 'Your Current Location',
+                        icon: {
+                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="blue" width="24" height="24"><circle cx="12" cy="12" r="8"/></svg>'),
+                            scaledSize: new google.maps.Size(24, 24)
+                        }
+                    });
+                    
+                    map.setCenter(location);
+                    
+                    // Reverse geocode to get address
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ location: location }, function(results, status) {
+                        if (status === 'OK' && results[0]) {
+                            document.getElementById('currentLocation').innerHTML = `
+                                <p class="font-medium">Current Location</p>
+                                <p class="text-sm text-gray-600">${results[0].formatted_address}</p>
+                                <p class="text-xs text-gray-500">Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}</p>
+                            `;
+                        }
+                    });
+                    
+                }, function(error) {
+                    console.error('Error getting location:', error);
+                    document.getElementById('currentLocation').innerHTML = `
+                        <p class="text-red-500">Unable to get current location</p>
+                        <p class="text-sm text-gray-600">Please enable location services</p>
+                    `;
+                });
+            }
+        }
+
+        function navigateToLocation(address) {
+            if (!navigator.geolocation) {
+                showToast('Geolocation not supported', 'error');
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const origin = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                
+                const request = {
+                    origin: origin,
+                    destination: address,
+                    travelMode: google.maps.TravelMode.DRIVING
+                };
+                
+                directionsService.route(request, function(result, status) {
+                    if (status === 'OK') {
+                        directionsRenderer.setDirections(result);
+                        
+                        // Show navigation tab
+                        showTab('navigation');
+                        
+                        // Update active route info
+                        const route = result.routes[0];
+                        const leg = route.legs[0];
+                        document.getElementById('activeRoute').innerHTML = `
+                            <p class="font-medium">Route to: ${address}</p>
+                            <p class="text-sm text-gray-600">Distance: ${leg.distance.text}</p>
+                            <p class="text-sm text-gray-600">Duration: ${leg.duration.text}</p>
+                        `;
+                        
+                        showToast('Route calculated successfully!');
+                    } else {
+                        showToast('Could not calculate route', 'error');
+                    }
+                });
+            });
+        }
+
+        function updateLocation() {
+            getCurrentLocation();
+            showToast('Location updated!');
+        }
+
+        // Utility Functions
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            
+            if (type === 'error') {
+                toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            } else {
+                toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            }
+            
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+    </script>
+</body>
+</html>

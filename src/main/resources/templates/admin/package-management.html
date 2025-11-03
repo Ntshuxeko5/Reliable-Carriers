@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Package Management - Reliable Carriers Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-cogs text-2xl"></i>
+                    <div>
+                        <h1 class="text-xl font-bold">Package Management</h1>
+                        <p class="text-indigo-200">Admin Dashboard</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="refreshAll()" class="bg-indigo-500 hover:bg-indigo-400 px-4 py-2 rounded">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh All
+                    </button>
+                    <a href="/admin/dashboard" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Pending Assignment</p>
+                        <p class="text-2xl font-semibold" id="pendingCount">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-user-check text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Assigned</p>
+                        <p class="text-2xl font-semibold" id="assignedCount">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <i class="fas fa-truck text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">In Transit</p>
+                        <p class="text-2xl font-semibold" id="transitCount">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                        <i class="fas fa-shipping-fast text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Out for Delivery</p>
+                        <p class="text-2xl font-semibold" id="deliveryCount">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Delivered Today</p>
+                        <p class="text-2xl font-semibold" id="deliveredCount">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Tabs -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex">
+                    <button onclick="showTab('pending')" id="pendingTab" 
+                            class="tab-button active px-6 py-3 text-sm font-medium border-b-2 border-indigo-500 text-indigo-600">
+                        Pending Assignment
+                    </button>
+                    <button onclick="showTab('drivers')" id="driversTab" 
+                            class="tab-button px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        Available Drivers
+                    </button>
+                    <button onclick="showTab('active')" id="activeTab" 
+                            class="tab-button px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        Active Deliveries
+                    </button>
+                    <button onclick="showTab('tracking')" id="trackingTab" 
+                            class="tab-button px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        Real-time Tracking
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Pending Packages Tab -->
+            <div id="pendingContent" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Packages Awaiting Assignment</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="bulkAssign()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm">
+                            <i class="fas fa-users mr-2"></i>Bulk Assign
+                        </button>
+                        <button onclick="refreshPendingPackages()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="pendingPackages" class="space-y-4">
+                    <!-- Pending packages will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Available Drivers Tab -->
+            <div id="driversContent" class="tab-content p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Available Drivers</h3>
+                    <button onclick="refreshDrivers()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div id="availableDrivers" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Available drivers will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Active Deliveries Tab -->
+            <div id="activeContent" class="tab-content p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Active Deliveries</h3>
+                    <div class="flex space-x-2">
+                        <select id="statusFilter" onchange="filterActiveDeliveries()" class="border rounded px-3 py-2 text-sm">
+                            <option value="">All Statuses</option>
+                            <option value="ASSIGNED">Assigned</option>
+                            <option value="PICKED_UP">Picked Up</option>
+                            <option value="IN_TRANSIT">In Transit</option>
+                            <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                        </select>
+                        <button onclick="refreshActiveDeliveries()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="activeDeliveries" class="space-y-4">
+                    <!-- Active deliveries will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Real-time Tracking Tab -->
+            <div id="trackingContent" class="tab-content p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Real-time Package Tracking</h3>
+                    <div class="flex space-x-2">
+                        <input type="text" id="trackingSearch" placeholder="Search by tracking number..." 
+                               class="border rounded px-3 py-2 text-sm" onkeyup="searchTracking(event)">
+                        <button onclick="refreshTracking()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="trackingResults" class="space-y-4">
+                    <!-- Tracking results will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Modal -->
+    <div id="assignmentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="assignmentModalTitle" class="text-lg font-semibold">Assign Package to Driver</h3>
+                        <button onclick="closeAssignmentModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div id="assignmentModalContent">
+                        <!-- Assignment modal content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Update Modal -->
+    <div id="statusModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-lg w-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Update Package Status</h3>
+                        <button onclick="closeStatusModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form onsubmit="updatePackageStatus(event)">
+                        <input type="hidden" id="statusPackageId">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">New Status:</label>
+                                <select id="newStatus" required class="w-full border rounded px-3 py-2">
+                                    <option value="">Select Status</option>
+                                    <option value="CONFIRMED">Confirmed</option>
+                                    <option value="ASSIGNED">Assigned</option>
+                                    <option value="PICKED_UP">Picked Up</option>
+                                    <option value="IN_TRANSIT">In Transit</option>
+                                    <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                                    <option value="DELIVERED">Delivered</option>
+                                    <option value="CANCELLED">Cancelled</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Notes:</label>
+                                <textarea id="statusNotes" rows="3" class="w-full border rounded px-3 py-2" 
+                                          placeholder="Reason for status change..."></textarea>
+                            </div>
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" onclick="closeStatusModal()" class="px-4 py-2 text-gray-600 border rounded">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-indigo-500 text-white rounded">Update Status</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="toastMessage">Success!</span>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatistics();
+            loadPendingPackages();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                loadStatistics();
+                refreshCurrentTab();
+            }, 30000);
+        });
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+                button.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Content').classList.remove('hidden');
+            
+            // Add active class to selected tab
+            const activeTab = document.getElementById(tabName + 'Tab');
+            activeTab.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+            activeTab.classList.remove('border-transparent', 'text-gray-500');
+            
+            // Load tab-specific data
+            switch(tabName) {
+                case 'pending':
+                    loadPendingPackages();
+                    break;
+                case 'drivers':
+                    loadAvailableDrivers();
+                    break;
+                case 'active':
+                    loadActiveDeliveries();
+                    break;
+                case 'tracking':
+                    loadTrackingData();
+                    break;
+            }
+        }
+
+        // Load Statistics
+        async function loadStatistics() {
+            try {
+                const response = await fetch('/api/admin/packages/statistics');
+                const stats = await response.json();
+                
+                document.getElementById('pendingCount').textContent = stats.confirmedCount || 0;
+                document.getElementById('assignedCount').textContent = stats.assignedCount || 0;
+                document.getElementById('transitCount').textContent = stats.in_transitCount || 0;
+                document.getElementById('deliveryCount').textContent = stats.out_for_deliveryCount || 0;
+                document.getElementById('deliveredCount').textContent = stats.deliveredCount || 0;
+                
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        // Load Pending Packages
+        async function loadPendingPackages() {
+            try {
+                const response = await fetch('/api/admin/packages/pending');
+                const packages = await response.json();
+                
+                const container = document.getElementById('pendingPackages');
+                container.innerHTML = '';
+                
+                if (packages.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-8">No packages pending assignment</p>';
+                    return;
+                }
+                
+                packages.forEach(pkg => {
+                    const packageCard = createPendingPackageCard(pkg);
+                    container.appendChild(packageCard);
+                });
+                
+            } catch (error) {
+                console.error('Error loading pending packages:', error);
+                showToast('Error loading pending packages', 'error');
+            }
+        }
+
+        // Load Available Drivers
+        async function loadAvailableDrivers() {
+            try {
+                const response = await fetch('/api/admin/packages/drivers/available');
+                const drivers = await response.json();
+                
+                const container = document.getElementById('availableDrivers');
+                container.innerHTML = '';
+                
+                if (drivers.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-8 col-span-full">No available drivers</p>';
+                    return;
+                }
+                
+                drivers.forEach(driver => {
+                    const driverCard = createDriverCard(driver);
+                    container.appendChild(driverCard);
+                });
+                
+            } catch (error) {
+                console.error('Error loading drivers:', error);
+                showToast('Error loading drivers', 'error');
+            }
+        }
+
+        // Load Active Deliveries
+        async function loadActiveDeliveries() {
+            try {
+                const status = document.getElementById('statusFilter')?.value || '';
+                let url = '/api/admin/packages/all';
+                if (status) {
+                    url += `?status=${status}`;
+                }
+                
+                const response = await fetch(url);
+                const packages = await response.json();
+                
+                // Filter for active deliveries
+                const activePackages = packages.filter(pkg => 
+                    ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(pkg.status)
+                );
+                
+                const container = document.getElementById('activeDeliveries');
+                container.innerHTML = '';
+                
+                if (activePackages.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-8">No active deliveries</p>';
+                    return;
+                }
+                
+                activePackages.forEach(pkg => {
+                    const packageCard = createActivePackageCard(pkg);
+                    container.appendChild(packageCard);
+                });
+                
+            } catch (error) {
+                console.error('Error loading active deliveries:', error);
+                showToast('Error loading active deliveries', 'error');
+            }
+        }
+
+        // Create Package Cards
+        function createPendingPackageCard(pkg) {
+            const card = document.createElement('div');
+            card.className = 'border rounded-lg p-4 hover:shadow-md transition-shadow';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="font-semibold">${pkg.trackingNumber}</h4>
+                        <p class="text-sm text-gray-600">${pkg.customerName} - ${pkg.serviceType}</p>
+                        <p class="text-xs text-gray-500">Created: ${new Date(pkg.createdAt).toLocaleString()}</p>
+                    </div>
+                    <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Pending</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm mb-4">
+                    <div>
+                        <p class="text-gray-600">Pickup:</p>
+                        <p class="font-medium">${pkg.pickup.address}, ${pkg.pickup.city}</p>
+                        <p class="text-gray-500">${pkg.pickup.contact} (${pkg.pickup.phone})</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Delivery:</p>
+                        <p class="font-medium">${pkg.delivery.address}, ${pkg.delivery.city}</p>
+                        <p class="text-gray-500">${pkg.delivery.contact} (${pkg.delivery.phone})</p>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        Weight: ${pkg.weight}kg | Amount: R${pkg.totalAmount}
+                    </div>
+                    <div class="space-x-2">
+                        <button onclick="showAssignmentModal(${pkg.id})" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-user-plus mr-1"></i>Assign Driver
+                        </button>
+                        <button onclick="showStatusModal(${pkg.id})" 
+                                class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-edit mr-1"></i>Update
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function createDriverCard(driver) {
+            const card = document.createElement('div');
+            card.className = 'border rounded-lg p-4 hover:shadow-md transition-shadow';
+            
+            const availabilityColor = driver.available ? 'text-green-600' : 'text-red-600';
+            const availabilityIcon = driver.available ? 'fa-check-circle' : 'fa-times-circle';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="font-semibold">${driver.name}</h4>
+                        <p class="text-sm text-gray-600">${driver.email}</p>
+                        <p class="text-sm text-gray-600">${driver.phone}</p>
+                    </div>
+                    <i class="fas ${availabilityIcon} ${availabilityColor}"></i>
+                </div>
+                <div class="text-sm mb-3">
+                    <p class="text-gray-600">Location: <span class="font-medium">${driver.city}</span></p>
+                    <p class="text-gray-600">Active Assignments: <span class="font-medium">${driver.activeAssignments}</span></p>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="${driver.available ? 'text-green-600' : 'text-red-600'} text-sm font-medium">
+                        ${driver.available ? 'Available' : 'Busy'}
+                    </span>
+                    ${driver.available ? `
+                        <button onclick="quickAssign(${driver.id})" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-plus mr-1"></i>Quick Assign
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function createActivePackageCard(pkg) {
+            const card = document.createElement('div');
+            card.className = 'border rounded-lg p-4 hover:shadow-md transition-shadow';
+            
+            const statusColors = {
+                'ASSIGNED': 'bg-yellow-100 text-yellow-800',
+                'PICKED_UP': 'bg-blue-100 text-blue-800',
+                'IN_TRANSIT': 'bg-purple-100 text-purple-800',
+                'OUT_FOR_DELIVERY': 'bg-orange-100 text-orange-800'
+            };
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="font-semibold">${pkg.trackingNumber}</h4>
+                        <p class="text-sm text-gray-600">${pkg.customerName}</p>
+                        ${pkg.driver ? `<p class="text-sm text-blue-600">Driver: ${pkg.driver.name} (${pkg.driver.phone})</p>` : ''}
+                    </div>
+                    <span class="${statusColors[pkg.status]} text-xs px-2 py-1 rounded">${pkg.status.replace('_', ' ')}</span>
+                </div>
+                <div class="text-sm mb-3">
+                    <p class="text-gray-600">Service: <span class="font-medium">${pkg.serviceType}</span></p>
+                    <p class="text-gray-600">Amount: <span class="font-medium">R${pkg.totalAmount}</span></p>
+                    <p class="text-gray-600">Updated: <span class="font-medium">${new Date(pkg.updatedAt).toLocaleString()}</span></p>
+                </div>
+                <div class="flex justify-between items-center">
+                    <button onclick="trackPackage('${pkg.trackingNumber}')" 
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                        <i class="fas fa-map-marker-alt mr-1"></i>Track
+                    </button>
+                    <div class="space-x-2">
+                        <button onclick="showStatusModal(${pkg.id})" 
+                                class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-edit mr-1"></i>Update
+                        </button>
+                        <button onclick="contactDriver(${pkg.driver?.id})" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
+                                ${!pkg.driver ? 'disabled' : ''}>
+                            <i class="fas fa-phone mr-1"></i>Contact
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Assignment Functions
+        async function showAssignmentModal(packageId) {
+            try {
+                // Load available drivers
+                const response = await fetch('/api/admin/packages/drivers/available');
+                const drivers = await response.json();
+                
+                document.getElementById('assignmentModalTitle').textContent = 'Assign Package to Driver';
+                document.getElementById('assignmentModalContent').innerHTML = `
+                    <form onsubmit="assignPackage(event, ${packageId})">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Select Driver:</label>
+                                <select id="selectedDriver" required class="w-full border rounded px-3 py-2">
+                                    <option value="">Choose a driver...</option>
+                                    ${drivers.filter(d => d.available).map(driver => 
+                                        `<option value="${driver.id}">${driver.name} - ${driver.city} (${driver.activeAssignments} active)</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded">
+                                <h4 class="font-medium mb-2">Driver Availability</h4>
+                                <div class="space-y-2 max-h-40 overflow-y-auto">
+                                    ${drivers.map(driver => `
+                                        <div class="flex justify-between items-center text-sm">
+                                            <span>${driver.name}</span>
+                                            <span class="${driver.available ? 'text-green-600' : 'text-red-600'}">
+                                                ${driver.available ? `Available (${driver.activeAssignments} active)` : 'Busy'}
+                                            </span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" onclick="closeAssignmentModal()" class="px-4 py-2 text-gray-600 border rounded">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Assign Package</button>
+                            </div>
+                        </div>
+                    </form>
+                `;
+                
+                document.getElementById('assignmentModal').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error loading assignment modal:', error);
+                showToast('Error loading drivers', 'error');
+            }
+        }
+
+        async function assignPackage(event, packageId) {
+            event.preventDefault();
+            
+            const driverId = document.getElementById('selectedDriver').value;
+            
+            try {
+                const response = await fetch(`/api/admin/packages/${packageId}/assign/${driverId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(`Package assigned to ${result.driverName} successfully!`);
+                    closeAssignmentModal();
+                    refreshCurrentTab();
+                    loadStatistics();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error assigning package:', error);
+                showToast('Error assigning package', 'error');
+            }
+        }
+
+        function closeAssignmentModal() {
+            document.getElementById('assignmentModal').classList.add('hidden');
+        }
+
+        // Status Update Functions
+        function showStatusModal(packageId) {
+            document.getElementById('statusPackageId').value = packageId;
+            document.getElementById('statusModal').classList.remove('hidden');
+        }
+
+        async function updatePackageStatus(event) {
+            event.preventDefault();
+            
+            const packageId = document.getElementById('statusPackageId').value;
+            const newStatus = document.getElementById('newStatus').value;
+            const notes = document.getElementById('statusNotes').value;
+            
+            try {
+                const response = await fetch(`/api/admin/packages/${packageId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: newStatus,
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Package status updated successfully!');
+                    closeStatusModal();
+                    refreshCurrentTab();
+                    loadStatistics();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showToast('Error updating package status', 'error');
+            }
+        }
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+            document.getElementById('newStatus').value = '';
+            document.getElementById('statusNotes').value = '';
+        }
+
+        // Refresh Functions
+        function refreshAll() {
+            loadStatistics();
+            refreshCurrentTab();
+            showToast('All data refreshed!');
+        }
+
+        function refreshCurrentTab() {
+            const activeTab = document.querySelector('.tab-button.active');
+            if (activeTab) {
+                const tabName = activeTab.id.replace('Tab', '');
+                showTab(tabName);
+            }
+        }
+
+        function refreshPendingPackages() {
+            loadPendingPackages();
+        }
+
+        function refreshDrivers() {
+            loadAvailableDrivers();
+        }
+
+        function refreshActiveDeliveries() {
+            loadActiveDeliveries();
+        }
+
+        function filterActiveDeliveries() {
+            loadActiveDeliveries();
+        }
+
+        // Tracking Functions
+        function loadTrackingData() {
+            // This would load real-time tracking data
+            document.getElementById('trackingResults').innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-map-marked-alt text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-500">Real-time tracking data will be displayed here</p>
+                    <p class="text-sm text-gray-400">Enter a tracking number to search</p>
+                </div>
+            `;
+        }
+
+        function searchTracking(event) {
+            if (event.key === 'Enter') {
+                const trackingNumber = event.target.value;
+                if (trackingNumber) {
+                    trackPackage(trackingNumber);
+                }
+            }
+        }
+
+        function trackPackage(trackingNumber) {
+            // This would show real-time tracking information
+            showToast(`Tracking package: ${trackingNumber}`);
+            showTab('tracking');
+        }
+
+        // Utility Functions
+        function bulkAssign() {
+            showToast('Bulk assignment feature coming soon!');
+        }
+
+        function quickAssign(driverId) {
+            showToast('Quick assign feature - select a package first');
+        }
+
+        function contactDriver(driverId) {
+            if (driverId) {
+                showToast(`Contacting driver ${driverId}...`);
+            }
+        }
+
+        function refreshTracking() {
+            loadTrackingData();
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            
+            if (type === 'error') {
+                toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            } else {
+                toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            }
+            
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

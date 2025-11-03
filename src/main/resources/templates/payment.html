@@ -6,193 +6,195 @@
     <title>Payment - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js.paystack.co/v1/inline.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'reliable': {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
-                        },
-                        'reliable-yellow': {
-                            50: '#fefce8',
-                            100: '#fef9c3',
-                            200: '#fef08a',
-                            300: '#fde047',
-                            400: '#facc15',
-                            500: '#eab308',
-                            600: '#ca8a04',
-                            700: '#a16207',
-                            800: '#854d0e',
-                            900: '#713f12',
-                        }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.5s ease-out',
-                        'bounce-gentle': 'bounceGentle 2s infinite',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(20px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        },
-                        bounceGentle: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-5px)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .payment-card { background: linear-gradient(145deg, #ffffff, #f8fafc); }
+        .success-animation { animation: successPulse 2s ease-in-out infinite; }
+        @keyframes successPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="gradient-bg min-h-screen">
     <!-- Header -->
-    <header class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header class="bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <i class="fas fa-truck text-brand-400"></i>
-                    <span>Reliable Carriers</span>
-                </a>
-                <ul class="hidden md:flex space-x-8">
-                    <li><a href="/" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Home</a></li>
-                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                    <li class="guest-only"><a href="/login" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Login</a></li>
-                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                    <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                    <li class="auth-required hidden"><a href="/booking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Book Service</a></li>
-                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
-                </ul>
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
+                    </a>
+                </div>
+                <div class="text-white">
+                    <i class="fas fa-lock mr-2"></i>
+                    <span class="font-medium">Secure Payment</span>
+                </div>
             </div>
-        </nav>
+        </div>
     </header>
 
     <!-- Main Content -->
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <!-- Payment Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-800 mb-4">Complete Your Payment</h1>
-            <p class="text-xl text-gray-600">Secure payment powered by Paystack</p>
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Progress Indicator -->
+        <div class="mb-8">
+            <div class="flex items-center justify-center space-x-4">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check text-white text-sm"></i>
+                    </div>
+                    <span class="ml-2 text-white font-medium">Quote</span>
+                </div>
+                <div class="w-16 h-1 bg-white/30"></div>
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
+                        <i class="fas fa-credit-card text-white text-sm"></i>
+                    </div>
+                    <span class="ml-2 text-white font-medium">Payment</span>
+                </div>
+                <div class="w-16 h-1 bg-white/30"></div>
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-white/30 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-white text-sm"></i>
+                    </div>
+                    <span class="ml-2 text-white font-medium">Confirmation</span>
+                </div>
+            </div>
         </div>
 
-        <!-- Payment Form -->
-        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+        <!-- Payment Card -->
+        <div class="payment-card rounded-2xl shadow-2xl p-8 hover-lift">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-credit-card mr-3 gradient-text"></i>Complete Your Payment
+                </h1>
+                <p class="text-gray-600">Secure payment powered by Paystack</p>
+            </div>
+
             <div class="grid md:grid-cols-2 gap-8">
-                <!-- Payment Details -->
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Payment Details</h2>
-                    
-                    <!-- Service Information -->
-                    <div class="bg-gray-50 rounded-lg p-6 mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Service Summary</h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Service Type:</span>
-                                <span class="font-medium" id="serviceType">Express Delivery</span>
+                <!-- Service Summary -->
+                <div class="space-y-6">
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-box mr-2 text-blue-600"></i>Your Package
+                        </h3>
+                        
+                        <!-- Package Details -->
+                        <div class="space-y-3 mb-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Service:</span>
+                                <span class="font-semibold text-gray-800" id="serviceType">Express Delivery</span>
                             </div>
-                            <div class="flex justify-between">
+                            <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Distance:</span>
-                                <span class="font-medium" id="distance">25 km</span>
+                                <span class="font-semibold text-gray-800" id="distance">25 km</span>
                             </div>
-                            <div class="flex justify-between">
+                            <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Weight:</span>
-                                <span class="font-medium" id="weight">2.5 kg</span>
+                                <span class="font-semibold text-gray-800" id="weight">2.5 kg</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Insurance:</span>
-                                <span class="font-medium" id="insurance">Basic Coverage</span>
-                            </div>
-                            <hr class="my-3">
-                                <div class="flex justify-between text-lg font-bold">
-                                <span>Total Amount:</span>
-                                <span class="text-brand-600" id="totalAmount">₦5,500</span>
+                        </div>
+
+                        <!-- Addresses -->
+                        <div class="border-t pt-4">
+                            <h4 class="font-semibold text-gray-800 mb-3">
+                                <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Delivery Addresses
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex items-start">
+                                    <i class="fas fa-hand-holding-box text-blue-500 mt-1 mr-2"></i>
+                                    <div>
+                                        <div class="text-sm text-gray-600">Pickup from:</div>
+                                        <div class="font-medium text-gray-800" id="pickupAddressDisplay">123 Main Street, Johannesburg</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-truck text-green-500 mt-1 mr-2"></i>
+                                    <div>
+                                        <div class="text-sm text-gray-600">Deliver to:</div>
+                                        <div class="font-medium text-gray-800" id="deliveryAddressDisplay">456 Oak Avenue, Pretoria</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Customer Information -->
-                    <div class="bg-gray-50 rounded-lg p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Customer Information</h3>
-                        <div class="space-y-3">
+                    <!-- Customer Info -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-user mr-2 text-purple-600"></i>Customer Information
+                        </h3>
+                        <div class="space-y-2">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Name:</span>
-                                <span class="font-medium" id="customerName">
-                                    <span th:if="${isAuthenticated}">Authenticated User</span>
+                                <span class="font-semibold text-gray-800" id="customerName">
+                                    <span th:if="${isAuthenticated}" th:text="${userFirstName + ' ' + userLastName}">Loading...</span>
                                     <span th:if="${!isAuthenticated}">Guest User</span>
                                 </span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Email:</span>
-                                <span class="font-medium" id="customerEmail" th:text="${userEmail ?: 'Not provided'}">Not provided</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Phone:</span>
-                                <span class="font-medium" id="customerPhone">Not provided</span>
+                                <span class="font-semibold text-gray-800" id="customerEmail" th:text="${userEmail ?: 'Not provided'}">Not provided</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Payment Method -->
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Payment Method</h2>
-                    
-                    <!-- Paystack Payment Button -->
-                    <div class="space-y-6">
-                        <div class="bg-brand-50 border border-brand-100 rounded-lg p-6">
-                            <div class="flex items-center mb-4">
-                                <i class="fas fa-credit-card text-brand-600 text-2xl mr-3"></i>
-                                <h3 class="text-lg font-semibold text-gray-800">Pay with Card</h3>
-                            </div>
-                            <p class="text-gray-600 mb-4">Secure payment via Paystack. Accepts all major cards and bank transfers.</p>
-                            
-                            <button id="paystackBtn" class="w-full bg-brand-blue-600 hover:bg-brand-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-colors duration-300 flex items-center justify-center">
-                                <i class="fas fa-lock mr-2"></i>
-                                Pay ₦5,500
-                            </button>
+                <!-- Payment Section -->
+                <div class="space-y-6">
+                    <!-- Total Amount -->
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white">
+                        <div class="text-center">
+                            <h3 class="text-lg font-semibold mb-2">Total Amount</h3>
+                            <div class="text-4xl font-bold" id="totalAmount">R0.00</div>
+                            <p class="text-blue-100 mt-2">All fees included</p>
                         </div>
+                    </div>
 
-                        <!-- Alternative Payment Methods -->
-                        <div class="space-y-3">
-                            <h4 class="font-semibold text-gray-800">Other Payment Options</h4>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors duration-300">
-                                    <i class="fas fa-university mr-2"></i>
-                                    Bank Transfer
-                                </button>
-                                <button class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors duration-300">
-                                    <i class="fas fa-mobile-alt mr-2"></i>
-                                    USSD
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Security Notice -->
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <div class="flex items-start">
-                                <i class="fas fa-shield-alt text-green-600 mt-1 mr-3"></i>
-                                <div>
-                                    <h4 class="font-semibold text-green-800">Secure Payment</h4>
-                                    <p class="text-green-700 text-sm">Your payment information is encrypted and secure. We never store your card details.</p>
+                    <!-- Payment Button -->
+                    <div class="space-y-4">
+                        <button id="paystackBtn" class="w-full bg-black hover:bg-gray-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105">
+                            <i class="fas fa-lock mr-3"></i>
+                            <span id="payButtonText">Pay R0.00 Securely</span>
+                        </button>
+                        
+                        <div class="text-center">
+                            <div class="flex items-center justify-center space-x-4 text-sm text-gray-600">
+                                <div class="flex items-center">
+                                    <i class="fas fa-shield-alt text-green-500 mr-1"></i>
+                                    <span>SSL Secured</span>
                                 </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-credit-card text-blue-500 mr-1"></i>
+                                    <span>All Cards Accepted</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-mobile-alt text-purple-500 mr-1"></i>
+                                    <span>Mobile Friendly</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Methods -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h4 class="font-semibold text-gray-800 mb-3">Accepted Payment Methods</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex items-center justify-center bg-white rounded-lg p-3">
+                                <i class="fab fa-cc-visa text-2xl text-blue-600"></i>
+                            </div>
+                            <div class="flex items-center justify-center bg-white rounded-lg p-3">
+                                <i class="fab fa-cc-mastercard text-2xl text-red-600"></i>
+                            </div>
+                            <div class="flex items-center justify-center bg-white rounded-lg p-3">
+                                <i class="fas fa-university text-2xl text-green-600"></i>
+                            </div>
+                            <div class="flex items-center justify-center bg-white rounded-lg p-3">
+                                <i class="fas fa-mobile-alt text-2xl text-purple-600"></i>
                             </div>
                         </div>
                     </div>
@@ -200,196 +202,243 @@
             </div>
         </div>
 
-        <!-- Payment Status -->
-        <div id="paymentStatus" class="hidden">
-            <div class="bg-white rounded-xl shadow-lg p-8 text-center">
-                <div id="paymentSuccess" class="hidden">
-                    <i class="fas fa-check-circle text-green-500 text-6xl mb-4"></i>
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Payment Successful!</h2>
-                    <p class="text-gray-600 mb-6">Your payment has been processed successfully. You will receive a confirmation email shortly.</p>
-                    <div class="space-y-3">
-                        <p class="text-sm text-gray-500">Transaction ID: <span id="transactionId" class="font-mono"></span></p>
-                        <p class="text-sm text-gray-500">Reference: <span id="reference" class="font-mono"></span></p>
+        <!-- Security Notice -->
+        <div class="mt-8 text-center">
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-6">
+                <div class="flex items-center justify-center space-x-4 text-white">
+                    <i class="fas fa-shield-alt text-green-400 text-xl"></i>
+                    <div>
+                        <div class="font-semibold">Your payment is secure</div>
+                        <div class="text-sm text-blue-100">Protected by 256-bit SSL encryption</div>
                     </div>
-                    <div class="mt-8 space-x-4">
-                        <a href="/dashboard" class="bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">
-                            Go to Dashboard
-                        </a>
-                        <a href="/tracking" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">
-                            Track Package
-                        </a>
-                    </div>
-                </div>
-                
-                <div id="paymentFailed" class="hidden">
-                    <i class="fas fa-times-circle text-red-500 text-6xl mb-4"></i>
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Payment Failed</h2>
-                    <p class="text-gray-600 mb-6">Your payment could not be processed. Please try again or contact support.</p>
-                    <button id="retryPayment" class="bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">
-                        Try Again
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-12 mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Reliable Carriers</h3>
-                    <p class="text-gray-300">Professional courier services you can trust.</p>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Quick Links</h4>
-                    <ul class="space-y-2 text-gray-300">
-                        <li><a href="/" class="hover:text-white transition-colors">Home</a></li>
-                        <li><a href="/about" class="hover:text-white transition-colors">About</a></li>
-                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
-                        <li><a href="/tracking" class="hover:text-white transition-colors">Track Package</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Services</h4>
-                    <ul class="space-y-2 text-gray-300">
-                        <li>Express Delivery</li>
-                        <li>Standard Shipping</li>
-                        <li>International</li>
-                        <li>Same Day Delivery</li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Contact Info</h4>
-                    <ul class="space-y-2 text-gray-300">
-                        <li><i class="fas fa-phone mr-2"></i>1-800-RELIABLE</li>
-                        <li><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</li>
-                        <li><i class="fas fa-clock mr-2"></i>24/7 Support</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+    <!-- Hidden fields for form data -->
+    <input type="hidden" id="hiddenCustomerName" th:value="${userFirstName != null ? userFirstName + ' ' + (userLastName != null ? userLastName : '') : ''}">
+    <input type="hidden" id="hiddenCustomerEmail" th:value="${userEmail != null ? userEmail : ''}">
+    <input type="hidden" id="hiddenCustomerPhone" th:value="${userPhone != null ? userPhone : ''}">
+    
+    <!-- Hidden fields for coordinates -->
+    <input type="hidden" id="pickupLatitude" name="pickupLatitude">
+    <input type="hidden" id="pickupLongitude" name="pickupLongitude">
+    <input type="hidden" id="pickupPlaceId" name="pickupPlaceId">
+    <input type="hidden" id="deliveryLatitude" name="deliveryLatitude">
+    <input type="hidden" id="deliveryLongitude" name="deliveryLongitude">
+    <input type="hidden" id="deliveryPlaceId" name="deliveryPlaceId">
 
     <script>
-        // Payment configuration
-        let paystackPublicKey = '';
-        let paymentData = {
-            amount: 550000, // Amount in kobo
-            email: 'john@example.com',
-            reference: '',
-            callback: function(response) {
-                // Handle payment success
-                console.log('Payment successful:', response);
-                showPaymentSuccess(response);
-            },
-            onClose: function() {
-                // Handle payment modal close
-                console.log('Payment modal closed');
-            }
-        };
+        // Google Maps integration
+        let pickupAutocomplete, deliveryAutocomplete;
+        let pickupCoordinates = null;
+        let deliveryCoordinates = null;
 
-        // Initialize payment
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get Paystack public key
-            fetch('/api/paystack/public-key')
-                .then(response => response.json())
-                .then(data => {
-                    paystackPublicKey = data.publicKey;
-                })
-                .catch(error => {
-                    console.error('Error fetching public key:', error);
-                });
+        function initMap() {
+            // Initialize autocomplete for pickup address
+            pickupAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('pickupAddress'),
+                {
+                    types: ['address'],
+                    componentRestrictions: { country: 'za' }
+                }
+            );
 
-            // Handle payment button click
-            document.getElementById('paystackBtn').addEventListener('click', function() {
-                initializePayment();
-            });
+            // Initialize autocomplete for delivery address
+            deliveryAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('deliveryAddress'),
+                {
+                    types: ['address'],
+                    componentRestrictions: { country: 'za' }
+                }
+            );
 
-            // Handle retry payment
-            document.getElementById('retryPayment').addEventListener('click', function() {
-                hidePaymentStatus();
-            });
-        });
-
-        function initializePayment() {
-            // Generate reference
-            paymentData.reference = 'PAY_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            
-            // Initialize Paystack
-            const handler = PaystackPop.setup({
-                key: paystackPublicKey,
-                email: paymentData.email,
-                amount: paymentData.amount,
-                currency: 'NGN',
-                ref: paymentData.reference,
-                callback: function(response) {
-                    // Verify payment on server
-                    verifyPayment(response.reference);
-                },
-                onClose: function() {
-                    console.log('Payment modal closed');
+            // Add place changed listeners to capture coordinates
+            pickupAutocomplete.addListener('place_changed', function() {
+                const place = pickupAutocomplete.getPlace();
+                if (place.geometry && place.geometry.location) {
+                    pickupCoordinates = {
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
+                        formattedAddress: place.formatted_address,
+                        placeId: place.place_id
+                    };
+                    
+                    // Update display
+                    document.getElementById('pickupAddressDisplay').textContent = pickupCoordinates.formattedAddress;
+                    
+                    // Store coordinates in hidden fields
+                    document.getElementById('pickupLatitude').value = pickupCoordinates.lat;
+                    document.getElementById('pickupLongitude').value = pickupCoordinates.lng;
+                    document.getElementById('pickupPlaceId').value = pickupCoordinates.placeId;
                 }
             });
-            handler.openIframe();
+
+            deliveryAutocomplete.addListener('place_changed', function() {
+                const place = deliveryAutocomplete.getPlace();
+                if (place.geometry && place.geometry.location) {
+                    deliveryCoordinates = {
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
+                        formattedAddress: place.formatted_address,
+                        placeId: place.place_id
+                    };
+                    
+                    // Update display
+                    document.getElementById('deliveryAddressDisplay').textContent = deliveryCoordinates.formattedAddress;
+                    
+                    // Store coordinates in hidden fields
+                    document.getElementById('deliveryLatitude').value = deliveryCoordinates.lat;
+                    document.getElementById('deliveryLongitude').value = deliveryCoordinates.lng;
+                    document.getElementById('deliveryPlaceId').value = deliveryCoordinates.placeId;
+                }
+            });
         }
 
-        function verifyPayment(reference) {
-            // Show loading state
-            showLoading();
+        // Load quote data from URL parameters or session
+        function loadQuoteData() {
+            const urlParams = new URLSearchParams(window.location.search);
             
-            // Verify payment with server
-            fetch(`/api/paystack/verify?reference=${reference}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Redirect to payment success page with tracking information
-                        const params = new URLSearchParams({
-                            reference: reference,
-                            tracking: data.trackingNumber || '',
-                            amount: data.amount || '',
-                            service: data.serviceType || '',
-                            email: data.customerEmail || '',
-                            status: data.paymentStatus || 'COMPLETED'
-                        });
-                        window.location.href = `/payment-success?${params.toString()}`;
-                    } else {
-                        showPaymentFailed();
+            // Load service details
+            const serviceType = urlParams.get('serviceType') || 'Express Delivery';
+            const distance = urlParams.get('distance') || '25';
+            const weight = urlParams.get('weight') || '2.5';
+            const totalAmount = urlParams.get('totalAmount') || '0';
+            
+            // Update display
+            document.getElementById('serviceType').textContent = serviceType;
+            document.getElementById('distance').textContent = distance + ' km';
+            document.getElementById('weight').textContent = weight + ' kg';
+            document.getElementById('totalAmount').textContent = 'R' + parseFloat(totalAmount).toFixed(2);
+            document.getElementById('payButtonText').textContent = 'Pay R' + parseFloat(totalAmount).toFixed(2) + ' Securely';
+            
+            // Load addresses if provided
+            const pickupAddress = urlParams.get('pickupAddress');
+            const deliveryAddress = urlParams.get('deliveryAddress');
+            
+            if (pickupAddress) {
+                document.getElementById('pickupAddressDisplay').textContent = pickupAddress;
+            }
+            if (deliveryAddress) {
+                document.getElementById('deliveryAddressDisplay').textContent = deliveryAddress;
+            }
+        }
+
+        // Paystack payment integration
+        function initializePaystack() {
+            const paystackBtn = document.getElementById('paystackBtn');
+            
+            paystackBtn.addEventListener('click', function() {
+                const customerName = document.getElementById('hiddenCustomerName').value || 'Guest User';
+                const customerEmail = document.getElementById('hiddenCustomerEmail').value || 'guest@example.com';
+                const totalAmount = document.getElementById('totalAmount').textContent.replace('R', '').replace(',', '');
+                
+                // Validate required fields
+                if (!pickupCoordinates || !deliveryCoordinates) {
+                    alert('Please select both pickup and delivery addresses using the Google Maps suggestions.');
+                    return;
+                }
+                
+                const handler = PaystackPop.setup({
+                    key: 'pk_test_your_paystack_public_key', // Replace with your actual Paystack public key
+                    email: customerEmail,
+                    amount: Math.round(parseFloat(totalAmount) * 100), // Convert to kobo
+                    currency: 'ZAR',
+                    ref: 'RC_' + Date.now(),
+                    metadata: {
+                        custom_fields: [
+                            {
+                                display_name: "Customer Name",
+                                variable_name: "customer_name",
+                                value: customerName
+                            },
+                            {
+                                display_name: "Pickup Address",
+                                variable_name: "pickup_address",
+                                value: pickupCoordinates.formattedAddress
+                            },
+                            {
+                                display_name: "Delivery Address",
+                                variable_name: "delivery_address",
+                                value: deliveryCoordinates.formattedAddress
+                            },
+                            {
+                                display_name: "Pickup Coordinates",
+                                variable_name: "pickup_coordinates",
+                                value: pickupCoordinates.lat + ',' + pickupCoordinates.lng
+                            },
+                            {
+                                display_name: "Delivery Coordinates",
+                                variable_name: "delivery_coordinates",
+                                value: deliveryCoordinates.lat + ',' + deliveryCoordinates.lng
+                            }
+                        ]
+                    },
+                    callback: function(response) {
+                        // Payment successful
+                        processPaymentSuccess(response);
+                    },
+                    onClose: function() {
+                        // Payment cancelled
+                        console.log('Payment cancelled');
                     }
-                })
-                .catch(error => {
-                    console.error('Payment verification error:', error);
-                    showPaymentFailed();
                 });
+                
+                handler.openIframe();
+            });
         }
 
-        function showPaymentSuccess(response) {
-            document.getElementById('paymentStatus').classList.remove('hidden');
-            document.getElementById('paymentSuccess').classList.remove('hidden');
-            document.getElementById('paymentFailed').classList.add('hidden');
+        // Process successful payment
+        function processPaymentSuccess(response) {
+            // Collect all payment data
+            const paymentData = {
+                reference: response.reference,
+                customerName: document.getElementById('hiddenCustomerName').value,
+                customerEmail: document.getElementById('hiddenCustomerEmail').value,
+                customerPhone: document.getElementById('hiddenCustomerPhone').value,
+                serviceType: document.getElementById('serviceType').textContent,
+                distance: document.getElementById('distance').textContent,
+                weight: document.getElementById('weight').textContent,
+                totalAmount: document.getElementById('totalAmount').textContent,
+                pickupAddress: pickupCoordinates.formattedAddress,
+                pickupLatitude: pickupCoordinates.lat,
+                pickupLongitude: pickupCoordinates.lng,
+                pickupPlaceId: pickupCoordinates.placeId,
+                deliveryAddress: deliveryCoordinates.formattedAddress,
+                deliveryLatitude: deliveryCoordinates.lat,
+                deliveryLongitude: deliveryCoordinates.lng,
+                deliveryPlaceId: deliveryCoordinates.placeId
+            };
             
-            document.getElementById('transactionId').textContent = response.transaction || 'N/A';
-            document.getElementById('reference').textContent = response.reference;
+            // Send payment data to backend
+            fetch('/api/payment/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(paymentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to success page with booking details
+                    window.location.href = '/payment-success?bookingId=' + data.bookingId + '&reference=' + response.reference;
+                } else {
+                    alert('Payment processed but booking creation failed. Please contact support.');
+                }
+            })
+            .catch(error => {
+                console.error('Error processing payment:', error);
+                alert('Payment successful but there was an error processing your booking. Please contact support.');
+            });
         }
 
-        function showPaymentFailed() {
-            document.getElementById('paymentStatus').classList.remove('hidden');
-            document.getElementById('paymentSuccess').classList.add('hidden');
-            document.getElementById('paymentFailed').classList.remove('hidden');
-        }
-
-        function hidePaymentStatus() {
-            document.getElementById('paymentStatus').classList.add('hidden');
-        }
-
-        function showLoading() {
-            const btn = document.getElementById('paystackBtn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
-            btn.disabled = true;
-        }
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadQuoteData();
+            initializePaystack();
+        });
     </script>
 </body>
 </html>

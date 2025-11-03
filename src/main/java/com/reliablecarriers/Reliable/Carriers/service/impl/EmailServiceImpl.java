@@ -12,6 +12,7 @@ import org.thymeleaf.context.Context;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -22,6 +23,9 @@ public class EmailServiceImpl implements EmailService {
 
     @Autowired
     private TemplateEngine templateEngine;
+    
+    @Value("${app.base.url:http://localhost:8080}")
+    private String baseUrl;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -138,9 +142,12 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendPasswordReset(String to, String resetToken) {
+        String resetUrl = baseUrl + "/reset-password?token=" + resetToken;
+        
         Map<String, Object> variables = Map.of(
             "resetToken", resetToken,
-            "resetUrl", "https://reliablecarriers.com/reset-password?token=" + resetToken
+            "resetUrl", resetUrl,
+            "appName", "Reliable Carriers"
         );
         sendHtmlEmail(to, "Password Reset Request", "email/password-reset", variables);
     }
@@ -164,5 +171,36 @@ public class EmailServiceImpl implements EmailService {
         for (String recipient : recipients) {
             sendHtmlEmail(recipient, subject, templateName, variables);
         }
+    }
+
+    @Override
+    public void sendBookingConfirmationEmail(String to, String customerName, String bookingNumber, String trackingNumber, 
+                                           String serviceType, String totalAmount, String estimatedDelivery,
+                                           String pickupAddress, String deliveryAddress, String weight, String description,
+                                           String customerPickupCode, String customerDeliveryCode, String pickupContactName,
+                                           String pickupContactPhone, String deliveryContactName, String deliveryContactPhone,
+                                           String dimensions, String specialInstructions) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("customerName", customerName);
+        variables.put("bookingNumber", bookingNumber);
+        variables.put("trackingNumber", trackingNumber);
+        variables.put("serviceType", serviceType);
+        variables.put("totalAmount", totalAmount);
+        variables.put("estimatedDelivery", estimatedDelivery);
+        variables.put("pickupAddress", pickupAddress);
+        variables.put("deliveryAddress", deliveryAddress);
+        variables.put("weight", weight);
+        variables.put("description", description);
+        variables.put("customerPickupCode", customerPickupCode);
+        variables.put("customerDeliveryCode", customerDeliveryCode);
+        variables.put("pickupContactName", pickupContactName);
+        variables.put("pickupContactPhone", pickupContactPhone);
+        variables.put("deliveryContactName", deliveryContactName);
+        variables.put("deliveryContactPhone", deliveryContactPhone);
+        variables.put("dimensions", dimensions);
+        variables.put("specialInstructions", specialInstructions);
+        variables.put("customerEmail", to);
+        
+        sendHtmlEmail(to, "Booking Confirmation - " + bookingNumber, "email/booking-confirmation", variables);
     }
 }

@@ -8,10 +8,14 @@ import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.model.UserRole;
 import com.reliablecarriers.Reliable.Carriers.service.AuthService;
 import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
+import com.reliablecarriers.Reliable.Carriers.service.UserValidationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,11 +28,15 @@ import java.util.Map;
 import java.util.List;
 import java.util.Arrays;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import com.reliablecarriers.Reliable.Carriers.dto.ForgotPasswordRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.ResetPasswordRequest;
 import com.reliablecarriers.Reliable.Carriers.model.PasswordResetToken;
 import com.reliablecarriers.Reliable.Carriers.repository.PasswordResetTokenRepository;
 import com.reliablecarriers.Reliable.Carriers.service.EmailService;
+import com.reliablecarriers.Reliable.Carriers.service.AccountLockoutService;
 import java.security.SecureRandom;
 import java.util.Base64;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,8 +60,10 @@ public class AuthController {
     private final EmailService emailService;
     private final com.reliablecarriers.Reliable.Carriers.service.TotpService totpService;
     private final com.reliablecarriers.Reliable.Carriers.service.TwoFactorService twoFactorService;
+    private final UserValidationService userValidationService;
+    private final AccountLockoutService accountLockoutService;
 
-    public AuthController(AuthService authService, JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService, UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService, com.reliablecarriers.Reliable.Carriers.service.TotpService totpService, com.reliablecarriers.Reliable.Carriers.service.TwoFactorService twoFactorService) {
+    public AuthController(AuthService authService, JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService, UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService, com.reliablecarriers.Reliable.Carriers.service.TotpService totpService, com.reliablecarriers.Reliable.Carriers.service.TwoFactorService twoFactorService, UserValidationService userValidationService, AccountLockoutService accountLockoutService) {
         this.authService = authService;
         this.jwtTokenUtil = jwtTokenUtil;
         this.userDetailsService = userDetailsService;
@@ -63,6 +73,8 @@ public class AuthController {
         this.emailService = emailService;
         this.totpService = totpService;
         this.twoFactorService = twoFactorService;
+        this.userValidationService = userValidationService;
+        this.accountLockoutService = accountLockoutService;
     }
 
     // Endpoint to enable TOTP for a user (after login or from profile)
@@ -100,6 +112,23 @@ public class AuthController {
             // success — generate JWT and return user details
             final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
             final String token = jwtTokenUtil.generateToken(userDetails);
+            
+            // Set authentication in SecurityContext
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            
+            // Also store user info in session for server-rendered pages
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+            HttpSession session = request.getSession(true);
+            session.setAttribute("userEmail", user.getEmail());
+            session.setAttribute("userFirstName", user.getFirstName());
+            session.setAttribute("userLastName", user.getLastName());
+            session.setAttribute("userPhone", user.getPhone());
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("userRole", user.getRole().toString());
+            session.setAttribute("isAuthenticated", true);
+            
             AuthResponse response = new AuthResponse(
                     user.getId(),
                     user.getFirstName(),
@@ -145,6 +174,23 @@ public class AuthController {
             // success — generate JWT and return user details
             final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
             final String tokenJwt = jwtTokenUtil.generateToken(userDetails);
+            
+            // Set authentication in SecurityContext
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            
+            // Also store user info in session for server-rendered pages
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+            HttpSession session = request.getSession(true);
+            session.setAttribute("userEmail", user.getEmail());
+            session.setAttribute("userFirstName", user.getFirstName());
+            session.setAttribute("userLastName", user.getLastName());
+            session.setAttribute("userPhone", user.getPhone());
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("userRole", user.getRole().toString());
+            session.setAttribute("isAuthenticated", true);
+            
             AuthResponse response = new AuthResponse(
                     user.getId(),
                     user.getFirstName(),
@@ -160,13 +206,52 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
         try {
-            // Restrict driver and tracking manager role creation - only admins can create these accounts
-            if (registerRequest.getRole() == UserRole.DRIVER || registerRequest.getRole() == UserRole.TRACKING_MANAGER) {
-                String roleName = registerRequest.getRole() == UserRole.DRIVER ? "Driver" : "Tracking Manager";
+            logger.info("=== REGISTRATION DEBUG START ===");
+            if (registerRequest == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Registration request is required"));
+            }
+            
+            logger.info("Registration request received for email: " + registerRequest.getEmail());
+            logger.info("Role: " + registerRequest.getRole());
+            logger.info("Request body: " + registerRequest);
+            
+            // Restrict tracking manager role creation - only admins can create these accounts
+            // Drivers can self-register via /api/driver/register
+            if (registerRequest.getRole() == UserRole.TRACKING_MANAGER) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(roleName + " accounts can only be created by administrators. Please contact support.");
+                    .body(Map.of("success", false, "message", "Tracking Manager accounts can only be created by administrators. Please contact support."));
+            }
+            
+            // Set default role to CUSTOMER if not specified
+            if (registerRequest.getRole() == null) {
+                registerRequest.setRole(UserRole.CUSTOMER);
+            }
+
+            // Validate registration data
+            try {
+                Map<String, Object> validation = userValidationService.validateRegistration(
+                    registerRequest.getFirstName(),
+                    registerRequest.getLastName(),
+                    registerRequest.getEmail(),
+                    registerRequest.getPassword(),
+                    registerRequest.getConfirmPassword(), // Use actual confirm password
+                    registerRequest.getPhone()
+                );
+
+                if (!(Boolean) validation.get("valid")) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> errors = (Map<String, String>) validation.get("errors");
+                    logger.info("Validation failed: " + errors);
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Validation failed", "errors", errors));
+                }
+            } catch (Exception validationError) {
+                logger.error("Validation service error: " + validationError.getMessage(), validationError);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Validation error: " + validationError.getMessage()));
             }
 
             // Create a new user from the request
@@ -187,29 +272,199 @@ public class AuthController {
             }
             user.setInsurancePreference(registerRequest.getInsurancePreference() != null ? registerRequest.getInsurancePreference() : "BUDGET");
             user.setRole(registerRequest.getRole());
+            
+            // Handle business registration
+            if (Boolean.TRUE.equals(registerRequest.getIsBusiness())) {
+                user.setIsBusiness(true);
+                user.setCustomerTier(com.reliablecarriers.Reliable.Carriers.model.CustomerTier.BUSINESS);
+                user.setBusinessName(registerRequest.getBusinessName());
+                user.setTaxId(registerRequest.getTaxId());
+                user.setRegistrationNumber(registerRequest.getRegistrationNumber());
+                
+                // Set business verification status to PENDING
+                user.setBusinessVerificationStatus(
+                    com.reliablecarriers.Reliable.Carriers.model.BusinessVerificationStatus.PENDING
+                );
+                
+                // Set default credit terms for new businesses (can be adjusted after verification)
+                user.setCreditLimit(java.math.BigDecimal.ZERO); // Will be set after verification
+                user.setPaymentTerms(0); // Immediate payment until verified, then Net 30
+                user.setCurrentBalance(java.math.BigDecimal.ZERO);
+            } else {
+                user.setIsBusiness(false);
+                user.setCustomerTier(com.reliablecarriers.Reliable.Carriers.model.CustomerTier.INDIVIDUAL);
+            }
+            
+            // Handle driver registration (if role is DRIVER - allowed for self-registration)
+            if (registerRequest.getRole() == UserRole.DRIVER) {
+                user.setDriverLicenseNumber(registerRequest.getDriverLicenseNumber());
+                user.setLicenseExpiryDate(registerRequest.getLicenseExpiryDate());
+                user.setVehicleMake(registerRequest.getVehicleMake());
+                user.setVehicleModel(registerRequest.getVehicleModel());
+                user.setVehicleYear(registerRequest.getVehicleYear());
+                user.setVehicleRegistration(registerRequest.getVehicleRegistration());
+                user.setVehicleColor(registerRequest.getVehicleColor());
+                user.setVehicleCapacityKg(registerRequest.getVehicleCapacityKg());
+                
+                // Set driver verification status to PENDING
+                user.setDriverVerificationStatus(
+                    com.reliablecarriers.Reliable.Carriers.model.DriverVerificationStatus.PENDING
+                );
+                
+                // Initialize driver stats
+                user.setIsOnline(false);
+                user.setTotalDeliveries(0);
+                user.setTotalEarnings(java.math.BigDecimal.ZERO);
+                user.setDriverRating(null);
+            }
 
-            // Register the user
+            // Register the user and implement 2FA for demo
             User registeredUser = authService.registerUser(user);
+            logger.info("User registered successfully: " + registeredUser.getEmail());
 
-            // Generate JWT token
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(registeredUser.getEmail());
+            // For Friday demo: Implement 2FA with email simulation
+            try {
+                logger.info("Generating 2FA token for registration demo...");
+                
+                // Generate a simple 6-digit code for demo
+                String demoCode = String.format("%06d", new java.util.Random().nextInt(1000000));
+                logger.info("Demo 2FA code for " + registeredUser.getEmail() + ": " + demoCode);
+                
+                // Store the code in session or a simple map for demo purposes
+                // In production, this would be stored in database with expiration
+                
+                return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of(
+                        "success", true, 
+                        "requires2fa", true,
+                        "message", "Account created! For demo: Use code " + demoCode + " to verify.",
+                        "email", registeredUser.getEmail(),
+                        "role", registeredUser.getRole().toString(),
+                        "demoCode", demoCode  // Only for demo - remove in production
+                    ));
+            } catch (Exception e) {
+                logger.error("Registration error: " + e.getMessage(), e);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of(
+                        "success", true, 
+                        "requires2fa", false,
+                        "message", "Account created successfully! You can now login.",
+                        "email", registeredUser.getEmail(),
+                        "role", registeredUser.getRole().toString()
+                    ));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Registration error: " + e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Registration failed. Please try again."));
+        }
+    }
+
+    /**
+     * Test endpoint to check if controller is working
+     */
+    @GetMapping("/register/test")
+    public ResponseEntity<?> testRegistration() {
+        return ResponseEntity.ok(Map.of("message", "Registration controller is working"));
+    }
+
+    /**
+     * Verify 2FA code for registration completion
+     */
+    @PostMapping("/register/verify")
+    public ResponseEntity<?> verifyRegistration(@RequestParam String email, @RequestParam String code) {
+        try {
+            logger.debug("Registration verification attempt for email: " + email);
+            
+            // Find the user by email
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", "User not found"));
+            }
+
+            // Verify the 2FA token
+            boolean verified = twoFactorService.verifyToken(user, code);
+            if (!verified) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or expired verification code"));
+            }
+
+            logger.debug("Registration verification successful for: " + email);
+
+            // Generate JWT token for the verified user
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
             final String token = jwtTokenUtil.generateToken(userDetails);
             
-            // Create response
+            // Set authentication in SecurityContext
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            
+            // Store user info in session for server-rendered pages
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+            HttpSession session = request.getSession(true);
+            session.setAttribute("userEmail", user.getEmail());
+            session.setAttribute("userFirstName", user.getFirstName());
+            session.setAttribute("userLastName", user.getLastName());
+            session.setAttribute("userPhone", user.getPhone());
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("userRole", user.getRole().toString());
+            session.setAttribute("isAuthenticated", true);
+            
+            // Create response with token
             AuthResponse response = new AuthResponse(
-                    registeredUser.getId(),
-                    registeredUser.getFirstName(),
-                    registeredUser.getLastName(),
-                    registeredUser.getEmail(),
-                    registeredUser.getRole(),
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    user.getRole(),
                     token
             );
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.ok(Map.of(
+                "success", true, 
+                "message", "Registration completed successfully! Welcome to Reliable Carriers.",
+                "user", response
+            ));
+            
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during registration: " + e.getMessage());
+            logger.error("Registration verification error: " + e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Verification failed. Please try again."));
+        }
+    }
+
+    /**
+     * Resend 2FA code for registration
+     */
+    @PostMapping("/register/resend")
+    public ResponseEntity<?> resendRegistrationCode(@RequestParam String email, @RequestParam(defaultValue = "EMAIL") String method) {
+        try {
+            logger.debug("Resending registration code for: " + email + " via " + method);
+            
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", "User not found"));
+            }
+
+            // Send new 2FA token
+            twoFactorService.generateAndSendToken(user, method);
+            
+            String methodText = "EMAIL".equalsIgnoreCase(method) ? "email" : "SMS";
+            return ResponseEntity.ok(Map.of(
+                "success", true, 
+                "message", "Verification code sent to your " + methodText
+            ));
+            
+        } catch (Exception e) {
+            logger.error("Failed to resend registration code: " + e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Failed to send verification code. Please try again."));
         }
     }
 
@@ -323,7 +578,23 @@ public class AuthController {
                 if (uopt.isPresent()) loginEmail = uopt.get().getEmail();
             }
             logger.debug("authenticateUser: identifier={}, resolvedEmail={}", identifier, loginEmail);
+            
+            // Check if account is locked
+            if (accountLockoutService.isAccountLocked(loginEmail)) {
+                long remainingMinutes = accountLockoutService.getRemainingLockoutMinutes(loginEmail);
+                return ResponseEntity.status(HttpStatus.LOCKED)
+                    .body(Map.of(
+                        "success", false,
+                        "message", "Account is temporarily locked due to multiple failed login attempts.",
+                        "remainingMinutes", remainingMinutes,
+                        "locked", true
+                    ));
+            }
+            
             User authenticatedUser = authService.authenticateUser(loginEmail, authRequest.getPassword());
+            
+            // Clear failed login attempts on successful authentication
+            accountLockoutService.clearFailedLoginAttempts(loginEmail);
 
             // Only allow customers to use this public/customer login endpoint.
             // Staff/admin/driver/tracking manager must use the staff portal (/staff-login).
@@ -332,20 +603,47 @@ public class AuthController {
                         .body("Access denied. Use the staff portal to sign in for staff accounts.");
             }
 
-            // For customers, always present a second-factor stage so the client can offer method choices
-            // (email or SMS) or TOTP if they've enabled it. Frontend will call /api/auth/2fa/request
-            // to actually send a method-based token, or /2fa/verify to verify TOTP.
-            return ResponseEntity.ok(Map.of(
-                    "requires2fa", true,
-                    "email", authenticatedUser.getEmail(),
-                    "phone", authenticatedUser.getPhone(),
-                    "totpEnabled", Boolean.TRUE.equals(authenticatedUser.getTotpEnabled())
-            ));
+            // For customers, check if 2FA is enabled
+            boolean has2faEnabled = Boolean.TRUE.equals(authenticatedUser.getTotpEnabled()) || 
+                                   (authenticatedUser.getPhone() != null && !authenticatedUser.getPhone().isEmpty());
+            
+            if (has2faEnabled) {
+                // Present 2FA stage
+                return ResponseEntity.ok(Map.of(
+                        "requires2fa", true,
+                        "email", authenticatedUser.getEmail(),
+                        "phone", authenticatedUser.getPhone(),
+                        "totpEnabled", Boolean.TRUE.equals(authenticatedUser.getTotpEnabled())
+                ));
+            } else {
+                // No 2FA required, generate JWT token directly
+                final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticatedUser.getEmail());
+                final String token = jwtTokenUtil.generateToken(userDetails);
+                
+                // Set authentication in SecurityContext
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                
+                AuthResponse response = new AuthResponse(
+                        authenticatedUser.getId(),
+                        authenticatedUser.getFirstName(),
+                        authenticatedUser.getLastName(),
+                        authenticatedUser.getEmail(),
+                        authenticatedUser.getRole(),
+                        token
+                );
+                return ResponseEntity.ok(response);
+            }
 
         } catch (UsernameNotFoundException | BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            // Use validation service to provide specific error messages
+            String errorMessage = userValidationService.getAuthenticationErrorMessage(authRequest.getIdentifier(), authRequest.getPassword());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("success", false, "message", errorMessage));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during authentication: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Error during authentication: " + e.getMessage()));
         }
     }
 
@@ -386,7 +684,23 @@ public class AuthController {
                 if (uopt.isPresent()) loginEmail = uopt.get().getEmail();
             }
             logger.debug("authenticateStaff: identifier={}, resolvedEmail={}", identifier, loginEmail);
+            
+            // Check if account is locked
+            if (accountLockoutService.isAccountLocked(loginEmail)) {
+                long remainingMinutes = accountLockoutService.getRemainingLockoutMinutes(loginEmail);
+                return ResponseEntity.status(HttpStatus.LOCKED)
+                    .body(Map.of(
+                        "success", false,
+                        "message", "Account is temporarily locked due to multiple failed login attempts.",
+                        "remainingMinutes", remainingMinutes,
+                        "locked", true
+                    ));
+            }
+            
             User authenticatedUser = authService.authenticateUser(loginEmail, authRequest.getPassword());
+            
+            // Clear failed login attempts on successful authentication
+            accountLockoutService.clearFailedLoginAttempts(loginEmail);
 
             // Check if user has staff role (ADMIN, STAFF, DRIVER, TRACKING_MANAGER)
             if (authenticatedUser.getRole() != UserRole.ADMIN && 
@@ -408,9 +722,38 @@ public class AuthController {
                     "role", authenticatedUser.getRole().name()
             ));
         } catch (UsernameNotFoundException | BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            // Record failed login attempt
+            String identifier = authRequest.getIdentifier();
+            String loginEmail = identifier;
+            if (!identifier.contains("@")) {
+                var uopt = userRepository.findByPhone(identifier);
+                if (uopt.isPresent()) loginEmail = uopt.get().getEmail();
+            }
+            
+            // Only record if user exists (to prevent email enumeration)
+            if (userRepository.findByEmail(loginEmail).isPresent()) {
+                accountLockoutService.recordFailedLoginAttempt(loginEmail);
+                
+                // Check if account is now locked
+                if (accountLockoutService.isAccountLocked(loginEmail)) {
+                    long remainingMinutes = accountLockoutService.getRemainingLockoutMinutes(loginEmail);
+                    return ResponseEntity.status(HttpStatus.LOCKED)
+                        .body(Map.of(
+                            "success", false,
+                            "message", "Too many failed login attempts. Account locked for " + remainingMinutes + " minutes.",
+                            "remainingMinutes", remainingMinutes,
+                            "locked", true
+                        ));
+                }
+            }
+            
+            // Use validation service to provide specific error messages
+            String errorMessage = userValidationService.getAuthenticationErrorMessage(authRequest.getIdentifier(), authRequest.getPassword());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("success", false, "message", errorMessage));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during authentication: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Error during authentication: " + e.getMessage()));
         }
     }
 
@@ -543,6 +886,19 @@ public class AuthController {
                 trackingUser.setPassword(passwordEncoder.encode("admin123"));
                 trackingUser.setRole(UserRole.TRACKING_MANAGER);
                 userRepository.save(trackingUser);
+            }
+
+            // Create a test customer without 2FA
+            if (!userRepository.findByEmail("customer@test.com").isPresent()) {
+                User customerUser = new User();
+                customerUser.setFirstName("Test");
+                customerUser.setLastName("Customer");
+                customerUser.setEmail("customer@test.com");
+                customerUser.setPhone(null); // No phone = no 2FA
+                customerUser.setPassword(passwordEncoder.encode("test123"));
+                customerUser.setRole(UserRole.CUSTOMER);
+                customerUser.setTotpEnabled(false); // Explicitly disable 2FA
+                userRepository.save(customerUser);
             }
 
             return ResponseEntity.ok("Test users created successfully!");

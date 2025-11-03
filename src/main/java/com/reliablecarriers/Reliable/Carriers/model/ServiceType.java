@@ -44,7 +44,7 @@ public enum ServiceType {
 
     public boolean isMovingService() {
         return this == FURNITURE || this == MOVING || this == LOAD_TRANSPORT || 
-               this == EXPRESS_DELIVERY || this == SAME_DAY_DELIVERY;
+               this == SAME_DAY_DELIVERY;
     }
 
     public boolean requiresDistanceCalculation() {

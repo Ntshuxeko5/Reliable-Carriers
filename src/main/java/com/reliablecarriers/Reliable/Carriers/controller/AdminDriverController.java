@@ -59,12 +59,12 @@ public class AdminDriverController {
                 response.setDriverStatus("ACTIVE"); // Default status since User model doesn't have status field
                 
                 // Get latest location
-                DriverLocation latestLocation = driverLocationRepository.findByDriverIdOrderByTimestampDesc(driver.getId());
+                DriverLocation latestLocation = driverLocationRepository.findTopByDriverIdOrderByTimestampDesc(driver.getId());
                 if (latestLocation != null) {
                     response.setLatitude(latestLocation.getLatitude());
                     response.setLongitude(latestLocation.getLongitude());
                     response.setAddress(latestLocation.getAddress());
-                    response.setLastLocationUpdate(latestLocation.getTimestamp());
+                    response.setLastLocationUpdate(java.sql.Timestamp.valueOf(latestLocation.getTimestamp()));
                 }
                 
                 // Get driver's current package count

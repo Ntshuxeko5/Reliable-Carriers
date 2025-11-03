@@ -66,82 +66,87 @@
 
 </head>
 <body class="bg-gray-50 font-sans">
-    <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-700 text-white shadow-lg nav-header sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
-                            <rect x="4" y="20" width="40" height="20" rx="2" />
-                            <rect x="44" y="28" width="12" height="8" rx="1" />
-                            <circle cx="18" cy="44" r="4" fill="white" />
-                            <circle cx="46" cy="44" r="4" fill="white" />
-                        </svg>
-                    </span>
-                    <span>Reliable Carriers</span>
+
+<!-- Navigation -->
+<nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+            <a href="/customer" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
+                <img src="/images/Reliable 1.png" alt="Reliable Carriers Logo" style="height:50px; width:auto;">
+            </a>
+            <div class="hidden md:flex space-x-8">
+
+                <a href="/customer/track" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-search mr-2"></i>Track Package
                 </a>
-                <div class="hidden md:flex space-x-8">
-                    <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-home mr-2"></i>Dashboard
-                    </a>
-                    <a href="/customer/track" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-search mr-2"></i>Track Package
-                    </a>
-                    <a href="/customer/quote" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-calculator mr-2"></i>Get Quote
-                    </a>
-                    <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-boxes mr-2"></i>My Packages
-                    </a>
-                    <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
-                    <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-question-circle mr-2"></i>Help
-                    </a>
-                    <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-envelope mr-2"></i>Contact
-                    </a>
-                </div>
-                <!-- Mobile menu button -->
-                <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
+                <a href="/customer/quote" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-calculator mr-2"></i>Get Quote
+                </a>
+                <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-boxes mr-2"></i>My Packages
+                </a>
+                <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-store mr-2"></i>Business
+                </a>
+                <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-question-circle mr-2"></i>Help
+                </a>
+                <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-envelope mr-2"></i>Contact
+                </a>
+                <a href="/customer/profile" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-user-edit mr-2"></i>Edit Profile
+                </a>
+                <a href="/logout" class="flex items-center text-white hover:text-brand-300 hover:no-underline transition-colors duration-300 font-medium ml-auto ">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
             </div>
-            <!-- Mobile menu -->
-            <div class="md:hidden hidden" id="mobileMenu">
-                <div class="py-4 space-y-4">
-                    <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-home mr-2"></i>Dashboard
-                    </a>
-                    <a href="/customer/track" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-search mr-2"></i>Track Package
-                    </a>
-                    <a href="/customer/quote" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-calculator mr-2"></i>Get Quote
-                    </a>
-                    <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-boxes mr-2"></i>My Packages
-                    </a>
-                    <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
-                    <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-question-circle mr-2"></i>Help
-                    </a>
-                    <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-envelope mr-2"></i>Contact
-                    </a>
-                </div>
+            <!-- Mobile menu button -->
+            <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="md:hidden hidden" id="mobileMenu">
+            <div class="py-4 space-y-4">
+                <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                <a href="/customer/track" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-search mr-2"></i>Track Package
+                </a>
+                <a href="/customer/quote" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-calculator mr-2"></i>Get Quote
+                </a>
+                <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-boxes mr-2"></i>My Packages
+                </a>
+                <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-store mr-2"></i>Business
+                </a>
+                <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-question-circle mr-2"></i>Help
+                </a>
+                <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-envelope mr-2"></i>Contact
+                </a>
+                <a href="/customer/profile" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-user-edit mr-2"></i>Edit Profile
+                </a>
+                <a href="/"  class="block text-white hover:text-brand-300 hover:no-underline transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
             </div>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <!-- Main Content -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="glass-effect rounded-3xl p-8 hover-lift">
-            <div class="text-center mb-8">
+        <div class="glass-effect rounded-3xl p-8 hover-lift" style="background-color: rgba(0,35,230,0.93);">
+
+        <div class="text-center mb-8">
                 <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
                     <i class="fas fa-store mr-3 gradient-text"></i>Business Shipping
                 </h1>
@@ -164,7 +169,7 @@
             </div>
             
             <div class="text-center mt-8">
-                <a href="/customer/dashboard" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto w-fit">
+                <a href="/customer" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto w-fit">
                     <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
                 </a>
             </div>

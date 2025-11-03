@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,12 +54,44 @@ public class AuditController {
             logs = auditService.getAuditLogsByDateRange(startDate, endDate, pageable);
         } else {
             // Default to recent activity
-            List<AuditLog> recentLogs = auditService.getRecentActivity(24);
-            // Convert to page - simplified implementation
-            logs = Page.empty(pageable);
+            logs = auditService.getAuditLogsByDateRange(
+                LocalDateTime.now().minusDays(7), 
+                LocalDateTime.now(), 
+                pageable
+            );
         }
         
         return ResponseEntity.ok(logs);
+    }
+    
+    // Get audit statistics
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getAuditStats() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusDays(7);
+        
+        stats.put("totalLogs", auditService.getAuditCountByDateRange(startDate, endDate));
+        stats.put("recentActivity", auditService.getAuditCountByDateRange(endDate.minusHours(24), endDate));
+        
+        return ResponseEntity.ok(stats);
+    }
+    
+    // Get audit analytics
+    @GetMapping("/analytics/counts")
+    public ResponseEntity<Map<String, Object>> getAuditAnalytics(
+            @RequestParam LocalDateTime startDate,
+            @RequestParam LocalDateTime endDate) {
+        
+        Map<String, Object> analytics = new HashMap<>();
+        
+        analytics.put("byRole", auditService.getAuditCountByRole(startDate, endDate));
+        analytics.put("byAction", auditService.getAuditCountByAction(startDate, endDate));
+        analytics.put("byStatus", auditService.getAuditCountByStatus(startDate, endDate));
+        analytics.put("dailyCount", auditService.getDailyAuditCount(startDate, endDate));
+        
+        return ResponseEntity.ok(analytics);
     }
     
     // Get audit logs by user
@@ -131,26 +164,6 @@ public class AuditController {
         return ResponseEntity.ok(logs);
     }
     
-    // Analytics endpoints
-    @GetMapping("/analytics/counts")
-    public ResponseEntity<Map<String, Object>> getAuditCounts(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        
-        Map<String, Object> counts = Map.of(
-            "total", auditService.getAuditCountByDateRange(startDate, endDate),
-            "byRole", auditService.getAuditCountByRole(startDate, endDate),
-            "byAction", auditService.getAuditCountByAction(startDate, endDate),
-            "byStatus", auditService.getAuditCountByStatus(startDate, endDate),
-            "byEntityType", auditService.getAuditCountByEntityType(startDate, endDate),
-            "daily", auditService.getDailyAuditCount(startDate, endDate),
-            "topUsers", auditService.getTopUsersByAuditCount(startDate, endDate, 10),
-            "topIpAddresses", auditService.getTopIpAddresses(startDate, endDate, 10),
-            "averageExecutionTime", auditService.getAverageExecutionTime(startDate, endDate)
-        );
-        
-        return ResponseEntity.ok(counts);
-    }
     
     // Security and compliance endpoints
     @GetMapping("/security/login-attempts")
@@ -257,12 +270,4 @@ public class AuditController {
         return ResponseEntity.ok("Audit logs archived successfully");
     }
     
-    @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> getAuditStats() {
-        Map<String, Object> stats = Map.of(
-            "totalLogs", auditService.getAuditLogsSize(),
-            "recentActivity", auditService.getRecentActivity(1).size()
-        );
-        return ResponseEntity.ok(stats);
-    }
 }

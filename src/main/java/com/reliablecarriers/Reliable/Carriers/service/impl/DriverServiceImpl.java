@@ -9,6 +9,7 @@ import com.reliablecarriers.Reliable.Carriers.repository.VehicleRepository;
 import com.reliablecarriers.Reliable.Carriers.service.DriverService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -366,14 +367,14 @@ public class DriverServiceImpl implements DriverService {
 
     private void populateDriverStatus(DriverResponse response, User driver) {
         // Check if driver is online (has recent location update)
-        DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+        DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
         boolean isOnline = lastLocation != null && isLocationRecent(lastLocation.getTimestamp());
         response.setIsOnline(isOnline);
         response.setCurrentStatus(isOnline ? "ACTIVE" : "OFFLINE");
         
         if (lastLocation != null) {
             response.setCurrentLocation(lastLocation.getAddress() + ", " + lastLocation.getCity() + ", " + lastLocation.getState());
-            response.setLastLocationUpdate(lastLocation.getTimestamp());
+            response.setLastLocationUpdate(java.sql.Timestamp.valueOf(lastLocation.getTimestamp()));
         }
         
         // Count active packages
@@ -393,11 +394,9 @@ public class DriverServiceImpl implements DriverService {
         response.setTotalWeightCarrying(totalWeight);
     }
 
-    private boolean isLocationRecent(Date timestamp) {
+    private boolean isLocationRecent(LocalDateTime timestamp) {
         if (timestamp == null) return false;
-        long currentTime = System.currentTimeMillis();
-        long locationTime = timestamp.getTime();
-        long fiveMinutesInMillis = 5 * 60 * 1000;
-        return (currentTime - locationTime) < fiveMinutesInMillis;
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        return timestamp.isAfter(fiveMinutesAgo);
     }
 }

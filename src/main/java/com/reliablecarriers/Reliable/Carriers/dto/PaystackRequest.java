@@ -21,7 +21,7 @@ public class PaystackRequest {
     private String redirectUrl;
     
     @JsonProperty("currency")
-    private String currency = "NGN";
+    private String currency = "ZAR";
     
     @JsonProperty("metadata")
     private PaystackMetadata metadata;

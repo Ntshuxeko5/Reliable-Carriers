@@ -16,6 +16,7 @@ public class PackageDeliveryRequest {
     private Double deliveryLng;
     private String deliveryAddress;
     private String deliveryMethod; // HAND_TO_RECIPIENT, LEAVE_AT_DOOR, etc.
+    private String dropOffCode; // Code provided by customer for delivery verification
 
     // Constructors
     public PackageDeliveryRequest() {}
@@ -128,5 +129,13 @@ public class PackageDeliveryRequest {
 
     public void setDeliveryMethod(String deliveryMethod) {
         this.deliveryMethod = deliveryMethod;
+    }
+    
+    public String getDropOffCode() {
+        return dropOffCode;
+    }
+    
+    public void setDropOffCode(String dropOffCode) {
+        this.dropOffCode = dropOffCode;
     }
 }

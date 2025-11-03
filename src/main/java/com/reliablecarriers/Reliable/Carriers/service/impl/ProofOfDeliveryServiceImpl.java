@@ -6,7 +6,6 @@ import com.reliablecarriers.Reliable.Carriers.repository.ShipmentRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
 import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
 import com.reliablecarriers.Reliable.Carriers.service.ProofOfDeliveryService;
-import com.reliablecarriers.Reliable.Carriers.service.ShipmentService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +24,6 @@ public class ProofOfDeliveryServiceImpl implements ProofOfDeliveryService {
     private final ShipmentRepository shipmentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
-    private final ShipmentService shipmentService;
 
     @Value("${app.pod.storage.path:/uploads/pod}")
     private String storagePath;
@@ -43,13 +41,11 @@ public class ProofOfDeliveryServiceImpl implements ProofOfDeliveryService {
     public ProofOfDeliveryServiceImpl(ProofOfDeliveryRepository podRepository,
                                     ShipmentRepository shipmentRepository,
                                     UserRepository userRepository,
-                                    NotificationService notificationService,
-                                    ShipmentService shipmentService) {
+                                    NotificationService notificationService) {
         this.podRepository = podRepository;
         this.shipmentRepository = shipmentRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
-        this.shipmentService = shipmentService;
     }
 
     @Override

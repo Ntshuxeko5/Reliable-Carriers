@@ -30,9 +30,13 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Email already exists");
         }
         
-        // Encode password if not already encoded
-        if (user.getPassword() != null && !user.getPassword().startsWith("$2a$")) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        // Encode password if not already encoded (support $2a/$2b/$2y)
+        if (user.getPassword() != null) {
+            String pwd = user.getPassword();
+            boolean looksLikeBCrypt = pwd.startsWith("$2a$") || pwd.startsWith("$2b$") || pwd.startsWith("$2y$");
+            if (!looksLikeBCrypt) {
+                user.setPassword(passwordEncoder.encode(pwd));
+            }
         }
         
         // Set timestamps
@@ -65,12 +69,14 @@ public class UserServiceImpl implements UserService {
             existingUser.setEmail(user.getEmail());
         }
         
-        // Only update password if provided and not already encoded
+        // Only update password if provided and not already encoded (support $2a/$2b/$2y)
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            if (!user.getPassword().startsWith("$2a$")) {
-                existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+            String pwd = user.getPassword();
+            boolean looksLikeBCrypt = pwd.startsWith("$2a$") || pwd.startsWith("$2b$") || pwd.startsWith("$2y$");
+            if (!looksLikeBCrypt) {
+                existingUser.setPassword(passwordEncoder.encode(pwd));
             } else {
-                existingUser.setPassword(user.getPassword());
+                existingUser.setPassword(pwd);
             }
         }
         

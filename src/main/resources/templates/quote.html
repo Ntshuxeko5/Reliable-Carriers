@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Free Quote - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hover-lift {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .modern-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .modern-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .form-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-input:focus {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .service-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+            border-radius: 16px;
+            border: 2px solid transparent;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: #0ea5e9;
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.2);
+        }
+        
+        .service-card.recommended {
+            border-color: #10b981;
+            background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
+        }
+        
+        .service-card.recommended::before {
+            content: 'RECOMMENDED';
+            position: absolute;
+            top: 10px;
+            right: -30px;
+            background: #10b981;
+            color: white;
+            padding: 4px 40px;
+            font-size: 12px;
+            font-weight: bold;
+            transform: rotate(45deg);
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
+        }
+        
+        .quote-result {
+            animation: slideInUp 0.6s ease-out;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .alert {
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 10px 0;
+            font-weight: 500;
+            animation: slideInRight 0.4s ease-out;
+        }
+        
+        .alert.success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        
+        .alert.error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        
+        .alert.info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-reliable-blue-800 to-reliable-blue-900 text-white shadow-lg nav-header">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                    <!-- Company Logo -->
+                    <img src="/images/Reliable 1.png" alt="Reliable Carriers" style="height:50px; width:auto; ">
+                </a>
+                <ul class="hidden md:flex space-x-8">
+                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/quote" class="text-reliable-yellow-300 hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
+                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li class="auth-required hidden"><a href="/customer/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/customer/analytics" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Analytics</a></li>
+                    <li class="auth-required hidden"><a href="/customer/quote" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Quote</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                </ul>
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300" id="mobileMenuBtn">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            <!-- Mobile menu -->
+            <div class="md:hidden hidden" id="mobileMenu">
+                <ul class="py-4 space-y-4">
+                    <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
+                    <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/quote" class="block text-reliable-yellow-300 hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
+                    <li><a href="/about" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li class="auth-required hidden"><a href="/customer/dashboard" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/customer/analytics" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Analytics</a></li>
+                    <li class="auth-required hidden"><a href="/customer/quote" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtnMobile" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="rounded-3xl p-8 hover-lift bg-white shadow-sm">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-calculator mr-3 gradient-text"></i>Get Free Quote
+                </h1>
+                <p class="text-xl text-gray-700">Get instant shipping quotes for your packages - no account required!</p>
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Note:</strong> You can get a quote without an account, but you'll need to create an account to complete your booking and payment.
+                    </p>
+                </div>
+            </div>
+            
+            <form id="quoteForm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-gray-800 font-medium mb-2">Pickup Address</label>
+                        <input id="pickupAddress" type="text" 
+                            class="w-full px-6 py-4 form-input text-gray-900 placeholder-gray-400 focus:outline-none transition-all duration-300" 
+                            placeholder="Enter pickup address" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-800 font-medium mb-2">Delivery Address</label>
+                        <input id="deliveryAddress" type="text" 
+                            class="w-full px-6 py-4 form-input text-gray-900 placeholder-gray-400 focus:outline-none transition-all duration-300" 
+                            placeholder="Enter delivery address" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label class="block text-gray-800 font-medium mb-2">Weight (kg)</label>
+                        <input id="weight" type="number" 
+                            class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none transition-all duration-300" 
+                            min="0" step="0.1" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-800 font-medium mb-2">Length (cm)</label>
+                        <input id="length" type="number" 
+                            class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none transition-all duration-300" 
+                            min="0" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-800 font-medium mb-2">Width (cm)</label>
+                        <input id="width" type="number" 
+                            class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none transition-all duration-300" 
+                            min="0" required>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-800 font-medium mb-2">Email</label>
+                    <input id="senderEmail" type="email" 
+                        class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none transition-all duration-300" 
+                        placeholder="you@example.com" required>
+                </div>
+                
+                <!-- Insurance Options -->
+                <div class="mb-6">
+                    <label class="block text-gray-800 font-medium mb-3">Insurance Coverage (Optional)</label>
+                    <div class="space-y-3">
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option" data-cost="0">
+                            <input type="radio" name="insurance" value="none" class="mr-3 text-blue-500" checked>
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-800">No Insurance</div>
+                                <div class="text-sm text-gray-600">Standard coverage included</div>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">R0.00</div>
+                        </label>
+                        
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option" data-cost="15">
+                            <input type="radio" name="insurance" value="basic" class="mr-3 text-blue-500">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-800">Basic Coverage</div>
+                                <div class="text-sm text-gray-600">Up to R1,000 coverage</div>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">R15.00</div>
+                        </label>
+                        
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option" data-cost="35">
+                            <input type="radio" name="insurance" value="standard" class="mr-3 text-blue-500">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-800">Standard Coverage</div>
+                                <div class="text-sm text-gray-600">Up to R5,000 coverage</div>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">R35.00</div>
+                        </label>
+                        
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option" data-cost="65">
+                            <input type="radio" name="insurance" value="premium" class="mr-3 text-blue-500">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-800">Premium Coverage</div>
+                                <div class="text-sm text-gray-600">Up to R10,000 coverage</div>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">R65.00</div>
+                        </label>
+                    </div>
+                    
+                    <!-- Live Price Update Display -->
+                    <div id="livePriceUpdate" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200" style="display: none;">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm text-blue-600 font-medium">Current Selection:</div>
+                                <div class="text-lg font-bold text-blue-800" id="selectedInsuranceText">No Insurance</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-blue-600">Insurance Cost:</div>
+                                <div class="text-xl font-bold text-blue-800" id="selectedInsuranceCost">R0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                    <button type="submit" 
+                        class="btn-primary px-8 py-4 rounded-full font-bold flex items-center justify-center hover-lift">
+                        <i class="fas fa-magic mr-2"></i>Get Free Quote
+                    </button>
+                    <a href="/" 
+                       class="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-8 py-4 rounded-full font-bold hover:from-gray-700 hover:to-gray-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Home
+                    </a>
+                </div>
+            </form>
+            
+            <div id="quoteResult" class="mt-8" style="display:none">
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm quote-result">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-receipt mr-2 text-green-400"></i>Your Quote Results
+                    </h3>
+                
+                    <!-- Service Options -->
+                    <div id="serviceOptions" class="mb-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Choose Your Service:</h4>
+                        <div id="serviceOptionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Service options will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Service Details -->
+                    <div id="selectedServiceDetails" class="bg-white rounded-xl p-6 mb-6" style="display:none">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-gray-800">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-400 mb-2">
+                                    <span id="resDistance">-</span> km
+                                </div>
+                                <div class="text-gray-300 text-sm">Distance</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-400 mb-2">
+                                    R<span id="resTotal">-</span>
+                                </div>
+                                <div class="text-gray-300 text-sm">Total Cost</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-400 mb-2">
+                                    <span id="resService">-</span>
+                                </div>
+                                <div class="text-gray-300 text-sm">Service Type</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-purple-400 mb-2">
+                                    <span id="resDelivery">-</span>
+                                </div>
+                                <div class="text-gray-300 text-sm">Delivery Time</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cost Breakdown -->
+                        <div class="mt-4 bg-gray-50 rounded-lg p-4">
+                            <h5 class="text-gray-800 font-semibold mb-3">Cost Breakdown:</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                    <span class="text-gray-300">Base Cost:</span>
+                                    <span class="text-gray-900 font-semibold">R<span id="baseCost">-</span></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-300">Service Fee:</span>
+                                    <span class="text-gray-900 font-semibold">R<span id="serviceFee">-</span></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-300">Fuel Surcharge:</span>
+                                    <span class="text-gray-900 font-semibold">R<span id="fuelSurcharge">-</span></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-300">Insurance:</span>
+                                    <span class="text-gray-900 font-semibold">R<span id="insuranceFee">-</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Account Required Notice -->
+                    <div id="accountRequiredNotice" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mt-6" style="display:none">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 text-xl mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="text-lg font-semibold text-yellow-800 mb-2">Account Required for Booking</h4>
+                                <p class="text-yellow-700 mb-4">To complete your booking and payment, you'll need to create an account or log in.</p>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <a href="/register" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors text-center">
+                                        <i class="fas fa-user-plus mr-2"></i>Create Account
+                                    </a>
+                                    <a href="/login" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors text-center">
+                                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center text-gray-600 text-sm">
+                        <i class="fas fa-info-circle mr-2"></i>Quote valid for 24 hours. Account required to complete booking.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-yellow-400">Reliable Carriers</h3>
+                    <p class="text-gray-300">Your trusted partner for reliable package delivery and tracking services.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/tracking" class="hover:text-yellow-400 transition-colors">Track Package</a></li>
+                        <li><a href="/quote" class="hover:text-yellow-400 transition-colors">Get Quote</a></li>
+                        <li><a href="/about" class="hover:text-yellow-400 transition-colors">About Us</a></li>
+                        <li><a href="/contact" class="hover:text-yellow-400 transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Services</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-yellow-400 transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-yellow-400 transition-colors">National Shipping</a></li>
+                        <li><a href="#" class="hover:text-yellow-400 transition-colors">Moving Services</a></li>
+                        <li><a href="#" class="hover:text-yellow-400 transition-colors">Load Transport</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Contact Info</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <p><i class="fas fa-phone mr-2"></i>+27 11 123 4567</p>
+                        <p><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</p>
+                        <p><i class="fas fa-map-marker-alt mr-2"></i>Johannesburg, South Africa</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        let currentQuote = null;
+        let selectedService = null;
+
+        // Alert system
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${
+                type === 'success' ? 'bg-green-500 text-white' : 
+                type === 'error' ? 'bg-red-500 text-white' : 
+                type === 'info' ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white'
+            }`;
+            alertDiv.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        function displayServiceOptions(services) {
+            const container = document.getElementById('serviceOptionsList');
+            container.innerHTML = '';
+            
+            if (!services || !Array.isArray(services) || services.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 p-4">No service options available</div>';
+                return;
+            }
+            
+            services.forEach((service, index) => {
+                const serviceCard = document.createElement('div');
+                serviceCard.className = `service-card p-6 cursor-pointer hover-lift ${service.isRecommended ? 'recommended' : ''}`;
+                serviceCard.innerHTML = `
+                    <div class="text-center text-gray-900">
+                        <div class="text-3xl font-bold text-gray-900 mb-3" data-base-cost="${service.cost}">R${service.cost}</div>
+                        <div class="text-lg font-semibold text-gray-800 mb-2">${service.serviceType}</div>
+                        <div class="text-sm text-gray-600 mb-4">${service.description}</div>
+                        <div class="text-sm text-blue-600 font-medium">${service.estimatedDeliveryTime}</div>
+                        <div class="text-xs text-gray-500 mt-2">Base price - insurance costs added separately</div>
+                        ${service.isRecommended ? '<div class="text-xs text-green-600 font-bold mt-2 bg-green-100 px-2 py-1 rounded-full inline-block">RECOMMENDED</div>' : ''}
+                    </div>
+                `;
+                
+                serviceCard.addEventListener('click', () => selectService(service));
+                container.appendChild(serviceCard);
+            });
+        }
+
+        function selectService(service) {
+            selectedService = service;
+            
+            // Get current insurance cost
+            const selectedInsurance = document.querySelector('input[name="insurance"]:checked');
+            const insuranceCost = selectedInsurance ? parseFloat(selectedInsurance.closest('.insurance-option').dataset.cost) : 0;
+            const totalCost = service.cost + insuranceCost;
+            
+            // Update selected service details
+            document.getElementById('resDistance').textContent = currentQuote.distanceKm.toFixed(1);
+            document.getElementById('resTotal').textContent = totalCost.toFixed(2);
+            document.getElementById('resService').textContent = service.serviceType;
+            document.getElementById('resDelivery').textContent = service.estimatedDeliveryTime;
+            
+            // Update cost breakdown
+            document.getElementById('baseCost').textContent = currentQuote.baseCost;
+            document.getElementById('serviceFee').textContent = currentQuote.serviceFee;
+            document.getElementById('fuelSurcharge').textContent = currentQuote.fuelSurcharge;
+            document.getElementById('insuranceFee').textContent = insuranceCost.toFixed(2);
+            
+            // Show selected service details and account required notice
+            document.getElementById('selectedServiceDetails').style.display = 'block';
+            document.getElementById('accountRequiredNotice').style.display = 'block';
+            
+            // Scroll to account required notice
+            document.getElementById('accountRequiredNotice').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Initialize insurance price update functionality
+        function initInsurancePriceUpdates() {
+            const insuranceOptions = document.querySelectorAll('input[name="insurance"]');
+            const livePriceUpdate = document.getElementById('livePriceUpdate');
+            const selectedInsuranceText = document.getElementById('selectedInsuranceText');
+            const selectedInsuranceCost = document.getElementById('selectedInsuranceCost');
+            
+            insuranceOptions.forEach(option => {
+                option.addEventListener('change', function() {
+                    if (this.checked) {
+                        const cost = this.closest('.insurance-option').dataset.cost;
+                        const text = this.closest('.insurance-option').querySelector('.font-semibold').textContent;
+                        
+                        // Update the live price display
+                        selectedInsuranceText.textContent = text;
+                        selectedInsuranceCost.textContent = `R${parseFloat(cost).toFixed(2)}`;
+                        
+                        // Show the live price update
+                        livePriceUpdate.style.display = 'block';
+                        
+                        // Update service cards if they exist
+                        updateServiceCardPrices(parseFloat(cost));
+                    }
+                });
+            });
+        }
+        
+        // Update service card prices with insurance cost
+        function updateServiceCardPrices(insuranceCost) {
+            const serviceCards = document.querySelectorAll('.service-card');
+            serviceCards.forEach(card => {
+                const costElement = card.querySelector('.text-3xl.font-bold');
+                if (costElement) {
+                    const baseCost = parseFloat(costElement.dataset.baseCost);
+                    const newTotal = baseCost + insuranceCost;
+                    costElement.textContent = `R${newTotal.toFixed(2)}`;
+                }
+            });
+            
+            // Update selected service details if visible
+            if (selectedService && document.getElementById('resTotal')) {
+                const originalCost = selectedService.cost;
+                const newTotal = originalCost + insuranceCost;
+                document.getElementById('resTotal').textContent = newTotal.toFixed(2);
+            }
+        }
+
+        // Google Maps API integration
+        let pickupAutocomplete, deliveryAutocomplete;
+        let distanceService;
+
+        function initMap() {
+            // Initialize services
+            distanceService = new google.maps.DistanceMatrixService();
+
+            // Initialize autocomplete for pickup address
+            pickupAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('pickupAddress'),
+                {
+                    types: ['address'],
+                    componentRestrictions: { country: 'za' } // Restrict to South Africa
+                }
+            );
+
+            // Initialize autocomplete for delivery address
+            deliveryAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('deliveryAddress'),
+                {
+                    types: ['address'],
+                    componentRestrictions: { country: 'za' } // Restrict to South Africa
+                }
+            );
+
+            // Add place changed listeners to capture coordinates
+            pickupAutocomplete.addListener('place_changed', function() {
+                const place = pickupAutocomplete.getPlace();
+                if (place.geometry && place.geometry.location) {
+                    console.log('Pickup location:', place.formatted_address);
+                }
+            });
+
+            deliveryAutocomplete.addListener('place_changed', function() {
+                const place = deliveryAutocomplete.getPlace();
+                if (place.geometry && place.geometry.location) {
+                    console.log('Delivery location:', place.formatted_address);
+                }
+            });
+        }
+
+        // Initialize insurance price updates when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initInsurancePriceUpdates();
+            
+            // Mobile menu toggle
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+
+        document.getElementById('quoteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Show loading state
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Getting Quote...';
+            submitBtn.disabled = true;
+            
+            // Get selected insurance
+            const selectedInsurance = document.querySelector('input[name="insurance"]:checked').value;
+            const insuranceCosts = {
+                'none': 0,
+                'basic': 15,
+                'standard': 35,
+                'premium': 65
+            };
+            
+            const payload = {
+                senderName: 'Customer',
+                senderEmail: document.getElementById('senderEmail').value,
+                pickupAddress: document.getElementById('pickupAddress').value,
+                pickupCity: 'Johannesburg',
+                pickupState: 'Gauteng',
+                pickupZipCode: '2000',
+                pickupCountry: 'South Africa',
+                recipientName: 'Recipient',
+                recipientEmail: document.getElementById('senderEmail').value,
+                deliveryAddress: document.getElementById('deliveryAddress').value,
+                deliveryCity: 'Pretoria',
+                deliveryState: 'Gauteng',
+                deliveryZipCode: '0001',
+                deliveryCountry: 'South Africa',
+                weight: parseFloat(document.getElementById('weight').value),
+                length: parseFloat(document.getElementById('length').value),
+                width: parseFloat(document.getElementById('width').value),
+                serviceType: 'OVERNIGHT',
+                insuranceType: selectedInsurance,
+                insuranceCost: insuranceCosts[selectedInsurance]
+            };
+
+            try {
+                const resp = await fetch('/api/customer/quote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!resp.ok) throw new Error('Failed to get quote');
+                
+                const response = await resp.json();
+                console.log('Quote response data:', response);
+                
+                // Handle different response structures
+                let data, availableServices;
+                if (response.success && response.data) {
+                    data = response.data;
+                    availableServices = data.availableServices;
+                } else {
+                    data = response;
+                    availableServices = data.availableServices;
+                }
+                
+                currentQuote = data;
+                
+                // Display service options
+                displayServiceOptions(availableServices);
+                
+                // Show quote results
+                document.getElementById('quoteResult').style.display = 'block';
+                
+                // Scroll to results
+                document.getElementById('quoteResult').scrollIntoView({ behavior: 'smooth' });
+                
+                showAlert('Quote generated successfully! Choose a service option below.', 'success');
+                
+            } catch (e) {
+                console.error('Quote creation error:', e);
+                showAlert('Could not create quote: ' + e.message, 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

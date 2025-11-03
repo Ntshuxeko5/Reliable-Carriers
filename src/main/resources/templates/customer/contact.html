@@ -1,85 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact - Reliable Carriers</title>
+    <title>Contact Us - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         'brand': {
-                            50: '#fefce8',
-                            100: '#fef9c3',
-                            200: '#fef08a',
-                            300: '#fde047',
-                            400: '#facc15',
-                            500: '#dbb714',
-                            600: '#ca8a04',
-                            700: '#a16207',
-                            800: '#854d0e',
-                            900: '#713f12',
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#dbb714', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
                         },
                         'brand-blue': {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#071c91',
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+                            800: '#1e40af', 900: '#071c91',
                         }
                     }
                 }
             }
         }
     </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .hover-lift {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #fde047, #facc15);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
-
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header sticky top-0 z-50">
+    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
-                            <rect x="4" y="20" width="40" height="20" rx="2" />
-                            <rect x="44" y="28" width="12" height="8" rx="1" />
-                            <circle cx="18" cy="44" r="4" fill="white" />
-                            <circle cx="46" cy="44" r="4" fill="white" />
-                        </svg>
-                    </span>
-                    <span>Reliable Carriers</span>
+                <a href="/customer/dashboard" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
+                    <img src="/images/Reliable 1.png" alt="Reliable Carriers Logo" style="height:50px; width:auto;">
                 </a>
                 <div class="hidden md:flex space-x-8">
                     <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
@@ -94,14 +54,14 @@
                     <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-boxes mr-2"></i>My Packages
                     </a>
-                    <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
                     <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-question-circle mr-2"></i>Help
                     </a>
-                    <a href="/customer/contact" class="text-brand-300 hover:text-reliable-yellow-200 transition-colors duration-300 font-medium flex items-center">
+                    <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center bg-brand-blue-700 px-4 py-2 rounded-lg">
                         <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                    <a href="/logout" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
                     </a>
                 </div>
                 <!-- Mobile menu button -->
@@ -109,7 +69,8 @@
                     <i class="fas fa-bars text-xl"></i>
                 </button>
             </div>
-            <!-- Mobile menu -->
+
+            <!-- Mobile Menu -->
             <div class="md:hidden hidden" id="mobileMenu">
                 <div class="py-4 space-y-4">
                     <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
@@ -124,14 +85,14 @@
                     <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-boxes mr-2"></i>My Packages
                     </a>
-                    <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
                     <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-question-circle mr-2"></i>Help
                     </a>
-                    <a href="/customer/contact" class="block text-brand-300 hover:text-reliable-yellow-200 transition-colors duration-300 font-medium flex items-center">
+                    <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center bg-brand-blue-700 px-4 py-2 rounded-lg">
                         <i class="fas fa-envelope mr-2"></i>Contact
+                    </a>
+                    <a href="/logout" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
                     </a>
                 </div>
             </div>
@@ -139,50 +100,171 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="glass-effect rounded-3xl p-8 hover-lift">
-            <div class="text-center mb-8">
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                    <i class="fas fa-envelope mr-3 gradient-text"></i>Contact Us
-                </h1>
-                <p class="text-xl text-gray-700">Get in touch with our support team</p>
-            </div>
-            
-            <form class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-               <label class="block text-gray-800 font-medium mb-2">Name</label>
-               <input type="text" 
-                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
-                               placeholder="Your full name" required>
-                            </div>
-                    <div>
-               <label class="block text-gray-800 font-medium mb-2">Email</label>
-               <input type="email" 
-                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
-                               placeholder="your@email.com" required>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-envelope mr-3 gradient-text"></i>Contact Us
+            </h1>
+            <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                Get in touch with our team. We're here to help with any questions or concerns you may have.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Contact Form -->
+            <div class="glass-effect rounded-2xl p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-paper-plane mr-3 text-blue-600"></i>Send us a Message
+                </h2>
+                <form class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                            <input type="text" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                            <input type="text" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
                     </div>
-                </div>
-                
-                <div>
-                    <label class="block text-gray-800 font-medium mb-2">Message</label>
-                    <textarea rows="5" 
-                              class="w-full px-6 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300 resize-none" 
-                              placeholder="How can we help you?" required></textarea>
-                </div>
-                
-                <div class="text-center">
-            <button type="submit" 
-                class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <input type="email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input type="tel" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option>General Inquiry</option>
+                            <option>Package Tracking</option>
+                            <option>Billing Question</option>
+                            <option>Service Complaint</option>
+                            <option>Technical Support</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                        <textarea rows="5" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Please describe your inquiry in detail..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-brand-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-brand-blue-700 transition-colors duration-300 flex items-center justify-center">
                         <i class="fas fa-paper-plane mr-2"></i>Send Message
                     </button>
+                </form>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="space-y-8">
+                <!-- Contact Methods -->
+                <div class="glass-effect rounded-2xl p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                        <i class="fas fa-phone mr-3 text-green-600"></i>Get in Touch
+                    </h2>
+                    <div class="space-y-6">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-phone text-green-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Phone Support</h3>
+                                <p class="text-gray-600">+27 11 123 4567</p>
+                                <p class="text-sm text-gray-500">Mon-Fri: 8AM-6PM, Sat: 9AM-2PM</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-envelope text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Email Support</h3>
+                                <p class="text-gray-600">support@reliablecarriers.com</p>
+                                <p class="text-sm text-gray-500">Response within 24 hours</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-comments text-purple-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Live Chat</h3>
+                                <p class="text-gray-600">Available 24/7</p>
+                                <p class="text-sm text-gray-500">Instant support</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </form>
+
+                <!-- Office Locations -->
+                <div class="glass-effect rounded-2xl p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                        <i class="fas fa-map-marker-alt mr-3 text-red-600"></i>Our Offices
+                    </h2>
+                    <div class="space-y-6">
+                        <div class="border-l-4 border-brand-blue-500 pl-4">
+                            <h3 class="font-semibold text-gray-900">Head Office - Johannesburg</h3>
+                            <p class="text-gray-600">123 Business Park, Sandton</p>
+                            <p class="text-gray-600">Johannesburg, 2196</p>
+                            <p class="text-sm text-gray-500">Mon-Fri: 8AM-5PM</p>
+                        </div>
+                        <div class="border-l-4 border-green-500 pl-4">
+                            <h3 class="font-semibold text-gray-900">Cape Town Branch</h3>
+                            <p class="text-gray-600">456 Waterfront Drive</p>
+                            <p class="text-gray-600">Cape Town, 8001</p>
+                            <p class="text-sm text-gray-500">Mon-Fri: 8AM-5PM</p>
+                        </div>
+                        <div class="border-l-4 border-purple-500 pl-4">
+                            <h3 class="font-semibold text-gray-900">Durban Branch</h3>
+                            <p class="text-gray-600">789 Harbour Road</p>
+                            <p class="text-gray-600">Durban, 4001</p>
+                            <p class="text-sm text-gray-500">Mon-Fri: 8AM-5PM</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contact -->
+                <div class="glass-effect rounded-2xl p-8 bg-gradient-to-r from-red-500 to-red-600 text-white">
+                    <h2 class="text-2xl font-bold mb-4">
+                        <i class="fas fa-exclamation-triangle mr-3"></i>Emergency Contact
+                    </h2>
+                    <p class="text-red-100 mb-4">For urgent package issues or emergencies</p>
+                    <div class="space-y-2">
+                        <p class="text-xl font-bold">+27 11 123 4567</p>
+                        <p class="text-sm text-red-200">Available 24/7</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Frequently Asked Questions</span>
+                </h2>
+                <p class="text-lg text-gray-600">Quick answers to common questions</p>
+            </div>
             
-            <div class="text-center mt-8">
-                <a href="/customer/dashboard" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto w-fit">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
-                </a>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-effect rounded-2xl p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">How do I track my package?</h3>
+                    <p class="text-gray-600">Use the tracking number provided in your confirmation email or SMS. Enter it in our tracking system for real-time updates.</p>
+                </div>
+                <div class="glass-effect rounded-2xl p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">What are your delivery times?</h3>
+                    <p class="text-gray-600">We offer Express (1-2 days), Standard (2-3 days), and Economy (4-7 days) delivery options depending on your needs.</p>
+                </div>
+                <div class="glass-effect rounded-2xl p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Can I change my delivery address?</h3>
+                    <p class="text-gray-600">Yes, contact our customer service team to change your delivery address. Additional fees may apply depending on timing.</p>
+                </div>
+                <div class="glass-effect rounded-2xl p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">What if my package is damaged?</h3>
+                    <p class="text-gray-600">Contact us immediately if your package arrives damaged. We have insurance coverage and will work to resolve the issue quickly.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -208,9 +290,9 @@
                     <h4 class="font-bold mb-4">Services</h4>
                     <ul class="space-y-2 text-gray-300">
                         <li><a href="#" class="hover:text-brand-400 transition-colors">Express Delivery</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">National Shipping</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Moving Services</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Load Transport</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Standard Delivery</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Economy Delivery</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">International</a></li>
                     </ul>
                 </div>
                 <div>
@@ -237,5 +319,3 @@
     </script>
 </body>
 </html>
-
-

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.Date;
-import com.reliablecarriers.Reliable.Carriers.model.ServiceType;
 
 @Entity
 @Table(name = "shipments")
@@ -36,6 +35,14 @@ public class Shipment {
     @Column(length = 15)
     @Size(max = 15)
     private String recipientPhone;
+    
+    @Column(length = 10, unique = true)
+    @Size(max = 10)
+    private String collectionCode;
+    
+    @Column(length = 10, unique = true)
+    @Size(max = 10)
+    private String dropOffCode;
     
     @Column(nullable = false, length = 200)
     @NotBlank
@@ -360,5 +367,21 @@ public class Shipment {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public String getCollectionCode() {
+        return collectionCode;
+    }
+    
+    public void setCollectionCode(String collectionCode) {
+        this.collectionCode = collectionCode;
+    }
+    
+    public String getDropOffCode() {
+        return dropOffCode;
+    }
+    
+    public void setDropOffCode(String dropOffCode) {
+        this.dropOffCode = dropOffCode;
     }
 }

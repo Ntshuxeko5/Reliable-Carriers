@@ -1,0 +1,5 @@
+---
+description: always use the maven wrapper to run the project
+globs:
+alwaysApply: true
+---

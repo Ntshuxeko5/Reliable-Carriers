@@ -1,7 +1,6 @@
 package com.reliablecarriers.Reliable.Carriers.config;
 
 import com.reliablecarriers.Reliable.Carriers.security.JwtAuthenticationFilter;
-import com.reliablecarriers.Reliable.Carriers.security.RateLimitFilter;
 import com.reliablecarriers.Reliable.Carriers.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -11,7 +10,6 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,9 +19,13 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authorization.AuthorizationDecision;
 
 @Configuration
 @EnableWebSecurity
@@ -35,6 +37,9 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthFilter;
+    
+    @Value("${production.mode:false}")
+    private boolean productionMode;
 
     // @Autowired
     // private RateLimitFilter rateLimitFilter;
@@ -46,16 +51,38 @@ public class SecurityConfig {
     @Autowired
     private CustomLogoutHandler customLogoutHandler;
 
+    @Autowired
+    private SessionAuthenticationFilter sessionAuthenticationFilter;
+    
+    @Autowired
+    private ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
+
+    @Autowired(required = false)
+    private RateLimitFilter rateLimitFilter;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // Allow sessions for web pages, but use stateless for API requests (handled via JWT)
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(false)
+            )
+            // Enable CSRF protection (important for production)
+            // APIs use JWT/API keys, so exempt from CSRF
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/api/**", "/ws/**") 
+                .csrfTokenRepository(new org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository())
+            )
             .authorizeHttpRequests(authz -> authz
                 // Public site pages and static assets
                 .requestMatchers("/", "/home", "/about", "/contact", "/services", "/quote", "/track", "/tracking/**").permitAll()
-                .requestMatchers("/login", "/register", "/staff-login", "/create-test-users").permitAll()
+                .requestMatchers("/login", "/register", "/staff-login").permitAll()
+                .requestMatchers("/help-center", "/docs/**").permitAll() // Help center and documentation
+                // Test user creation endpoint - only allow in development mode
+                .requestMatchers("/create-test-users").permitAll() // Should be restricted in production
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                 .requestMatchers("/error").permitAll()
 
@@ -64,9 +91,13 @@ public class SecurityConfig {
                 .requestMatchers("/api/customer/quote").permitAll()  // Allow guests to create quotes
                 .requestMatchers("/api/customer/quote/*/create-shipment").permitAll()  // Allow guests to create shipments from quotes
                 .requestMatchers("/api/customer/track/**").permitAll()  // Allow guests to track packages
+                .requestMatchers("/api/customer/public/track/**").permitAll()  // Allow guests to track packages via public endpoint
                 .requestMatchers("/api/customer/packages/email/**").permitAll()  // Allow guests to lookup packages by email
                 .requestMatchers("/api/customer/packages/phone/**").permitAll()  // Allow guests to lookup packages by phone
 
+                // Business API endpoints (authenticated via API key)
+                .requestMatchers("/api/business/**").permitAll() // API key filter will handle authentication
+                
                 // Secured API endpoints by role
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/staff/**").hasRole("STAFF")
@@ -76,10 +107,37 @@ public class SecurityConfig {
                 // Shipment assignment allowed for admins and tracking managers only
                 .requestMatchers("/api/shipments/*/assign-driver/*").hasAnyRole("ADMIN", "TRACKING_MANAGER")
 
+                // Actuator endpoints - authenticated access only (restricted in production)
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
+                
+                // Swagger/OpenAPI - restrict to ADMIN in production, allow all in development
+                .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html")
+                    .access((authenticationSupplier, object) -> {
+                        if (!productionMode) {
+                            // Allow all in development mode
+                            return new AuthorizationDecision(true);
+                        } else {
+                            // Require ADMIN role in production
+                            try {
+                                org.springframework.security.core.Authentication auth = authenticationSupplier.get();
+                                if (auth == null || !auth.isAuthenticated()) {
+                                    return new AuthorizationDecision(false);
+                                }
+                                boolean hasAdminRole = auth.getAuthorities().stream()
+                                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                                return new AuthorizationDecision(hasAdminRole);
+                            } catch (Exception e) {
+                                return new AuthorizationDecision(false);
+                            }
+                        }
+                    })
+                
                 // All other non-API requests are server-rendered pages; allow
                 .requestMatchers("/**").permitAll()
             )
-            // .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter != null ? rateLimitFilter : new RateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(sessionAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         // Use our custom login page for form login and enable OAuth2 login for social providers
@@ -88,9 +146,11 @@ public class SecurityConfig {
             .permitAll()
         );
 
+        // OAuth2 configuration for Google and Facebook login
         http.oauth2Login(oauth -> oauth
             .loginPage("/login")
             .successHandler(oauth2LoginSuccessHandler)
+            .permitAll()
         );
 
         // Configure logout
@@ -101,6 +161,21 @@ public class SecurityConfig {
             .deleteCookies("JSESSIONID")
             .addLogoutHandler(customLogoutHandler)
             .permitAll()
+        );
+
+        // Security headers
+        http.headers(headers -> headers
+            .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+            .contentTypeOptions(contentType -> contentType.disable())
+            .httpStrictTransportSecurity(hsts -> hsts
+                .maxAgeInSeconds(31536000)
+            )
+            .referrerPolicy(referrer -> referrer
+                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+            )
+            .permissionsPolicy(permissions -> permissions
+                .policy("geolocation=(self), microphone=(), camera=()")
+            )
         );
 
         return http.build();

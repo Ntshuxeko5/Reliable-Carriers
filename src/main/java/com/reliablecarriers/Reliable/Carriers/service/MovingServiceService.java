@@ -2,7 +2,6 @@ package com.reliablecarriers.Reliable.Carriers.service;
 
 import com.reliablecarriers.Reliable.Carriers.dto.MovingServiceRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.MovingServiceResponse;
-import com.reliablecarriers.Reliable.Carriers.model.MovingService;
 import com.reliablecarriers.Reliable.Carriers.model.ServiceType;
 import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
 

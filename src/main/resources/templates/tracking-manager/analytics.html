@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Analytics & Reports</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-map-marker-alt text-reliable-500 mr-2"></i>
+                        Tracking Manager
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/tracking-manager/dashboard" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
+                    </a>
+                    <a href="/tracking-manager/packages" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-box mr-1"></i> Packages
+                    </a>
+                    <a href="/tracking-manager/drivers" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-users mr-1"></i> Drivers
+                    </a>
+                    <a href="/tracking-manager/live-tracking" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-map mr-1"></i> Live Tracking
+                    </a>
+                    <a href="/tracking-manager/analytics" class="text-reliable-600 hover:text-reliable-800 font-medium">
+                        <i class="fas fa-chart-bar mr-1"></i> Analytics
+                    </a>
+                    <a href="/logout" class="text-red-600 hover:text-red-800 font-medium">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900">Analytics & Reports</h2>
+            <p class="text-gray-600 mt-2">Comprehensive insights into your delivery operations</p>
+        </div>
+
+        <!-- Date Range Selector -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Period</label>
+                        <select id="periodSelect" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last year</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <input type="date" id="startDate" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <input type="date" id="endDate" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                    </div>
+                </div>
+                <button onclick="loadAnalytics()" class="bg-reliable-600 text-white py-2 px-6 rounded-md hover:bg-reliable-700 focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                    <i class="fas fa-sync-alt mr-2"></i> Update Analytics
+                </button>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-box text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Packages</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalPackages">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Delivered</p>
+                        <p class="text-2xl font-bold text-gray-900" id="deliveredPackages">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">In Transit</p>
+                        <p class="text-2xl font-bold text-gray-900" id="inTransitPackages">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <i class="fas fa-dollar-sign text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Revenue</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalRevenue">$0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Package Trends Chart -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Package Trends</h3>
+                <canvas id="trendsChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Service Type Distribution -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Service Type Distribution</h3>
+                <canvas id="serviceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Status Distribution -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Status Distribution</h3>
+                <canvas id="statusChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Revenue Trends -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Revenue Trends</h3>
+                <canvas id="revenueChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Reports -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-900">Detailed Reports</h3>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="exportToPDF()" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <i class="fas fa-file-pdf mr-2"></i> Export PDF
+                        </button>
+                        <button onclick="exportToExcel()" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <i class="fas fa-file-excel mr-2"></i> Export Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="text-md font-semibold text-gray-900 mb-3">Package Performance</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Delivery Rate</span>
+                                <span class="text-sm font-medium" id="deliveryRate">0%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Average Delivery Time</span>
+                                <span class="text-sm font-medium" id="avgDeliveryTime">0 hours</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Failed Deliveries</span>
+                                <span class="text-sm font-medium" id="failedDeliveries">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="text-md font-semibold text-gray-900 mb-3">Driver Performance</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Active Drivers</span>
+                                <span class="text-sm font-medium" id="activeDrivers">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Avg Packages/Driver</span>
+                                <span class="text-sm font-medium" id="avgPackagesPerDriver">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Driver Efficiency</span>
+                                <span class="text-sm font-medium" id="driverEfficiency">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="text-md font-semibold text-gray-900 mb-3">Financial Summary</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Total Revenue</span>
+                                <span class="text-sm font-medium" id="totalRevenueDetailed">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Avg Revenue/Package</span>
+                                <span class="text-sm font-medium" id="avgRevenuePerPackage">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Growth Rate</span>
+                                <span class="text-sm font-medium" id="growthRate">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let analyticsData = {};
+
+        // Load initial analytics
+        document.addEventListener('DOMContentLoaded', function() {
+            setDefaultDateRange();
+            loadAnalytics();
+        });
+
+        // Set default date range
+        function setDefaultDateRange() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+        }
+
+        // Load analytics data
+        async function loadAnalytics() {
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                const response = await fetch(`/tracking-manager/api/analytics?startDate=${startDate}&endDate=${endDate}`);
+                analyticsData = await response.json();
+                
+                updateMetrics();
+                updateCharts();
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        // Update metrics
+        function updateMetrics() {
+            const dailyTrends = analyticsData.dailyTrends || {};
+            const statusDistribution = analyticsData.statusDistribution || {};
+            const serviceDistribution = analyticsData.serviceDistribution || {};
+            const revenueTrends = analyticsData.revenueTrends || {};
+
+            // Calculate totals
+            const totalPackages = Object.values(dailyTrends).reduce((sum, count) => sum + count, 0);
+            const deliveredPackages = statusDistribution.DELIVERED || 0;
+            const inTransitPackages = statusDistribution.IN_TRANSIT || 0;
+            const totalRevenue = Object.values(revenueTrends).reduce((sum, revenue) => sum + parseFloat(revenue || 0), 0);
+
+            document.getElementById('totalPackages').textContent = totalPackages;
+            document.getElementById('deliveredPackages').textContent = deliveredPackages;
+            document.getElementById('inTransitPackages').textContent = inTransitPackages;
+            document.getElementById('totalRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
+
+            // Calculate performance metrics
+            const deliveryRate = totalPackages > 0 ? (deliveredPackages / totalPackages * 100).toFixed(1) : 0;
+            const avgRevenuePerPackage = totalPackages > 0 ? (totalRevenue / totalPackages).toFixed(2) : 0;
+
+            document.getElementById('deliveryRate').textContent = `${deliveryRate}%`;
+            document.getElementById('avgRevenuePerPackage').textContent = `$${avgRevenuePerPackage}`;
+            document.getElementById('totalRevenueDetailed').textContent = `$${totalRevenue.toFixed(2)}`;
+            document.getElementById('failedDeliveries').textContent = statusDistribution.FAILED_DELIVERY || 0;
+            document.getElementById('avgDeliveryTime').textContent = '24 hours'; // This would be calculated from actual data
+        }
+
+        // Update charts
+        function updateCharts() {
+            updateTrendsChart();
+            updateServiceChart();
+            updateStatusChart();
+            updateRevenueChart();
+        }
+
+        // Update trends chart
+        function updateTrendsChart() {
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            const dailyTrends = analyticsData.dailyTrends || {};
+            
+            const labels = Object.keys(dailyTrends).sort();
+            const data = labels.map(date => dailyTrends[date]);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Packages',
+                        data: data,
+                        borderColor: 'rgb(14, 165, 233)',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update service chart
+        function updateServiceChart() {
+            const ctx = document.getElementById('serviceChart').getContext('2d');
+            const serviceDistribution = analyticsData.serviceDistribution || {};
+            
+            const labels = Object.keys(serviceDistribution);
+            const data = Object.values(serviceDistribution);
+            const colors = [
+                'rgba(14, 165, 233, 0.8)',
+                'rgba(34, 197, 94, 0.8)',
+                'rgba(251, 191, 36, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(147, 51, 234, 0.8)'
+            ];
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update status chart
+        function updateStatusChart() {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            const statusDistribution = analyticsData.statusDistribution || {};
+            
+            const labels = Object.keys(statusDistribution);
+            const data = Object.values(statusDistribution);
+            const colors = {
+                'PENDING': 'rgba(251, 191, 36, 0.8)',
+                'IN_TRANSIT': 'rgba(14, 165, 233, 0.8)',
+                'OUT_FOR_DELIVERY': 'rgba(147, 51, 234, 0.8)',
+                'DELIVERED': 'rgba(34, 197, 94, 0.8)',
+                'FAILED_DELIVERY': 'rgba(239, 68, 68, 0.8)',
+                'CANCELLED': 'rgba(107, 114, 128, 0.8)'
+            };
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Packages',
+                        data: data,
+                        backgroundColor: labels.map(label => colors[label] || 'rgba(107, 114, 128, 0.8)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update revenue chart
+        function updateRevenueChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            const revenueTrends = analyticsData.revenueTrends || {};
+            
+            const labels = Object.keys(revenueTrends).sort();
+            const data = labels.map(date => parseFloat(revenueTrends[date] || 0));
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: data,
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Export to PDF
+        function exportToPDF() {
+            alert('PDF export functionality would be implemented here');
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            alert('Excel export functionality would be implemented here');
+        }
+
+        // Handle period selection change
+        document.getElementById('periodSelect').addEventListener('change', function() {
+            const days = parseInt(this.value);
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+            
+            loadAnalytics();
+        });
+    </script>
+</body>
+</html>

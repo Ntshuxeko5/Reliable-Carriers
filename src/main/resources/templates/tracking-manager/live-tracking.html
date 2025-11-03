@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Live Tracking</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0284c7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Reliable Carriers Tracking">
+    <link rel="apple-touch-icon" href="/images/Reliable 1.png">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-map-marker-alt text-reliable-500 mr-2"></i>
+                        Tracking Manager
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Real-time indicator -->
+                    <div id="realTimeIndicator" class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                        <i class="fas fa-satellite-dish mr-1"></i>
+                        <span>Live</span>
+                    </div>
+                    
+                    <!-- Dark Mode Toggle -->
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="darkModeToggle" class="sr-only">
+                        <div class="relative">
+                            <div class="w-12 h-6 bg-gray-600 rounded-full shadow-inner"></div>
+                            <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300 ease-in-out"></div>
+                        </div>
+                        <span class="ml-2 text-gray-600">
+                            <i class="fas fa-moon"></i>
+                        </span>
+                    </label>
+                    
+                    <a href="/tracking-manager/dashboard" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
+                    </a>
+                    <a href="/tracking-manager/packages" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-box mr-1"></i> Packages
+                    </a>
+                    <a href="/tracking-manager/drivers" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-users mr-1"></i> Drivers
+                    </a>
+                    <a href="/tracking-manager/live-tracking" class="text-reliable-600 hover:text-reliable-800 font-medium">
+                        <i class="fas fa-map mr-1"></i> Live Tracking
+                    </a>
+                    <a href="/tracking-manager/analytics" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-chart-bar mr-1"></i> Analytics
+                    </a>
+                    <a href="/logout" class="text-red-600 hover:text-red-800 font-medium">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-80 bg-white shadow-lg overflow-y-auto">
+            <div class="p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-6">
+                    <i class="fas fa-map text-reliable-500 mr-2"></i>
+                    Live Tracking
+                </h4>
+                
+                <!-- Filters -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h6 class="text-sm font-medium text-gray-700 mb-3">Filters</h6>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Driver Status</label>
+                            <select id="statusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                                <option value="">All Drivers</option>
+                                <option value="online">Online Only</option>
+                                <option value="offline">Offline Only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Search Driver</label>
+                            <input type="text" id="driverSearch" placeholder="Driver name or vehicle..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                        </div>
+                        <button onclick="applyFilters()" class="w-full bg-reliable-600 text-white py-2 px-4 rounded-md text-sm hover:bg-reliable-700 focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                            <i class="fas fa-search mr-1"></i> Apply Filters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="space-y-4 mb-6">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-blue-700">Total Drivers</p>
+                                <p class="text-2xl font-bold text-blue-900" id="totalDrivers">0</p>
+                            </div>
+                            <i class="fas fa-users text-blue-500 text-xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-green-700">Online Drivers</p>
+                                <p class="text-2xl font-bold text-green-900" id="onlineDrivers">0</p>
+                            </div>
+                            <i class="fas fa-circle text-green-500 text-xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-red-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-red-700">Offline Drivers</p>
+                                <p class="text-2xl font-bold text-red-900" id="offlineDrivers">0</p>
+                            </div>
+                            <i class="fas fa-circle text-red-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="space-y-3">
+                    <button onclick="refreshData()" class="w-full bg-reliable-600 text-white py-3 px-4 rounded-lg hover:bg-reliable-700 focus:outline-none focus:ring-2 focus:ring-reliable-500 transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i> Refresh Data
+                    </button>
+                    <button onclick="toggleRealTime()" class="w-full bg-transparent border-2 border-reliable-600 text-reliable-600 hover:bg-reliable-600 hover:text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-reliable-500 transition-colors">
+                        <i class="fas fa-play mr-2"></i> <span id="realTimeText">Start Real-time</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 bg-gray-50">
+            <!-- Map Container -->
+            <div class="h-full relative">
+                <div id="map" class="w-full h-full"></div>
+                
+                <!-- Map Controls -->
+                <div class="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="centerMap()" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-md" title="Center Map">
+                            <i class="fas fa-crosshairs text-gray-600"></i>
+                        </button>
+                        <button onclick="toggleFullscreen()" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-md" title="Fullscreen">
+                            <i class="fas fa-expand text-gray-600"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Map Legend -->
+                <div class="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4">
+                    <h6 class="text-sm font-medium text-gray-700 mb-2">Legend</h6>
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-4 h-4 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-gray-600">Online Driver</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+                            <span class="text-sm text-gray-600">Offline Driver</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                            <span class="text-sm text-gray-600">Package Location</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Driver Details Modal -->
+    <div id="driverModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-md w-full">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900">Driver Details</h3>
+                        <button onclick="closeDriverModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="driverModalContent" class="p-6">
+                    <!-- Driver details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.2/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    
+    <script>
+        let map;
+        let markers = {};
+        let realTimeInterval;
+        let isRealTimeActive = false;
+        let allDrivers = [];
+        let filteredDrivers = [];
+        let stompClient;
+        let isConnected = false;
+        let selectedDriver = null;
+
+        // Initialize enhanced tracking manager
+        function initTrackingManager() {
+            initMap();
+            initWebSocket();
+            initDarkMode();
+            loadDriverData();
+            startRealTimeUpdates();
+        }
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([-26.2041, 28.0473], 10); // Johannesburg coordinates
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Add map controls
+            addMapControls();
+        }
+        
+        // Add map controls
+        function addMapControls() {
+            // Zoom controls
+            const zoomControl = L.control.zoom({
+                position: 'topright'
+            });
+            zoomControl.addTo(map);
+            
+            // Custom controls
+            const customControl = L.control({position: 'topleft'});
+            customControl.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'custom-control');
+                div.innerHTML = `
+                    <div class="bg-white p-2 rounded shadow-lg">
+                        <button onclick="centerMap()" class="block w-full mb-1 bg-blue-500 text-white px-2 py-1 rounded text-sm">Center</button>
+                        <button onclick="toggleTraffic()" class="block w-full mb-1 bg-green-500 text-white px-2 py-1 rounded text-sm">Traffic</button>
+                        <button onclick="toggleSatellite()" class="block w-full bg-purple-500 text-white px-2 py-1 rounded text-sm">Satellite</button>
+                    </div>
+                `;
+                return div;
+            };
+            customControl.addTo(map);
+        }
+        
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('Tracking Manager WebSocket connected: ' + frame);
+                isConnected = true;
+                updateRealTimeIndicator(true);
+                
+                // Subscribe to driver location updates
+                stompClient.subscribe('/topic/tracking-manager/driver-locations', function(message) {
+                    const update = JSON.parse(message.body);
+                    handleDriverLocationUpdate(update);
+                });
+                
+            }, function(error) {
+                console.error('Tracking Manager WebSocket connection error: ' + error);
+                isConnected = false;
+                updateRealTimeIndicator(false);
+                
+                // Retry connection after 5 seconds
+                setTimeout(initWebSocket, 5000);
+            });
+        }
+        
+        // Handle driver location updates
+        function handleDriverLocationUpdate(update) {
+            if (update.type === 'location_update') {
+                // Update driver marker
+                const marker = markers[update.driverId];
+                if (marker) {
+                    marker.setLatLng([update.latitude, update.longitude]);
+                    
+                    // Update popup content
+                    marker.setPopupContent(`
+                        <div class="p-2">
+                            <h4 class="font-semibold">${update.driverName}</h4>
+                            <p class="text-sm text-gray-600">Status: ${update.status}</p>
+                            <p class="text-sm text-gray-600">Speed: ${update.speed || 'N/A'} km/h</p>
+                            <p class="text-sm text-gray-600">Last Update: ${new Date().toLocaleTimeString()}</p>
+                        </div>
+                    `);
+                }
+                
+                // Update driver list
+                updateDriverInList(update);
+            }
+        }
+        
+        // Update real-time indicator
+        function updateRealTimeIndicator(isOnline = true) {
+            const indicator = document.getElementById('realTimeIndicator');
+            if (indicator) {
+                if (isOnline) {
+                    indicator.className = 'bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center';
+                    indicator.innerHTML = '<i class="fas fa-satellite-dish mr-1"></i><span>Live</span>';
+                } else {
+                    indicator.className = 'bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center';
+                    indicator.innerHTML = '<i class="fas fa-wifi mr-1"></i><span>Offline</span>';
+                }
+            }
+        }
+        
+        // Dark Mode Toggle
+        function initDarkMode() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const body = document.body;
+            const toggleSlider = document.querySelector('#darkModeToggle + div > div:last-child');
+            
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            if (currentTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (darkModeToggle) darkModeToggle.checked = true;
+                if (toggleSlider) {
+                    toggleSlider.style.transform = 'translateX(1.5rem)';
+                    toggleSlider.style.backgroundColor = '#3b82f6';
+                }
+            }
+            
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener('change', function() {
+                    if (this.checked) {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('theme', 'dark');
+                        if (toggleSlider) {
+                            toggleSlider.style.transform = 'translateX(1.5rem)';
+                            toggleSlider.style.backgroundColor = '#3b82f6';
+                        }
+                    } else {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('theme', 'light');
+                        if (toggleSlider) {
+                            toggleSlider.style.transform = 'translateX(0)';
+                            toggleSlider.style.backgroundColor = '#ffffff';
+                        }
+                    }
+                });
+            }
+        }
+
+        // Load tracking data
+        async function loadTrackingData() {
+            try {
+                const response = await fetch('/tracking-manager/api/live-tracking');
+                const data = await response.json();
+                
+                allDrivers = data.allDrivers || [];
+                updateStatistics(data.statistics);
+                applyFilters();
+                
+            } catch (error) {
+                console.error('Error loading tracking data:', error);
+            }
+        }
+
+        // Update statistics
+        function updateStatistics(stats) {
+            document.getElementById('totalDrivers').textContent = stats.totalDrivers || 0;
+            document.getElementById('onlineDrivers').textContent = stats.onlineDrivers || 0;
+            document.getElementById('offlineDrivers').textContent = stats.offlineDrivers || 0;
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const driverSearch = document.getElementById('driverSearch').value.toLowerCase();
+            
+            filteredDrivers = allDrivers.filter(driver => {
+                const statusMatch = !statusFilter || 
+                    (statusFilter === 'online' && driver.isOnline) ||
+                    (statusFilter === 'offline' && !driver.isOnline);
+                
+                const searchMatch = !driverSearch || 
+                    driver.name.toLowerCase().includes(driverSearch) ||
+                    (driver.vehicle && driver.vehicle.plate.toLowerCase().includes(driverSearch));
+                
+                return statusMatch && searchMatch;
+            });
+            
+            updateMapMarkers();
+        }
+
+        // Update map markers
+        function updateMapMarkers() {
+            // Clear existing markers
+            Object.values(markers).forEach(marker => map.removeLayer(marker));
+            markers = {};
+            
+            filteredDrivers.forEach(driver => {
+                if (driver.latitude && driver.longitude) {
+                    const markerColor = driver.isOnline ? 'green' : 'red';
+                    const icon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div class="w-6 h-6 bg-${markerColor}-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+                                  <i class="fas fa-user text-white text-xs"></i>
+                               </div>`,
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    });
+                    
+                    const marker = L.marker([driver.latitude, driver.longitude], { icon })
+                        .bindPopup(`
+                            <div class="p-2">
+                                <h6 class="font-semibold text-gray-900">${driver.name}</h6>
+                                <p class="text-sm text-gray-600">${driver.email}</p>
+                                <p class="text-sm text-gray-600">Vehicle: ${driver.vehicle ? driver.vehicle.make + ' ' + driver.vehicle.model : 'N/A'}</p>
+                                <p class="text-sm text-gray-600">Status: <span class="${driver.isOnline ? 'text-green-600' : 'text-red-600'}">${driver.isOnline ? 'Online' : 'Offline'}</span></p>
+                                <p class="text-sm text-gray-600">Packages: ${driver.assignedPackages || 0}</p>
+                                <p class="text-sm text-gray-600">Last Update: ${driver.lastUpdate || 'N/A'}</p>
+                                <button onclick="showDriverDetails(${driver.id})" class="mt-2 w-full bg-reliable-600 text-white py-1 px-3 rounded text-sm hover:bg-reliable-700">
+                                    View Details
+                                </button>
+                            </div>
+                        `)
+                        .addTo(map);
+                    
+                    markers[driver.id] = marker;
+                }
+            });
+            
+            // Fit map to show all markers
+            if (filteredDrivers.length > 0) {
+                const group = new L.featureGroup(Object.values(markers));
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        // Show driver details
+        function showDriverDetails(driverId) {
+            const driver = filteredDrivers.find(d => d.id === driverId);
+            if (!driver) return;
+            
+            const modalContent = document.getElementById('driverModalContent');
+            modalContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gray-300 rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-user text-gray-600 text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-semibold text-gray-900">${driver.name}</h4>
+                        <p class="text-sm text-gray-600">${driver.email}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Status</label>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${driver.isOnline ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                <i class="fas fa-circle mr-1 ${driver.isOnline ? 'text-green-400' : 'text-red-400'}"></i>
+                                ${driver.isOnline ? 'Online' : 'Offline'}
+                            </span>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Phone</label>
+                            <p class="text-sm text-gray-900">${driver.phone || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Assigned Packages</label>
+                            <p class="text-sm text-gray-900">${driver.assignedPackages || 0}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Last Update</label>
+                            <p class="text-sm text-gray-900">${driver.lastUpdate || 'N/A'}</p>
+                        </div>
+                    </div>
+                    
+                    ${driver.vehicle ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Information</label>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <p class="text-sm text-gray-900"><strong>Make:</strong> ${driver.vehicle.make}</p>
+                                <p class="text-sm text-gray-900"><strong>Model:</strong> ${driver.vehicle.model}</p>
+                                <p class="text-sm text-gray-900"><strong>Plate:</strong> ${driver.vehicle.plate}</p>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex space-x-3">
+                        <button onclick="viewDriverPackages(${driver.id})" class="flex-1 bg-reliable-600 text-white py-2 px-4 rounded-md hover:bg-reliable-700 focus:outline-none focus:ring-2 focus:ring-reliable-500">
+                            <i class="fas fa-box mr-2"></i> View Packages
+                        </button>
+                        <button onclick="centerOnDriver(${driver.id})" class="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            <i class="fas fa-map-marker-alt mr-2"></i> Center Map
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('driverModal').classList.remove('hidden');
+        }
+
+        // Close driver modal
+        function closeDriverModal() {
+            document.getElementById('driverModal').classList.add('hidden');
+        }
+
+        // View driver packages
+        function viewDriverPackages(driverId) {
+            window.location.href = `/tracking-manager/packages?driverId=${driverId}`;
+        }
+
+        // Center map on driver
+        function centerOnDriver(driverId) {
+            const driver = filteredDrivers.find(d => d.id === driverId);
+            if (driver && driver.latitude && driver.longitude) {
+                map.setView([driver.latitude, driver.longitude], 15);
+                markers[driverId].openPopup();
+            }
+            closeDriverModal();
+        }
+
+        // Center map
+        function centerMap() {
+            if (filteredDrivers.length > 0) {
+                const group = new L.featureGroup(Object.values(markers));
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Refresh data
+        function refreshData() {
+            loadTrackingData();
+        }
+
+        // Toggle real-time updates
+        function toggleRealTime() {
+            if (isRealTimeActive) {
+                clearInterval(realTimeInterval);
+                document.getElementById('realTimeText').textContent = 'Start Real-time';
+                isRealTimeActive = false;
+            } else {
+                realTimeInterval = setInterval(loadTrackingData, 30000); // Update every 30 seconds
+                document.getElementById('realTimeText').textContent = 'Stop Real-time';
+                isRealTimeActive = true;
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initTrackingManager();
+        });
+    </script>
+</body>
+</html>

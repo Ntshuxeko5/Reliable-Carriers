@@ -1,85 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Help Center - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         'brand': {
-                            50: '#fefce8',
-                            100: '#fef9c3',
-                            200: '#fef08a',
-                            300: '#fde047',
-                            400: '#facc15',
-                            500: '#dbb714',
-                            600: '#ca8a04',
-                            700: '#a16207',
-                            800: '#854d0e',
-                            900: '#713f12',
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#dbb714', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
                         },
                         'brand-blue': {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#071c91',
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+                            800: '#1e40af', 900: '#071c91',
                         }
                     }
                 }
             }
         }
     </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .hover-lift {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #fde047, #facc15);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
-
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header sticky top-0 z-50">
+    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
-                            <rect x="4" y="20" width="40" height="20" rx="2" />
-                            <rect x="44" y="28" width="12" height="8" rx="1" />
-                            <circle cx="18" cy="44" r="4" fill="white" />
-                            <circle cx="46" cy="44" r="4" fill="white" />
-                        </svg>
-                    </span>
-                    <span>Reliable Carriers</span>
+                <a href="/customer/dashboard" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
+                    <img src="/images/Reliable 1.png" alt="Reliable Carriers Logo" style="height:50px; width:auto;">
                 </a>
                 <div class="hidden md:flex space-x-8">
                     <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
@@ -94,14 +54,11 @@
                     <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-boxes mr-2"></i>My Packages
                     </a>
-                    <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
-                    <a href="/customer/help" class="text-brand-300 hover:text-reliable-yellow-200 transition-colors duration-300 font-medium flex items-center">
+                    <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center bg-brand-blue-700 px-4 py-2 rounded-lg">
                         <i class="fas fa-question-circle mr-2"></i>Help
                     </a>
-                    <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-envelope mr-2"></i>Contact
+                    <a href="/logout" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
                     </a>
                 </div>
                 <!-- Mobile menu button -->
@@ -109,7 +66,8 @@
                     <i class="fas fa-bars text-xl"></i>
                 </button>
             </div>
-            <!-- Mobile menu -->
+
+            <!-- Mobile Menu -->
             <div class="md:hidden hidden" id="mobileMenu">
                 <div class="py-4 space-y-4">
                     <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
@@ -124,14 +82,11 @@
                     <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-boxes mr-2"></i>My Packages
                     </a>
-                    <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
-                    <a href="/customer/help" class="block text-brand-300 hover:text-reliable-yellow-200 transition-colors duration-300 font-medium flex items-center">
+                    <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center bg-brand-blue-700 px-4 py-2 rounded-lg">
                         <i class="fas fa-question-circle mr-2"></i>Help
                     </a>
-                    <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-envelope mr-2"></i>Contact
+                    <a href="/logout" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
                     </a>
                 </div>
             </div>
@@ -139,58 +94,211 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="glass-effect rounded-3xl p-8 hover-lift">
-            <div class="text-center mb-8">
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                    <i class="fas fa-question-circle mr-3 gradient-text"></i>Help Center
-                </h1>
-                <p class="text-xl text-gray-700">How can we help you today?</p>
-            </div>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-question-circle mr-3 gradient-text"></i>Help Center
+            </h1>
+            <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                Find answers to common questions and get the support you need
+            </p>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <a href="/customer/track" class="group">
-                    <div class="glass-effect rounded-2xl p-6 hover-lift cursor-pointer">
-                        <div class="text-4xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
-                            <i class="fas fa-search"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">Track a Package</h3>
-                        <p class="text-gray-700">Find your package using its tracking number</p>
-                    </div>
-                </a>
-                <a href="/customer/quote" class="group">
-                    <div class="glass-effect rounded-2xl p-6 hover-lift cursor-pointer">
-                        <div class="text-4xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
-                            <i class="fas fa-calculator"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">Create a Quote</h3>
-                        <p class="text-gray-700">Get instant shipping quotes for your packages</p>
-                    </div>
-                </a>
-                <a href="/customer/packages" class="group">
-                    <div class="glass-effect rounded-2xl p-6 hover-lift cursor-pointer">
-                        <div class="text-4xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
-                            <i class="fas fa-boxes"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">View Packages by Email</h3>
-                        <p class="text-gray-700">See all your packages using your email address</p>
-                    </div>
-                </a>
-                <a href="/customer/contact" class="group">
-                    <div class="glass-effect rounded-2xl p-6 hover-lift cursor-pointer">
-                        <div class="text-4xl mb-4 text-brand-400 group-hover:text-brand-300 transition-colors duration-300">
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">Contact Support</h3>
-                        <p class="text-gray-700">Get in touch with our support team</p>
-                    </div>
-                </a>
+            <!-- Search Bar -->
+            <div class="max-w-2xl mx-auto">
+                <div class="relative">
+                    <input type="text" placeholder="Search for help..." 
+                           class="w-full px-6 py-4 pr-12 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg">
+                    <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-search text-xl"></i>
+                    </button>
+                </div>
             </div>
-            
-            <div class="text-center mt-8">
-                <a href="/customer/dashboard" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto w-fit">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
-                </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Quick Help Categories -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- FAQ Section -->
+                <div class="glass-effect rounded-2xl p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                        <i class="fas fa-question-circle mr-3 text-blue-600"></i>Frequently Asked Questions
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="border border-gray-200 rounded-lg">
+                            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50" onclick="toggleFAQ(this)">
+                                <span class="font-semibold text-gray-900">How do I track my package?</span>
+                                <i class="fas fa-chevron-down transform transition-transform"></i>
+                            </button>
+                            <div class="px-6 pb-4 text-gray-600 hidden">
+                                <p>You can track your package by entering your tracking number in the search bar on our homepage or by visiting the "Track Package" page. You'll receive real-time updates about your package's location and status.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded-lg">
+                            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50" onclick="toggleFAQ(this)">
+                                <span class="font-semibold text-gray-900">What are your delivery times?</span>
+                                <i class="fas fa-chevron-down transform transition-transform"></i>
+                            </button>
+                            <div class="px-6 pb-4 text-gray-600 hidden">
+                                <p>We offer three delivery options: Express (1-2 days), Standard (2-3 days), and Economy (4-7 days). Delivery times may vary based on distance and package size.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded-lg">
+                            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50" onclick="toggleFAQ(this)">
+                                <span class="font-semibold text-gray-900">How do I get a shipping quote?</span>
+                                <i class="fas fa-chevron-down transform transition-transform"></i>
+                            </button>
+                            <div class="px-6 pb-4 text-gray-600 hidden">
+                                <p>Use our instant quote calculator by entering your package details including dimensions, weight, pickup and delivery addresses. You'll get an immediate price estimate for all our services.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded-lg">
+                            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50" onclick="toggleFAQ(this)">
+                                <span class="font-semibold text-gray-900">What if my package is damaged?</span>
+                                <i class="fas fa-chevron-down transform transition-transform"></i>
+                            </button>
+                            <div class="px-6 pb-4 text-gray-600 hidden">
+                                <p>If your package arrives damaged, please contact our customer service immediately. We have insurance coverage and will work with you to resolve the issue quickly.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded-lg">
+                            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50" onclick="toggleFAQ(this)">
+                                <span class="font-semibold text-gray-900">Can I change my delivery address?</span>
+                                <i class="fas fa-chevron-down transform transition-transform"></i>
+                            </button>
+                            <div class="px-6 pb-4 text-gray-600 hidden">
+                                <p>Yes, you can change your delivery address by contacting our customer service team. Changes may incur additional fees depending on the timing and distance.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Support -->
+                <div class="glass-effect rounded-2xl p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                        <i class="fas fa-headset mr-3 text-green-600"></i>Contact Support
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="text-center p-6 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-phone text-3xl text-blue-600 mb-4"></i>
+                            <h3 class="font-semibold text-gray-900 mb-2">Phone Support</h3>
+                            <p class="text-gray-600 mb-4">Speak with our support team</p>
+                            <p class="text-lg font-bold text-blue-600">+27 11 123 4567</p>
+                            <p class="text-sm text-gray-500">Mon-Fri: 8AM-6PM</p>
+                        </div>
+                        <div class="text-center p-6 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-envelope text-3xl text-green-600 mb-4"></i>
+                            <h3 class="font-semibold text-gray-900 mb-2">Email Support</h3>
+                            <p class="text-gray-600 mb-4">Send us a message</p>
+                            <p class="text-lg font-bold text-green-600">support@reliablecarriers.com</p>
+                            <p class="text-sm text-gray-500">Response within 24 hours</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Quick Actions -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <a href="/customer/track" class="flex items-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                            <i class="fas fa-search text-blue-600 mr-3"></i>
+                            <span class="text-gray-900">Track Package</span>
+                        </a>
+                        <a href="/customer/quote" class="flex items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                            <i class="fas fa-calculator text-green-600 mr-3"></i>
+                            <span class="text-gray-900">Get Quote</span>
+                        </a>
+                        <a href="/customer/packages" class="flex items-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                            <i class="fas fa-boxes text-purple-600 mr-3"></i>
+                            <span class="text-gray-900">My Packages</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Documentation Section -->
+                <div class="glass-effect rounded-2xl p-6 bg-gradient-to-br from-blue-50 to-purple-50">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-book-open text-blue-600 mr-2"></i>Documentation
+                    </h3>
+                    <div class="space-y-3">
+                        <a href="/docs/customer-manual" target="_blank" class="block p-3 bg-white rounded-lg hover:shadow-md transition-all border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 text-sm">Customer Manual</h4>
+                                    <p class="text-xs text-gray-600 mt-1">Complete guide</p>
+                                </div>
+                                <i class="fas fa-external-link-alt text-blue-600"></i>
+                            </div>
+                        </a>
+                        <a href="/docs/quick-start" target="_blank" class="block p-3 bg-white rounded-lg hover:shadow-md transition-all border border-green-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 text-sm">Quick Start</h4>
+                                    <p class="text-xs text-gray-600 mt-1">Get started fast</p>
+                                </div>
+                                <i class="fas fa-external-link-alt text-green-600"></i>
+                            </div>
+                        </a>
+                        <a href="/help-center" class="block p-3 bg-white rounded-lg hover:shadow-md transition-all border border-purple-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 text-sm">All Docs</h4>
+                                    <p class="text-xs text-gray-600 mt-1">View all guides</p>
+                                </div>
+                                <i class="fas fa-arrow-right text-purple-600"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Live Chat -->
+                <div class="glass-effect rounded-2xl p-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                    <h3 class="text-xl font-bold mb-4">
+                        <i class="fas fa-comments mr-2"></i>Live Chat
+                    </h3>
+                    <p class="text-blue-100 mb-4">Get instant help from our support team</p>
+                    <button class="w-full bg-white text-blue-600 py-3 px-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
+                        <i class="fas fa-comment-dots mr-2"></i>Start Chat
+                    </button>
+                    <p class="text-xs text-blue-200 mt-2">Available 24/7</p>
+                </div>
+
+                <!-- Documentation Links -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-book text-blue-600 mr-2"></i>User Manuals
+                    </h3>
+                    <div class="space-y-3">
+                        <a href="/docs/customer-manual" target="_blank" class="block p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                            <h4 class="font-semibold text-gray-900 flex items-center">
+                                <i class="fas fa-user text-blue-600 mr-2"></i>Customer Manual
+                            </h4>
+                            <p class="text-sm text-gray-600 mt-1">Complete guide for customers</p>
+                            <span class="text-xs text-blue-600 mt-1 inline-block">View Full Guide <i class="fas fa-external-link-alt ml-1"></i></span>
+                        </a>
+                        <a href="/docs/quick-start" target="_blank" class="block p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                            <h4 class="font-semibold text-gray-900 flex items-center">
+                                <i class="fas fa-rocket text-green-600 mr-2"></i>Quick Start Guide
+                            </h4>
+                            <p class="text-sm text-gray-600 mt-1">Get started in minutes</p>
+                            <span class="text-xs text-green-600 mt-1 inline-block">View Guide <i class="fas fa-external-link-alt ml-1"></i></span>
+                        </a>
+                        <a href="/help-center" class="block p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                            <h4 class="font-semibold text-gray-900 flex items-center">
+                                <i class="fas fa-question-circle text-purple-600 mr-2"></i>All Documentation
+                            </h4>
+                            <p class="text-sm text-gray-600 mt-1">Browse all help resources</p>
+                            <span class="text-xs text-purple-600 mt-1 inline-block">View All <i class="fas fa-arrow-right ml-1"></i></span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -216,9 +324,9 @@
                     <h4 class="font-bold mb-4">Services</h4>
                     <ul class="space-y-2 text-gray-300">
                         <li><a href="#" class="hover:text-brand-400 transition-colors">Express Delivery</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">National Shipping</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Moving Services</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Load Transport</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Standard Delivery</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Economy Delivery</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">International</a></li>
                     </ul>
                 </div>
                 <div>
@@ -242,8 +350,20 @@
             const mobileMenu = document.getElementById('mobileMenu');
             mobileMenu.classList.toggle('hidden');
         });
+
+        // FAQ toggle functionality
+        function toggleFAQ(button) {
+            const content = button.nextElementSibling;
+            const icon = button.querySelector('i');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
     </script>
 </body>
 </html>
-
-

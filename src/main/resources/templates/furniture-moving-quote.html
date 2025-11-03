@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Furniture Moving Quote - Reliable Carriers</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initAutocomplete'" async defer></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .furniture-item {
+            transition: all 0.3s ease;
+        }
+        .furniture-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .room-section {
+            border-left: 4px solid #667eea;
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+        }
+        .step-indicator {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-reliable-blue-800 to-reliable-blue-900 text-white shadow-lg nav-header">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                    <!-- Company Logo -->
+                    <img src="/images/Reliable 1.png" alt="Reliable Carriers" style="height:50px; width:auto; ">
+                </a>
+                <ul class="hidden md:flex space-x-8">
+                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/quote" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
+                    <li><a href="/furniture-moving-quote" class="text-reliable-yellow-300 hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Furniture Moving</a></li>
+                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li class="auth-required hidden"><a href="/customer/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/customer/analytics" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Analytics</a></li>
+                    <li class="auth-required hidden"><a href="/customer/quote" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Quote</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                </ul>
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300" id="mobileMenuBtn">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            <!-- Mobile menu -->
+            <div class="md:hidden hidden" id="mobileMenu">
+                <ul class="py-4 space-y-4">
+                    <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
+                    <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/quote" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
+                    <li><a href="/furniture-moving-quote" class="block text-reliable-yellow-300 hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Furniture Moving</a></li>
+                    <li><a href="/about" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li class="auth-required hidden"><a href="/customer/dashboard" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/customer/analytics" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Analytics</a></li>
+                    <li class="auth-required hidden"><a href="/customer/quote" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtnMobile" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-4">
+                <i class="fas fa-home mr-3"></i>Furniture Moving Quote
+            </h1>
+            <p class="text-xl text-white opacity-90">
+                Get an accurate quote for your furniture moving needs
+            </p>
+        </div>
+
+        <!-- Quote Form -->
+        <div class="max-w-6xl mx-auto">
+            <form id="furnitureQuoteForm" class="glass-effect rounded-2xl shadow-2xl p-8">
+                <!-- Progress Indicator -->
+                <div class="flex justify-between items-center mb-8">
+                    <div class="flex items-center">
+                        <div class="step-indicator">1</div>
+                        <span class="ml-2 text-sm font-medium">Contact Info</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-200 mx-4 rounded">
+                        <div class="h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded" style="width: 25%"></div>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="step-indicator bg-gray-300">2</div>
+                        <span class="ml-2 text-sm font-medium text-gray-500">Locations</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-200 mx-4 rounded"></div>
+                    <div class="flex items-center">
+                        <div class="step-indicator bg-gray-300">3</div>
+                        <span class="ml-2 text-sm font-medium text-gray-500">Inventory</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-200 mx-4 rounded"></div>
+                    <div class="flex items-center">
+                        <div class="step-indicator bg-gray-300">4</div>
+                        <span class="ml-2 text-sm font-medium text-gray-500">Details</span>
+                    </div>
+                </div>
+
+                <!-- Step 1: Contact Information -->
+                <div id="step1" class="step-content">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-user mr-3 text-blue-600"></i>Contact Information
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                            <input type="text" id="customerName" name="customerName" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                            <input type="tel" id="customerPhone" name="customerPhone" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                            <input type="email" id="customerEmail" name="customerEmail" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    <div class="flex justify-end mt-6">
+                        <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300">
+                            Next Step <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Locations -->
+                <div id="step2" class="step-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-map-marker-alt mr-3 text-blue-600"></i>Moving Locations
+                    </h2>
+                    
+                    <!-- Pickup Location -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-home mr-2 text-green-600"></i>Pickup Location
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Pickup Address *</label>
+                                <input type="text" id="pickupAddress" name="pickupAddress" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Start typing your address...">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+                                <select id="pickupPropertyType" name="pickupPropertyType" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select property type</option>
+                                    <option value="apartment">Apartment</option>
+                                    <option value="house">House</option>
+                                    <option value="townhouse">Townhouse</option>
+                                    <option value="condo">Condominium</option>
+                                    <option value="office">Office</option>
+                                    <option value="storage">Storage Unit</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Floor Level</label>
+                                <select id="pickupFloor" name="pickupFloor"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select floor</option>
+                                    <option value="ground">Ground Floor</option>
+                                    <option value="1">1st Floor</option>
+                                    <option value="2">2nd Floor</option>
+                                    <option value="3">3rd Floor</option>
+                                    <option value="4">4th Floor</option>
+                                    <option value="5">5th Floor</option>
+                                    <option value="6+">6th Floor or Higher</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Elevator Available?</label>
+                                <select id="pickupElevator" name="pickupElevator"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select option</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                    <option value="freight">Freight Elevator</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Parking Distance</label>
+                                <select id="pickupParking" name="pickupParking"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select distance</option>
+                                    <option value="close">Close to entrance (0-15m)</option>
+                                    <option value="medium">Medium distance (15-50m)</option>
+                                    <option value="far">Far from entrance (50m+)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Location -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-flag-checkered mr-2 text-red-600"></i>Delivery Location
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Address *</label>
+                                <input type="text" id="deliveryAddress" name="deliveryAddress" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Start typing your address...">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+                                <select id="deliveryPropertyType" name="deliveryPropertyType" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select property type</option>
+                                    <option value="apartment">Apartment</option>
+                                    <option value="house">House</option>
+                                    <option value="townhouse">Townhouse</option>
+                                    <option value="condo">Condominium</option>
+                                    <option value="office">Office</option>
+                                    <option value="storage">Storage Unit</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Floor Level</label>
+                                <select id="deliveryFloor" name="deliveryFloor"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select floor</option>
+                                    <option value="ground">Ground Floor</option>
+                                    <option value="1">1st Floor</option>
+                                    <option value="2">2nd Floor</option>
+                                    <option value="3">3rd Floor</option>
+                                    <option value="4">4th Floor</option>
+                                    <option value="5">5th Floor</option>
+                                    <option value="6+">6th Floor or Higher</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Elevator Available?</label>
+                                <select id="deliveryElevator" name="deliveryElevator"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select option</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                    <option value="freight">Freight Elevator</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Parking Distance</label>
+                                <select id="deliveryParking" name="deliveryParking"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select distance</option>
+                                    <option value="close">Close to entrance (0-15m)</option>
+                                    <option value="medium">Medium distance (15-50m)</option>
+                                    <option value="far">Far from entrance (50m+)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between mt-6">
+                        <button type="button" onclick="prevStep()" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition duration-300">
+                            <i class="fas fa-arrow-left mr-2"></i>Previous
+                        </button>
+                        <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300">
+                            Next Step <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Furniture Inventory -->
+                <div id="step3" class="step-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-couch mr-3 text-blue-600"></i>Furniture Inventory
+                    </h2>
+                    
+                    <!-- Living Room -->
+                    <div class="room-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-tv mr-2 text-purple-600"></i>Living Room
+                        </h3>
+                        <div class="grid md:grid-cols-3 gap-4 mb-6">
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Sofa (3-seater)</span>
+                                    <input type="number" name="sofa_3seat" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Sofa (2-seater)</span>
+                                    <input type="number" name="sofa_2seat" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Armchair</span>
+                                    <input type="number" name="armchair" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Coffee Table</span>
+                                    <input type="number" name="coffee_table" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">TV Stand</span>
+                                    <input type="number" name="tv_stand" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Bookshelf</span>
+                                    <input type="number" name="bookshelf" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bedroom -->
+                    <div class="room-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-bed mr-2 text-blue-600"></i>Bedroom
+                        </h3>
+                        <div class="grid md:grid-cols-3 gap-4 mb-6">
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">King Bed</span>
+                                    <input type="number" name="king_bed" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Queen Bed</span>
+                                    <input type="number" name="queen_bed" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Single Bed</span>
+                                    <input type="number" name="single_bed" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Mattress (King)</span>
+                                    <input type="number" name="mattress_king" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Mattress (Queen)</span>
+                                    <input type="number" name="mattress_queen" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Mattress (Single)</span>
+                                    <input type="number" name="mattress_single" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Wardrobe</span>
+                                    <input type="number" name="wardrobe" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Dresser</span>
+                                    <input type="number" name="dresser" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Nightstand</span>
+                                    <input type="number" name="nightstand" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dining Room -->
+                    <div class="room-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-utensils mr-2 text-green-600"></i>Dining Room
+                        </h3>
+                        <div class="grid md:grid-cols-3 gap-4 mb-6">
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Dining Table</span>
+                                    <input type="number" name="dining_table" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Dining Chairs</span>
+                                    <input type="number" name="dining_chairs" min="0" max="20" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">China Cabinet</span>
+                                    <input type="number" name="china_cabinet" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kitchen -->
+                    <div class="room-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-blender mr-2 text-orange-600"></i>Kitchen & Appliances
+                        </h3>
+                        <div class="grid md:grid-cols-3 gap-4 mb-6">
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Refrigerator</span>
+                                    <input type="number" name="refrigerator" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Washing Machine</span>
+                                    <input type="number" name="washing_machine" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Dryer</span>
+                                    <input type="number" name="dryer" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Dishwasher</span>
+                                    <input type="number" name="dishwasher" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Microwave</span>
+                                    <input type="number" name="microwave" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Office -->
+                    <div class="room-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-laptop mr-2 text-indigo-600"></i>Office
+                        </h3>
+                        <div class="grid md:grid-cols-3 gap-4 mb-6">
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Desk</span>
+                                    <input type="number" name="desk" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Office Chair</span>
+                                    <input type="number" name="office_chair" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Filing Cabinet</span>
+                                    <input type="number" name="filing_cabinet" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Miscellaneous -->
+                    <div class="room-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-boxes mr-2 text-gray-600"></i>Miscellaneous
+                        </h3>
+                        <div class="grid md:grid-cols-3 gap-4 mb-6">
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Boxes (Small)</span>
+                                    <input type="number" name="boxes_small" min="0" max="50" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Boxes (Medium)</span>
+                                    <input type="number" name="boxes_medium" min="0" max="50" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Boxes (Large)</span>
+                                    <input type="number" name="boxes_large" min="0" max="50" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Piano</span>
+                                    <input type="number" name="piano" min="0" max="5" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Safe</span>
+                                    <input type="number" name="safe" min="0" max="5" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                            <div class="furniture-item bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Exercise Equipment</span>
+                                    <input type="number" name="exercise_equipment" min="0" max="10" value="0" class="quantity-input border rounded px-2 py-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between mt-6">
+                        <button type="button" onclick="prevStep()" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition duration-300">
+                            <i class="fas fa-arrow-left mr-2"></i>Previous
+                        </button>
+                        <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300">
+                            Next Step <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Additional Details -->
+                <div id="step4" class="step-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-clipboard-list mr-3 text-blue-600"></i>Additional Details
+                    </h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Moving Date *</label>
+                            <input type="date" id="movingDate" name="movingDate" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Time</label>
+                            <select id="movingTime" name="movingTime"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Select time preference</option>
+                                <option value="morning">Morning (8AM - 12PM)</option>
+                                <option value="afternoon">Afternoon (12PM - 5PM)</option>
+                                <option value="flexible">Flexible</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Services Needed -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Services Needed</h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" name="services[]" value="packing" class="mr-3">
+                                <div>
+                                    <div class="font-medium">Packing Service</div>
+                                    <div class="text-sm text-gray-600">Professional packing of your items</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" name="services[]" value="unpacking" class="mr-3">
+                                <div>
+                                    <div class="font-medium">Unpacking Service</div>
+                                    <div class="text-sm text-gray-600">Unpacking at your new location</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" name="services[]" value="assembly" class="mr-3">
+                                <div>
+                                    <div class="font-medium">Furniture Assembly</div>
+                                    <div class="text-sm text-gray-600">Disassembly and reassembly of furniture</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" name="services[]" value="storage" class="mr-3">
+                                <div>
+                                    <div class="font-medium">Temporary Storage</div>
+                                    <div class="text-sm text-gray-600">Short-term storage solution</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Special Instructions -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Special Instructions or Fragile Items</label>
+                        <textarea id="specialInstructions" name="specialInstructions" rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Please describe any fragile items, special handling requirements, or additional instructions..."></textarea>
+                    </div>
+
+                    <!-- Insurance -->
+                    <div class="mb-6">
+                        <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="checkbox" id="insurance" name="insurance" class="mr-3">
+                            <div>
+                                <div class="font-medium">Add Moving Insurance</div>
+                                <div class="text-sm text-gray-600">Protect your belongings with comprehensive coverage</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="flex justify-between mt-6">
+                        <button type="button" onclick="prevStep()" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition duration-300">
+                            <i class="fas fa-arrow-left mr-2"></i>Previous
+                        </button>
+                        <button type="submit" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition duration-300">
+                            <i class="fas fa-calculator mr-2"></i>Get Quote
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hidden fields for coordinates -->
+                <input type="hidden" id="pickupLatitude" name="pickupLatitude">
+                <input type="hidden" id="pickupLongitude" name="pickupLongitude">
+                <input type="hidden" id="pickupPlaceId" name="pickupPlaceId">
+                <input type="hidden" id="deliveryLatitude" name="deliveryLatitude">
+                <input type="hidden" id="deliveryLongitude" name="deliveryLongitude">
+                <input type="hidden" id="deliveryPlaceId" name="deliveryPlaceId">
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-lg font-medium">Calculating your moving quote...</p>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        let pickupAutocomplete, deliveryAutocomplete;
+        let pickupCoordinates = null;
+        let deliveryCoordinates = null;
+
+        // Initialize Google Maps Autocomplete
+        function initAutocomplete() {
+            const options = {
+                componentRestrictions: { country: 'za' },
+                fields: ['place_id', 'geometry', 'name', 'formatted_address']
+            };
+
+            pickupAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('pickupAddress'), options
+            );
+            deliveryAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('deliveryAddress'), options
+            );
+
+            pickupAutocomplete.addListener('place_changed', function() {
+                const place = pickupAutocomplete.getPlace();
+                if (place.geometry) {
+                    pickupCoordinates = {
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
+                        placeId: place.place_id,
+                        address: place.formatted_address
+                    };
+                    document.getElementById('pickupLatitude').value = pickupCoordinates.lat;
+                    document.getElementById('pickupLongitude').value = pickupCoordinates.lng;
+                    document.getElementById('pickupPlaceId').value = pickupCoordinates.placeId;
+                }
+            });
+
+            deliveryAutocomplete.addListener('place_changed', function() {
+                const place = deliveryAutocomplete.getPlace();
+                if (place.geometry) {
+                    deliveryCoordinates = {
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
+                        placeId: place.place_id,
+                        address: place.formatted_address
+                    };
+                    document.getElementById('deliveryLatitude').value = deliveryCoordinates.lat;
+                    document.getElementById('deliveryLongitude').value = deliveryCoordinates.lng;
+                    document.getElementById('deliveryPlaceId').value = deliveryCoordinates.placeId;
+                }
+            });
+        }
+
+        // Step navigation
+        function nextStep() {
+            if (validateCurrentStep()) {
+                if (currentStep < totalSteps) {
+                    document.getElementById(`step${currentStep}`).classList.add('hidden');
+                    currentStep++;
+                    document.getElementById(`step${currentStep}`).classList.remove('hidden');
+                    updateProgressBar();
+                }
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                document.getElementById(`step${currentStep}`).classList.add('hidden');
+                currentStep--;
+                document.getElementById(`step${currentStep}`).classList.remove('hidden');
+                updateProgressBar();
+            }
+        }
+
+        function updateProgressBar() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.querySelector('.bg-gradient-to-r').style.width = progress + '%';
+            
+            // Update step indicators
+            for (let i = 1; i <= totalSteps; i++) {
+                const indicator = document.querySelectorAll('.step-indicator')[i-1];
+                const label = indicator.nextElementSibling;
+                
+                if (i <= currentStep) {
+                    indicator.classList.remove('bg-gray-300');
+                    indicator.style.background = 'linear-gradient(45deg, #667eea, #764ba2)';
+                    label.classList.remove('text-gray-500');
+                } else {
+                    indicator.classList.add('bg-gray-300');
+                    indicator.style.background = '';
+                    label.classList.add('text-gray-500');
+                }
+            }
+        }
+
+        function validateCurrentStep() {
+            const currentStepElement = document.getElementById(`step${currentStep}`);
+            const requiredFields = currentStepElement.querySelectorAll('[required]');
+            
+            for (let field of requiredFields) {
+                if (!field.value.trim()) {
+                    field.focus();
+                    alert('Please fill in all required fields before proceeding.');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Form submission
+        document.getElementById('furnitureQuoteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateCurrentStep()) {
+                return;
+            }
+
+            // Show loading modal
+            document.getElementById('loadingModal').classList.remove('hidden');
+            document.getElementById('loadingModal').classList.add('flex');
+
+            // Collect all form data
+            const formData = new FormData(this);
+            
+            // Add inventory data
+            const inventory = {};
+            const quantityInputs = document.querySelectorAll('.quantity-input');
+            quantityInputs.forEach(input => {
+                if (input.value > 0) {
+                    inventory[input.name] = parseInt(input.value);
+                }
+            });
+            
+            // Add services
+            const services = [];
+            const serviceCheckboxes = document.querySelectorAll('input[name="services[]"]:checked');
+            serviceCheckboxes.forEach(checkbox => {
+                services.push(checkbox.value);
+            });
+
+            // Prepare quote data
+            const quoteData = {
+                customerName: formData.get('customerName'),
+                customerEmail: formData.get('customerEmail'),
+                customerPhone: formData.get('customerPhone'),
+                pickupAddress: formData.get('pickupAddress'),
+                deliveryAddress: formData.get('deliveryAddress'),
+                pickupLatitude: formData.get('pickupLatitude'),
+                pickupLongitude: formData.get('pickupLongitude'),
+                pickupPlaceId: formData.get('pickupPlaceId'),
+                deliveryLatitude: formData.get('deliveryLatitude'),
+                deliveryLongitude: formData.get('deliveryLongitude'),
+                deliveryPlaceId: formData.get('deliveryPlaceId'),
+                pickupPropertyType: formData.get('pickupPropertyType'),
+                pickupFloor: formData.get('pickupFloor'),
+                pickupElevator: formData.get('pickupElevator'),
+                pickupParking: formData.get('pickupParking'),
+                deliveryPropertyType: formData.get('deliveryPropertyType'),
+                deliveryFloor: formData.get('deliveryFloor'),
+                deliveryElevator: formData.get('deliveryElevator'),
+                deliveryParking: formData.get('deliveryParking'),
+                movingDate: formData.get('movingDate'),
+                movingTime: formData.get('movingTime'),
+                specialInstructions: formData.get('specialInstructions'),
+                insurance: formData.get('insurance') === 'on',
+                inventory: inventory,
+                services: services,
+                serviceType: 'FURNITURE_MOVING'
+            };
+
+            // Submit to backend
+            fetch('/api/furniture-moving/quote', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(quoteData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loadingModal').classList.add('hidden');
+                document.getElementById('loadingModal').classList.remove('flex');
+                
+                if (data.success) {
+                    // Redirect to quote results page
+                    window.location.href = `/furniture-moving-quote-result?quoteId=${data.quoteId}`;
+                } else {
+                    alert('Error generating quote: ' + (data.message || 'Please try again.'));
+                }
+            })
+            .catch(error => {
+                document.getElementById('loadingModal').classList.add('hidden');
+                document.getElementById('loadingModal').classList.remove('flex');
+                console.error('Error:', error);
+                alert('An error occurred while generating your quote. Please try again.');
+            });
+        });
+
+        // Initialize minimum date when page loads
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
+            // Auth visibility
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const guestOnly = document.querySelectorAll('.guest-only');
+            const authRequired = document.querySelectorAll('.auth-required');
+            
+            if (token) {
+                guestOnly.forEach(el => el.classList.add('hidden'));
+                authRequired.forEach(el => el.classList.remove('hidden'));
+            } else {
+                guestOnly.forEach(el => el.classList.remove('hidden'));
+                authRequired.forEach(el => el.classList.add('hidden'));
+            }
+            
+            // Logout functionality
+            const logoutBtn = document.getElementById('logoutBtn');
+            const logoutBtnMobile = document.getElementById('logoutBtnMobile');
+            
+            function handleLogout() {
+                localStorage.removeItem('token');
+                sessionStorage.clear();
+                window.location.href = '/login';
+            }
+            
+            if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+            if (logoutBtnMobile) logoutBtnMobile.addEventListener('click', handleLogout);
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('movingDate').setAttribute('min', today);
+        });
+    </script>
+</body>
+</html>

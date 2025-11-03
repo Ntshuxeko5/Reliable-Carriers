@@ -23,6 +23,8 @@ public interface ShipmentService {
     
     List<Shipment> getShipmentsByDriver(User driver);
     
+    List<Shipment> getShipmentsByDriverId(Long driverId);
+    
     List<Shipment> getShipmentsByStatus(ShipmentStatus status);
     
     List<Shipment> getShipmentsByDateRange(Date startDate, Date endDate);

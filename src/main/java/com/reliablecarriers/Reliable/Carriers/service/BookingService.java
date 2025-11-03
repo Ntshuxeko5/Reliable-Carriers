@@ -72,4 +72,9 @@ public interface BookingService {
      * Get booking statistics for customer
      */
     Map<String, Object> getBookingStatistics(String email);
+    
+    /**
+     * Get booking entity by ID (internal use)
+     */
+    com.reliablecarriers.Reliable.Carriers.model.Booking getBookingEntityById(Long bookingId);
 }

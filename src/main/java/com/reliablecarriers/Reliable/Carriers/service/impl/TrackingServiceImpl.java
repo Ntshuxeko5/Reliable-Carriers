@@ -3,6 +3,7 @@ package com.reliablecarriers.Reliable.Carriers.service.impl;
 import com.reliablecarriers.Reliable.Carriers.dto.DriverLocationResponse;
 import com.reliablecarriers.Reliable.Carriers.dto.ShipmentInfo;
 import com.reliablecarriers.Reliable.Carriers.dto.TrackingRequest;
+import com.reliablecarriers.Reliable.Carriers.dto.TrackingResponse;
 import com.reliablecarriers.Reliable.Carriers.model.DriverLocation;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
@@ -17,6 +18,7 @@ import com.reliablecarriers.Reliable.Carriers.service.TrackingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,7 +45,7 @@ public class TrackingServiceImpl implements TrackingService {
         // Get the most recent location for each driver
         List<DriverLocationResponse> activeLocations = new ArrayList<>();
         for (User driver : drivers) {
-            DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+            DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
             if (lastLocation != null && isLocationRecent(lastLocation.getTimestamp())) {
                 DriverLocationResponse response = new DriverLocationResponse(lastLocation);
                 populateShipmentInfo(response);
@@ -63,7 +65,7 @@ public class TrackingServiceImpl implements TrackingService {
             for (Long driverId : request.getDriverIds()) {
                 User driver = userRepository.findById(driverId).orElse(null);
                 if (driver != null) {
-                    DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+                    DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
                     if (lastLocation != null) {
                         DriverLocationResponse response = new DriverLocationResponse(lastLocation);
                         populateShipmentInfo(response);
@@ -75,7 +77,7 @@ public class TrackingServiceImpl implements TrackingService {
             // Get all drivers
             List<User> drivers = userRepository.findByRole(UserRole.DRIVER);
             for (User driver : drivers) {
-                DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+                DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
                 if (lastLocation != null) {
                     DriverLocationResponse response = new DriverLocationResponse(lastLocation);
                     populateShipmentInfo(response);
@@ -102,7 +104,7 @@ public class TrackingServiceImpl implements TrackingService {
         for (Long driverId : driverIds) {
             User driver = userRepository.findById(driverId).orElse(null);
             if (driver != null) {
-                DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+                DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
                 if (lastLocation != null && isLocationRecent(lastLocation.getTimestamp())) {
                     DriverLocationResponse response = new DriverLocationResponse(lastLocation);
                     populateShipmentInfo(response);
@@ -121,7 +123,11 @@ public class TrackingServiceImpl implements TrackingService {
             return new ArrayList<>();
         }
         
-        List<DriverLocation> locations = driverLocationRepository.findByDriverAndTimestampBetweenOrderByTimestampDesc(driver, startTime, endTime);
+        // Convert Date to LocalDateTime
+        LocalDateTime startDateTime = startTime.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime endDateTime = endTime.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+        
+        List<DriverLocation> locations = driverLocationRepository.findByDriverAndTimestampBetweenOrderByTimestampDesc(driver.getId(), startDateTime, endDateTime);
         return locations.stream()
                 .map(DriverLocationResponse::new)
                 .collect(Collectors.toList());
@@ -134,7 +140,11 @@ public class TrackingServiceImpl implements TrackingService {
             return new ArrayList<>();
         }
         
-        List<DriverLocation> locations = driverLocationRepository.findByVehicleAndTimestampBetweenOrderByTimestampDesc(vehicle, startTime, endTime);
+        // Convert Date to LocalDateTime
+        LocalDateTime startDateTime = startTime.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime endDateTime = endTime.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+        
+        List<DriverLocation> locations = driverLocationRepository.findByVehicleAndTimestampBetweenOrderByTimestampDesc(vehicle.getRegistrationNumber(), startDateTime, endDateTime);
         return locations.stream()
                 .map(DriverLocationResponse::new)
                 .collect(Collectors.toList());
@@ -147,9 +157,9 @@ public class TrackingServiceImpl implements TrackingService {
         // Get the most recent location for each driver in the bounding box
         Map<Long, DriverLocation> latestLocations = new HashMap<>();
         for (DriverLocation location : locations) {
-            Long driverId = location.getDriver().getId();
+            Long driverId = location.getDriverId();
             if (!latestLocations.containsKey(driverId) || 
-                location.getTimestamp().after(latestLocations.get(driverId).getTimestamp())) {
+                location.getTimestamp().isAfter(latestLocations.get(driverId).getTimestamp())) {
                 latestLocations.put(driverId, location);
             }
         }
@@ -166,9 +176,9 @@ public class TrackingServiceImpl implements TrackingService {
         // Get the most recent location for each driver in the location
         Map<Long, DriverLocation> latestLocations = new HashMap<>();
         for (DriverLocation location : locations) {
-            Long driverId = location.getDriver().getId();
+            Long driverId = location.getDriverId();
             if (!latestLocations.containsKey(driverId) || 
-                location.getTimestamp().after(latestLocations.get(driverId).getTimestamp())) {
+                location.getTimestamp().isAfter(latestLocations.get(driverId).getTimestamp())) {
                 latestLocations.put(driverId, location);
             }
         }
@@ -195,7 +205,7 @@ public class TrackingServiceImpl implements TrackingService {
                             (driver.getPhone() != null && driver.getPhone().contains(searchTerm));
             
             if (matches) {
-                DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+                DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
                 if (lastLocation != null) {
                     results.add(new DriverLocationResponse(lastLocation));
                 }
@@ -217,7 +227,7 @@ public class TrackingServiceImpl implements TrackingService {
         double totalWeight = 0.0;
         
         for (User driver : drivers) {
-            DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+            DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
             if (lastLocation != null && isLocationRecent(lastLocation.getTimestamp())) {
                 onlineDrivers++;
             } else {
@@ -261,7 +271,7 @@ public class TrackingServiceImpl implements TrackingService {
         long offline = 0;
         
         for (User driver : drivers) {
-            DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+            DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
             if (lastLocation != null && isLocationRecent(lastLocation.getTimestamp())) {
                 online++;
             } else {
@@ -284,7 +294,7 @@ public class TrackingServiceImpl implements TrackingService {
             return summary;
         }
         
-        DriverLocation lastLocation = driverLocationRepository.findTopByVehicleOrderByTimestampDesc(vehicle);
+        DriverLocation lastLocation = driverLocationRepository.findTopByVehicleOrderByTimestampDesc(vehicle.getRegistrationNumber());
         if (lastLocation != null) {
             summary.put("lastLocation", new DriverLocationResponse(lastLocation));
             summary.put("isOnline", isLocationRecent(lastLocation.getTimestamp()));
@@ -302,7 +312,7 @@ public class TrackingServiceImpl implements TrackingService {
             return summary;
         }
         
-        DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+        DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
         if (lastLocation != null) {
             summary.put("lastLocation", new DriverLocationResponse(lastLocation));
             summary.put("isOnline", isLocationRecent(lastLocation.getTimestamp()));
@@ -318,7 +328,7 @@ public class TrackingServiceImpl implements TrackingService {
             return false;
         }
         
-        DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+        DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
         return lastLocation != null && isLocationRecent(lastLocation.getTimestamp());
     }
 
@@ -329,7 +339,7 @@ public class TrackingServiceImpl implements TrackingService {
             return null;
         }
         
-        DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+        DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
         if (lastLocation != null) {
             DriverLocationResponse response = new DriverLocationResponse(lastLocation);
             populateShipmentInfo(response);
@@ -350,7 +360,7 @@ public class TrackingServiceImpl implements TrackingService {
             driverInfo.put("email", driver.getEmail());
             driverInfo.put("phone", driver.getPhone());
             
-            DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+            DriverLocation lastLocation = driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
             boolean isOnline = lastLocation != null && isLocationRecent(lastLocation.getTimestamp());
             driverInfo.put("isOnline", isOnline);
             driverInfo.put("status", isOnline ? "ONLINE" : "OFFLINE");
@@ -379,7 +389,7 @@ public class TrackingServiceImpl implements TrackingService {
             vehicleInfo.put("licensePlate", vehicle.getRegistrationNumber());
             vehicleInfo.put("type", vehicle.getType());
             
-            DriverLocation lastLocation = driverLocationRepository.findTopByVehicleOrderByTimestampDesc(vehicle);
+            DriverLocation lastLocation = driverLocationRepository.findTopByVehicleOrderByTimestampDesc(vehicle.getRegistrationNumber());
             boolean isOnline = lastLocation != null && isLocationRecent(lastLocation.getTimestamp());
             vehicleInfo.put("isOnline", isOnline);
             vehicleInfo.put("status", isOnline ? "ONLINE" : "OFFLINE");
@@ -441,12 +451,10 @@ public class TrackingServiceImpl implements TrackingService {
                 .collect(Collectors.toList());
     }
 
-    private boolean isLocationRecent(Date timestamp) {
+    private boolean isLocationRecent(LocalDateTime timestamp) {
         if (timestamp == null) return false;
-        long currentTime = System.currentTimeMillis();
-        long locationTime = timestamp.getTime();
-        long fiveMinutesInMillis = 5 * 60 * 1000;
-        return (currentTime - locationTime) < fiveMinutesInMillis;
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        return timestamp.isAfter(fiveMinutesAgo);
     }
 
     /**
@@ -499,6 +507,142 @@ public class TrackingServiceImpl implements TrackingService {
         } catch (Exception e) {
             // Log error but don't fail the entire response
             System.err.println("Error populating shipment info for driver " + response.getDriverId() + ": " + e.getMessage());
+        }
+    }
+
+    @Override
+    public TrackingResponse getTrackingInfo(String trackingNumber) {
+        try {
+            // In a real implementation, this would query the database
+            // For now, return sample data for demonstration
+            if ("RC123456789ZA".equals(trackingNumber)) {
+                TrackingResponse response = new TrackingResponse();
+                response.setTrackingNumber(trackingNumber);
+                response.setStatus("out-for-delivery");
+                response.setStatusText("Out for Delivery");
+                response.setProgress(85);
+                response.setPickupLocation("Cape Town, Western Cape");
+                response.setDeliveryLocation("Johannesburg, Gauteng");
+                response.setEstimatedDelivery("Today by 6:00 PM");
+                response.setServiceType("Express Delivery");
+                response.setLastUpdated(LocalDateTime.now());
+                
+                // Create timeline
+                List<TrackingResponse.TrackingEvent> timeline = new ArrayList<>();
+                
+                TrackingResponse.TrackingEvent event1 = new TrackingResponse.TrackingEvent();
+                event1.setStatus("pending");
+                event1.setTitle("Package Received");
+                event1.setDescription("Package received at Cape Town facility");
+                event1.setTimestamp(LocalDateTime.now().minusDays(1).withHour(8).withMinute(30));
+                event1.setCompleted(true);
+                timeline.add(event1);
+                
+                TrackingResponse.TrackingEvent event2 = new TrackingResponse.TrackingEvent();
+                event2.setStatus("processing");
+                event2.setTitle("Processing");
+                event2.setDescription("Package is being processed and prepared for shipment");
+                event2.setTimestamp(LocalDateTime.now().minusDays(1).withHour(9).withMinute(15));
+                event2.setCompleted(true);
+                timeline.add(event2);
+                
+                TrackingResponse.TrackingEvent event3 = new TrackingResponse.TrackingEvent();
+                event3.setStatus("in-transit");
+                event3.setTitle("In Transit");
+                event3.setDescription("Package is on its way to Johannesburg");
+                event3.setTimestamp(LocalDateTime.now().minusDays(1).withHour(14).withMinute(20));
+                event3.setCompleted(true);
+                timeline.add(event3);
+                
+                TrackingResponse.TrackingEvent event4 = new TrackingResponse.TrackingEvent();
+                event4.setStatus("out-for-delivery");
+                event4.setTitle("Out for Delivery");
+                event4.setDescription("Package is out for delivery in your area");
+                event4.setTimestamp(LocalDateTime.now().withHour(10).withMinute(45));
+                event4.setCompleted(false);
+                event4.setCurrent(true);
+                timeline.add(event4);
+                
+                TrackingResponse.TrackingEvent event5 = new TrackingResponse.TrackingEvent();
+                event5.setStatus("delivered");
+                event5.setTitle("Delivered");
+                event5.setDescription("Package has been delivered successfully");
+                event5.setTimestamp(null);
+                event5.setCompleted(false);
+                timeline.add(event5);
+                
+                response.setTimeline(timeline);
+                
+                // Create driver info
+                TrackingResponse.DriverInfo driver = new TrackingResponse.DriverInfo();
+                driver.setName("John Smith");
+                driver.setPhone("+27 82 123 4567");
+                driver.setVehicle("Toyota Hilux");
+                driver.setVehiclePlate("RC123GP");
+                driver.setCurrentLocation("Johannesburg, Gauteng");
+                driver.setLastLocationUpdate(LocalDateTime.now().minusMinutes(5));
+                response.setDriver(driver);
+                
+                return response;
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error getting tracking info: " + e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getTrackingStatus(String trackingNumber) {
+        try {
+            TrackingResponse trackingInfo = getTrackingInfo(trackingNumber);
+            if (trackingInfo != null) {
+                Map<String, Object> status = new HashMap<>();
+                status.put("trackingNumber", trackingInfo.getTrackingNumber());
+                status.put("status", trackingInfo.getStatus());
+                status.put("statusText", trackingInfo.getStatusText());
+                status.put("progress", trackingInfo.getProgress());
+                status.put("lastUpdated", trackingInfo.getLastUpdated());
+                return status;
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error getting tracking status: " + e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getTrackingTimeline(String trackingNumber) {
+        try {
+            TrackingResponse trackingInfo = getTrackingInfo(trackingNumber);
+            if (trackingInfo != null) {
+                Map<String, Object> timeline = new HashMap<>();
+                timeline.put("trackingNumber", trackingInfo.getTrackingNumber());
+                timeline.put("timeline", trackingInfo.getTimeline());
+                return timeline;
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error getting tracking timeline: " + e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getDriverInfo(String trackingNumber) {
+        try {
+            TrackingResponse trackingInfo = getTrackingInfo(trackingNumber);
+            if (trackingInfo != null && trackingInfo.getDriver() != null) {
+                Map<String, Object> driverInfo = new HashMap<>();
+                driverInfo.put("trackingNumber", trackingInfo.getTrackingNumber());
+                driverInfo.put("driver", trackingInfo.getDriver());
+                return driverInfo;
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error getting driver info: " + e.getMessage());
+            return null;
         }
     }
 }

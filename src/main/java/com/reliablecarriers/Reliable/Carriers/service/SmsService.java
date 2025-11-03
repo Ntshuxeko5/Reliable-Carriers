@@ -1,49 +1,21 @@
 package com.reliablecarriers.Reliable.Carriers.service;
 
+/**
+ * SMS Service Interface
+ * Simplified interface matching existing usage patterns
+ */
 public interface SmsService {
     
-    /**
-     * Send a basic SMS message
-     */
-    void sendSms(String to, String message);
+    // Basic SMS operations
+    void sendSms(String phoneNumber, String message);
     
-    /**
-     * Send shipment status update SMS
-     */
-    void sendShipmentUpdate(String to, String trackingNumber, String status);
-    
-    /**
-     * Send delivery notification SMS
-     */
-    void sendDeliveryNotification(String to, String trackingNumber, String estimatedTime);
-    
-    /**
-     * Send driver assignment SMS
-     */
-    void sendDriverAssignment(String to, String trackingNumber, String pickupAddress);
-    
-    /**
-     * Send payment reminder SMS
-     */
-    void sendPaymentReminder(String to, String trackingNumber, String amount);
-    
-    /**
-     * Send bulk SMS to multiple recipients
-     */
-    void sendBulkSms(String[] recipients, String message);
-    
-    /**
-     * Send custom SMS message
-     */
-    void sendCustomSms(String to, String message);
-    
-    /**
-     * Send OTP verification SMS
-     */
-    void sendOtp(String to, String otp);
-    
-    /**
-     * Send emergency notification SMS
-     */
-    void sendEmergencyNotification(String to, String message);
+    // Existing method signatures from SmsServiceImpl
+    void sendShipmentUpdate(String phoneNumber, String trackingNumber, String status);
+    void sendDeliveryNotification(String phoneNumber, String trackingNumber, String estimatedTime);
+    void sendDriverAssignment(String phoneNumber, String trackingNumber, String pickupLocation);
+    void sendPaymentReminder(String phoneNumber, String bookingNumber, String amount);
+    void sendBulkSms(String[] phoneNumbers, String message);
+    void sendCustomSms(String phoneNumber, String message);
+    void sendOtp(String phoneNumber, String otp);
+    void sendEmergencyNotification(String phoneNumber, String message);
 }

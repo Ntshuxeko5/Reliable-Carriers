@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#dbb714',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Reliable Carriers">
+    <link rel="apple-touch-icon" href="/images/Reliable 1.png">
+    
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #fde047, #facc15);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Analytics specific styling */
+        .analytics-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            padding: 1rem;
+        }
+
+        .insight-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        /* Dark mode support */
+        .dark-mode {
+            background: #1a1a1a;
+            color: #e5e5e5;
+        }
+
+        .dark-mode .glass-effect {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-mode .insight-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Loading animations */
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Chart animations */
+        .chart-fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+<!-- Navigation -->
+<nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+            <a href="/customer" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
+                <img src="/images/Reliable 1.png" alt="Reliable Carriers Logo" style="height:50px; width:auto;">
+            </a>
+            <div class="hidden md:flex space-x-8">
+                <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                <a href="/customer/track" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-search mr-2"></i>Track Package
+                </a>
+                <a href="/customer/quote" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-calculator mr-2"></i>Get Quote
+                </a>
+                <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-boxes mr-2"></i>My Packages
+                </a>
+                <a href="/customer/analytics" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center bg-white/20 rounded-lg px-3 py-1">
+                    <i class="fas fa-chart-line mr-2"></i>Analytics
+                </a>
+                <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-store mr-2"></i>Business
+                </a>
+                <!-- Dark Mode Toggle -->
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="darkModeToggle" class="sr-only">
+                    <div class="relative">
+                        <div class="w-12 h-6 bg-gray-600 rounded-full shadow-inner"></div>
+                        <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300 ease-in-out"></div>
+                    </div>
+                    <span class="ml-2 text-white">
+                        <i class="fas fa-moon"></i>
+                    </span>
+                </label>
+                <a href="/"  class="flex items-center text-white hover:text-brand-300 hover:no-underline transition-colors duration-300 font-medium ml-auto ">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+            <!-- Mobile menu button -->
+            <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="md:hidden hidden" id="mobileMenu">
+            <div class="py-4 space-y-4">
+                <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                <a href="/customer/track" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-search mr-2"></i>Track Package
+                </a>
+                <a href="/customer/quote" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-calculator mr-2"></i>Get Quote
+                </a>
+                <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-boxes mr-2"></i>My Packages
+                </a>
+                <a href="/customer/analytics" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center bg-white/20 rounded-lg px-3 py-1">
+                    <i class="fas fa-chart-line mr-2"></i>Analytics
+                </a>
+                <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-store mr-2"></i>Business
+                </a>
+                <a href="/logout" class="block text-white hover:text-brand-300 hover:no-underline transition-colors duration-300 font-medium flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-800">
+    
+    <!-- Header Section -->
+    <div class="mb-8">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-chart-line mr-3 gradient-text"></i>Analytics Dashboard
+        </h1>
+        <p class="text-xl text-gray-700">Insights and analytics for your shipping patterns</p>
+    </div>
+
+    <!-- Tier Access Check -->
+    <div id="tierAccessCheck" class="hidden mb-6 p-4 bg-yellow-100 border border-yellow-400 rounded-lg">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-triangle text-yellow-600 mr-3"></i>
+            <div>
+                <h3 class="text-lg font-semibold text-yellow-800">Analytics Access Required</h3>
+                <p class="text-yellow-700">Upgrade to Business plan or higher to access analytics dashboard</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="metric-card hover-lift">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-75">Total Shipments</p>
+                    <p class="text-3xl font-bold" id="totalShipments">-</p>
+                </div>
+                <i class="fas fa-boxes text-3xl opacity-50"></i>
+            </div>
+        </div>
+        
+        <div class="metric-card hover-lift">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-75">On-Time Delivery</p>
+                    <p class="text-3xl font-bold" id="onTimeRate">-</p>
+                </div>
+                <i class="fas fa-clock text-3xl opacity-50"></i>
+            </div>
+        </div>
+        
+        <div class="metric-card hover-lift">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-75">Total Spent</p>
+                    <p class="text-3xl font-bold" id="totalSpent">-</p>
+                </div>
+                <i class="fas fa-dollar-sign text-3xl opacity-50"></i>
+            </div>
+        </div>
+        
+        <div class="metric-card hover-lift">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-75">Avg. Cost</p>
+                    <p class="text-3xl font-bold" id="avgCost">-</p>
+                </div>
+                <i class="fas fa-chart-pie text-3xl opacity-50"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Monthly Trends Chart -->
+        <div class="insight-card hover-lift">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-chart-line mr-2 text-brand-500"></i>Monthly Trends
+            </h3>
+            <div class="chart-container">
+                <canvas id="monthlyTrendsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Service Type Breakdown -->
+        <div class="insight-card hover-lift">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-chart-pie mr-2 text-brand-500"></i>Service Type Breakdown
+            </h3>
+            <div class="chart-container">
+                <canvas id="serviceTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Analytics -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Delivery Performance -->
+        <div class="insight-card hover-lift">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-tachometer-alt mr-2 text-brand-500"></i>Delivery Performance
+            </h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">On-Time Rate</span>
+                    <span class="font-bold text-green-600" id="performanceOnTime">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Avg. Delivery Time</span>
+                    <span class="font-bold text-blue-600" id="performanceAvgTime">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Total Delays</span>
+                    <span class="font-bold text-red-600" id="performanceDelays">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Analysis -->
+        <div class="insight-card hover-lift">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-money-bill-wave mr-2 text-brand-500"></i>Cost Analysis
+            </h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Total Spent</span>
+                    <span class="font-bold text-green-600" id="costTotal">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Avg. per Shipment</span>
+                    <span class="font-bold text-blue-600" id="costAvg">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Potential Savings</span>
+                    <span class="font-bold text-yellow-600" id="costSavings">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipping Patterns -->
+        <div class="insight-card hover-lift">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-route mr-2 text-brand-500"></i>Shipping Patterns
+            </h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Peak Day</span>
+                    <span class="font-bold text-purple-600" id="patternPeakDay">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Peak Time</span>
+                    <span class="font-bold text-indigo-600" id="patternPeakTime">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Most Used Service</span>
+                    <span class="font-bold text-pink-600" id="patternService">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Recommendations -->
+    <div class="insight-card hover-lift mb-8">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-robot mr-2 text-brand-500"></i>AI-Powered Recommendations
+        </h3>
+        <div id="aiRecommendations" class="space-y-4">
+            <!-- Recommendations will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="flex flex-wrap gap-4 mb-8">
+        <button id="exportPdfBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+            <i class="fas fa-file-pdf mr-2"></i>Export PDF
+        </button>
+        <button id="exportExcelBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+            <i class="fas fa-file-excel mr-2"></i>Export Excel
+        </button>
+        <button id="refreshDataBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+            <i class="fas fa-sync-alt mr-2"></i>Refresh Data
+        </button>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="bg-gray-900 text-white mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-xl font-bold mb-4 text-brand-400">Reliable Carriers</h3>
+                <p class="text-gray-300">Your trusted partner for reliable package delivery and tracking services.</p>
+            </div>
+            <div>
+                <h4 class="font-bold mb-4">Quick Links</h4>
+                <ul class="space-y-2 text-gray-300">
+                    <li><a href="/customer/track" class="hover:text-brand-400 transition-colors">Track Package</a></li>
+                    <li><a href="/customer/quote" class="hover:text-brand-400 transition-colors">Get Quote</a></li>
+                    <li><a href="/customer/packages" class="hover:text-brand-400 transition-colors">My Packages</a></li>
+                    <li><a href="/customer/analytics" class="hover:text-brand-400 transition-colors">Analytics</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold mb-4">Services</h4>
+                <ul class="space-y-2 text-gray-300">
+                    <li><a href="#" class="hover:text-brand-400 transition-colors">Express Delivery</a></li>
+                    <li><a href="#" class="hover:text-brand-400 transition-colors">National Shipping</a></li>
+                    <li><a href="#" class="hover:text-brand-400 transition-colors">Moving Services</a></li>
+                    <li><a href="#" class="hover:text-brand-400 transition-colors">Load Transport</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold mb-4">Contact Info</h4>
+                <div class="space-y-2 text-gray-300">
+                    <p><i class="fas fa-phone mr-2"></i>+27 11 123 4567</p>
+                    <p><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</p>
+                    <p><i class="fas fa-map-marker-alt mr-2"></i>Johannesburg, South Africa</p>
+                </div>
+            </div>
+        </div>
+        <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+            <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Global variables
+    let monthlyTrendsChart, serviceTypeChart;
+    let analyticsData = null;
+
+    // Initialize analytics dashboard
+    async function initAnalytics() {
+        try {
+            // Check analytics access
+            const accessResponse = await fetch('/api/customer/analytics/access', {
+                headers: {
+                    'Authorization': 'Bearer ' + getToken()
+                }
+            });
+            
+            if (!accessResponse.ok) {
+                showTierAccessMessage();
+                return;
+            }
+            
+            const accessData = await accessResponse.json();
+            if (!accessData.hasAccess) {
+                showTierAccessMessage();
+                return;
+            }
+
+            // Load analytics data
+            await loadAnalyticsData();
+            
+            // Initialize charts
+            initCharts();
+            
+            // Load AI recommendations
+            await loadAIRecommendations();
+            
+        } catch (error) {
+            console.error('Failed to initialize analytics:', error);
+            showNotification('Failed to load analytics data', 'error');
+        }
+    }
+
+    // Load analytics data
+    async function loadAnalyticsData() {
+        try {
+            const response = await fetch('/api/customer/analytics/dashboard', {
+                headers: {
+                    'Authorization': 'Bearer ' + getToken()
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to load analytics data');
+            }
+            
+            const data = await response.json();
+            analyticsData = data.analytics;
+            
+            // Update metrics
+            updateMetrics();
+            
+        } catch (error) {
+            console.error('Failed to load analytics data:', error);
+            throw error;
+        }
+    }
+
+    // Update metrics display
+    function updateMetrics() {
+        if (!analyticsData) return;
+        
+        document.getElementById('totalShipments').textContent = analyticsData.totalShipments || 0;
+        document.getElementById('onTimeRate').textContent = (analyticsData.onTimeDeliveryRate || 0).toFixed(1) + '%';
+        document.getElementById('totalSpent').textContent = 'R' + (analyticsData.totalShippingCost || 0).toFixed(2);
+        document.getElementById('avgCost').textContent = 'R' + (analyticsData.averageShippingCost || 0).toFixed(2);
+        
+        // Performance metrics
+        document.getElementById('performanceOnTime').textContent = (analyticsData.onTimeDeliveryRate || 0).toFixed(1) + '%';
+        document.getElementById('performanceAvgTime').textContent = (analyticsData.averageDeliveryTime || 0).toFixed(1) + 'h';
+        document.getElementById('performanceDelays').textContent = analyticsData.totalDelays || 0;
+        
+        // Cost analysis
+        document.getElementById('costTotal').textContent = 'R' + (analyticsData.totalShippingCost || 0).toFixed(2);
+        document.getElementById('costAvg').textContent = 'R' + (analyticsData.averageShippingCost || 0).toFixed(2);
+        document.getElementById('costSavings').textContent = 'R' + (analyticsData.potentialSavings || 0).toFixed(2);
+        
+        // Shipping patterns
+        document.getElementById('patternPeakDay').textContent = analyticsData.peakDeliveryDay || 'N/A';
+        document.getElementById('patternPeakTime').textContent = analyticsData.peakDeliveryTime || 'N/A';
+        document.getElementById('patternService').textContent = analyticsData.mostUsedService || 'N/A';
+    }
+
+    // Initialize charts
+    function initCharts() {
+        // Monthly Trends Chart
+        const monthlyCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
+        monthlyTrendsChart = new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: analyticsData.monthlyTrends?.map(t => t.month) || [],
+                datasets: [{
+                    label: 'Shipments',
+                    data: analyticsData.monthlyTrends?.map(t => t.shipments) || [],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Cost (R)',
+                    data: analyticsData.monthlyTrends?.map(t => t.totalCost) || [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Shipments'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Cost (R)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+
+        // Service Type Chart
+        const serviceCtx = document.getElementById('serviceTypeChart').getContext('2d');
+        serviceTypeChart = new Chart(serviceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: analyticsData.serviceTypeBreakdown?.map(s => s.serviceType) || [],
+                datasets: [{
+                    data: analyticsData.serviceTypeBreakdown?.map(s => s.count) || [],
+                    backgroundColor: [
+                        '#3b82f6',
+                        '#10b981',
+                        '#f59e0b',
+                        '#ef4444',
+                        '#8b5cf6'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    }
+
+    // Load AI recommendations
+    async function loadAIRecommendations() {
+        try {
+            const response = await fetch('/api/customer/ai/recommendations', {
+                headers: {
+                    'Authorization': 'Bearer ' + getToken()
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to load AI recommendations');
+            }
+            
+            const data = await response.json();
+            displayAIRecommendations(data.recommendations);
+            
+        } catch (error) {
+            console.error('Failed to load AI recommendations:', error);
+        }
+    }
+
+    // Display AI recommendations
+    function displayAIRecommendations(recommendations) {
+        const container = document.getElementById('aiRecommendations');
+        
+        if (!recommendations || recommendations.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">No recommendations available at this time.</p>';
+            return;
+        }
+        
+        container.innerHTML = recommendations.map(rec => `
+            <div class="bg-white/10 rounded-lg p-4 border border-white/20">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-900 mb-2">${rec.title}</h4>
+                        <p class="text-gray-600 mb-3">${rec.description}</p>
+                        <div class="flex items-center space-x-4 text-sm">
+                            <span class="text-blue-600 font-medium">${rec.action}</span>
+                            <span class="text-green-600 font-medium">Potential Savings: R${rec.potentialSavings?.toFixed(2) || 0}</span>
+                            <span class="text-purple-600 font-medium">Confidence: ${(rec.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <span class="inline-block px-3 py-1 bg-${getRecommendationColor(rec.type)}-100 text-${getRecommendationColor(rec.type)}-800 rounded-full text-sm font-medium">
+                            ${rec.type.replace('_', ' ')}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Get recommendation color based on type
+    function getRecommendationColor(type) {
+        const colors = {
+            'COST_OPTIMIZATION': 'green',
+            'SERVICE_OPTIMIZATION': 'blue',
+            'ROUTE_OPTIMIZATION': 'purple',
+            'TIER_UPGRADE': 'yellow'
+        };
+        return colors[type] || 'gray';
+    }
+
+    // Show tier access message
+    function showTierAccessMessage() {
+        document.getElementById('tierAccessCheck').classList.remove('hidden');
+    }
+
+    // Export functions
+    document.getElementById('exportPdfBtn').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/customer/analytics/report?format=pdf', {
+                headers: {
+                    'Authorization': 'Bearer ' + getToken()
+                }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'analytics-report.pdf';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+        } catch (error) {
+            showNotification('Failed to export PDF', 'error');
+        }
+    });
+
+    document.getElementById('exportExcelBtn').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/customer/analytics/report?format=excel', {
+                headers: {
+                    'Authorization': 'Bearer ' + getToken()
+                }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'analytics-report.xlsx';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+        } catch (error) {
+            showNotification('Failed to export Excel', 'error');
+        }
+    });
+
+    document.getElementById('refreshDataBtn').addEventListener('click', async function() {
+        this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Refreshing...';
+        this.disabled = true;
+        
+        try {
+            await loadAnalyticsData();
+            monthlyTrendsChart.update();
+            serviceTypeChart.update();
+            await loadAIRecommendations();
+            showNotification('Data refreshed successfully', 'success');
+        } catch (error) {
+            showNotification('Failed to refresh data', 'error');
+        } finally {
+            this.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Refresh Data';
+            this.disabled = false;
+        }
+    });
+
+    // Dark Mode Toggle
+    function initDarkMode() {
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+        const toggleSlider = document.querySelector('#darkModeToggle + div > div:last-child');
+        
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+            body.classList.add('dark-mode');
+            if (darkModeToggle) darkModeToggle.checked = true;
+            if (toggleSlider) {
+                toggleSlider.style.transform = 'translateX(1.5rem)';
+                toggleSlider.style.backgroundColor = '#3b82f6';
+            }
+        }
+        
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    body.classList.add('dark-mode');
+                    localStorage.setItem('theme', 'dark');
+                    if (toggleSlider) {
+                        toggleSlider.style.transform = 'translateX(1.5rem)';
+                        toggleSlider.style.backgroundColor = '#3b82f6';
+                    }
+                } else {
+                    body.classList.remove('dark-mode');
+                    localStorage.setItem('theme', 'light');
+                    if (toggleSlider) {
+                        toggleSlider.style.transform = 'translateX(0)';
+                        toggleSlider.style.backgroundColor = '#ffffff';
+                    }
+                }
+            });
+        }
+    }
+
+    // Mobile menu toggle
+    document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+        const mobileMenu = document.getElementById('mobileMenu');
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    // Notification system
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+        
+        const colors = {
+            success: 'bg-green-500 text-white',
+            error: 'bg-red-500 text-white',
+            info: 'bg-blue-500 text-white',
+            warning: 'bg-yellow-500 text-black'
+        };
+        
+        notification.className += ` ${colors[type] || colors.info}`;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // Get token helper
+    function getToken() {
+        return sessionStorage.getItem('jwtToken') || sessionStorage.getItem('token') || '';
+    }
+
+    // Initialize everything when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initDarkMode();
+        initAnalytics();
+    });
+</script>
+</body>
+</html>
+

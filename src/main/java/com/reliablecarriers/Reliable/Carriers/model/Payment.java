@@ -15,9 +15,16 @@ public class Payment {
     @Column(unique = true, nullable = false)
     private String transactionId;
     
+    @Column(unique = true, nullable = true)
+    private String reference;
+    
     @ManyToOne
     @JoinColumn(name = "shipment_id", nullable = true)
     private Shipment shipment;
+    
+    @ManyToOne
+    @JoinColumn(name = "booking_id", nullable = true)
+    private Booking booking;
     
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = true)
@@ -75,12 +82,28 @@ public class Payment {
         this.transactionId = transactionId;
     }
 
+    public String getReference() {
+        return reference;
+    }
+
+    public void setReference(String reference) {
+        this.reference = reference;
+    }
+
     public Shipment getShipment() {
         return shipment;
     }
 
     public void setShipment(Shipment shipment) {
         this.shipment = shipment;
+    }
+
+    public Booking getBooking() {
+        return booking;
+    }
+
+    public void setBooking(Booking booking) {
+        this.booking = booking;
     }
 
     public User getUser() {

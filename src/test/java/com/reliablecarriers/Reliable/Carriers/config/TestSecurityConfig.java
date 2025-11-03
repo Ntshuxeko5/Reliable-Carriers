@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.Properties;
@@ -25,6 +24,7 @@ public class TestSecurityConfig {
     @Bean
     @Primary
     public UserDetailsService testUserDetailsService() {
+        @SuppressWarnings("deprecation")
         UserDetails user = User.withDefaultPasswordEncoder()
                 .username("test@example.com")
                 .password("password")

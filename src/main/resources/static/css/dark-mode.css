@@ -1,0 +1,332 @@
+/* Comprehensive Dark Mode Styles */
+.dark-mode,
+.dark-mode body,
+.dark-mode html {
+    background-color: #0f172a !important;
+    color: #e5e7eb !important;
+}
+
+/* Ensure full page background */
+html.dark-mode {
+    background-color: #0f172a !important;
+}
+
+body.dark-mode {
+    background-color: #0f172a !important;
+    min-height: 100vh;
+}
+
+/* Background colors */
+.dark-mode .bg-white {
+    background-color: #1e293b !important;
+}
+
+.dark-mode .bg-gray-50,
+.dark-mode .bg-gray-100 {
+    background-color: #1e293b !important;
+}
+
+.dark-mode .bg-gray-200 {
+    background-color: #334155 !important;
+}
+
+.dark-mode .bg-gray-300 {
+    background-color: #475569 !important;
+}
+
+/* Text colors */
+.dark-mode .text-gray-900,
+.dark-mode .text-gray-800,
+.dark-mode .text-black {
+    color: #f1f5f9 !important;
+}
+
+.dark-mode .text-gray-700 {
+    color: #cbd5e1 !important;
+}
+
+.dark-mode .text-gray-600 {
+    color: #94a3b8 !important;
+}
+
+.dark-mode .text-gray-500 {
+    color: #64748b !important;
+}
+
+.dark-mode .text-gray-400 {
+    color: #94a3b8 !important;
+}
+
+/* Cards and containers */
+.dark-mode .glass-effect {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border-color: rgba(71, 85, 105, 0.3) !important;
+}
+
+.dark-mode .modern-card,
+.dark-mode .service-card,
+.dark-mode .quick-action-card,
+.dark-mode .feature-card,
+.dark-mode .service-type-card {
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%) !important;
+    border-color: rgba(71, 85, 105, 0.3) !important;
+}
+
+.dark-mode .welcome-section,
+.dark-mode .contact-section {
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%) !important;
+}
+
+/* Inputs and forms */
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #f1f5f9 !important;
+}
+
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+    color: #64748b !important;
+}
+
+.dark-mode .form-input {
+    background: rgba(30, 41, 59, 0.9) !important;
+    border-color: #475569 !important;
+    color: #f1f5f9 !important;
+}
+
+.dark-mode .form-input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Buttons */
+.dark-mode .btn-primary {
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Borders */
+.dark-mode .border-gray-300,
+.dark-mode .border-gray-200 {
+    border-color: #475569 !important;
+}
+
+/* Navigation */
+.dark-mode nav {
+    background: linear-gradient(to right, #1e40af, #1e3a8a) !important;
+}
+
+/* Footer */
+.dark-mode footer {
+    background-color: #0f172a !important;
+}
+
+.dark-mode footer .text-gray-300 {
+    color: #94a3b8 !important;
+}
+
+/* Shadows - Enhanced for dark mode */
+.dark-mode .shadow-lg,
+.dark-mode .shadow-xl {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Status badges */
+.dark-mode .bg-green-100 {
+    background-color: #065f46 !important;
+    color: #6ee7b7 !important;
+}
+
+.dark-mode .bg-blue-100 {
+    background-color: #1e3a8a !important;
+    color: #93c5fd !important;
+}
+
+.dark-mode .bg-yellow-100 {
+    background-color: #854d0e !important;
+    color: #fde047 !important;
+}
+
+.dark-mode .bg-purple-100 {
+    background-color: #6b21a8 !important;
+    color: #c084fc !important;
+}
+
+.dark-mode .bg-red-100 {
+    background-color: #991b1b !important;
+    color: #fca5a5 !important;
+}
+
+/* Links */
+.dark-mode a:not(.btn-primary):not(.bg-gradient-to-r) {
+    color: #60a5fa !important;
+}
+
+.dark-mode a:hover:not(.btn-primary):not(.bg-gradient-to-r) {
+    color: #93c5fd !important;
+}
+
+/* Tables */
+.dark-mode table {
+    background-color: #1e293b !important;
+}
+
+.dark-mode th,
+.dark-mode td {
+    border-color: #475569 !important;
+    color: #f1f5f9 !important;
+}
+
+.dark-mode thead {
+    background-color: #0f172a !important;
+}
+
+/* Modal/Dialog backgrounds */
+.dark-mode .modal,
+.dark-mode [role="dialog"] {
+    background-color: #1e293b !important;
+}
+
+/* Code blocks */
+.dark-mode pre,
+.dark-mode code {
+    background-color: #0f172a !important;
+    color: #f1f5f9 !important;
+}
+
+/* Divider lines */
+.dark-mode hr,
+.dark-mode .border-t {
+    border-color: #475569 !important;
+}
+
+/* Alert/Notification backgrounds */
+.dark-mode .bg-white.rounded-lg {
+    background-color: #1e293b !important;
+}
+
+/* Select dropdown */
+.dark-mode select option {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+/* Checkbox and radio buttons */
+.dark-mode input[type="checkbox"],
+.dark-mode input[type="radio"] {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+}
+
+/* Custom scrollbar for dark mode */
+.dark-mode ::-webkit-scrollbar {
+    width: 10px;
+}
+
+.dark-mode ::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 5px;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Ensure html element also gets dark background */
+.dark-mode html {
+    background-color: #0f172a !important;
+}
+
+/* Additional common elements */
+.dark-mode .bg-gradient-to-br,
+.dark-mode .bg-gradient-to-r,
+.dark-mode .bg-gradient-to-t {
+    background: linear-gradient(to bottom right, #0f172a, #1e293b) !important;
+}
+
+/* Override any white backgrounds */
+.dark-mode [class*="bg-white"],
+.dark-mode [style*="background-color: white"],
+.dark-mode [style*="background-color: #fff"],
+.dark-mode [style*="background-color: #ffffff"] {
+    background-color: #1e293b !important;
+}
+
+/* Ensure section backgrounds are dark */
+.dark-mode section {
+    background-color: transparent !important;
+}
+
+/* Images and media - slight opacity adjustment for better contrast */
+.dark-mode img {
+    opacity: 0.9;
+}
+
+.dark-mode img:hover {
+    opacity: 1;
+}
+
+/* Lists */
+.dark-mode ul,
+.dark-mode ol {
+    color: #e5e7eb !important;
+}
+
+/* Blockquotes */
+.dark-mode blockquote {
+    background-color: #1e293b !important;
+    border-left-color: #475569 !important;
+    color: #e5e7eb !important;
+}
+
+/* Code blocks */
+.dark-mode code,
+.dark-mode pre {
+    background-color: #0f172a !important;
+    color: #e5e7eb !important;
+}
+
+/* SVG icons - ensure they're visible */
+.dark-mode svg {
+    fill: currentColor;
+}
+
+/* Ensure any light backgrounds become dark */
+.dark-mode [class*="bg-gray-50"],
+.dark-mode [class*="bg-gray-100"],
+.dark-mode [class*="bg-gray-200"] {
+    background-color: #1e293b !important;
+}
+
+/* Dropdown menus */
+.dark-mode .dropdown-menu,
+.dark-mode [role="menu"],
+.dark-mode [role="listbox"] {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+}
+
+.dark-mode .dropdown-menu a,
+.dark-mode .dropdown-menu button {
+    color: #e5e7eb !important;
+}
+
+.dark-mode .dropdown-menu a:hover,
+.dark-mode .dropdown-menu button:hover {
+    background-color: #334155 !important;
+}
+
+/* Tooltips */
+.dark-mode [role="tooltip"],
+.dark-mode .tooltip {
+    background-color: #1e293b !important;
+    color: #e5e7eb !important;
+    border-color: #475569 !important;
+}
+

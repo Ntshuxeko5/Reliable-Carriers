@@ -2,8 +2,7 @@ package com.reliablecarriers.Reliable.Carriers.service;
 
 import com.reliablecarriers.Reliable.Carriers.dto.DriverLocationResponse;
 import com.reliablecarriers.Reliable.Carriers.dto.TrackingRequest;
-import com.reliablecarriers.Reliable.Carriers.model.User;
-import com.reliablecarriers.Reliable.Carriers.model.Vehicle;
+import com.reliablecarriers.Reliable.Carriers.dto.TrackingResponse;
 
 import java.util.Date;
 import java.util.List;
@@ -90,4 +89,24 @@ public interface TrackingService {
      * Get all vehicles with their current status
      */
     List<Map<String, Object>> getAllVehiclesWithStatus();
+    
+    /**
+     * Get tracking information for a specific tracking number
+     */
+    TrackingResponse getTrackingInfo(String trackingNumber);
+    
+    /**
+     * Get current tracking status for a tracking number
+     */
+    Map<String, Object> getTrackingStatus(String trackingNumber);
+    
+    /**
+     * Get tracking timeline for a tracking number
+     */
+    Map<String, Object> getTrackingTimeline(String trackingNumber);
+    
+    /**
+     * Get driver information for a tracking number
+     */
+    Map<String, Object> getDriverInfo(String trackingNumber);
 }

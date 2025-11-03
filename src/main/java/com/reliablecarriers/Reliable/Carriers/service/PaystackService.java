@@ -47,4 +47,14 @@ public interface PaystackService {
      * Get Paystack public key for frontend
      */
     String getPaystackPublicKey();
+    
+    /**
+     * Test Paystack connectivity
+     */
+    boolean testPaystackConnectivity();
+    
+    /**
+     * Get detailed configuration status
+     */
+    java.util.Map<String, Object> getConfigurationStatus();
 }

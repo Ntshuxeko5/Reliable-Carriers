@@ -1,0 +1,42 @@
+{
+  "name": "Reliable Carriers",
+  "short_name": "Reliable",
+  "description": "Professional courier and logistics services in South Africa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#3b82f6",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/images/Reliable 1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/Reliable 1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Track Package",
+      "short_name": "Track",
+      "description": "Track your package",
+      "url": "/tracking",
+      "icons": [{ "src": "/images/Reliable 1.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Get Quote",
+      "short_name": "Quote",
+      "description": "Get shipping quote",
+      "url": "/quote",
+      "icons": [{ "src": "/images/Reliable 1.png", "sizes": "192x192" }]
+    }
+  ]
+}

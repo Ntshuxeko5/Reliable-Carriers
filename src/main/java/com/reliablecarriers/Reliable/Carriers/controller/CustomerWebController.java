@@ -26,7 +26,7 @@ public class CustomerWebController {
     }
 
     // Main customer dashboard
-    @GetMapping
+    @GetMapping({"", "/dashboard"})
     public String customerDashboard(Model model) {
         try {
             // Get current user information
@@ -71,9 +71,41 @@ public class CustomerWebController {
         return "customer/track";
     }
 
+    // Business API Management page
+    @GetMapping("/api-keys")
+    public String apiKeysManagement(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("isBusiness", currentUser.getIsBusiness() != null && currentUser.getIsBusiness());
+                model.addAttribute("isVerified", currentUser.getBusinessVerificationStatus() != null && 
+                    currentUser.getBusinessVerificationStatus().isVerified());
+            }
+        } catch (Exception e) {
+            model.addAttribute("isBusiness", false);
+        }
+        return "customer/api-keys";
+    }
+
     // Quote creation page
     @GetMapping("/quote")
-    public String createQuote() {
+    public String createQuote(Model model) {
+        try {
+            // Get current user information
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userName", currentUser.getFirstName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                return "customer/quote-logged-in";
+            }
+        } catch (Exception e) {
+            // If authentication fails, continue with default behavior
+        }
+        
+        // Default to public quote page
+        model.addAttribute("isAuthenticated", false);
         return "customer/quote";
     }
 
@@ -89,17 +121,20 @@ public class CustomerWebController {
                 if (packages != null && !packages.isEmpty()) {
                     model.addAttribute("packages", packages);
                     model.addAttribute("email", currentUser.getEmail());
+                    model.addAttribute("userName", currentUser.getFirstName());
                     model.addAttribute("found", true);
                     model.addAttribute("isAuthenticated", true);
                 } else {
                     model.addAttribute("packages", new ArrayList<>());
                     model.addAttribute("email", currentUser.getEmail());
+                    model.addAttribute("userName", currentUser.getFirstName());
                     model.addAttribute("found", false);
                     model.addAttribute("isAuthenticated", true);
                 }
             } catch (Exception e) {
                 model.addAttribute("packages", new ArrayList<>());
                 model.addAttribute("email", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
                 model.addAttribute("found", false);
                 model.addAttribute("isAuthenticated", true);
             }
@@ -263,9 +298,46 @@ public class CustomerWebController {
         return "customer/contact";
     }
 
+    // Analytics page
+    @GetMapping("/analytics")
+    public String analytics(Model model) {
+        try {
+            // Get current user information
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userName", currentUser.getFirstName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("user", currentUser);
+                model.addAttribute("customerTier", currentUser.getCustomerTier());
+                return "customer/analytics";
+            }
+        } catch (Exception e) {
+            // If authentication fails, redirect to login
+        }
+        
+        // Redirect to login if not authenticated
+        return "redirect:/login";
+    }
+
     // Profile page
     @GetMapping("/profile")
-    public String profile() {
-        return "customer/profile";
+    public String profile(Model model) {
+        try {
+            // Get current user information
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userName", currentUser.getFirstName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("user", currentUser);
+                return "customer/profile";
+            }
+        } catch (Exception e) {
+            // If authentication fails, redirect to login
+        }
+        
+        // Redirect to login if not authenticated
+        return "redirect:/login";
     }
 }

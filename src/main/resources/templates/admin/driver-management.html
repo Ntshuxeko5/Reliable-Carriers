@@ -231,16 +231,17 @@
         // Load driver locations
         async function loadDriverLocations() {
             try {
-                const response = await fetch('/api/admin/drivers/locations', {
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken()
-                    }
-                });
-                const drivers = await response.json();
+                const response = await fetch('/api/admin/drivers/tracking/all');
+                const result = await response.json();
                 
-                updateDriverList(drivers);
-                updateDriverMap(drivers);
-                updateStatistics(drivers);
+                if (result.success) {
+                    const drivers = result.data;
+                    updateDriverList(drivers);
+                    updateDriverMap(drivers);
+                    updateStatistics(drivers);
+                } else {
+                    console.error('Error loading drivers:', result.error);
+                }
                 
             } catch (error) {
                 console.error('Error loading driver locations:', error);
@@ -261,30 +262,80 @@
                 return;
             }
             
-            container.innerHTML = drivers.map(driver => `
-                <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors duration-200" 
+            const getStatusColor = (status, isOnline) => {
+                if (!isOnline) return 'bg-gray-100 text-gray-800';
+                switch(status) {
+                    case 'ONLINE': return 'bg-green-100 text-green-800';
+                    case 'EN_ROUTE': return 'bg-blue-100 text-blue-800';
+                    case 'ON_DELIVERY': return 'bg-yellow-100 text-yellow-800';
+                    case 'ASSIGNED': return 'bg-purple-100 text-purple-800';
+                    default: return 'bg-gray-100 text-gray-800';
+                }
+            };
+            
+            const getStatusIcon = (status) => {
+                switch(status) {
+                    case 'ONLINE': return 'fa-circle';
+                    case 'EN_ROUTE': return 'fa-route';
+                    case 'ON_DELIVERY': return 'fa-truck';
+                    case 'ASSIGNED': return 'fa-clipboard-list';
+                    default: return 'fa-circle';
+                }
+            };
+            
+            container.innerHTML = drivers.map(driver => {
+                const driverName = `${driver.firstName || ''} ${driver.lastName || ''}`.trim();
+                const status = driver.status || (driver.isOnline ? 'ONLINE' : 'OFFLINE');
+                const isOnline = driver.isOnline && driver.latitude && driver.longitude;
+                
+                return `
+                <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors duration-200 border-l-4 ${
+                    isOnline ? 'border-green-500' : 'border-gray-300'
+                }" 
                      onclick="selectDriver(${driver.driverId})">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
-                            <h4 class="font-semibold text-gray-900 text-sm">${driver.driverName}</h4>
-                            <p class="text-xs text-gray-600">${driver.driverPhone}</p>
-                            <p class="text-xs text-gray-500">${driver.assignedPackageCount} packages</p>
+                            <h4 class="font-semibold text-gray-900 text-sm">${driverName}</h4>
+                            <p class="text-xs text-gray-600">${driver.phone || 'N/A'}</p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                <i class="fas fa-box mr-1"></i>${driver.activeBookingsCount || 0} active deliveries
+                            </p>
+                            ${driver.vehicleMake ? `<p class="text-xs text-gray-500"><i class="fas fa-car mr-1"></i>${driver.vehicleMake} ${driver.vehicleModel || ''}</p>` : ''}
                         </div>
-                        <div class="text-right">
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                driver.latitude ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                            }">
-                                ${driver.latitude ? 'Online' : 'Offline'}
+                        <div class="text-right ml-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status, isOnline)}">
+                                <i class="fas ${getStatusIcon(status)} mr-1"></i>
+                                ${status.replace('_', ' ')}
                             </span>
+                            ${driver.lastLocationUpdate ? `
+                                <p class="text-xs text-gray-500 mt-1">
+                                    ${formatTimeAgo(new Date(driver.lastLocationUpdate))}
+                                </p>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
             
             // Update driver select dropdown
             const driverSelect = document.getElementById('driverSelect');
             driverSelect.innerHTML = '<option value="">Choose a driver...</option>' + 
-                drivers.map(driver => `<option value="${driver.driverId}">${driver.driverName} (${driver.assignedPackageCount} packages)</option>`).join('');
+                drivers.map(driver => {
+                    const driverName = `${driver.firstName || ''} ${driver.lastName || ''}`.trim();
+                    return `<option value="${driver.driverId}">${driverName} (${driver.activeBookingsCount || 0} active)</option>`;
+                }).join('');
+        }
+        
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            const days = Math.floor(hours / 24);
+            return `${days}d ago`;
         }
         
         // Update driver map
@@ -294,34 +345,102 @@
             driverMarkers = {};
             
             drivers.forEach(driver => {
-                if (driver.latitude && driver.longitude) {
-                    const marker = L.marker([driver.latitude, driver.longitude], {
+                // Only show online drivers with locations
+                if (driver.isOnline && driver.latitude && driver.longitude) {
+                    const driverName = `${driver.firstName || ''} ${driver.lastName || ''}`.trim();
+                    const status = driver.status || 'ONLINE';
+                    
+                    // Color based on status
+                    let markerColor = '#3b82f6'; // default blue
+                    switch(status) {
+                        case 'ONLINE': markerColor = '#10b981'; break; // green
+                        case 'EN_ROUTE': markerColor = '#3b82f6'; break; // blue
+                        case 'ON_DELIVERY': markerColor = '#f59e0b'; break; // yellow
+                        case 'ASSIGNED': markerColor = '#8b5cf6'; break; // purple
+                        default: markerColor = '#6b7280'; // gray
+                    }
+                    
+                    // Handle BigDecimal or number types
+                    const lat = typeof driver.latitude === 'object' && driver.latitude !== null 
+                        ? parseFloat(driver.latitude) : parseFloat(driver.latitude || 0);
+                    const lng = typeof driver.longitude === 'object' && driver.longitude !== null 
+                        ? parseFloat(driver.longitude) : parseFloat(driver.longitude || 0);
+                    
+                    const marker = L.marker([lat, lng], {
                         icon: L.divIcon({
                             className: 'driver-marker',
-                            html: `<div style="background-color: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
-                            iconSize: [20, 20],
-                            iconAnchor: [10, 10]
+                            html: `<div style="background-color: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-truck text-white text-xs"></i>
+                            </div>`,
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
                         })
                     }).addTo(map);
                     
-                    marker.bindPopup(`
-                        <div class="p-2">
-                            <h3 class="font-bold">${driver.driverName}</h3>
-                            <p class="text-sm">${driver.driverPhone}</p>
-                            <p class="text-sm">${driver.assignedPackageCount} packages assigned</p>
-                            <p class="text-xs text-gray-500">Last update: ${new Date(driver.lastLocationUpdate).toLocaleString()}</p>
+                    // Build popup content
+                    let popupContent = `
+                        <div class="p-3" style="min-width: 200px;">
+                            <h3 class="font-bold text-gray-900 mb-2">${driverName}</h3>
+                            <div class="space-y-1 text-sm">
+                                <p class="text-gray-600"><i class="fas fa-phone mr-2"></i>${driver.phone || 'N/A'}</p>
+                                <p class="text-gray-600"><i class="fas fa-box mr-2"></i>${driver.activeBookingsCount || 0} active deliveries</p>
+                                ${driver.vehicleMake ? `<p class="text-gray-600"><i class="fas fa-car mr-2"></i>${driver.vehicleMake} ${driver.vehicleModel || ''}</p>` : ''}
+                                <p class="text-xs text-gray-500 mt-2">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    ${driver.lastLocationUpdate ? formatTimeAgo(new Date(driver.lastLocationUpdate)) : 'No recent update'}
+                                </p>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${status === 'ONLINE' ? 'green' : status === 'EN_ROUTE' ? 'blue' : status === 'ON_DELIVERY' ? 'yellow' : 'purple'}-100 text-${status === 'ONLINE' ? 'green' : status === 'EN_ROUTE' ? 'blue' : status === 'ON_DELIVERY' ? 'yellow' : 'purple'}-800 mt-2">
+                                    ${status.replace('_', ' ')}
+                                </span>
+                            </div>
                         </div>
-                    `);
+                    `;
+                    
+                    marker.bindPopup(popupContent);
                     
                     driverMarkers[driver.driverId] = marker;
                 }
             });
+            
+            // Fit map to show all markers if any exist
+            if (Object.keys(driverMarkers).length > 0) {
+                const group = new L.featureGroup(Object.values(driverMarkers));
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
         }
         
         // Update statistics
         function updateStatistics(drivers) {
             document.getElementById('totalDrivers').textContent = drivers.length;
-            document.getElementById('activeDrivers').textContent = drivers.filter(d => d.latitude).length;
+            const onlineDrivers = drivers.filter(d => d.isOnline && d.latitude && d.longitude);
+            document.getElementById('activeDrivers').textContent = onlineDrivers.length;
+            
+            // Count drivers by status
+            const enRouteCount = drivers.filter(d => d.status === 'EN_ROUTE').length;
+            const onDeliveryCount = drivers.filter(d => d.status === 'ON_DELIVERY').length;
+            
+            // Update in-transit count
+            document.getElementById('inTransitPackages').textContent = enRouteCount + onDeliveryCount;
+        }
+        
+        // Auto-refresh driver locations every 10 seconds
+        let refreshInterval;
+        
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                loadDriverLocations();
+            }, 10000); // Refresh every 10 seconds
+        }
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        }
+        
+        function refreshData() {
+            loadDriverLocations();
+            loadAvailablePackages();
         }
         
         // Load available packages
@@ -398,6 +517,13 @@
         
         // Select driver
         function selectDriver(driverId) {
+            // Focus map on selected driver
+            if (driverMarkers[driverId]) {
+                map.setView(driverMarkers[driverId].getLatLng(), 15);
+                driverMarkers[driverId].openPopup();
+            }
+            
+            // Also update dropdown
             document.getElementById('driverSelect').value = driverId;
         }
         
@@ -475,8 +601,11 @@
             loadDriverLocations();
             loadAvailablePackages();
             
-            // Refresh data every 30 seconds
-            setInterval(refreshData, 30000);
+            // Start auto-refresh every 10 seconds
+            startAutoRefresh();
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', stopAutoRefresh);
         });
 
         function getToken() {

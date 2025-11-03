@@ -1,16 +1,12 @@
 package com.reliablecarriers.Reliable.Carriers.controller;
 
-import com.reliablecarriers.Reliable.Carriers.model.User;
-import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
 import com.reliablecarriers.Reliable.Carriers.service.EmailService;
 import com.reliablecarriers.Reliable.Carriers.service.SmsService;
-import com.reliablecarriers.Reliable.Carriers.service.TwoFactorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/test")
@@ -22,11 +18,6 @@ public class TestController {
     @Autowired
     private SmsService smsService;
 
-    @Autowired
-    private TwoFactorService twoFactorService;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @PostMapping("/email")
     public ResponseEntity<?> testEmail(@RequestParam String to, @RequestParam String subject, @RequestParam String message) {

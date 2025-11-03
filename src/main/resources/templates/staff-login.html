@@ -327,7 +327,12 @@
                         }
                     }, 1500);
                 } else {
-                    showAlert(data.message || 'Authentication failed. Please check your credentials.', 'error');
+                    // Handle staff login errors with specific messages
+                    if (data && data.success === false) {
+                        showAlert(data.message || 'Authentication failed. Please check your credentials.', 'error');
+                    } else {
+                        showAlert('Authentication failed. Please check your credentials.', 'error');
+                    }
                 }
             })
             .catch(error => {

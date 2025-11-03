@@ -19,7 +19,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     List<User> findByRole(UserRole role);
     
+    List<User> findByRoleAndIsOnline(UserRole role, Boolean isOnline);
+    
     boolean existsByEmail(String email);
+    
+    boolean existsByPhone(String phone);
     
     List<User> findByFirstNameContainingOrLastNameContaining(String firstName, String lastName);
     
@@ -32,7 +36,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
            "WHERE u.role = 'CUSTOMER' AND s.createdAt BETWEEN :startDate AND :endDate")
     long countActiveCustomersByDateRange(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
     
-    @Query("SELECT COUNT(DISTINCT u.id) FROM User u JOIN DriverLocation dl ON dl.driver = u " +
+    @Query("SELECT COUNT(DISTINCT u.id) FROM User u JOIN DriverLocation dl ON dl.driverId = u.id " +
            "WHERE u.role = 'DRIVER' AND dl.timestamp BETWEEN :startDate AND :endDate")
-    long countActiveDriversByDateRange(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+    long countActiveDriversByDateRange(@Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
 }

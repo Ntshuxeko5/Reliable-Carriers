@@ -14,12 +14,15 @@ import com.reliablecarriers.Reliable.Carriers.service.PaystackService;
 import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.ShipmentRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.PaymentRepository;
+import com.reliablecarriers.Reliable.Carriers.repository.QuoteRepository;
 import com.reliablecarriers.Reliable.Carriers.service.PaymentService;
 import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageRequest;
 import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
+import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -27,31 +30,44 @@ import java.util.HashMap;
 import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/paystack")
 @CrossOrigin(origins = "*")
 public class PaystackController {
     
+    private static final Logger logger = LoggerFactory.getLogger(PaystackController.class);
+    
     @Value("${app.base.url:http://localhost:8080}")
     private String appBaseUrl;
     
     private final PaystackService paystackService;
     private final PaymentService paymentService;
+    @SuppressWarnings("unused")
     private final CustomerPackageService customerPackageService;
     private final UserRepository userRepository;
     private final ShipmentRepository shipmentRepository;
     private final PaymentRepository paymentRepository;
+    private final QuoteRepository quoteRepository;
+    private final NotificationService notificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
-    public PaystackController(PaystackService paystackService, PaymentService paymentService, CustomerPackageService customerPackageService, UserRepository userRepository, ShipmentRepository shipmentRepository, PaymentRepository paymentRepository) {
+    // Temporary storage for address data (in production, use Redis or database)
+    private final Map<String, Map<String, Object>> temporaryAddressStorage = new HashMap<>();
+    
+    public PaystackController(PaystackService paystackService, PaymentService paymentService, CustomerPackageService customerPackageService, UserRepository userRepository, ShipmentRepository shipmentRepository, PaymentRepository paymentRepository, QuoteRepository quoteRepository, NotificationService notificationService) {
         this.paystackService = paystackService;
         this.paymentService = paymentService;
         this.customerPackageService = customerPackageService;
         this.userRepository = userRepository;
         this.shipmentRepository = shipmentRepository;
         this.paymentRepository = paymentRepository;
+        this.quoteRepository = quoteRepository;
+        this.notificationService = notificationService;
     }
     
     /**
@@ -73,27 +89,70 @@ public class PaystackController {
             BigDecimal amount = request.get("amount") != null ? new BigDecimal(request.get("amount").toString()) : BigDecimal.ZERO;
             
             // Get email from authenticated user if available, otherwise use request email
-            String email = "guest@example.com";
+            String email = null;
             
             // First try to get email from request (frontend)
             if (request.get("email") != null && !request.get("email").toString().trim().isEmpty()) {
-                email = request.get("email").toString();
+                String requestEmail = request.get("email").toString().trim();
+                System.out.println("Email from request: " + requestEmail);
+                if (isValidEmail(requestEmail)) {
+                    email = requestEmail;
+                    System.out.println("Using email from request: " + email);
+                } else {
+                    System.out.println("Invalid email format from request: " + requestEmail);
+                }
+            } else {
+                System.out.println("No email in request or email is empty");
             }
             
             // Then try to override with authenticated user if available
             try {
                 var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                System.out.println("Authentication object: " + auth);
                 if (auth != null && auth.isAuthenticated() && !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
                     String principal = auth.getName();
-                    if (principal != null && !principal.isBlank()) {
+                    System.out.println("Authenticated user principal: " + principal);
+                    if (principal != null && !principal.isBlank() && isValidEmail(principal)) {
                         email = principal; // Use authenticated user's email
+                        System.out.println("Using authenticated user email: " + email);
+                    } else {
+                        System.out.println("Principal is null, blank, or invalid email: " + principal);
                     }
+                } else {
+                    System.out.println("User is not authenticated or is anonymous");
                 }
             } catch (Exception e) {
+                System.out.println("Exception getting authenticated user: " + e.getMessage());
                 // Keep frontend email if auth fails
             }
             
+            // Validate that we have a valid email
+            System.out.println("Final email value: " + email);
+            if (email == null || !isValidEmail(email)) {
+                System.out.println("Email validation failed - email is null or invalid: " + email);
+                Map<String, Object> error = new HashMap<>();
+                error.put("status", "error");
+                error.put("message", "Valid email address is required for payment processing");
+                return ResponseEntity.badRequest().body(error);
+            }
+            System.out.println("Email validation passed: " + email);
+            
             String serviceType = request.get("serviceType") != null ? request.get("serviceType").toString() : "standard";
+            
+            // If we have a quoteId, get the actual quote amount from the database
+            if (!"unknown".equals(quoteId)) {
+                try {
+                    // Try to find the quote in the database to get the correct amount
+                    var quoteOpt = quoteRepository.findByQuoteId(quoteId);
+                    if (quoteOpt.isPresent()) {
+                        var quote = quoteOpt.get();
+                        amount = quote.getTotalCost(); // Use the actual quote total cost
+                        System.out.println("Using quote total cost: " + amount + " for quoteId: " + quoteId);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Could not retrieve quote amount, using provided amount: " + e.getMessage());
+                }
+            }
             
             // Add insurance cost to the amount if provided
             BigDecimal insuranceCost = BigDecimal.ZERO;
@@ -118,18 +177,67 @@ public class PaystackController {
             payment.setPaymentMethod(PaymentMethod.CREDIT_CARD);
             payment.setStatus(PaymentStatus.PENDING);
             
+            // Set the email directly in the payment object for PaystackServiceImpl to use
+            System.out.println("Setting email in payment object: " + email);
+            
+            // Store essential information in payment notes (compact format to fit 500 char limit)
+            String customerName = request.get("customerName") != null ? request.get("customerName").toString() : "";
+            String customerPhone = request.get("customerPhone") != null ? request.get("customerPhone").toString() : "";
+            String recipientName = request.get("recipientName") != null ? request.get("recipientName").toString() : "";
+            String pickupCity = request.get("pickupCity") != null ? request.get("pickupCity").toString() : "";
+            String deliveryCity = request.get("deliveryCity") != null ? request.get("deliveryCity").toString() : "";
+            
+            // Create compact notes format to fit within 500 character limit
+            String compactNotes = String.format("email:%s|serviceType:%s|quoteId:%s|customerName:%s|customerPhone:%s|recipientName:%s|pickupAddress:%s|pickupCity:%s|pickupState:%s|pickupZipCode:%s|pickupCountry:%s|deliveryAddress:%s|deliveryCity:%s|deliveryState:%s|deliveryZipCode:%s|deliveryCountry:%s", 
+                email, serviceType, quoteId, customerName, customerPhone, recipientName, 
+                request.get("pickupAddress") != null ? request.get("pickupAddress").toString() : "Pickup Address",
+                pickupCity, 
+                request.get("pickupState") != null ? request.get("pickupState").toString() : "Pickup State",
+                request.get("pickupZipCode") != null ? request.get("pickupZipCode").toString() : "12345",
+                request.get("pickupCountry") != null ? request.get("pickupCountry").toString() : "South Africa",
+                request.get("deliveryAddress") != null ? request.get("deliveryAddress").toString() : "Delivery Address",
+                deliveryCity,
+                request.get("deliveryState") != null ? request.get("deliveryState").toString() : "Delivery State",
+                request.get("deliveryZipCode") != null ? request.get("deliveryZipCode").toString() : "54321",
+                request.get("deliveryCountry") != null ? request.get("deliveryCountry").toString() : "South Africa");
+            
+            System.out.println("Compact notes with email: " + compactNotes);
+            
+            // Truncate if still too long
+            if (compactNotes.length() > 500) {
+                compactNotes = compactNotes.substring(0, 497) + "...";
+            }
+            
+            payment.setNotes(compactNotes);
+            System.out.println("Stored compact payment notes: " + compactNotes.length() + " characters");
+            
+            // Store complete address data temporarily using transaction ID as key
+            Map<String, Object> addressData = new HashMap<>();
+            addressData.put("customerName", request.get("customerName"));
+            addressData.put("customerEmail", request.get("customerEmail"));
+            addressData.put("customerPhone", request.get("customerPhone"));
+            addressData.put("recipientName", request.get("recipientName"));
+            addressData.put("recipientEmail", request.get("recipientEmail"));
+            addressData.put("recipientPhone", request.get("recipientPhone"));
+            addressData.put("pickupAddress", request.get("pickupAddress"));
+            addressData.put("pickupCity", request.get("pickupCity"));
+            addressData.put("pickupState", request.get("pickupState"));
+            addressData.put("pickupZipCode", request.get("pickupZipCode"));
+            addressData.put("pickupCountry", request.get("pickupCountry"));
+            addressData.put("deliveryAddress", request.get("deliveryAddress"));
+            addressData.put("deliveryCity", request.get("deliveryCity"));
+            addressData.put("deliveryState", request.get("deliveryState"));
+            addressData.put("deliveryZipCode", request.get("deliveryZipCode"));
+            addressData.put("deliveryCountry", request.get("deliveryCountry"));
+            addressData.put("weight", request.get("weight"));
+            addressData.put("description", request.get("description"));
+            
+            // Store address data temporarily
+            temporaryAddressStorage.put(transactionId, addressData);
+            System.out.println("Stored address data temporarily for transaction: " + transactionId);
+            
             // Note: shipment_id and user_id are now optional for quote payments
             // They will be set later when the actual shipment is created
-            
-            // Store full request payload as JSON in payment notes for later use (robust for callbacks)
-            try {
-                String notesJson = objectMapper.writeValueAsString(request);
-                payment.setNotes(notesJson);
-            } catch (JsonProcessingException jpe) {
-                // fallback to compact string
-                String notes = String.format("quoteId:%s,email:%s,serviceType:%s", quoteId, email, serviceType);
-                payment.setNotes(notes);
-            }
             
             // Save payment record
             try {
@@ -155,10 +263,8 @@ public class PaystackController {
             
             // Create Paystack request
             String callbackUrl = appBaseUrl + "/api/paystack/verify";
-            String redirectUrl = appBaseUrl + "/payment-success?reference=" + transactionId + 
-                                "&service=" + serviceType + 
-                                "&amount=" + amount + 
-                                "&email=" + email;
+            // Let the frontend handle the redirect after payment verification
+            String redirectUrl = appBaseUrl + "/payment"; // Stay on payment page, let JS handle redirect
             PaystackRequest paystackRequest = paystackService.createPaymentRequest(payment, callbackUrl, redirectUrl);
             
             // Initialize payment with Paystack
@@ -179,12 +285,15 @@ public class PaystackController {
             
             Map<String, Object> result = new HashMap<>();
             result.put("status", "success");
+            result.put("success", true); // Add this for frontend compatibility
             result.put("authorizationUrl", response.getData().getAuthorizationUrl());
             result.put("reference", transactionId);
             result.put("accessCode", response.getData().getAccessCode());
             result.put("paymentId", payment.getId());
             result.put("quoteId", quoteId);
             result.put("serviceType", serviceType);
+            result.put("amount", amount);
+            result.put("message", "Payment initialized successfully");
             
             return ResponseEntity.ok(result);
             
@@ -203,10 +312,73 @@ public class PaystackController {
      * Verify payment callback from Paystack (API endpoint for JSON response)
      */
     @GetMapping("/verify")
-    public ResponseEntity<Map<String, Object>> verifyPayment(@RequestParam String reference) {
+    public Object verifyPayment(@RequestParam String reference, @RequestParam(required = false) String trxref, HttpServletResponse httpResponse) throws IOException {
         try {
-            System.err.println("=== VERIFY PAYMENT START ===");
-            System.err.println("Verifying payment with reference: " + reference);
+            logger.info("=== VERIFY PAYMENT START ===");
+            logger.info("Verifying payment with reference: " + reference);
+            logger.info("Transaction reference (trxref): " + trxref);
+
+            // If trxref is present, this is a browser redirect from Paystack
+            // We need to redirect to the payment-success HTML page
+            if (trxref != null) {
+                logger.info("=== PAYSTACK BROWSER REDIRECT DETECTED ===");
+                logger.info("This is a browser redirect from Paystack");
+                logger.info("Processing payment and redirecting to success page");
+
+                // Process the payment first
+                Payment payment = paymentRepository.findByTransactionId(reference).orElse(null);
+                String trackingNumber = null;
+                BigDecimal amount = BigDecimal.ZERO;
+                String serviceType = "OVERNIGHT";
+                String email = "customer@example.com";
+
+                if (payment != null) {
+                    amount = payment.getAmount();
+
+                    // Try to extract data from payment notes
+                    if (payment.getNotes() != null && payment.getNotes().trim().startsWith("{")) {
+                        try {
+                            Map<String, Object> payload = objectMapper.readValue(payment.getNotes(), new TypeReference<Map<String, Object>>(){});
+                            if (payload.containsKey("email")) email = String.valueOf(payload.get("email"));
+                            if (payload.containsKey("serviceType")) serviceType = String.valueOf(payload.get("serviceType"));
+                        } catch (Exception ex) {
+                            logger.warn("Could not parse payment notes: " + ex.getMessage());
+                        }
+                    }
+
+                    // Create shipment if not already created
+                    if (payment.getShipment() == null) {
+                        logger.info("Creating shipment from payment data...");
+                        Shipment shipment = createShipmentFromPaymentData(payment, email, serviceType);
+                        if (shipment != null) {
+                            trackingNumber = shipment.getTrackingNumber();
+                            logger.info("Shipment created with tracking number: " + trackingNumber);
+                        }
+                    } else {
+                        trackingNumber = payment.getShipment().getTrackingNumber();
+                        logger.info("Shipment already exists with tracking number: " + trackingNumber);
+                    }
+                }
+
+                // Build redirect URL with all parameters
+                String redirectUrl = String.format("/api/paystack/payment-success?reference=%s&tracking=%s&amount=%s&service=%s&email=%s&status=COMPLETED",
+                        URLEncoder.encode(reference, StandardCharsets.UTF_8),
+                        URLEncoder.encode(trackingNumber != null ? trackingNumber : "", StandardCharsets.UTF_8),
+                        URLEncoder.encode(amount.toString(), StandardCharsets.UTF_8),
+                        URLEncoder.encode(serviceType, StandardCharsets.UTF_8),
+                        URLEncoder.encode(email, StandardCharsets.UTF_8));
+
+                logger.info("=== REDIRECTING TO: " + redirectUrl + " ===");
+
+                // Use HttpServletResponse to perform actual redirect
+                httpResponse.sendRedirect(redirectUrl);
+                return null;
+            }
+
+            // If no trxref, this is an AJAX call from the frontend
+            // Return JSON response
+            logger.info("=== AJAX VERIFICATION REQUEST ===");
+            logger.info("This is an AJAX call from frontend");
             
             // Check if payment exists first
             Payment payment;
@@ -219,6 +391,12 @@ public class PaystackController {
                 
                 // Skip Paystack verification for now and use local payment
                 System.out.println("Using local payment for verification: " + payment.getTransactionId());
+                
+                // Check if shipment already exists to avoid duplicates
+                if (payment.getShipment() != null) {
+                    System.out.println("Shipment already exists, skipping creation: " + payment.getShipment().getTrackingNumber());
+                    return ResponseEntity.ok(createSuccessResponse(payment, payment.getShipment()));
+                }
             } catch (Exception e) {
                 System.err.println("Payment verification failed: " + e.getMessage());
                 // Try to find the payment by reference and create shipment directly
@@ -254,16 +432,26 @@ public class PaystackController {
                         response.put("serviceType", serviceType);
                         response.put("customerEmail", email);
                         
-                        // Add shipping details if shipment exists
-                        if (shipment != null) {
-                            response.put("pickupAddress", shipment.getPickupAddress());
-                            response.put("pickupCity", shipment.getPickupCity());
-                            response.put("pickupCountry", shipment.getPickupCountry());
-                            response.put("deliveryAddress", shipment.getDeliveryAddress());
-                            response.put("deliveryCity", shipment.getDeliveryCity());
-                            response.put("deliveryCountry", shipment.getDeliveryCountry());
-                            response.put("customerPhone", shipment.getSender() != null ? shipment.getSender().getPhone() : null);
+                    // Add shipping details if shipment exists
+                    if (shipment != null) {
+                        response.put("pickupAddress", shipment.getPickupAddress());
+                        response.put("pickupCity", shipment.getPickupCity());
+                        response.put("pickupCountry", shipment.getPickupCountry());
+                        response.put("deliveryAddress", shipment.getDeliveryAddress());
+                        response.put("deliveryCity", shipment.getDeliveryCity());
+                        response.put("deliveryCountry", shipment.getDeliveryCountry());
+                        response.put("customerPhone", shipment.getSender() != null ? shipment.getSender().getPhone() : null);
+                        
+                        // Add customer information
+                        if (shipment.getSender() != null) {
+                            response.put("customerName", shipment.getSender().getFirstName() + " " + shipment.getSender().getLastName());
+                            response.put("customerEmail", shipment.getSender().getEmail());
                         }
+                        
+                        // Add collection and drop-off codes
+                        response.put("collectionCode", shipment.getCollectionCode());
+                        response.put("dropOffCode", shipment.getDropOffCode());
+                    }
                         return ResponseEntity.ok(response);
                     }
                 } catch (Exception ex) {
@@ -295,9 +483,37 @@ public class PaystackController {
                     String email = "customer@example.com"; // Default email
                     String serviceType = "OVERNIGHT"; // Default service type
 
-                    if (notes != null && notes.trim().startsWith("{")) {
-                        // JSON payload
-                        System.out.println("=== ENTERING JSON PARSING ===");
+                    if (notes != null && notes.contains("|")) {
+                        // New compact format parsing: email:value|serviceType:value|...
+                        System.out.println("=== ENTERING COMPACT FORMAT PARSING ===");
+                        try {
+                            System.out.println("Parsing compact notes: " + notes);
+                            String[] parts = notes.split("\\|");
+                            for (String part : parts) {
+                                if (part.contains(":")) {
+                                    String[] keyValue = part.split(":", 2);
+                                    if (keyValue.length == 2) {
+                                        String key = keyValue[0].trim();
+                                        String value = keyValue[1].trim();
+                                        if (key.equals("quoteId")) {
+                                            quoteId = value;
+                                            System.out.println("Found quoteId: " + quoteId);
+                                        } else if (key.equals("email")) {
+                                            email = value;
+                                            System.out.println("Found email: " + email);
+                                        } else if (key.equals("serviceType")) {
+                                            serviceType = value;
+                                            System.out.println("Found serviceType: " + serviceType);
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (Exception ex) {
+                            System.out.println("Could not parse compact notes, using defaults: " + ex.getMessage());
+                        }
+                    } else if (notes != null && notes.trim().startsWith("{")) {
+                        // Legacy JSON payload (for backward compatibility)
+                        System.out.println("=== ENTERING JSON PARSING (LEGACY) ===");
                         try {
                             System.out.println("Parsing JSON notes: " + notes);
                         Map<String, Object> payload = objectMapper.readValue(notes, new TypeReference<Map<String, Object>>(){});
@@ -369,6 +585,12 @@ public class PaystackController {
                     response.put("serviceType", serviceType);
                     response.put("customerEmail", email);
                     
+                    logger.info("Payment verification successful for reference: " + reference);
+                    logger.info("Tracking number: " + (shipment != null ? shipment.getTrackingNumber() : "null"));
+                    logger.info("Amount: " + payment.getAmount());
+                    logger.info("Service type: " + serviceType);
+                    logger.info("Customer email: " + email);
+                    
                     // Add shipping details if shipment exists
                     if (shipment != null) {
                         response.put("pickupAddress", shipment.getPickupAddress());
@@ -378,7 +600,27 @@ public class PaystackController {
                         response.put("deliveryCity", shipment.getDeliveryCity());
                         response.put("deliveryCountry", shipment.getDeliveryCountry());
                         response.put("customerPhone", shipment.getSender() != null ? shipment.getSender().getPhone() : null);
+                        
+                        // Add customer information
+                        if (shipment.getSender() != null) {
+                            response.put("customerName", shipment.getSender().getFirstName() + " " + shipment.getSender().getLastName());
+                            response.put("customerEmail", shipment.getSender().getEmail());
+                        }
+                        
+                        // Add collection and drop-off codes
+                        response.put("collectionCode", shipment.getCollectionCode());
+                        response.put("dropOffCode", shipment.getDropOffCode());
+                        
+                        // Send email confirmation to customer
+                        try {
+                            sendPaymentConfirmationEmail(shipment, payment);
+                        } catch (Exception e) {
+                            System.err.println("Failed to send payment confirmation email: " + e.getMessage());
+                        }
                     }
+                    
+                    // Return success response for frontend to handle redirect
+                    return ResponseEntity.ok(response);
 
                 } catch (Exception e) {
                     response.put("status", "error");
@@ -456,8 +698,14 @@ public class PaystackController {
             // Create a basic shipment with minimal required data
             Shipment shipment = new Shipment();
             String trackingNumber = generateTrackingNumber();
+            String collectionCode = generateCollectionCode();
+            String dropOffCode = generateDropOffCode();
             System.out.println("Generated tracking number: " + trackingNumber);
+            System.out.println("Generated collection code: " + collectionCode);
+            System.out.println("Generated drop-off code: " + dropOffCode);
             shipment.setTrackingNumber(trackingNumber);
+            shipment.setCollectionCode(collectionCode);
+            shipment.setDropOffCode(dropOffCode);
             shipment.setStatus(ShipmentStatus.PENDING);
             shipment.setShippingCost(payment.getAmount());
             shipment.setServiceType(ServiceType.ECONOMY); // Default service type
@@ -498,6 +746,28 @@ public class PaystackController {
             shipment.setWeight(getDoubleValue(addressData, "weight", 1.0));
             shipment.setDescription(getStringValue(addressData, "description", "Package from payment"));
             
+            // Update sender information if we have customer data
+            if (shipment.getSender() != null) {
+                String customerName = getStringValue(addressData, "customerName", null);
+                String customerPhone = getStringValue(addressData, "customerPhone", null);
+                
+                if (customerName != null && !customerName.equals("Customer")) {
+                    // Split customer name into first and last name
+                    String[] nameParts = customerName.split(" ", 2);
+                    shipment.getSender().setFirstName(nameParts[0]);
+                    if (nameParts.length > 1) {
+                        shipment.getSender().setLastName(nameParts[1]);
+                    }
+                }
+                
+                if (customerPhone != null && !customerPhone.equals("Not provided")) {
+                    shipment.getSender().setPhone(customerPhone);
+                }
+                
+                // Save updated user information
+                userRepository.save(shipment.getSender());
+            }
+            
             // Save the shipment
             System.out.println("About to save shipment...");
             Shipment savedShipment = shipmentRepository.save(shipment);
@@ -524,56 +794,35 @@ public class PaystackController {
      */
     private Map<String, Object> extractAddressDataFromPayment(Payment payment) {
         Map<String, Object> addressData = new HashMap<>();
-        
         try {
-            if (payment.getNotes() != null && payment.getNotes().trim().startsWith("{")) {
-                // Parse JSON notes
-                Map<String, Object> payload = objectMapper.readValue(payment.getNotes(), new TypeReference<Map<String, Object>>(){});
-                
-                // Extract address fields
-                addressData.put("recipientName", payload.get("recipientName"));
-                addressData.put("recipientEmail", payload.get("recipientEmail"));
-                addressData.put("pickupAddress", payload.get("pickupAddress"));
-                addressData.put("pickupCity", payload.get("pickupCity"));
-                addressData.put("pickupState", payload.get("pickupState"));
-                addressData.put("pickupZipCode", payload.get("pickupZipCode"));
-                addressData.put("pickupCountry", payload.get("pickupCountry"));
-                addressData.put("deliveryAddress", payload.get("deliveryAddress"));
-                addressData.put("deliveryCity", payload.get("deliveryCity"));
-                addressData.put("deliveryState", payload.get("deliveryState"));
-                addressData.put("deliveryZipCode", payload.get("deliveryZipCode"));
-                addressData.put("deliveryCountry", payload.get("deliveryCountry"));
-                addressData.put("weight", payload.get("weight"));
-                addressData.put("description", payload.get("description"));
-                
-                // Also check nested shipmentRequest
-                if (payload.containsKey("shipmentRequest")) {
-                    Object sr = payload.get("shipmentRequest");
-                    Map<String, Object> srMap = objectMapper.convertValue(sr, new TypeReference<Map<String,Object>>(){});
-                    
-                    // Override with nested data if available
-                    if (srMap.containsKey("recipientName")) addressData.put("recipientName", srMap.get("recipientName"));
-                    if (srMap.containsKey("recipientEmail")) addressData.put("recipientEmail", srMap.get("recipientEmail"));
-                    if (srMap.containsKey("pickupAddress")) addressData.put("pickupAddress", srMap.get("pickupAddress"));
-                    if (srMap.containsKey("pickupCity")) addressData.put("pickupCity", srMap.get("pickupCity"));
-                    if (srMap.containsKey("pickupState")) addressData.put("pickupState", srMap.get("pickupState"));
-                    if (srMap.containsKey("pickupZipCode")) addressData.put("pickupZipCode", srMap.get("pickupZipCode"));
-                    if (srMap.containsKey("pickupCountry")) addressData.put("pickupCountry", srMap.get("pickupCountry"));
-                    if (srMap.containsKey("deliveryAddress")) addressData.put("deliveryAddress", srMap.get("deliveryAddress"));
-                    if (srMap.containsKey("deliveryCity")) addressData.put("deliveryCity", srMap.get("deliveryCity"));
-                    if (srMap.containsKey("deliveryState")) addressData.put("deliveryState", srMap.get("deliveryState"));
-                    if (srMap.containsKey("deliveryZipCode")) addressData.put("deliveryZipCode", srMap.get("deliveryZipCode"));
-                    if (srMap.containsKey("deliveryCountry")) addressData.put("deliveryCountry", srMap.get("deliveryCountry"));
-                    if (srMap.containsKey("weight")) addressData.put("weight", srMap.get("weight"));
-                    if (srMap.containsKey("description")) addressData.put("description", srMap.get("description"));
+            // First try to get from temporary storage using transaction ID
+            if (payment.getTransactionId() != null) {
+                Map<String, Object> tempData = temporaryAddressStorage.get(payment.getTransactionId());
+                if (tempData != null) {
+                    addressData.putAll(tempData);
+                    System.out.println("Retrieved address data from temporary storage for transaction: " + payment.getTransactionId());
+                    // Clean up temporary storage after use
+                    temporaryAddressStorage.remove(payment.getTransactionId());
+                    return addressData;
                 }
-                
-                System.out.println("Extracted address data: " + addressData);
+            }
+            
+            // Fallback to parsing payment notes (compact format)
+            if (payment.getNotes() != null && !payment.getNotes().trim().isEmpty()) {
+                String[] parts = payment.getNotes().split("\\|");
+                for (String part : parts) {
+                    if (part.contains(":")) {
+                        String[] keyValue = part.split(":", 2);
+                        if (keyValue.length == 2) {
+                            addressData.put(keyValue[0].trim(), keyValue[1].trim());
+                        }
+                    }
+                }
+                System.out.println("Successfully parsed address data from payment notes compact format");
             }
         } catch (Exception e) {
-            System.out.println("Could not extract address data from payment notes: " + e.getMessage());
+            System.err.println("Error extracting address data from payment: " + e.getMessage());
         }
-        
         return addressData;
     }
     
@@ -608,6 +857,20 @@ public class PaystackController {
     }
     
     /**
+     * Generate a collection code
+     */
+    private String generateCollectionCode() {
+        return "COL" + (int)(Math.random() * 100000);
+    }
+    
+    /**
+     * Generate a drop-off code
+     */
+    private String generateDropOffCode() {
+        return "DRO" + (int)(Math.random() * 100000);
+    }
+    
+    /**
      * Get Paystack public key for frontend
      */
     @GetMapping("/public-key")
@@ -617,14 +880,6 @@ public class PaystackController {
         return ResponseEntity.ok(result);
     }
     
-    /**
-     * Payment success page
-     */
-    @GetMapping("/payment-success")
-    public String paymentSuccess(@RequestParam(required = false) String reference, Model model) {
-        model.addAttribute("reference", reference);
-        return "payment-success";
-    }
     
     /**
      * Test endpoint to create a shipment directly
@@ -749,6 +1004,99 @@ public class PaystackController {
     }
     
     /**
+     * Send payment confirmation email and SMS to customer
+     */
+    private void sendPaymentConfirmationEmail(Shipment shipment, Payment payment) {
+        try {
+            String customerEmail = shipment.getSender() != null ? shipment.getSender().getEmail() : 
+                                 shipment.getRecipientEmail() != null ? shipment.getRecipientEmail() : null;
+            String customerPhone = shipment.getSender() != null ? shipment.getSender().getPhone() : 
+                                  shipment.getRecipientPhone() != null ? shipment.getRecipientPhone() : null;
+            
+            if (customerEmail != null) {
+                String subject = "Payment Confirmation - " + shipment.getTrackingNumber();
+                String message = String.format(
+                    "Dear Customer,\n\n" +
+                    "Your payment has been processed successfully!\n\n" +
+                    "Payment Details:\n" +
+                    "- Transaction ID: %s\n" +
+                    "- Amount Paid: R%.2f\n" +
+                    "- Payment Date: %s\n" +
+                    "- Service Type: %s\n\n" +
+                    "Shipment Details:\n" +
+                    "- Tracking Number: %s\n" +
+                    "- Collection Code: %s\n" +
+                    "- Drop-off Code: %s\n" +
+                    "- Status: %s\n" +
+                    "- Pickup Address: %s, %s, %s\n" +
+                    "- Delivery Address: %s, %s, %s\n\n" +
+                    "Important Instructions:\n" +
+                    "- Use Collection Code '%s' when dropping off your package\n" +
+                    "- Use Drop-off Code '%s' when receiving your package\n" +
+                    "- Keep these codes safe and provide them to our drivers\n\n" +
+                    "You can track your shipment using the tracking number: %s\n" +
+                    "Track online: http://localhost:8080/tracking/%s\n\n" +
+                    "Thank you for choosing Reliable Carriers!\n\n" +
+                    "Best regards,\n" +
+                    "Reliable Carriers Team",
+                    payment.getTransactionId(),
+                    payment.getAmount(),
+                    payment.getPaymentDate() != null ? payment.getPaymentDate().toString() : "N/A",
+                    shipment.getServiceType(),
+                    shipment.getTrackingNumber(),
+                    shipment.getCollectionCode(),
+                    shipment.getDropOffCode(),
+                    shipment.getStatus(),
+                    shipment.getPickupAddress(),
+                    shipment.getPickupCity(),
+                    shipment.getPickupCountry(),
+                    shipment.getDeliveryAddress(),
+                    shipment.getDeliveryCity(),
+                    shipment.getDeliveryCountry(),
+                    shipment.getCollectionCode(),
+                    shipment.getDropOffCode(),
+                    shipment.getTrackingNumber(),
+                    shipment.getTrackingNumber()
+                );
+                
+                // Send email notification using notification service
+                System.out.println("Sending payment confirmation email to: " + customerEmail);
+                System.out.println("Subject: " + subject);
+                
+                try {
+                    notificationService.sendCustomEmailNotification(customerEmail, subject, message);
+                    System.out.println("Payment confirmation email sent successfully");
+                } catch (Exception e) {
+                    System.err.println("Failed to send email via notification service: " + e.getMessage());
+                    // Fallback: just log the email content
+                    System.out.println("Email content: " + message);
+                }
+                
+                // Send SMS notification if phone number is available
+                if (customerPhone != null && !customerPhone.trim().isEmpty() && !customerPhone.equals("Not provided")) {
+                    try {
+                        String smsMessage = String.format(
+                            "Payment Confirmed! Tracking: %s, Collection Code: %s, Drop-off Code: %s. " +
+                            "Track at: http://localhost:8080/tracking/%s",
+                            shipment.getTrackingNumber(),
+                            shipment.getCollectionCode(),
+                            shipment.getDropOffCode(),
+                            shipment.getTrackingNumber()
+                        );
+                        
+                        notificationService.sendCustomSmsNotification(customerPhone, smsMessage);
+                        System.out.println("Payment confirmation SMS sent to: " + customerPhone);
+                    } catch (Exception e) {
+                        System.err.println("Failed to send SMS notification: " + e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send payment confirmation notifications: " + e.getMessage());
+        }
+    }
+    
+    /**
      * Test Paystack configuration and connectivity
      */
     @GetMapping("/test-config")
@@ -769,10 +1117,75 @@ public class PaystackController {
     }
     
     /**
+     * Get detailed Paystack configuration status
+     */
+    @GetMapping("/config-status")
+    public ResponseEntity<Map<String, Object>> getPaystackConfigStatus() {
+        try {
+            Map<String, Object> status = paystackService.getConfigurationStatus();
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+    
+    /**
      * Test payment success page with sample data
      */
     @GetMapping("/test-payment-success")
     public String testPaymentSuccess() {
-        return "redirect:/payment-success?reference=PAY_1636BDED-633&tracking=RC1760780229388924&amount=150.00&service=OVERNIGHT&email=customer@example.com&status=COMPLETED";
+        return "redirect:/api/paystack/payment-success?reference=PAY_1636BDED-633&tracking=RC1760780229388924&amount=150.00&service=OVERNIGHT&email=customer@example.com&status=COMPLETED";
+    }
+    
+    /**
+     * Validate email address format
+     */
+    private boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+        
+        // Basic email validation regex
+        String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+        return email.matches(emailRegex);
+    }
+    
+    /**
+     * Create success response for payment verification
+     */
+    private Map<String, Object> createSuccessResponse(Payment payment, Shipment shipment) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("paymentStatus", "COMPLETED");
+        response.put("message", "Payment verification completed");
+        response.put("reference", payment.getTransactionId());
+        response.put("trackingNumber", shipment.getTrackingNumber());
+        response.put("amount", payment.getAmount());
+        response.put("serviceType", shipment.getServiceType());
+        response.put("customerEmail", shipment.getSender() != null ? shipment.getSender().getEmail() : null);
+        
+        // Add customer information
+        if (shipment.getSender() != null) {
+            response.put("customerName", shipment.getSender().getFirstName() + " " + shipment.getSender().getLastName());
+            response.put("customerEmail", shipment.getSender().getEmail());
+            response.put("customerPhone", shipment.getSender().getPhone());
+        }
+        
+        // Add shipping details
+        response.put("pickupAddress", shipment.getPickupAddress());
+        response.put("pickupCity", shipment.getPickupCity());
+        response.put("pickupCountry", shipment.getPickupCountry());
+        response.put("deliveryAddress", shipment.getDeliveryAddress());
+        response.put("deliveryCity", shipment.getDeliveryCity());
+        response.put("deliveryCountry", shipment.getDeliveryCountry());
+        
+        // Add collection and drop-off codes
+        response.put("collectionCode", shipment.getCollectionCode());
+        response.put("dropOffCode", shipment.getDropOffCode());
+        
+        return response;
     }
 }

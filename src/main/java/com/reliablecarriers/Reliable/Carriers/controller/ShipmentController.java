@@ -2,6 +2,7 @@ package com.reliablecarriers.Reliable.Carriers.controller;
 
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
+import com.reliablecarriers.Reliable.Carriers.model.ServiceType;
 import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.service.ShipmentService;
 import com.reliablecarriers.Reliable.Carriers.service.ShipmentTrackingService;
@@ -10,10 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import jakarta.validation.Valid;
 
 @RestController
@@ -125,6 +128,7 @@ public class ShipmentController {
     }
 
     @PutMapping("/{shipmentId}/assign-driver/{driverId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TRACKING_MANAGER')")
     public ResponseEntity<Shipment> assignDriverToShipment(
             @PathVariable Long shipmentId, @PathVariable Long driverId) {
         Shipment shipment = shipmentService.assignDriverToShipment(shipmentId, driverId);
@@ -132,6 +136,7 @@ public class ShipmentController {
     }
 
     @PutMapping("/{shipmentId}/update-status")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TRACKING_MANAGER') or hasRole('DRIVER')")
     public ResponseEntity<Shipment> updateShipmentStatus(
             @PathVariable Long shipmentId,
             @RequestParam ShipmentStatus status,
@@ -139,5 +144,86 @@ public class ShipmentController {
             @RequestParam(required = false) String notes) {
         Shipment shipment = shipmentService.updateShipmentStatus(shipmentId, status, location, notes);
         return ResponseEntity.ok(shipment);
+    }
+
+    /**
+     * Update package information - allows admin, tracking manager, and driver to update package details
+     */
+    @PutMapping("/{shipmentId}/update-package-info")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TRACKING_MANAGER') or hasRole('DRIVER')")
+    public ResponseEntity<Shipment> updatePackageInfo(
+            @PathVariable Long shipmentId,
+            @RequestBody Map<String, Object> updates) {
+        try {
+            Shipment shipment = shipmentService.getShipmentById(shipmentId);
+            
+            // Update fields if provided
+            if (updates.containsKey("status")) {
+                String statusStr = updates.get("status").toString();
+                ShipmentStatus status = ShipmentStatus.valueOf(statusStr.toUpperCase());
+                shipment.setStatus(status);
+                
+                // If delivered, set actual delivery date
+                if (status == ShipmentStatus.DELIVERED) {
+                    shipment.setActualDeliveryDate(new Date());
+                }
+            }
+            
+            if (updates.containsKey("location")) {
+                String location = updates.get("location").toString();
+                // Create tracking entry for location update
+                shipmentService.updateShipmentStatus(shipmentId, shipment.getStatus(), location, "Location updated");
+            }
+            
+            if (updates.containsKey("notes")) {
+                String notes = updates.get("notes").toString();
+                // Create tracking entry for notes update
+                shipmentService.updateShipmentStatus(shipmentId, shipment.getStatus(), "System", notes);
+            }
+            
+            if (updates.containsKey("estimatedDeliveryDate")) {
+                String dateStr = updates.get("estimatedDeliveryDate").toString();
+                try {
+                    Date estimatedDate = new java.text.SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
+                    shipment.setEstimatedDeliveryDate(estimatedDate);
+                } catch (Exception e) {
+                    // Invalid date format, ignore
+                }
+            }
+            
+            if (updates.containsKey("serviceType")) {
+                String serviceTypeStr = updates.get("serviceType").toString();
+                ServiceType serviceType = ServiceType.valueOf(serviceTypeStr.toUpperCase());
+                shipment.setServiceType(serviceType);
+            }
+            
+            // Save updated shipment
+            Shipment updatedShipment = shipmentService.updateShipment(shipmentId, shipment);
+            
+            return ResponseEntity.ok(updatedShipment);
+            
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Get all shipments for admin/tracking manager management
+     */
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TRACKING_MANAGER')")
+    public ResponseEntity<List<Shipment>> getAllShipmentsForAdmin() {
+        List<Shipment> shipments = shipmentService.getAllShipments();
+        return ResponseEntity.ok(shipments);
+    }
+
+    /**
+     * Get shipments assigned to a specific driver (for admin/tracking manager)
+     */
+    @GetMapping("/driver/{driverId}/assigned")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TRACKING_MANAGER') or hasRole('DRIVER')")
+    public ResponseEntity<List<Shipment>> getShipmentsAssignedToDriver(@PathVariable Long driverId) {
+        List<Shipment> shipments = shipmentService.getShipmentsByDriverId(driverId);
+        return ResponseEntity.ok(shipments);
     }
 }

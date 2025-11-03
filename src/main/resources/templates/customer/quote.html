@@ -3,664 +3,351 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Quote - Reliable Carriers</title>
-    <link href="/css/tailwind-production.css" rel="stylesheet">
+    <title>Get Instant Quote - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Maps (loaded only if API key is configured) -->
-    <script th:inline="javascript">
-        (function(){
-            var key = /*[[${@environment.getProperty('google.maps.api.key')}]]*/ null;
-            console.log('Google Maps API key from server:', key);
-            console.log('Key type:', typeof key);
-            console.log('Key length:', key ? key.length : 'null');
-            
-            // Always try to load Google Maps with the configured key or fallback
-            var apiKey = key && key !== 'your-google-maps-api-key' && key !== '' && key !== null ? key : 'AIzaSyDLgjJj0Ou8dO1CHzKzJWtbP59QlafVgBY';
-            
-            console.log('Using API key:', apiKey.substring(0, 10) + '...');
-            
-            var s = document.createElement('script');
-            s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(apiKey) + '&libraries=places&region=za&callback=initGoogleMaps';
-            s.async = true;
-            s.defer = true;
-            s.onload = function() {
-                console.log('Google Maps script loaded successfully');
-                window.__MAPS_ENABLED__ = true;
-            };
-            s.onerror = function() {
-                console.error('Failed to load Google Maps script');
-                window.__MAPS_ENABLED__ = false;
-            };
-            document.head.appendChild(s);
-        })();
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
+                            800: '#1e3a8a', 900: '#1e40af',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
     </script>
     <style>
-        /* Enhanced Glass Effect */
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Enhanced Hover Effects */
-        .hover-lift {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .hover-lift:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-        }
-        
-        .hover-lift::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        .hover-lift:hover::before {
-            left: 100%;
-        }
-        
-        /* Enhanced Gradient Text */
-        .gradient-text {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradient-shift 3s ease-in-out infinite;
-        }
-        
-        @keyframes gradient-shift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        
-        /* Modern Card Styles */
-        .modern-card {
-            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-        }
-        
-        .modern-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-        
-        /* Enhanced Form Styling */
-        .form-input {
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-        
-        .form-input:focus {
-            border-color: #0ea5e9;
-            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
-            transform: translateY(-2px);
-        }
-        
-        /* Service Option Cards */
-        .service-card {
-            background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
-            border-radius: 16px;
-            border: 2px solid transparent;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .service-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: #0ea5e9;
-            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.2);
-        }
-        
-        .service-card.recommended {
-            border-color: #10b981;
-            background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
-        }
-        
-        .service-card.recommended::before {
-            content: 'RECOMMENDED';
-            position: absolute;
-            top: 10px;
-            right: -30px;
-            background: #10b981;
-            color: white;
-            padding: 4px 40px;
-            font-size: 12px;
-            font-weight: bold;
-            transform: rotate(45deg);
-            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
-        }
-        
-        /* Enhanced Button Styles */
-        .btn-primary {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 12px 24px;
-            color: white;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
-        }
-        
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        .btn-primary:hover::before {
-            left: 100%;
-        }
-        
-        /* Loading Animation */
-        .loading-spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        /* Enhanced Map Container */
-        .map-container {
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        /* Quote Result Animation */
-        .quote-result {
-            animation: slideInUp 0.6s ease-out;
-        }
-        
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        /* Enhanced Alert Styles */
-        .alert {
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin: 10px 0;
-            font-weight: 500;
-            animation: slideInRight 0.4s ease-out;
-        }
-        
-        .alert.success {
-            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-            border: 1px solid #10b981;
-            color: #065f46;
-        }
-        
-        .alert.error {
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-            border: 1px solid #ef4444;
-            color: #991b1b;
-        }
-        
-        .alert.info {
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-            border: 1px solid #3b82f6;
-            color: #1e40af;
-        }
-        
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        /* Responsive Design Enhancements */
-        @media (max-width: 768px) {
-            .hover-lift:hover {
-                transform: translateY(-4px) scale(1.01);
-            }
-            
-            .service-card:hover {
-                transform: translateY(-4px) scale(1.01);
-            }
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #0284c7 0%, #075985 100%);
-        }
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .pricing-card { transition: all 0.3s ease; }
+        .pricing-card:hover { transform: translateY(-8px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+        .selected-service { border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.05); }
+        .dimension-input { transition: all 0.3s ease; }
+        .dimension-input:focus { transform: scale(1.02); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
     </style>
-
-    </head>
-    <body class="bg-gray-50 font-sans">
+</head>
+<body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg nav-header sticky top-0 z-50">
+    <nav class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
-                            <rect x="4" y="20" width="40" height="20" rx="2" />
-                            <rect x="44" y="28" width="12" height="8" rx="1" />
-                            <circle cx="18" cy="44" r="4" fill="white" />
-                            <circle cx="46" cy="44" r="4" fill="white" />
-                        </svg>
-                    </span>
-                    <span>Reliable Carriers</span>
-                </a>
-                <div class="hidden md:flex space-x-8">
-                    <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-home mr-2"></i>Dashboard
-                    </a>
-                    <a href="/customer/track" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-search mr-2"></i>Track Package
-                    </a>
-                    <a href="/customer/quote" class="text-brand-300 hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-calculator mr-2"></i>Get Quote
-                    </a>
-                    <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-boxes mr-2"></i>My Packages
-                    </a>
-                    <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
-                    <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-question-circle mr-2"></i>Help
-                    </a>
-                    <a href="/customer/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-envelope mr-2"></i>Contact
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-reliable-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
                     </a>
                 </div>
-                <!-- Mobile menu button -->
-                <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
-                    <i class="fas fa-bars text-xl"></i>
-            </button>
-            </div>
-            <!-- Mobile menu -->
-            <div class="md:hidden hidden" id="mobileMenu">
-                <div class="py-4 space-y-4">
-                    <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-home mr-2"></i>Dashboard
-                    </a>
-                    <a href="/customer/track" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-search mr-2"></i>Track Package
-                    </a>
-                    <a href="/customer/quote" class="block text-brand-300 hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-calculator mr-2"></i>Get Quote
-                    </a>
-                    <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-boxes mr-2"></i>My Packages
-                    </a>
-                    <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-store mr-2"></i>Business
-                    </a>
-                    <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-question-circle mr-2"></i>Help
-                    </a>
-                    <a href="/customer/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-envelope mr-2"></i>Contact
-                    </a>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a>
+                    <a href="/services" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Services</a>
+                    <a href="/pricing" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Pricing</a>
+                    <a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a>
+                    <a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a>
+                    <a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a>
+                    <a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a>
                 </div>
             </div>
         </div>
     </nav>
 
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                <span class="gradient-text">Get Instant Quote</span>
+            </h1>
+            <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+                Calculate shipping costs instantly with our transparent pricing. No hidden fees, no surprises.
+            </p>
+        </div>
+    </section>
+
     <!-- Main Content -->
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="rounded-3xl p-8 hover-lift bg-white shadow-sm">
-            <div class="text-center mb-8">
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                    <i class="fas fa-calculator mr-3 gradient-text"></i>Create Quote
-                </h1>
-                <p class="text-xl text-gray-700">Get instant shipping quotes for your packages</p>
-                    </div>
-            
-                        <form id="quoteForm">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-               <label class="block text-gray-800 font-medium mb-2">Pickup Address</label>
-               <input id="pickupAddress" type="text" 
-                   class="w-full px-6 py-4 form-input text-gray-900 placeholder-gray-400 focus:outline-none transition-all duration-300" 
-                               placeholder="Enter pickup address" required>
-                                    <input type="hidden" id="pickupLat" />
-                                    <input type="hidden" id="pickupLng" />
-                                </div>
-                    <div>
-               <label class="block text-gray-800 font-medium mb-2">Delivery Address</label>
-               <input id="deliveryAddress" type="text" 
-                   class="w-full px-6 py-4 form-input text-gray-900 placeholder-gray-400 focus:outline-none transition-all duration-300" 
-                               placeholder="Enter delivery address" required>
-                                    <input type="hidden" id="deliveryLat" />
-                                    <input type="hidden" id="deliveryLng" />
-                    </div>
-                </div>
-                
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div>
-         <label class="block text-gray-800 font-medium mb-2">Weight (kg)</label>
-               <input id="weight" type="number" 
-                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
-                               min="0" step="0.1" required>
-                    </div>
-                    <div>
-               <label class="block text-gray-800 font-medium mb-2">Length (cm)</label>
-               <input type="number" 
-                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
-                   min="0" required>
-                    </div>
-                    <div>
-               <label class="block text-gray-800 font-medium mb-2">Width (cm)</label>
-               <input type="number" 
-                   class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
-                   min="0" required>
-                    </div>
-                </div>
-                
-                <div class="mb-6">
-              <label class="block text-gray-800 font-medium mb-2">Email</label>
-              <input id="senderEmail" type="email" 
-                  class="w-full px-6 py-4 rounded-full border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-all duration-300" 
-                           placeholder="you@example.com" required>
-                </div>
-                
-                <!-- Insurance Options -->
-                <div class="mb-6">
-                    <label class="block text-gray-800 font-medium mb-3">Insurance Coverage (Optional)</label>
-                    <div class="space-y-3">
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-brand-400 transition-all duration-300">
-                            <input type="radio" name="insurance" value="none" class="mr-3 text-brand-500" checked>
-                            <div class="flex-1">
-                                <div class="font-semibold text-gray-800">No Insurance</div>
-                                <div class="text-sm text-gray-600">Standard coverage included</div>
-                            </div>
-                            <div class="text-lg font-bold text-gray-800">R0.00</div>
-                        </label>
-                        
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-brand-400 transition-all duration-300">
-                            <input type="radio" name="insurance" value="basic" class="mr-3 text-brand-500">
-                            <div class="flex-1">
-                                <div class="font-semibold text-gray-800">Basic Coverage</div>
-                                <div class="text-sm text-gray-600">Up to R1,000 coverage</div>
-                            </div>
-                            <div class="text-lg font-bold text-gray-800">R15.00</div>
-                        </label>
-                        
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-brand-400 transition-all duration-300">
-                            <input type="radio" name="insurance" value="standard" class="mr-3 text-brand-500">
-                            <div class="flex-1">
-                                <div class="font-semibold text-gray-800">Standard Coverage</div>
-                                <div class="text-sm text-gray-600">Up to R5,000 coverage</div>
-                            </div>
-                            <div class="text-lg font-bold text-gray-800">R35.00</div>
-                        </label>
-                        
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-brand-400 transition-all duration-300">
-                            <input type="radio" name="insurance" value="premium" class="mr-3 text-brand-500">
-                            <div class="flex-1">
-                                <div class="font-semibold text-gray-800">Premium Coverage</div>
-                                <div class="text-sm text-gray-600">Up to R10,000 coverage</div>
-                            </div>
-                            <div class="text-lg font-bold text-gray-800">R65.00</div>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="mb-6">
-                    <label class="flex items-center text-gray-800">
-                        <input class="form-check-input mr-3" type="checkbox" value="1" id="useCurrentLocation">
-                        <span>Use my current location as pickup</span>
-                    </label>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-4 mb-8">
-            <button type="button" onclick="previewRoute()" 
-                class="btn-primary px-8 py-4 rounded-full font-bold flex items-center justify-center hover-lift">
-                        <i class="fas fa-map mr-2"></i>Preview Route
-                    </button>
-            <button type="submit" 
-                class="btn-primary px-8 py-4 rounded-full font-bold flex items-center justify-center hover-lift">
-                        <i class="fas fa-magic mr-2"></i>Get Quote
-                    </button>
-                    <a href="/customer/dashboard" 
-                       class="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-8 py-4 rounded-full font-bold hover:from-gray-700 hover:to-gray-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
-                        <i class="fas fa-arrow-left mr-2"></i>Back
-                    </a>
-                </div>
-            </form>
-                <div id="mapPreview" class="mt-8" style="display:none">
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">
-                        <i class="fas fa-map mr-2 text-brand-400"></i>Route Preview
-                    </h3>
-                    <div id="map" class="rounded-xl overflow-hidden" style="height: 400px; width: 100%;"></div>
-                    <div id="routeInfo" class="mt-4 text-center">
-                        <div class="inline-flex items-center space-x-4 text-gray-700">
-                            <span><i class="fas fa-route mr-2"></i>Distance: <span id="routeDistance" class="text-brand-600 font-bold">-</span> km</span>
-                            <span><i class="fas fa-clock mr-2"></i>Duration: <span id="routeDuration" class="text-brand-600 font-bold">-</span></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-                    <div id="quoteResult" class="mt-8" style="display:none">
-                        <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                            <h3 class="text-2xl font-bold text-gray-900 mb-4">
-                                <i class="fas fa-receipt mr-2 text-green-400"></i>Instant Quote Results
-                            </h3>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Quote Form -->
+            <div class="lg:col-span-2">
+                <div class="glass-effect rounded-2xl p-8 mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                        <i class="fas fa-calculator mr-3 gradient-text"></i>Package Details
+                    </h2>
                     
-                    <!-- Service Options -->
-                    <div id="serviceOptions" class="mb-6">
-                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Choose Your Service:</h4>
-                        <div id="serviceOptionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <!-- Service options will be populated here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Selected Service Details -->
-                    <div id="selectedServiceDetails" class="bg-white rounded-xl p-6 mb-6" style="display:none">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-gray-800">
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-green-400 mb-2">
-                                    <span id="resDistance">-</span> km
-                                </div>
-                                <div class="text-gray-300 text-sm">Distance</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-brand-400 mb-2">
-                                    R<span id="resTotal">-</span>
-                                </div>
-                                <div class="text-gray-300 text-sm">Total Cost</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-blue-400 mb-2">
-                                    <span id="resService">-</span>
-                                </div>
-                                <div class="text-gray-300 text-sm">Service Type</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-purple-400 mb-2">
-                                    <span id="resDelivery">-</span>
-                                </div>
-                                <div class="text-gray-300 text-sm">Delivery Time</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Cost Breakdown -->
-                        <div class="mt-4 bg-gray-50 rounded-lg p-4">
-                            <h5 class="text-gray-800 font-semibold mb-3">Cost Breakdown:</h5>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                    <span class="text-gray-300">Base Cost:</span>
-                                    <span class="text-gray-900 font-semibold">R<span id="baseCost">-</span></span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-300">Service Fee:</span>
-                                    <span class="text-gray-900 font-semibold">R<span id="serviceFee">-</span></span>
-                                    </div>
-                                <div>
-                                    <span class="text-gray-300">Fuel Surcharge:</span>
-                                    <span class="text-gray-900 font-semibold">R<span id="fuelSurcharge">-</span></span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-300">Insurance:</span>
-                                    <span class="text-gray-900 font-semibold">R<span id="insuranceFee">-</span></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Payment Section -->
-                    <div id="paymentSection" class="bg-white border border-gray-100 rounded-2xl p-6" style="display:none">
-                        <h4 class="text-xl font-bold text-gray-900 mb-4">
-                            <i class="fas fa-credit-card mr-2 text-blue-400"></i>Complete Your Order
-                        </h4>
-                        
+                    <form id="quoteForm" class="space-y-6">
+                        <!-- Pickup and Delivery Addresses -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Order Summary -->
-                            <div class="bg-white rounded-xl p-4 shadow-sm">
-                                <h5 class="text-gray-900 font-semibold mb-3">Order Summary:</h5>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between text-gray-700">
-                                        <span>From:</span>
-                                        <span class="text-gray-900" id="orderPickup">-</span>
-                                    </div>
-                                    <div class="flex justify-between text-gray-700">
-                                        <span>To:</span>
-                                        <span class="text-gray-900" id="orderDelivery">-</span>
-                                    </div>
-                                    <div class="flex justify-between text-gray-700">
-                                        <span>Weight:</span>
-                                        <span class="text-gray-900" id="orderWeight">-</span>
-                                    </div>
-                                    <div class="flex justify-between text-gray-700">
-                                        <span>Service:</span>
-                                        <span class="text-gray-900" id="orderService">-</span>
-                                    </div>
-                                    <div class="border-t border-gray-200 pt-2 mt-2">
-                                        <div class="flex justify-between text-lg font-bold text-brand-600">
-                                            <span>Total:</span>
-                                            <span>R<span id="orderTotal">-</span></span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>Pickup Address
+                                </label>
+                                <input type="text" id="pickupAddress" name="pickupAddress" 
+                                       placeholder="Enter pickup address" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
-                            
-                            <!-- Payment Options -->
-                            <div class="bg-white rounded-xl p-4">
-                                <h5 class="text-gray-900 font-semibold mb-3">Payment Method:</h5>
-                                <div class="space-y-3">
-                                    <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                                        <input type="radio" name="paymentMethod" value="paystack" class="mr-3" checked>
-                                        <i class="fas fa-credit-card text-blue-400 mr-2"></i>
-                                        <span class="text-gray-900">Credit/Debit Card (Paystack)</span>
-                                    </label>
-                                    <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                                        <input type="radio" name="paymentMethod" value="eft" class="mr-3">
-                                        <i class="fas fa-university text-green-400 mr-2"></i>
-                                        <span class="text-gray-900">EFT/Bank Transfer</span>
-                                    </label>
-                                </div>
-                                
-                                <button id="proceedToPayment" 
-                                        class="w-full mt-4 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-full font-bold hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
-                                    <i class="fas fa-lock mr-2"></i>Proceed to Payment
-                                </button>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Delivery Address
+                                </label>
+                                <input type="text" id="deliveryAddress" name="deliveryAddress" 
+                                       placeholder="Enter delivery address" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="mt-4 text-center text-gray-600 text-sm">
-                        <i class="fas fa-info-circle mr-2"></i>Quote valid for 24 hours. Payment required to confirm shipment.
-                    </div>
+
+                        <!-- Hidden fields for coordinates -->
+                        <input type="hidden" id="pickupLatitude" name="pickupLatitude">
+                        <input type="hidden" id="pickupLongitude" name="pickupLongitude">
+                        <input type="hidden" id="pickupPlaceId" name="pickupPlaceId">
+                        <input type="hidden" id="deliveryLatitude" name="deliveryLatitude">
+                        <input type="hidden" id="deliveryLongitude" name="deliveryLongitude">
+                        <input type="hidden" id="deliveryPlaceId" name="deliveryPlaceId">
+
+                        <!-- Package Dimensions -->
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-ruler-combined mr-2 text-purple-600"></i>Package Dimensions
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Length (cm)</label>
+                                    <input type="number" id="length" name="length" min="1" max="200" required
+                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Width (cm)</label>
+                                    <input type="number" id="width" name="width" min="1" max="200" required
+                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
+                                    <input type="number" id="height" name="height" min="1" max="200" required
+                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="0">
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
+                                <input type="number" id="weight" name="weight" min="0.1" max="50" step="0.1" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="0.0">
+                            </div>
+                            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                                <p class="text-sm text-blue-800">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Volume Weight:</strong> <span id="volumeWeight">0.0 kg</span> 
+                                    (Length × Width × Height ÷ 5000)
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Sample Box Sizes -->
+                        <div class="bg-blue-50 rounded-xl p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-boxes mr-2 text-blue-600"></i>Quick Fill - Common Box Sizes
+                            </h3>
+                            <p class="text-sm text-gray-600 mb-4">Click on a box size to automatically fill in the dimensions and weight:</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <!-- Small Box -->
+                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
+                                     data-length="25" data-width="20" data-height="10" data-weight="0.5" data-name="Small Box">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                                            <i class="fas fa-box text-blue-600 text-sm"></i>
+                                        </div>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Small</span>
+                                    </div>
+                                    <h4 class="font-medium text-gray-900 mb-1">Small Box</h4>
+                                    <p class="text-xs text-gray-600 mb-2">25×20×10 cm</p>
+                                    <p class="text-xs text-gray-500">~0.5 kg</p>
+                                    <p class="text-xs text-gray-500">Shoes, books, small items</p>
+                                </div>
+
+                                <!-- Medium Box -->
+                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
+                                     data-length="40" data-width="30" data-height="20" data-weight="1.5" data-name="Medium Box">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
+                                            <i class="fas fa-box text-green-600 text-sm"></i>
+                                        </div>
+                                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Medium</span>
+                                    </div>
+                                    <h4 class="font-medium text-gray-900 mb-1">Medium Box</h4>
+                                    <p class="text-xs text-gray-600 mb-2">40×30×20 cm</p>
+                                    <p class="text-xs text-gray-500">~1.5 kg</p>
+                                    <p class="text-xs text-gray-500">Electronics, clothing</p>
+                                </div>
+
+                                <!-- Large Box -->
+                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
+                                     data-length="60" data-width="40" data-height="30" data-weight="3.0" data-name="Large Box">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="w-8 h-8 bg-orange-100 rounded flex items-center justify-center">
+                                            <i class="fas fa-box text-orange-600 text-sm"></i>
+                                        </div>
+                                        <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">Large</span>
+                                    </div>
+                                    <h4 class="font-medium text-gray-900 mb-1">Large Box</h4>
+                                    <p class="text-xs text-gray-600 mb-2">60×40×30 cm</p>
+                                    <p class="text-xs text-gray-500">~3.0 kg</p>
+                                    <p class="text-xs text-gray-500">Household items, bulk</p>
+                                </div>
+
+                                <!-- Document Envelope -->
+                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
+                                     data-length="32" data-width="23" data-height="2" data-weight="0.1" data-name="Document Envelope">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="w-8 h-8 bg-purple-100 rounded flex items-center justify-center">
+                                            <i class="fas fa-envelope text-purple-600 text-sm"></i>
+                                        </div>
+                                        <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Document</span>
+                                    </div>
+                                    <h4 class="font-medium text-gray-900 mb-1">Document Envelope</h4>
+                                    <p class="text-xs text-gray-600 mb-2">32×23×2 cm</p>
+                                    <p class="text-xs text-gray-500">~0.1 kg</p>
+                                    <p class="text-xs text-gray-500">Letters, contracts</p>
+                                </div>
+
+                                <!-- Shoebox -->
+                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
+                                     data-length="35" data-width="25" data-height="15" data-weight="0.8" data-name="Shoebox">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="w-8 h-8 bg-pink-100 rounded flex items-center justify-center">
+                                            <i class="fas fa-shoe-prints text-pink-600 text-sm"></i>
+                                        </div>
+                                        <span class="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded">Shoes</span>
+                                    </div>
+                                    <h4 class="font-medium text-gray-900 mb-1">Shoebox</h4>
+                                    <p class="text-xs text-gray-600 mb-2">35×25×15 cm</p>
+                                    <p class="text-xs text-gray-500">~0.8 kg</p>
+                                    <p class="text-xs text-gray-500">Shoes, small items</p>
+                                </div>
+
+                                <!-- Gift Box -->
+                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
+                                     data-length="30" data-width="20" data-height="12" data-weight="0.6" data-name="Gift Box">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="w-8 h-8 bg-red-100 rounded flex items-center justify-center">
+                                            <i class="fas fa-gift text-red-600 text-sm"></i>
+                                        </div>
+                                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Gift</span>
+                                    </div>
+                                    <h4 class="font-medium text-gray-900 mb-1">Gift Box</h4>
+                                    <p class="text-xs text-gray-600 mb-2">30×20×12 cm</p>
+                                    <p class="text-xs text-gray-500">~0.6 kg</p>
+                                    <p class="text-xs text-gray-500">Gifts, small items</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Package Type -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-4">
+                                <i class="fas fa-box mr-2 text-orange-600"></i>Package Type
+                            </label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="radio" name="packageType" value="document" class="mr-3">
+                                    <div>
+                                        <div class="font-medium text-gray-900">Document</div>
+                                        <div class="text-sm text-gray-500">Letters, contracts, certificates</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="radio" name="packageType" value="parcel" class="mr-3" checked>
+                                    <div>
+                                        <div class="font-medium text-gray-900">Parcel</div>
+                                        <div class="text-sm text-gray-500">Small packages, gifts, products</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="radio" name="packageType" value="fragile" class="mr-3">
+                                    <div>
+                                        <div class="font-medium text-gray-900">Fragile</div>
+                                        <div class="text-sm text-gray-500">Glass, electronics, delicate items</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="radio" name="packageType" value="valuable" class="mr-3">
+                                    <div>
+                                        <div class="font-medium text-gray-900">Valuable</div>
+                                        <div class="text-sm text-gray-500">Jewelry, electronics, high-value items</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Service Type Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-4">
+                                <i class="fas fa-truck mr-2 text-indigo-600"></i>Service Type
+                            </label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="serviceOptions">
+                                <!-- Service options will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Calculate Button -->
+                        <div class="pt-6">
+                            <button type="submit" id="calculateBtn" 
+                                    class="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center">
+                                <i class="fas fa-calculator mr-2"></i>
+                                Calculate Quote
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-            
-            <!-- Order Confirmation Modal -->
-            <div id="orderConfirmationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" style="display:none">
-                <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
-                    <div class="text-center">
-                        <div class="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                            <i class="fas fa-check text-green-600 text-2xl"></i>
+
+            <!-- Quote Results -->
+            <div class="lg:col-span-1">
+                <div class="glass-effect rounded-2xl p-8 sticky top-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                        <i class="fas fa-receipt mr-3 gradient-text"></i>Quote Results
+                    </h2>
+                    
+                    <div id="quoteResults" class="space-y-4">
+                        <div class="text-center text-gray-500 py-8">
+                            <i class="fas fa-calculator text-4xl mb-4"></i>
+                            <p>Enter package details to get instant pricing</p>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h3>
-                        <p class="text-gray-600 mb-4">Your shipment has been created successfully.</p>
-                        
-                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                            <div class="text-sm text-gray-600 mb-2">Tracking Number:</div>
-                            <div class="text-2xl font-bold text-blue-600" id="confirmationTrackingNumber">-</div>
-                        </div>
-                        
-                        <div class="space-y-2 text-sm text-gray-600 mb-6">
-                            <div>Estimated Delivery: <span class="font-semibold" id="confirmationDelivery">-</span></div>
-                            <div>Total Paid: <span class="font-semibold">R<span id="confirmationTotal">-</span></span></div>
+                    </div>
+
+                    <!-- Quick Quote Examples -->
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Examples</h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                <div class="font-medium text-gray-900">Small Document</div>
+                                <div class="text-sm text-gray-600">A4 envelope, 1kg</div>
+                                <div class="text-sm font-semibold text-blue-600">From R25</div>
                             </div>
-                        
-                        <div class="flex gap-3">
-                            <button onclick="trackNewPackage()" 
-                                    class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                                Track Package
-                            </button>
-                            <button onclick="closeConfirmationModal()" 
-                                    class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
-                                Close
-                            </button>
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                <div class="font-medium text-gray-900">Standard Parcel</div>
+                                <div class="text-sm text-gray-600">30×20×10cm, 2kg</div>
+                                <div class="text-sm font-semibold text-blue-600">From R45</div>
+                            </div>
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                <div class="font-medium text-gray-900">Large Package</div>
+                                <div class="text-sm text-gray-600">50×40×30cm, 5kg</div>
+                                <div class="text-sm font-semibold text-blue-600">From R89</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -668,713 +355,490 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <h3 class="text-xl font-bold mb-4 text-brand-400">Reliable Carriers</h3>
-                    <p class="text-gray-300">Your trusted partner for reliable package delivery and tracking services.</p>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Quick Links</h4>
-                    <ul class="space-y-2 text-gray-300">
-                        <li><a href="/customer/track" class="hover:text-brand-400 transition-colors">Track Package</a></li>
-                        <li><a href="/customer/quote" class="hover:text-brand-400 transition-colors">Get Quote</a></li>
-                        <li><a href="/customer/packages" class="hover:text-brand-400 transition-colors">My Packages</a></li>
-                        <li><a href="/customer/help" class="hover:text-brand-400 transition-colors">Help Center</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Services</h4>
-                    <ul class="space-y-2 text-gray-300">
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Express Delivery</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">National Shipping</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Moving Services</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Load Transport</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Contact Info</h4>
-                    <div class="space-y-2 text-gray-300">
-                        <p><i class="fas fa-phone mr-2"></i>+27 11 123 4567</p>
-                        <p><i class="fas fa-envelope mr-2"></i>support@reliablecarriers.com</p>
-                        <p><i class="fas fa-map-marker-alt mr-2"></i>Johannesburg, South Africa</p>
+    <!-- Service Information -->
+    <section class="py-16 bg-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Our Services</span>
+                </h2>
+                <p class="text-lg text-gray-600">Choose the right service for your needs</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-bolt text-2xl text-red-600"></i>
                     </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Express Delivery</h3>
+                    <p class="text-gray-600 mb-6">Same-day and next-day delivery for urgent packages</p>
+                    <div class="text-2xl font-bold text-gray-900 mb-2">From R89</div>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>• Same-day delivery</li>
+                        <li>• Real-time tracking</li>
+                        <li>• Priority handling</li>
+                        <li>• SMS notifications</li>
+                    </ul>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-truck text-2xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Standard Delivery</h3>
+                    <p class="text-gray-600 mb-6">Reliable 2-3 day delivery service for regular packages</p>
+                    <div class="text-2xl font-bold text-gray-900 mb-2">From R45</div>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>• 2-3 day delivery</li>
+                        <li>• Package tracking</li>
+                        <li>• Insurance included</li>
+                        <li>• Email notifications</li>
+                    </ul>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-shipping-fast text-2xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Economy Delivery</h3>
+                    <p class="text-gray-600 mb-6">Cost-effective 4-7 day delivery for non-urgent packages</p>
+                    <div class="text-2xl font-bold text-gray-900 mb-2">From R25</div>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>• 4-7 day delivery</li>
+                        <li>• Bulk discounts</li>
+                        <li>• Basic tracking</li>
+                        <li>• Email notifications</li>
+                    </ul>
                 </div>
             </div>
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-16 bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-bold text-white mb-6">
+                Ready to Ship?
+            </h2>
+            <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+                Get your quote and start shipping with confidence today.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/register" class="bg-reliable-yellow-400 text-reliable-blue-800 px-8 py-4 rounded-lg font-bold text-lg hover:bg-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-user-plus mr-2"></i>Create Account
+                </a>
+                <a href="/contact" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-reliable-blue-800 transition-colors duration-300">
+                    <i class="fas fa-phone mr-2"></i>Contact Us
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-shipping-fast text-2xl text-reliable-yellow-400 mr-2"></i>
+                        <span class="text-xl font-bold">Reliable Carriers</span>
+                    </div>
+                    <p class="text-gray-400">Your trusted partner for all courier and logistics needs.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Standard Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Economy Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">International</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Company</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="/careers" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="/news" class="hover:text-white transition-colors">News</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Support</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/help-center" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="/tracking" class="hover:text-white transition-colors">Track Package</a></li>
+                        <li><a href="/terms" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
                 <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
     <script>
-        // Mobile menu toggle
-        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
-            const mobileMenu = document.getElementById('mobileMenu');
-            mobileMenu.classList.toggle('hidden');
-        });
+        // Service options data
+        const serviceOptions = [
+            {
+                id: 'express',
+                name: 'Express Delivery',
+                description: 'Same-day & Next-day',
+                icon: 'fas fa-bolt',
+                color: 'red',
+                basePrice: 89,
+                multiplier: 1.2
+            },
+            {
+                id: 'standard',
+                name: 'Standard Delivery',
+                description: '2-3 Business Days',
+                icon: 'fas fa-truck',
+                color: 'blue',
+                basePrice: 45,
+                multiplier: 1.0
+            },
+            {
+                id: 'economy',
+                name: 'Economy Delivery',
+                description: '4-7 Business Days',
+                icon: 'fas fa-shipping-fast',
+                color: 'green',
+                basePrice: 25,
+                multiplier: 0.8
+            }
+        ];
 
-        let map, directionsService, directionsRenderer;
-        let pickupAutocomplete, deliveryAutocomplete;
-        let currentQuote = null;
-        let selectedService = null;
+        // Initialize service options
+        function initializeServiceOptions() {
+            const container = document.getElementById('serviceOptions');
+            container.innerHTML = serviceOptions.map(service => `
+                <label class="service-option pricing-card glass-effect rounded-xl p-6 cursor-pointer hover-lift" data-service="${service.id}">
+                    <input type="radio" name="serviceType" value="${service.id}" class="hidden">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-${service.color}-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="${service.icon} text-xl text-${service.color}-600"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-1">${service.name}</h3>
+                        <p class="text-sm text-gray-600 mb-2">${service.description}</p>
+                        <div class="text-lg font-bold text-${service.color}-600">From R${service.basePrice}</div>
+                    </div>
+                </label>
+            `).join('');
 
-        // Global callback function for Google Maps API
-        function initGoogleMaps() {
-            console.log('Google Maps API loaded successfully');
-            initMap();
+            // Add click handlers
+            document.querySelectorAll('.service-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove selected class from all options
+                    document.querySelectorAll('.service-option').forEach(opt => opt.classList.remove('selected-service'));
+                    // Add selected class to clicked option
+                    this.classList.add('selected-service');
+                    // Check the radio button
+                    this.querySelector('input[type="radio"]').checked = true;
+                });
+            });
         }
 
-        // Fallback function to load Google Maps with hardcoded key
-        function loadGoogleMapsFallback() {
-            console.log('Attempting to load Google Maps with fallback method...');
-            const fallbackKey = 'AIzaSyDLgjJj0Ou8dO1CHzKzJWtbP59QlafVgBY';
-            var s = document.createElement('script');
-            s.src = 'https://maps.googleapis.com/maps/api/js?key=' + fallbackKey + '&libraries=places&region=za&callback=initGoogleMaps';
-            s.async = true;
-            s.defer = true;
-            s.onload = function() {
-                console.log('Google Maps fallback script loaded successfully');
-                window.__MAPS_ENABLED__ = true;
-            };
-            s.onerror = function() {
-                console.error('Failed to load Google Maps fallback script');
-            };
-            document.head.appendChild(s);
+        // Calculate volume weight
+        function calculateVolumeWeight() {
+            const length = parseFloat(document.getElementById('length').value) || 0;
+            const width = parseFloat(document.getElementById('width').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+            
+            const volumeWeight = (length * width * height) / 5000;
+            document.getElementById('volumeWeight').textContent = volumeWeight.toFixed(2);
+            
+            return volumeWeight;
         }
 
-        function initMap() {
-            if (!window.__MAPS_ENABLED__ || typeof google === 'undefined' || !google.maps) {
-                console.log('Google Maps not available, using fallback methods');
-                // Maps not available; hide preview UI gracefully
-                const preview = document.getElementById('mapPreview');
-                if (preview) preview.style.display = 'none';
+        // Calculate quote
+        async function calculateQuote() {
+            const length = parseFloat(document.getElementById('length').value) || 0;
+            const width = parseFloat(document.getElementById('width').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+            const weight = parseFloat(document.getElementById('weight').value) || 0;
+            const packageType = document.querySelector('input[name="packageType"]:checked')?.value || 'parcel';
+            const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || 'standard';
+            
+            if (!length || !width || !height || !weight) {
+                alert('Please fill in all package dimensions and weight');
                 return;
             }
+
+            const volumeWeight = calculateVolumeWeight();
+            const actualWeight = Math.max(weight, volumeWeight);
             
-            console.log('Initializing Google Maps...');
+            const selectedService = serviceOptions.find(s => s.id === serviceType);
+            if (!selectedService) return;
+
+            // Calculate distance using Google Maps API
+            const distance = await calculateDistance();
             
-            // Initialize map centered on Johannesburg
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: { lat: -26.2041, lng: 28.0473 },
-                zoom: 10
-            });
+            // Calculate pricing
+            let basePrice = selectedService.basePrice;
             
+            // Weight multiplier
+            if (actualWeight > 5) basePrice += (actualWeight - 5) * 5;
+            if (actualWeight > 10) basePrice += (actualWeight - 10) * 3;
+            
+            // Distance multiplier
+            if (distance > 100) basePrice += (distance - 100) * 0.5;
+            if (distance > 500) basePrice += (distance - 500) * 0.3;
+            
+            // Package type multiplier
+            const typeMultipliers = {
+                'document': 0.8,
+                'parcel': 1.0,
+                'fragile': 1.3,
+                'valuable': 1.5
+            };
+            basePrice *= typeMultipliers[packageType] || 1.0;
+            
+            // Service multiplier
+            basePrice *= selectedService.multiplier;
+            
+            const finalPrice = Math.round(basePrice);
+            
+            // Display results
+            displayQuoteResults(selectedService, finalPrice, actualWeight, distance);
+        }
+
+        // Google Maps API integration
+        let map, pickupAutocomplete, deliveryAutocomplete;
+        let distanceService, directionsService, directionsRenderer;
+        let pickupCoordinates = null;
+        let deliveryCoordinates = null;
+
+        function initMap() {
+            // Initialize services
+            distanceService = new google.maps.DistanceMatrixService();
             directionsService = new google.maps.DirectionsService();
             directionsRenderer = new google.maps.DirectionsRenderer();
-            directionsRenderer.setMap(map);
 
             // Initialize autocomplete for pickup address
-            pickupAutocomplete = new google.maps.places.Autocomplete(document.getElementById('pickupAddress'), {
-                componentRestrictions: { country: 'za' },
-                fields: ['formatted_address', 'geometry', 'name']
-            });
+            pickupAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('pickupAddress'),
+                {
+                    types: ['address'],
+                    componentRestrictions: { country: 'za' } // Restrict to South Africa
+                }
+            );
 
             // Initialize autocomplete for delivery address
-            deliveryAutocomplete = new google.maps.places.Autocomplete(document.getElementById('deliveryAddress'), {
-                componentRestrictions: { country: 'za' },
-                fields: ['formatted_address', 'geometry', 'name']
-            });
+            deliveryAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('deliveryAddress'),
+                {
+                    types: ['address'],
+                    componentRestrictions: { country: 'za' } // Restrict to South Africa
+                }
+            );
 
-            // Capture coordinates when place is selected
+            // Add place changed listeners to capture coordinates
             pickupAutocomplete.addListener('place_changed', function() {
                 const place = pickupAutocomplete.getPlace();
-                if (place.geometry) {
-                    document.getElementById('pickupLat').value = place.geometry.location.lat();
-                    document.getElementById('pickupLng').value = place.geometry.location.lng();
-                    console.log('Pickup coordinates set:', place.geometry.location.lat(), place.geometry.location.lng());
+                if (place.geometry && place.geometry.location) {
+                    pickupCoordinates = {
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
+                        formattedAddress: place.formatted_address,
+                        placeId: place.place_id
+                    };
+                    console.log('Pickup coordinates captured:', pickupCoordinates);
+                    
+                    // Store coordinates in hidden fields for form submission
+                    document.getElementById('pickupLatitude').value = pickupCoordinates.lat;
+                    document.getElementById('pickupLongitude').value = pickupCoordinates.lng;
+                    document.getElementById('pickupPlaceId').value = pickupCoordinates.placeId;
                 }
             });
 
             deliveryAutocomplete.addListener('place_changed', function() {
                 const place = deliveryAutocomplete.getPlace();
-                if (place.geometry) {
-                    document.getElementById('deliveryLat').value = place.geometry.location.lat();
-                    document.getElementById('deliveryLng').value = place.geometry.location.lng();
-                    console.log('Delivery coordinates set:', place.geometry.location.lat(), place.geometry.location.lng());
+                if (place.geometry && place.geometry.location) {
+                    deliveryCoordinates = {
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
+                        formattedAddress: place.formatted_address,
+                        placeId: place.place_id
+                    };
+                    console.log('Delivery coordinates captured:', deliveryCoordinates);
+                    
+                    // Store coordinates in hidden fields for form submission
+                    document.getElementById('deliveryLatitude').value = deliveryCoordinates.lat;
+                    document.getElementById('deliveryLongitude').value = deliveryCoordinates.lng;
+                    document.getElementById('deliveryPlaceId').value = deliveryCoordinates.placeId;
                 }
             });
-            
-            console.log('Google Maps initialization completed');
         }
 
-        function previewRoute() {
+        // Real distance calculation using Google Maps API
+        function calculateDistance() {
             const pickup = document.getElementById('pickupAddress').value;
             const delivery = document.getElementById('deliveryAddress').value;
             
             if (!pickup || !delivery) {
-                showAlert('Please enter both pickup and delivery addresses', 'error');
-                return;
+                return 100; // Default distance
             }
-            
-            console.log('Previewing route from', pickup, 'to', delivery);
-            
-            // Check if Google Maps is available
-            if (window.__MAPS_ENABLED__ && typeof google !== 'undefined' && google.maps && directionsService && directionsRenderer) {
-                console.log('Using Google Maps for route calculation');
-                // Use Google Maps for accurate distance and route calculation
-                calculateRouteWithGoogleMaps(pickup, delivery);
-            } else {
-                console.log('Google Maps not available, using fallback calculation');
-                // Fallback to estimated distance calculation
-                const estimatedDistance = calculateEstimatedDistance(pickup, delivery);
-                
-                // Show route information
-                document.getElementById('routeDistance').textContent = estimatedDistance.toFixed(1);
-                document.getElementById('routeDuration').textContent = estimateDuration(estimatedDistance);
-                document.getElementById('mapPreview').style.display = 'block';
-                
-                showAlert(`Estimated distance: ${estimatedDistance.toFixed(1)} km. Duration: ${estimateDuration(estimatedDistance)} (Using fallback calculation)`, 'info');
-            }
-        }
-        
-        function calculateRouteWithGoogleMaps(pickup, delivery) {
-            if (!directionsService || !directionsRenderer) {
-                showAlert('Google Maps not properly initialized', 'error');
-                return;
-            }
-            
-            const request = {
-                origin: pickup,
-                destination: delivery,
-                travelMode: google.maps.TravelMode.DRIVING,
-                unitSystem: google.maps.UnitSystem.METRIC,
-                avoidHighways: false,
-                avoidTolls: false
-            };
-            
-            directionsService.route(request, function(result, status) {
-                if (status === google.maps.DirectionsStatus.OK) {
-                    // Display the route on the map
-                    directionsRenderer.setDirections(result);
-                    
-                    // Get distance and duration from the result
-                    const route = result.routes[0];
-                    const leg = route.legs[0];
-                    const distance = leg.distance.value / 1000; // Convert to km
-                    const duration = leg.duration.value; // Duration in seconds
-                    
-                    // Update the display
-                    document.getElementById('routeDistance').textContent = distance.toFixed(1);
-                    document.getElementById('routeDuration').textContent = formatDuration(duration);
-                    document.getElementById('mapPreview').style.display = 'block';
-                    
-                    // Show success message
-                    showAlert(`Route calculated: ${distance.toFixed(1)} km. Duration: ${formatDuration(duration)}`, 'success');
-                    
-                    // Update hidden form fields with coordinates
-                    if (leg.start_location) {
-                        document.getElementById('pickupLat').value = leg.start_location.lat();
-                        document.getElementById('pickupLng').value = leg.start_location.lng();
-                    }
-                    if (leg.end_location) {
-                        document.getElementById('deliveryLat').value = leg.end_location.lat();
-                        document.getElementById('deliveryLng').value = leg.end_location.lng();
-                    }
-                } else {
-                    // Fallback to estimated calculation if Google Maps fails
-                    console.error('Google Maps route calculation failed:', status);
-                    const estimatedDistance = calculateEstimatedDistance(pickup, delivery);
-                    
-                    document.getElementById('routeDistance').textContent = estimatedDistance.toFixed(1);
-                    document.getElementById('routeDuration').textContent = estimateDuration(estimatedDistance);
-                    document.getElementById('mapPreview').style.display = 'block';
-                    
-                    showAlert(`Estimated distance: ${estimatedDistance.toFixed(1)} km. Duration: ${estimateDuration(estimatedDistance)} (Google Maps unavailable)`, 'info');
-                }
-            });
-        }
-        
-        function formatDuration(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            
-            if (hours > 0) {
-                return hours + 'h ' + minutes + 'm';
-            } else {
-                return minutes + 'm';
-            }
-        }
-        
-        function calculateEstimatedDistance(address1, address2) {
-            // Enhanced distance estimation with more South African locations
-            const lower1 = address1.toLowerCase();
-            const lower2 = address2.toLowerCase();
-            
-            // Major cities array for same-city detection
-            const majorCities = [
-                'johannesburg', 'jhb', 'pretoria', 'cape town', 'durban', 'sandton', 'midrand', 'soweto',
-                'centurion', 'randburg', 'roodepoort', 'kempton park', 'boksburg', 'benoni', 'germiston',
-                'alberton', 'krugersdorp', 'fourways', 'rosebank', 'melville', 'parktown', 'houghton',
-                'bedfordview', 'edenvale', 'brakpan', 'springs', 'katlehong', 'vanderbijlpark', 'vereeniging',
-                'port elizabeth', 'bloemfontein', 'nelspruit', 'polokwane', 'kimberley', 'richards bay',
-                'east london', 'george'
-            ];
-            
-            // Check for same city
-            for (const city of majorCities) {
-                if (lower1.includes(city) && lower2.includes(city)) {
-                    return 10.0; // Intra-city distance
-                }
-            }
-            
-            // Specific inter-city distances (more accurate)
-            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('pretoria')) return 55.0;
-            if (lower1.includes('pretoria') && (lower2.includes('johannesburg') || lower2.includes('jhb'))) return 55.0;
-            
-            if (lower1.includes('sandton') && lower2.includes('midrand')) return 20.0;
-            if (lower1.includes('midrand') && lower2.includes('sandton')) return 20.0;
-            
-            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('soweto')) return 25.0;
-            if (lower1.includes('soweto') && (lower2.includes('johannesburg') || lower2.includes('jhb'))) return 25.0;
-            
-            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('sandton')) return 15.0;
-            if (lower1.includes('sandton') && (lower2.includes('johannesburg') || lower2.includes('jhb'))) return 15.0;
-            
-            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('centurion')) return 45.0;
-            if (lower1.includes('centurion') && (lower2.includes('johannesburg') || lower2.includes('jhb'))) return 45.0;
-            
-            if (lower1.includes('pretoria') && lower2.includes('centurion')) return 15.0;
-            if (lower1.includes('centurion') && lower2.includes('pretoria')) return 15.0;
-            
-            // Cross-province distances
-            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('cape town')) return 1400.0;
-            if ((lower2.includes('johannesburg') || lower2.includes('jhb')) && lower1.includes('cape town')) return 1400.0;
-            
-            if ((lower1.includes('johannesburg') || lower1.includes('jhb')) && lower2.includes('durban')) return 550.0;
-            if ((lower2.includes('johannesburg') || lower2.includes('jhb')) && lower1.includes('durban')) return 550.0;
-            
-            // Default fallback based on region
-            if (lower1.includes('gauteng') || lower2.includes('gauteng')) return 30.0;
-            
-            return 50.0; // Default for unknown routes
-        }
-        
-        function estimateDuration(distanceKm) {
-            // Estimate travel time based on distance
-            // Assuming average speed of 40 km/h in city traffic
-            const hours = distanceKm / 40;
-            if (hours < 1) {
-                return Math.round(hours * 60) + ' min';
-            } else {
-                const wholeHours = Math.floor(hours);
-                const minutes = Math.round((hours - wholeHours) * 60);
-                return wholeHours + 'h ' + minutes + 'm';
-            }
-        }
 
-        // Alert system
-        function showAlert(message, type) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${
-                type === 'success' ? 'bg-green-500 text-white' : 
-                type === 'error' ? 'bg-red-500 text-white' : 
-                type === 'info' ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white'
-            }`;
-            alertDiv.innerHTML = `
-                <div class="flex items-center">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-2"></i>
-                    <span>${message}</span>
-                </div>
-            `;
-            
-            document.body.appendChild(alertDiv);
-            
-            setTimeout(() => {
-                if (alertDiv.parentElement) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
-
-        function displayServiceOptions(services) {
-            const container = document.getElementById('serviceOptionsList');
-            container.innerHTML = '';
-            
-            // Check if services is defined and is an array
-            if (!services || !Array.isArray(services)) {
-                console.error('Services is not defined or not an array:', services);
-                container.innerHTML = '<div class="text-center text-gray-500 p-4">No service options available</div>';
-                return;
-            }
-            
-            if (services.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-500 p-4">No service options available</div>';
-                return;
-            }
-            
-            console.log('Displaying', services.length, 'service options');
-            
-            services.forEach((service, index) => {
-                const serviceCard = document.createElement('div');
-                serviceCard.className = `service-card p-6 cursor-pointer hover-lift ${service.isRecommended ? 'recommended' : ''}`;
-                serviceCard.innerHTML = `
-                    <div class="text-center text-gray-900">
-                        <div class="text-3xl font-bold text-gray-900 mb-3">R${service.cost}</div>
-                        <div class="text-lg font-semibold text-gray-800 mb-2">${service.serviceType}</div>
-                        <div class="text-sm text-gray-600 mb-4">${service.description}</div>
-                        <div class="text-sm text-blue-600 font-medium">${service.estimatedDeliveryTime}</div>
-                        ${service.isRecommended ? '<div class="text-xs text-green-600 font-bold mt-2 bg-green-100 px-2 py-1 rounded-full inline-block">RECOMMENDED</div>' : ''}
-                    </div>
-                `;
-                
-                serviceCard.addEventListener('click', () => selectService(service));
-                container.appendChild(serviceCard);
+            return new Promise((resolve) => {
+                distanceService.getDistanceMatrix({
+                    origins: [pickup],
+                    destinations: [delivery],
+                    travelMode: google.maps.TravelMode.DRIVING,
+                    unitSystem: google.maps.UnitSystem.METRIC,
+                    avoidHighways: false,
+                    avoidTolls: false
+                }, (response, status) => {
+                    if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                        const distance = response.rows[0].elements[0].distance.value / 1000; // Convert to km
+                        console.log('Google Maps distance:', distance, 'km');
+                        resolve(distance);
+                    } else {
+                        console.log('Google Maps API error:', status);
+                        resolve(100); // Fallback distance
+                    }
+                });
             });
         }
 
-        function selectService(service) {
-            selectedService = service;
-            
-            // Update selected service details
-            document.getElementById('resDistance').textContent = currentQuote.distanceKm.toFixed(1);
-            document.getElementById('resTotal').textContent = service.cost;
-            document.getElementById('resService').textContent = service.serviceType;
-            document.getElementById('resDelivery').textContent = service.estimatedDeliveryTime;
-            
-            // Update cost breakdown
-            document.getElementById('baseCost').textContent = currentQuote.baseCost;
-            document.getElementById('serviceFee').textContent = currentQuote.serviceFee;
-            document.getElementById('fuelSurcharge').textContent = currentQuote.fuelSurcharge;
-            document.getElementById('insuranceFee').textContent = currentQuote.insuranceFee;
-            
-            // Show selected service details and payment section
-            document.getElementById('selectedServiceDetails').style.display = 'block';
-            document.getElementById('paymentSection').style.display = 'block';
-            
-            // Update order summary
-            document.getElementById('orderPickup').textContent = currentQuote.pickupAddress;
-            document.getElementById('orderDelivery').textContent = currentQuote.deliveryAddress;
-            document.getElementById('orderWeight').textContent = currentQuote.weight + ' kg';
-            document.getElementById('orderService').textContent = service.serviceType;
-            document.getElementById('orderTotal').textContent = service.cost;
-            
-            // Scroll to payment section
-            document.getElementById('paymentSection').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function processPayment() {
-            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-            
-            if (paymentMethod === 'paystack') {
-                processPaystackPayment();
-            } else if (paymentMethod === 'eft') {
-                processEFTPayment();
-            }
-        }
-
-        async function processPaystackPayment() {
-            try {
-                const selectedInsurance = document.querySelector('input[name="insurance"]:checked').value;
-                const insuranceCosts = {
-                    'none': 0,
-                    'basic': 15,
-                    'standard': 35,
-                    'premium': 65
-                };
-                const insuranceCost = insuranceCosts[selectedInsurance] || 0;
-                const totalAmount = selectedService.cost + insuranceCost;
-                
-                // Use authenticated user's email if available, otherwise use form email
-                let userEmail = document.getElementById('senderEmail').value;
-                const jwt = sessionStorage.getItem('jwtToken') || sessionStorage.getItem('token');
-                if (jwt) {
-                    // Try to get user email from JWT token or use a default
-                    try {
-                        const payload = JSON.parse(atob(jwt.split('.')[1]));
-                        if (payload.sub || payload.email) {
-                            userEmail = payload.sub || payload.email;
-                        }
-                    } catch (e) {
-                        // Keep form email if JWT parsing fails
-                    }
-                }
-                
-                const paymentData = {
-                    shipmentId: currentQuote.quoteId,
-                    amount: totalAmount,
-                    email: userEmail,
-                    serviceType: selectedService.serviceType,
-                    insuranceType: selectedInsurance,
-                    insuranceCost: insuranceCost
-                };
-
-                // Attach Authorization header if JWT token present (logged-in user)
-                const headers = { 'Content-Type': 'application/json' };
-                if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
-
-                const response = await fetch('/api/paystack/initialize', {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(paymentData)
-                });
-                
-                if (!response.ok) throw new Error('Payment initialization failed');
-                
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    // Redirect to Paystack payment page
-                    window.location.href = result.authorizationUrl;
-                } else {
-                    throw new Error(result.message || 'Payment failed');
-                }
-            } catch (error) {
-                alert('Payment failed: ' + error.message);
-            }
-        }
-
-        async function processEFTPayment() {
-            try {
-                // Create shipment with EFT payment
-                const shipmentData = {
-                    senderName: 'Customer',
-                    senderEmail: document.getElementById('senderEmail').value,
-                    pickupAddress: document.getElementById('pickupAddress').value,
-                    pickupCity: 'Johannesburg',
-                    pickupState: 'Gauteng',
-                    pickupZipCode: '2000',
-                    pickupCountry: 'South Africa',
-                    recipientName: 'Recipient',
-                    recipientEmail: document.getElementById('senderEmail').value,
-                    deliveryAddress: document.getElementById('deliveryAddress').value,
-                    deliveryCity: 'Pretoria',
-                    deliveryState: 'Gauteng',
-                    deliveryZipCode: '0001',
-                    deliveryCountry: 'South Africa',
-                    weight: parseFloat(document.getElementById('weight').value),
-                    serviceType: selectedService.serviceType,
-                    paymentMethod: 'EFT'
-                };
-                
-                // Include Authorization header for authenticated users
-                const jwtForShipment = sessionStorage.getItem('jwtToken') || sessionStorage.getItem('token');
-                const shipmentHeaders = { 'Content-Type': 'application/json' };
-                if (jwtForShipment) shipmentHeaders['Authorization'] = 'Bearer ' + jwtForShipment;
-
-                const response = await fetch(`/api/customer/quote/${currentQuote.quoteId}/create-shipment`, {
-                    method: 'POST',
-                    headers: shipmentHeaders,
-                    body: JSON.stringify(shipmentData)
-                });
-                
-                if (!response.ok) throw new Error('Shipment creation failed');
-                
-                const result = await response.json();
-                
-                // Show EFT payment instructions
-                showEFTPaymentInstructions(result.trackingNumber, selectedService.cost);
-                
-            } catch (error) {
-                alert('Order creation failed: ' + error.message);
-            }
-        }
-
-        function showEFTPaymentInstructions(trackingNumber, amount) {
-            const modal = document.getElementById('orderConfirmationModal');
-            const content = modal.querySelector('.bg-white');
-            
-            content.innerHTML = `
-                <div class="text-center">
-                    <div class="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-university text-blue-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">EFT Payment Required</h3>
-                    <p class="text-gray-600 mb-4">Your shipment has been created. Please complete payment via EFT.</p>
-                    
-                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                        <div class="text-sm text-gray-600 mb-2">Tracking Number:</div>
-                        <div class="text-2xl font-bold text-blue-600">${trackingNumber}</div>
-                    </div>
-                    
-                    <div class="bg-blue-50 rounded-lg p-4 mb-6 text-left">
-                        <h4 class="font-semibold text-gray-900 mb-2">Payment Details:</h4>
-                        <div class="space-y-1 text-sm text-gray-600">
-                            <div><strong>Amount:</strong> R${amount}</div>
-                            <div><strong>Reference:</strong> ${trackingNumber}</div>
-                            <div><strong>Bank:</strong> Standard Bank</div>
-                            <div><strong>Account:</strong> 1234567890</div>
-                            <div><strong>Branch:</strong> 051001</div>
+        // Display quote results
+        function displayQuoteResults(service, price, weight, distance) {
+            const container = document.getElementById('quoteResults');
+            container.innerHTML = `
+                <div class="bg-${service.color}-50 rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-${service.color}-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="${service.icon} text-${service.color}-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">${service.name}</h3>
+                                <p class="text-sm text-gray-600">${service.description}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-${service.color}-600">R${price}</div>
+                            <div class="text-sm text-gray-500">Total Cost</div>
                         </div>
                     </div>
                     
-                    <div class="text-sm text-gray-600 mb-6">
-                        <p>Once payment is confirmed, your shipment will be processed and you'll receive tracking updates.</p>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>Weight:</span>
+                            <span>${weight.toFixed(1)} kg</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Distance:</span>
+                            <span>${Math.round(distance)} km</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Delivery Time:</span>
+                            <span>${service.description}</span>
+                        </div>
                     </div>
                     
-                    <div class="flex gap-3">
-                        <button onclick="trackNewPackage()" 
-                                class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                            Track Package
-                        </button>
-                        <button onclick="closeConfirmationModal()" 
-                                class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
-                            Close
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <button onclick="proceedToBooking('${service.type}')" class="w-full bg-${service.color}-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-${service.color}-700 transition-colors duration-300">
+                            <i class="fas fa-shopping-cart mr-2"></i>Book This Service
                         </button>
                     </div>
                 </div>
             `;
-            
-            modal.style.display = 'flex';
         }
 
-        function trackNewPackage() {
-            window.location.href = '/customer/track';
-        }
-
-        function closeConfirmationModal() {
-            document.getElementById('orderConfirmationModal').style.display = 'none';
-        }
-
-        document.getElementById('quoteForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Proceed to booking
+        function proceedToBooking(selectedServiceType) {
+            if (!currentQuote) {
+                showAlert('Please generate a quote first before booking.', 'error');
+                return;
+            }
             
-            // Show loading state
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Getting Quote...';
-            submitBtn.disabled = true;
+            // Find the selected service details
+            const selectedService = currentQuote.availableServices.find(service => service.type === selectedServiceType);
             
-            const useLoc = document.getElementById('useCurrentLocation').checked;
-            // Get selected insurance
-            const selectedInsurance = document.querySelector('input[name="insurance"]:checked').value;
-            const insuranceCosts = {
-                'none': 0,
-                'basic': 15,
-                'standard': 35,
-                'premium': 65
+            // Prepare quote data with selected service
+            const quoteDataForBooking = {
+                ...currentQuote,
+                selectedService: selectedService
             };
             
-            const payload = {
-                senderName: 'Customer',
-                senderEmail: document.getElementById('senderEmail').value,
-                pickupAddress: document.getElementById('pickupAddress').value,
-                pickupCity: 'Johannesburg',
-                pickupState: 'Gauteng',
-                pickupZipCode: '2000',
-                pickupCountry: 'South Africa',
-                recipientName: 'Recipient',
-                recipientEmail: document.getElementById('senderEmail').value,
-                deliveryAddress: document.getElementById('deliveryAddress').value,
-                deliveryCity: 'Pretoria',
-                deliveryState: 'Gauteng',
-                deliveryZipCode: '0001',
-                deliveryCountry: 'South Africa',
-                weight: parseFloat(document.getElementById('weight').value),
-                serviceType: 'OVERNIGHT',
-                insuranceType: selectedInsurance,
-                insuranceCost: insuranceCosts[selectedInsurance]
-            };
+            // Store quote data in sessionStorage for the booking page
+            sessionStorage.setItem('quoteData', JSON.stringify(quoteDataForBooking));
             
-            // Add coordinates if available
-            if (document.getElementById('pickupLat').value) {
-                payload.pickupLatitude = parseFloat(document.getElementById('pickupLat').value);
-                payload.pickupLongitude = parseFloat(document.getElementById('pickupLng').value);
-            }
-            if (document.getElementById('deliveryLat').value) {
-                payload.deliveryLatitude = parseFloat(document.getElementById('deliveryLat').value);
-                payload.deliveryLongitude = parseFloat(document.getElementById('deliveryLng').value);
-            }
-            
-            if (useLoc && navigator.geolocation) {
-                try {
-                    const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
-                    payload.pickupLatitude = pos.coords.latitude;
-                    payload.pickupLongitude = pos.coords.longitude;
-                } catch {}
-            }
+            // Redirect to booking page
+            window.location.href = '/booking';
+        }
 
-            try {
-                const resp = await fetch('/api/customer/quote', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+        // Sample box click handler
+        function handleSampleBoxClick(boxElement) {
+            const length = boxElement.dataset.length;
+            const width = boxElement.dataset.width;
+            const height = boxElement.dataset.height;
+            const weight = boxElement.dataset.weight;
+            const name = boxElement.dataset.name;
+            
+            // Fill in the form fields
+            document.getElementById('length').value = length;
+            document.getElementById('width').value = width;
+            document.getElementById('height').value = height;
+            document.getElementById('weight').value = weight;
+            
+            // Calculate volume weight
+            calculateVolumeWeight();
+            
+            // Add visual feedback
+            document.querySelectorAll('.sample-box').forEach(box => {
+                box.classList.remove('ring-2', 'ring-blue-400', 'bg-blue-50');
+            });
+            boxElement.classList.add('ring-2', 'ring-blue-400', 'bg-blue-50');
+            
+            // Show success message
+            showTemporaryMessage(`✓ ${name} dimensions filled!`, 'success');
+        }
+
+        // Show temporary message
+        function showTemporaryMessage(message, type = 'info') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white font-medium z-50 transition-all duration-300 ${
+                type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+            }`;
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                messageDiv.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(messageDiv);
+                }, 300);
+            }, 3000);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeServiceOptions();
+            
+            // Add click handlers for sample boxes
+            document.querySelectorAll('.sample-box').forEach(box => {
+                box.addEventListener('click', function() {
+                    handleSampleBoxClick(this);
                 });
-                
-                if (!resp.ok) throw new Error('Failed to get quote');
-                
-                const response = await resp.json();
-                console.log('Quote response data:', response);
-                
-                // Handle different response structures
-                let data, availableServices;
-                if (response.success && response.data) {
-                    // Wrapped response structure
-                    data = response.data;
-                    availableServices = data.availableServices;
-                    console.log('Using wrapped response structure');
-                } else {
-                    // Direct response structure
-                    data = response;
-                    availableServices = data.availableServices;
-                    console.log('Using direct response structure');
-                }
-                
-                console.log('Final data object:', data);
-                console.log('Final availableServices:', availableServices);
-                console.log('AvailableServices type:', typeof availableServices);
-                console.log('AvailableServices is array:', Array.isArray(availableServices));
-                
-                currentQuote = data;
-                
-                // Display service options
-                displayServiceOptions(availableServices);
-                
-                // Show quote results
-                document.getElementById('quoteResult').style.display = 'block';
-                
-                // Scroll to results
-                document.getElementById('quoteResult').scrollIntoView({ behavior: 'smooth' });
-                
-            } catch (e) {
-                console.error('Quote creation error:', e);
-                console.error('Error details:', e.message, e.stack);
-                alert('Could not create quote: ' + e.message);
-            } finally {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
-        });
-
-        // Payment button event listener
-        document.getElementById('proceedToPayment').addEventListener('click', processPayment);
-
-        // Initialize when page loads
-        window.onload = function() {
-            console.log('Page loaded, checking Google Maps availability...');
-            console.log('__MAPS_ENABLED__:', window.__MAPS_ENABLED__);
-            console.log('google object:', typeof google);
+            });
             
-            // Try to initialize immediately
-            if (window.__MAPS_ENABLED__ && typeof google !== 'undefined' && google.maps) {
-                console.log('Google Maps available immediately');
-                initMap();
-            } else {
-                console.log('Google Maps not immediately available, waiting...');
-                // Wait a bit for Google Maps to load
-                setTimeout(function() {
-                    console.log('After timeout - __MAPS_ENABLED__:', window.__MAPS_ENABLED__);
-                    console.log('After timeout - google object:', typeof google);
-                    if (window.__MAPS_ENABLED__ && typeof google !== 'undefined' && google.maps) {
-                        console.log('Google Maps became available after timeout');
-                        initMap();
-                    } else {
-                        console.log('Google Maps still not available after timeout');
-                        // Try to load Google Maps with a hardcoded key as fallback
-                        loadGoogleMapsFallback();
-                    }
-                }, 3000);
-            }
-            // Prefill sender email if user is logged in
-            try {
-                const userEmail = sessionStorage.getItem('userEmail') || sessionStorage.getItem('pending2faEmail');
-                if (userEmail) document.getElementById('senderEmail').value = userEmail;
-            } catch (e) {}
-        };
+            // Calculate volume weight on dimension change
+            ['length', 'width', 'height'].forEach(id => {
+                document.getElementById(id).addEventListener('input', calculateVolumeWeight);
+            });
+            
+            // Form submission
+            document.getElementById('quoteForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                calculateQuote();
+            });
+        });
     </script>
 </body>
 </html>
-
-

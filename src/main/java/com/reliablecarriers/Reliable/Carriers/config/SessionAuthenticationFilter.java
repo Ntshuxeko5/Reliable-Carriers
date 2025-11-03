@@ -1,9 +1,10 @@
 package com.reliablecarriers.Reliable.Carriers.config;
 
-import com.reliablecarriers.Reliable.Carriers.model.User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,14 +25,20 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
         HttpSession session = request.getSession(false);
         
-        if (session != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = (User) session.getAttribute("user");
+        // Check if we have session data and no current authentication (or it's anonymous)
+        Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
+        boolean needsAuth = (currentAuth == null || currentAuth instanceof AnonymousAuthenticationToken || !currentAuth.isAuthenticated());
+        
+        if (session != null && needsAuth) {
+            String userEmail = (String) session.getAttribute("userEmail");
             String userRole = (String) session.getAttribute("userRole");
+            Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
             
-            if (user != null && userRole != null) {
+            // If we have valid session data, restore authentication
+            if (userEmail != null && userRole != null && Boolean.TRUE.equals(isAuthenticated)) {
                 // Create authentication token from session
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    user.getEmail(),
+                    userEmail,
                     null,
                     Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + userRole))
                 );

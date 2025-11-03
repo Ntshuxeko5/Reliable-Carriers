@@ -86,4 +86,10 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
            "WHERE s.createdAt BETWEEN :startDate AND :endDate " +
            "GROUP BY DATE(s.createdAt) ORDER BY DATE(s.createdAt)")
     List<Object[]> getDailyShipmentCounts(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+    
+    // Analytics methods for customer-specific data
+    @Query("SELECT s FROM Shipment s WHERE s.sender.email = :email AND s.createdAt BETWEEN :startDate AND :endDate")
+    List<Shipment> findBySenderEmailAndCreatedAtBetween(@Param("email") String email, 
+                                                       @Param("startDate") java.time.LocalDateTime startDate, 
+                                                       @Param("endDate") java.time.LocalDateTime endDate);
 }

@@ -398,6 +398,7 @@ public class SecurityMonitoringServiceImpl implements SecurityMonitoringService 
             this.expiryDate = expiryDate;
         }
 
+        @SuppressWarnings("unused")
         public String getReason() { return reason; }
         public LocalDateTime getExpiryDate() { return expiryDate; }
     }
@@ -475,8 +476,10 @@ public class SecurityMonitoringServiceImpl implements SecurityMonitoringService 
             this.lastActivity = lastActivity;
         }
 
+        @SuppressWarnings("unused")
         public String getSessionId() { return sessionId; }
         public String getUserId() { return userId; }
+        @SuppressWarnings("unused")
         public String getIpAddress() { return ipAddress; }
         public LocalDateTime getLastActivity() { return lastActivity; }
 

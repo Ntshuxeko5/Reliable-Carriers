@@ -11,6 +11,7 @@ import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
 import com.reliablecarriers.Reliable.Carriers.service.PricingService;
 import com.reliablecarriers.Reliable.Carriers.service.ShipmentService;
 import com.reliablecarriers.Reliable.Carriers.service.UserService;
+import com.reliablecarriers.Reliable.Carriers.controller.WebSocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,18 +27,21 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final UserService userService;
     private final NotificationService notificationService;
     private final PricingService pricingService;
+    private final WebSocketController webSocketController;
 
     @Autowired
     public ShipmentServiceImpl(ShipmentRepository shipmentRepository, 
                               ShipmentTrackingRepository trackingRepository,
                               UserService userService,
                               NotificationService notificationService,
-                              PricingService pricingService) {
+                              PricingService pricingService,
+                              WebSocketController webSocketController) {
         this.shipmentRepository = shipmentRepository;
         this.trackingRepository = trackingRepository;
         this.userService = userService;
         this.notificationService = notificationService;
         this.pricingService = pricingService;
+        this.webSocketController = webSocketController;
     }
 
     @Override
@@ -135,6 +139,11 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Override
     public List<Shipment> getShipmentsByDriver(User driver) {
         return shipmentRepository.findByAssignedDriver(driver);
+    }
+
+    @Override
+    public List<Shipment> getShipmentsByDriverId(Long driverId) {
+        return shipmentRepository.findByAssignedDriverId(driverId);
     }
 
     @Override
@@ -237,6 +246,15 @@ public class ShipmentServiceImpl implements ShipmentService {
     private void sendStatusSpecificNotifications(Shipment shipment, ShipmentStatus oldStatus, ShipmentStatus newStatus, String location, String notes) {
         String driverName = shipment.getAssignedDriver() != null ? 
             shipment.getAssignedDriver().getFirstName() + " " + shipment.getAssignedDriver().getLastName() : "Assigned Driver";
+        
+        // Send WebSocket real-time update
+        if (webSocketController != null) {
+            webSocketController.sendPackageStatusUpdate(
+                shipment.getTrackingNumber(), 
+                newStatus, 
+                location != null ? location : "Location not specified"
+            );
+        }
         
         switch (newStatus) {
             case PICKED_UP:

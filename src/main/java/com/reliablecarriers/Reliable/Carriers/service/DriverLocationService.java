@@ -4,7 +4,7 @@ import com.reliablecarriers.Reliable.Carriers.model.DriverLocation;
 import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.model.Vehicle;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface DriverLocationService {
@@ -25,7 +25,7 @@ public interface DriverLocationService {
     List<DriverLocation> getDriverLocationsByDriver(User driver);
     
     // Get locations for a specific driver within a time range
-    List<DriverLocation> getDriverLocationsByDriverAndTimeRange(User driver, Date startTime, Date endTime);
+    List<DriverLocation> getDriverLocationsByDriverAndTimeRange(User driver, LocalDateTime startTime, LocalDateTime endTime);
     
     // Get locations for a specific vehicle
     List<DriverLocation> getDriverLocationsByVehicle(Vehicle vehicle);

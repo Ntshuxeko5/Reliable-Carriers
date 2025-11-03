@@ -1,7 +1,7 @@
 package com.reliablecarriers.Reliable.Carriers.model;
 
 import jakarta.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "driver_locations")
@@ -11,140 +11,204 @@ public class DriverLocation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @ManyToOne
-    @JoinColumn(name = "driver_id", nullable = false)
-    private User driver;
+    @Column(name = "driver_id", nullable = false)
+    private Long driverId;
     
-    @Column(nullable = false)
+    @Column(name = "latitude", nullable = false)
     private Double latitude;
     
-    @Column(nullable = false)
+    @Column(name = "longitude", nullable = false)
     private Double longitude;
     
-    @Column(length = 200)
+    @Column(name = "address")
     private String address;
     
-    @Column(length = 50)
+    @Column(name = "speed")
+    private Double speed;
+    
+    @Column(name = "heading")
+    private Double heading;
+    
+    @Column(name = "accuracy")
+    private Double accuracy;
+    
+    @Column(name = "timestamp", nullable = false)
+    private LocalDateTime timestamp;
+    
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+    
+    // Additional fields for enhanced location tracking
+    @Column(name = "city")
     private String city;
     
-    @Column(length = 50)
+    @Column(name = "state")
     private String state;
     
-    @Column(length = 10)
+    @Column(name = "zip_code")
     private String zipCode;
     
-    @Column(length = 50)
+    @Column(name = "country")
     private String country;
     
-    @ManyToOne
-    @JoinColumn(name = "vehicle_id")
-    private Vehicle vehicle;
-    
-    @Column(length = 500)
+    @Column(name = "notes")
     private String notes;
     
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date timestamp;
+    // Vehicle information (simplified as String for now)
+    @Column(name = "vehicle_info")
+    private String vehicle;
     
-    @PrePersist
-    protected void onCreate() {
-        timestamp = new Date();
+    public DriverLocation() {
+        this.timestamp = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+    }
+    
+    public DriverLocation(Long driverId, Double latitude, Double longitude) {
+        this();
+        this.driverId = driverId;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
     
     // Getters and Setters
     public Long getId() {
         return id;
     }
-
+    
     public void setId(Long id) {
         this.id = id;
     }
-
-    public User getDriver() {
-        return driver;
+    
+    public Long getDriverId() {
+        return driverId;
     }
-
-    public void setDriver(User driver) {
-        this.driver = driver;
+    
+    public void setDriverId(Long driverId) {
+        this.driverId = driverId;
     }
-
+    
     public Double getLatitude() {
         return latitude;
     }
-
+    
     public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
-
+    
     public Double getLongitude() {
         return longitude;
     }
-
+    
     public void setLongitude(Double longitude) {
         this.longitude = longitude;
     }
-
+    
     public String getAddress() {
         return address;
     }
-
+    
     public void setAddress(String address) {
         this.address = address;
     }
-
+    
+    public Double getSpeed() {
+        return speed;
+    }
+    
+    public void setSpeed(Double speed) {
+        this.speed = speed;
+    }
+    
+    public Double getHeading() {
+        return heading;
+    }
+    
+    public void setHeading(Double heading) {
+        this.heading = heading;
+    }
+    
+    public Double getAccuracy() {
+        return accuracy;
+    }
+    
+    public void setAccuracy(Double accuracy) {
+        this.accuracy = accuracy;
+    }
+    
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+    
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
+    
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    
+    // Additional getters and setters
     public String getCity() {
         return city;
     }
-
+    
     public void setCity(String city) {
         this.city = city;
     }
-
+    
     public String getState() {
         return state;
     }
-
+    
     public void setState(String state) {
         this.state = state;
     }
-
+    
     public String getZipCode() {
         return zipCode;
     }
-
+    
     public void setZipCode(String zipCode) {
         this.zipCode = zipCode;
     }
-
+    
     public String getCountry() {
         return country;
     }
-
+    
     public void setCountry(String country) {
         this.country = country;
     }
-
-    public Vehicle getVehicle() {
-        return vehicle;
-    }
-
-    public void setVehicle(Vehicle vehicle) {
-        this.vehicle = vehicle;
-    }
-
+    
     public String getNotes() {
         return notes;
     }
-
+    
     public void setNotes(String notes) {
         this.notes = notes;
     }
-
-    public Date getTimestamp() {
-        return timestamp;
+    
+    public String getVehicle() {
+        return vehicle;
     }
-
-    public void setTimestamp(Date timestamp) {
-        this.timestamp = timestamp;
+    
+    public void setVehicle(String vehicle) {
+        this.vehicle = vehicle;
+    }
+    
+    // Helper methods for compatibility
+    public User getDriver() {
+        // This would need to be implemented with proper User lookup
+        return null;
+    }
+    
+    public void setDriver(User driver) {
+        if (driver != null) {
+            this.driverId = driver.getId();
+        }
     }
 }

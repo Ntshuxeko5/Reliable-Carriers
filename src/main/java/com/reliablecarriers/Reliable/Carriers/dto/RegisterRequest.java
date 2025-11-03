@@ -25,6 +25,8 @@ public class RegisterRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
+    private String confirmPassword;
+
     @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Phone number should be valid")
     private String phone;
@@ -39,6 +41,22 @@ public class RegisterRequest {
     // Registration confirmations
     private Boolean waiverAccepted;
     private String insurancePreference; // e.g., BUDGET, BASIC, STANDARD, PREMIUM
+    
+    // Business registration fields
+    private Boolean isBusiness = false;
+    private String businessName;
+    private String taxId;
+    private String registrationNumber;
+    
+    // Driver registration fields
+    private String driverLicenseNumber;
+    private java.util.Date licenseExpiryDate;
+    private String vehicleMake;
+    private String vehicleModel;
+    private Integer vehicleYear;
+    private String vehicleRegistration;
+    private String vehicleColor;
+    private java.math.BigDecimal vehicleCapacityKg;
 
     // Default constructor
     public RegisterRequest() {
@@ -103,6 +121,14 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getConfirmPassword() {
+        return confirmPassword;
+    }
+
+    public void setConfirmPassword(String confirmPassword) {
+        this.confirmPassword = confirmPassword;
     }
 
     public String getPhone() {
@@ -176,4 +202,61 @@ public class RegisterRequest {
     public void setInsurancePreference(String insurancePreference) {
         this.insurancePreference = insurancePreference;
     }
+
+    public Boolean getIsBusiness() {
+        return isBusiness;
+    }
+
+    public void setIsBusiness(Boolean isBusiness) {
+        this.isBusiness = isBusiness;
+    }
+
+    public String getBusinessName() {
+        return businessName;
+    }
+
+    public void setBusinessName(String businessName) {
+        this.businessName = businessName;
+    }
+
+    public String getTaxId() {
+        return taxId;
+    }
+
+    public void setTaxId(String taxId) {
+        this.taxId = taxId;
+    }
+
+    public String getRegistrationNumber() {
+        return registrationNumber;
+    }
+
+    public void setRegistrationNumber(String registrationNumber) {
+        this.registrationNumber = registrationNumber;
+    }
+
+    // Driver field getters and setters
+    public String getDriverLicenseNumber() { return driverLicenseNumber; }
+    public void setDriverLicenseNumber(String driverLicenseNumber) { this.driverLicenseNumber = driverLicenseNumber; }
+    
+    public java.util.Date getLicenseExpiryDate() { return licenseExpiryDate; }
+    public void setLicenseExpiryDate(java.util.Date licenseExpiryDate) { this.licenseExpiryDate = licenseExpiryDate; }
+    
+    public String getVehicleMake() { return vehicleMake; }
+    public void setVehicleMake(String vehicleMake) { this.vehicleMake = vehicleMake; }
+    
+    public String getVehicleModel() { return vehicleModel; }
+    public void setVehicleModel(String vehicleModel) { this.vehicleModel = vehicleModel; }
+    
+    public Integer getVehicleYear() { return vehicleYear; }
+    public void setVehicleYear(Integer vehicleYear) { this.vehicleYear = vehicleYear; }
+    
+    public String getVehicleRegistration() { return vehicleRegistration; }
+    public void setVehicleRegistration(String vehicleRegistration) { this.vehicleRegistration = vehicleRegistration; }
+    
+    public String getVehicleColor() { return vehicleColor; }
+    public void setVehicleColor(String vehicleColor) { this.vehicleColor = vehicleColor; }
+    
+    public java.math.BigDecimal getVehicleCapacityKg() { return vehicleCapacityKg; }
+    public void setVehicleCapacityKg(java.math.BigDecimal vehicleCapacityKg) { this.vehicleCapacityKg = vehicleCapacityKg; }
 }

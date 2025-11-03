@@ -2,12 +2,15 @@ package com.reliablecarriers.Reliable.Carriers.service.impl;
 
 import com.reliablecarriers.Reliable.Carriers.dto.BookingRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.BookingResponse;
+import com.reliablecarriers.Reliable.Carriers.dto.AddressCoordinates;
 import com.reliablecarriers.Reliable.Carriers.model.*;
 import com.reliablecarriers.Reliable.Carriers.repository.BookingRepository;
 import com.reliablecarriers.Reliable.Carriers.service.BookingService;
 import com.reliablecarriers.Reliable.Carriers.service.PricingService;
 import com.reliablecarriers.Reliable.Carriers.service.ShipmentService;
 import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
+import com.reliablecarriers.Reliable.Carriers.service.EmailService;
+import com.reliablecarriers.Reliable.Carriers.service.GoogleMapsGeocodingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Random;
 
 @Service
 @Transactional
@@ -24,16 +28,22 @@ public class BookingServiceImpl implements BookingService {
     private final PricingService pricingService;
     private final ShipmentService shipmentService;
     private final NotificationService notificationService;
+    private final EmailService emailService;
+    private final GoogleMapsGeocodingService geocodingService;
 
     @Autowired
     public BookingServiceImpl(BookingRepository bookingRepository, 
                              PricingService pricingService,
                              ShipmentService shipmentService,
-                             NotificationService notificationService) {
+                             NotificationService notificationService,
+                             EmailService emailService,
+                             GoogleMapsGeocodingService geocodingService) {
         this.bookingRepository = bookingRepository;
         this.pricingService = pricingService;
         this.shipmentService = shipmentService;
         this.notificationService = notificationService;
+        this.emailService = emailService;
+        this.geocodingService = geocodingService;
     }
 
     @Override
@@ -65,6 +75,30 @@ public class BookingServiceImpl implements BookingService {
             booking.setDeliveryPostalCode(request.getDeliveryPostalCode());
             booking.setDeliveryContactName(request.getDeliveryContactName());
             booking.setDeliveryContactPhone(request.getDeliveryContactPhone());
+            
+            // Get Google Maps coordinates for addresses
+            try {
+                String fullPickupAddress = request.getPickupAddress() + ", " + request.getPickupCity() + 
+                    ", " + request.getPickupState() + " " + request.getPickupPostalCode();
+                AddressCoordinates pickupCoords = geocodingService.validateAndNormalizeAddress(fullPickupAddress);
+                if (pickupCoords != null) {
+                    booking.setPickupLatitude(pickupCoords.getLatitude());
+                    booking.setPickupLongitude(pickupCoords.getLongitude());
+                    booking.setPickupAddress(pickupCoords.getFormattedAddress());
+                }
+                
+                String fullDeliveryAddress = request.getDeliveryAddress() + ", " + request.getDeliveryCity() + 
+                    ", " + request.getDeliveryState() + " " + request.getDeliveryPostalCode();
+                AddressCoordinates deliveryCoords = geocodingService.validateAndNormalizeAddress(fullDeliveryAddress);
+                if (deliveryCoords != null) {
+                    booking.setDeliveryLatitude(deliveryCoords.getLatitude());
+                    booking.setDeliveryLongitude(deliveryCoords.getLongitude());
+                    booking.setDeliveryAddress(deliveryCoords.getFormattedAddress());
+                }
+            } catch (Exception e) {
+                // Log error but continue - coordinates are optional
+                System.err.println("Failed to geocode addresses: " + e.getMessage());
+            }
             
             // Package details
             booking.setWeight(request.getWeight());
@@ -105,6 +139,11 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse getBookingById(Long bookingId) {
         Optional<Booking> booking = bookingRepository.findById(bookingId);
         return booking.map(this::convertToResponse).orElse(null);
+    }
+
+    @Override
+    public Booking getBookingEntityById(Long bookingId) {
+        return bookingRepository.findById(bookingId).orElse(null);
     }
 
     @Override
@@ -186,6 +225,7 @@ public class BookingServiceImpl implements BookingService {
         }
         
         Booking booking = bookingOpt.get();
+        BookingStatus oldStatus = booking.getStatus();
         
         // Check if booking can be cancelled
         if (!canCancelBooking(bookingId)) {
@@ -193,10 +233,19 @@ public class BookingServiceImpl implements BookingService {
         }
         
         booking.setStatus(BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking);
         
         // Send cancellation notification
-        notificationService.sendBookingCancellationNotification(booking);
+        notificationService.sendBookingCancellationNotification(savedBooking);
+        
+        // Send status update notification
+        if (oldStatus != BookingStatus.CANCELLED) {
+            notificationService.sendBookingStatusUpdateNotification(
+                savedBooking,
+                oldStatus != null ? oldStatus.toString() : "UNKNOWN",
+                BookingStatus.CANCELLED.toString()
+            );
+        }
         
         return true;
     }
@@ -209,12 +258,19 @@ public class BookingServiceImpl implements BookingService {
         }
         
         Booking booking = bookingOpt.get();
+        BookingStatus oldStatus = booking.getStatus();
         
         // Update booking status and payment details
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setPaymentReference(paymentReference);
         booking.setPaymentStatus(PaymentStatus.COMPLETED);
         booking.setPaymentDate(new Date());
+        
+        // Generate customer verification codes
+        String customerPickupCode = generateCustomerCode();
+        String customerDeliveryCode = generateCustomerCode();
+        booking.setCustomerPickupCode(customerPickupCode);
+        booking.setCustomerDeliveryCode(customerDeliveryCode);
         
         // Create shipment from booking
         Shipment shipment = createShipmentFromBooking(booking);
@@ -227,6 +283,18 @@ public class BookingServiceImpl implements BookingService {
         // Send confirmation notification
         notificationService.sendBookingConfirmationNotification(savedBooking);
         
+        // Send status update notification if status changed
+        if (oldStatus != BookingStatus.CONFIRMED) {
+            notificationService.sendBookingStatusUpdateNotification(
+                savedBooking,
+                oldStatus != null ? oldStatus.toString() : "UNKNOWN",
+                BookingStatus.CONFIRMED.toString()
+            );
+        }
+        
+        // Send detailed email confirmation with codes
+        sendBookingConfirmationEmail(savedBooking);
+        
         return convertToResponse(savedBooking);
     }
 
@@ -235,8 +303,18 @@ public class BookingServiceImpl implements BookingService {
         Optional<Booking> bookingOpt = bookingRepository.findById(bookingId);
         if (bookingOpt.isPresent()) {
             Booking booking = bookingOpt.get();
+            BookingStatus oldStatus = booking.getStatus();
             booking.setStatus(status);
-            bookingRepository.save(booking);
+            Booking savedBooking = bookingRepository.save(booking);
+            
+            // Send notification for status change
+            if (oldStatus != status) {
+                notificationService.sendBookingStatusUpdateNotification(
+                    savedBooking, 
+                    oldStatus != null ? oldStatus.toString() : "UNKNOWN",
+                    status.toString()
+                );
+            }
         }
     }
 
@@ -639,6 +717,78 @@ public class BookingServiceImpl implements BookingService {
             return 50.0; // Same state, estimate 50km
         } else {
             return 200.0; // Different state, estimate 200km
+        }
+    }
+    
+    /**
+     * Generate a random customer verification code
+     */
+    private String generateCustomerCode() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder code = new StringBuilder();
+        Random random = new Random();
+        
+        for (int i = 0; i < 6; i++) {
+            code.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        
+        return code.toString();
+    }
+    
+    /**
+     * Send booking confirmation email with verification codes
+     */
+    private void sendBookingConfirmationEmail(Booking booking) {
+        try {
+            String estimatedDelivery = calculateEstimatedDeliveryText(booking.getServiceType());
+            
+            emailService.sendBookingConfirmationEmail(
+                booking.getCustomerEmail(),
+                booking.getCustomerName(),
+                booking.getBookingNumber(),
+                booking.getTrackingNumber(),
+                booking.getServiceType().toString(),
+                "R" + booking.getTotalAmount().toString(),
+                estimatedDelivery,
+                booking.getPickupAddress() + ", " + booking.getPickupCity() + ", " + booking.getPickupState(),
+                booking.getDeliveryAddress() + ", " + booking.getDeliveryCity() + ", " + booking.getDeliveryState(),
+                booking.getWeight() + " kg",
+                booking.getDescription(),
+                booking.getCustomerPickupCode(),
+                booking.getCustomerDeliveryCode(),
+                booking.getPickupContactName(),
+                booking.getPickupContactPhone(),
+                booking.getDeliveryContactName(),
+                booking.getDeliveryContactPhone(),
+                booking.getDimensions() != null ? booking.getDimensions() : "Not specified",
+                booking.getSpecialInstructions() != null ? booking.getSpecialInstructions() : "None"
+            );
+        } catch (Exception e) {
+            // Log error but don't fail the booking confirmation
+            System.err.println("Failed to send booking confirmation email: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Calculate estimated delivery text based on service type
+     */
+    private String calculateEstimatedDeliveryText(ServiceType serviceType) {
+        switch (serviceType) {
+            case SAME_DAY:
+                return "Same day delivery";
+            case OVERNIGHT:
+                return "1-2 business days";
+            case ECONOMY:
+                return "2-3 business days";
+            case URGENT:
+                return "Same day delivery";
+            case FURNITURE:
+            case MOVING:
+            case LOAD_TRANSPORT:
+            case EXPRESS_DELIVERY:
+                return "1-2 business days";
+            default:
+                return "2-3 business days";
         }
     }
 }

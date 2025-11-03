@@ -35,6 +35,16 @@ public class WebController {
         return "register";
     }
 
+    @GetMapping("/register/business")
+    public String registerBusiness() {
+        return "register-business";
+    }
+
+    @GetMapping("/register/driver")
+    public String registerDriver() {
+        return "register-driver";
+    }
+
     @GetMapping("/dashboard")
     public String dashboard(HttpServletRequest request) {
         // Get user role from session or authentication
@@ -194,6 +204,12 @@ public class WebController {
         return "driver/dashboard";
     }
 
+    @GetMapping("/driver/uber-dashboard")
+    @PreAuthorize("hasRole('DRIVER')")
+    public String driverUberDashboard() {
+        return "driver/uber-dashboard";
+    }
+
     @GetMapping("/payment")
     public String payment(Model model) {
         // Get current user information
@@ -231,5 +247,48 @@ public class WebController {
     @GetMapping("/booking-confirmation")
     public String bookingConfirmation() {
         return "booking-confirmation";
+    }
+
+    @GetMapping("/help-center")
+    public String helpCenter() {
+        return "help-center";
+    }
+    
+    // Documentation endpoints - serve markdown files as HTML
+    @GetMapping("/docs")
+    public String docsIndex() {
+        return "redirect:/help-center#documentation";
+    }
+    
+    @GetMapping("/docs/{manual}")
+    public String viewManual(@PathVariable String manual, Model model) {
+        // Map URL-friendly names to actual file names
+        String manualName = switch(manual) {
+            case "customer-manual" -> "Customer Manual";
+            case "driver-manual" -> "Driver Manual";
+            case "admin-manual" -> "Admin Manual";
+            case "business-manual" -> "Business Manual";
+            case "quick-start" -> "Quick Start Guide";
+            case "api-documentation" -> "API Documentation";
+            default -> null;
+        };
+        
+        String fileName = switch(manual) {
+            case "customer-manual" -> "CUSTOMER_MANUAL";
+            case "driver-manual" -> "DRIVER_MANUAL";
+            case "admin-manual" -> "ADMIN_MANUAL";
+            case "business-manual" -> "BUSINESS_MANUAL";
+            case "quick-start" -> "QUICK_START_GUIDE";
+            case "api-documentation" -> "API_DOCUMENTATION";
+            default -> null;
+        };
+        
+        if (manualName != null && fileName != null) {
+            model.addAttribute("manualName", manualName);
+            model.addAttribute("manualPath", "/docs/" + fileName + ".md");
+            return "docs/viewer";
+        }
+        
+        return "redirect:/help-center";
     }
 }

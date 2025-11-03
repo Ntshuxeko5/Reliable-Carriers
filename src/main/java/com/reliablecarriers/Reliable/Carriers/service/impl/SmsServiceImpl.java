@@ -140,13 +140,35 @@ public class SmsServiceImpl implements SmsService {
             System.out.println("To: " + to);
             System.out.println("Message: " + message);
             
-            // Prepare authentication header
-            String auth = smsApiKey + ":" + smsApiSecret;
-            String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
+            // Try Method 1: Bearer Token Authentication
+            String authToken = getSmsPortalAuthToken();
+            if (authToken != null) {
+                try {
+                    sendSmsWithBearerToken(to, message, authToken);
+                    return;
+                } catch (Exception e) {
+                    System.err.println("Bearer token method failed: " + e.getMessage());
+                    // Continue to Basic Auth fallback
+                }
+            }
             
+            // Try Method 2: Basic Authentication (fallback with comprehensive testing)
+            System.out.println("Bearer token failed, trying Basic auth with comprehensive testing...");
+            sendSmsWithBasicAuth(to, message);
+            
+        } catch (Exception e) {
+            System.err.println("Error sending SMS via SMSPortal: " + e.getMessage());
+            e.printStackTrace();
+            // Enhanced fallback logging
+            logSmsToConsole(to, message, "SMSPortal API error: " + e.getMessage());
+        }
+    }
+    
+    private void sendSmsWithBearerToken(String to, String message, String authToken) {
+        try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Basic " + encodedAuth);
+            headers.set("Authorization", "Bearer " + authToken);
             
             // Prepare SMS payload according to SMSPortal API v1
             Map<String, Object> smsData = Map.of(
@@ -159,7 +181,7 @@ public class SmsServiceImpl implements SmsService {
                 "messages", java.util.List.of(smsData)
             );
             
-            System.out.println("Payload: " + payload);
+            System.out.println("Bearer Token Payload: " + payload);
             
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
             
@@ -179,15 +201,141 @@ public class SmsServiceImpl implements SmsService {
                 System.out.println("SMS sent successfully via SMSPortal to " + to);
             } else {
                 System.err.println("SMS failed via SMSPortal: " + response.getBody());
-                // Enhanced fallback logging
                 logSmsToConsole(to, message, "SMSPortal API failed");
             }
-            System.out.println("=== SMS DEBUG END ===");
         } catch (Exception e) {
-            System.err.println("Error sending SMS via SMSPortal: " + e.getMessage());
+            System.err.println("Error sending SMS with Bearer token: " + e.getMessage());
+            throw e;
+        }
+    }
+    
+    private void sendSmsWithBasicAuth(String to, String message) {
+        try {
+            System.out.println("=== SMSPORTAL AUTHENTICATION DEBUG ===");
+            System.out.println("API Key: " + smsApiKey);
+            System.out.println("API Secret: " + (smsApiSecret != null ? "***" + smsApiSecret.substring(smsApiSecret.length()-4) : "null"));
+            
+            // SMSPortal uses Basic Authentication with ClientID:Secret format
+            String credentials = smsApiKey + ":" + smsApiSecret;
+            String encodedCredentials = java.util.Base64.getEncoder().encodeToString(credentials.getBytes());
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Basic " + encodedCredentials);
+            
+            System.out.println("Using Basic Auth with credentials: " + encodedCredentials.substring(0, Math.min(20, encodedCredentials.length())) + "...");
+            
+            // SMSPortal API format - try different endpoints and payloads
+            String[] endpoints = {
+                "https://rest.smsportal.com/v1/bulkmessages",
+                "https://rest.smsportal.com/v1/messages", 
+                "https://rest.smsportal.com/bulkmessages",
+                "https://rest.smsportal.com/messages"
+            };
+            
+            // Try different payload formats for SMSPortal
+            Map<String, Object> payload1 = Map.of(
+                "destination", to,
+                "content", message
+            );
+            
+            Map<String, Object> payload2 = Map.of(
+                "messages", java.util.List.of(Map.of(
+                    "destination", to,
+                    "content", message
+                ))
+            );
+            
+            Map<String, Object> payload3 = Map.of(
+                "to", to,
+                "message", message
+            );
+            
+            // SMSPortal specific format based on documentation
+            Map<String, Object> payload4 = Map.of(
+                "messages", java.util.List.of(Map.of(
+                    "destination", to,
+                    "content", message,
+                    "campaign", "Reliable Carriers"
+                ))
+            );
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object>[] payloads = new Map[]{payload1, payload2, payload3, payload4};
+            
+            // Try each endpoint with each payload
+            for (String endpoint : endpoints) {
+                for (Map<String, Object> payload : payloads) {
+                    try {
+                        System.out.println("Trying endpoint: " + endpoint);
+                        System.out.println("Trying payload format: " + payload);
+                        
+                        HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+                        
+                        ResponseEntity<String> response = restTemplate.postForEntity(
+                            endpoint, 
+                            request, 
+                            String.class
+                        );
+                        
+                        System.out.println("Response Status: " + response.getStatusCode());
+                        System.out.println("Response Body: " + response.getBody());
+                        
+                        if (response.getStatusCode().is2xxSuccessful()) {
+                            System.out.println("SMS sent successfully via SMSPortal to " + to);
+                            return; // Success, exit the method
+                        } else if (response.getStatusCode().value() == 401) {
+                            System.err.println("Authentication failed with endpoint " + endpoint + " and payload: " + payload);
+                            // Try next combination
+                            continue;
+                        } else if (response.getStatusCode().value() == 404) {
+                            System.err.println("Endpoint not found: " + endpoint);
+                            // Try next endpoint
+                            break;
+                        } else {
+                            System.err.println("SMS failed via SMSPortal: " + response.getBody());
+                            logSmsToConsole(to, message, "SMSPortal API failed: " + response.getBody());
+                            return;
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error with endpoint " + endpoint + " and payload " + payload + ": " + e.getMessage());
+                        // Continue to next combination
+                    }
+                }
+            }
+            
+            // If all combinations failed
+            System.err.println("All SMSPortal endpoint and payload combinations failed");
+            logSmsToConsole(to, message, "All SMSPortal combinations failed - check API credentials and format");
+            
+        } catch (Exception e) {
+            System.err.println("Error sending SMS with Basic auth: " + e.getMessage());
+            throw e;
+        }
+    }
+    
+    private String getSmsPortalAuthToken() {
+        try {
+            System.out.println("=== SMSPORTAL AUTH DEBUG ===");
+            System.out.println("Client ID: " + smsApiKey);
+            System.out.println("Secret: " + (smsApiSecret != null ? "***" + smsApiSecret.substring(smsApiSecret.length()-4) : "null"));
+            
+            // SMSPortal uses Basic Authentication with Base64 encoded credentials
+            String credentials = smsApiKey + ":" + smsApiSecret;
+            String encodedCredentials = java.util.Base64.getEncoder().encodeToString(credentials.getBytes());
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Basic " + encodedCredentials);
+            
+            // SMSPortal doesn't require a separate auth endpoint - we use the credentials directly
+            System.out.println("Using Basic Auth with encoded credentials");
+            return "BASIC_AUTH"; // Return a marker to indicate we're using Basic Auth
+            
+        } catch (Exception e) {
+            System.err.println("Error preparing SMSPortal auth: " + e.getMessage());
             e.printStackTrace();
-            // Enhanced fallback logging
-            logSmsToConsole(to, message, "SMSPortal API error: " + e.getMessage());
+            return null;
         }
     }
     

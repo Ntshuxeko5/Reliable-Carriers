@@ -57,6 +57,16 @@ public interface DriverWorkboardService {
     Map<String, Object> getPackageDetails(Long driverId, Long packageId);
     
     /**
+     * Verify collection code for package pickup
+     */
+    Map<String, Object> verifyCollectionCode(Long packageId, String collectionCode);
+    
+    /**
+     * Verify drop-off code for package delivery
+     */
+    Map<String, Object> verifyDropOffCode(Long packageId, String dropOffCode);
+    
+    /**
      * Update driver's current location
      */
     void updateDriverLocation(Long driverId, Double lat, Double lng, String address);
@@ -125,4 +135,34 @@ public interface DriverWorkboardService {
      * Reject a package assignment
      */
     boolean rejectPackage(Long driverId, Long packageId, String reason);
+    
+    /**
+     * Debug method to check all packages in database
+     */
+    Map<String, Object> debugAllPackages();
+    
+    /**
+     * Assign package to driver
+     */
+    boolean assignPackageToDriver(Long driverId, Long packageId);
+    
+    /**
+     * Batch pick up multiple packages
+     */
+    List<DriverPackageInfo> batchPickupPackages(Long driverId, List<Long> packageIds, Double currentLat, Double currentLng);
+    
+    /**
+     * Batch deliver multiple packages
+     */
+    List<DriverPackageInfo> batchDeliverPackages(Long driverId, List<Long> packageIds, Double currentLat, Double currentLng);
+    
+    /**
+     * Get optimized route with Google Maps waypoints
+     */
+    Map<String, Object> getOptimizedRouteWithWaypoints(Long driverId, Double currentLat, Double currentLng, String routeType);
+    
+    /**
+     * Get all packages visible on map (nearby + assigned)
+     */
+    Map<String, Object> getPackagesOnMap(Long driverId, Double currentLat, Double currentLng, Double radius);
 }

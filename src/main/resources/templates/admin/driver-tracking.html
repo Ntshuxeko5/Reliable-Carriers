@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Driver Tracking - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
+    <style>
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        #map { height: 500px; width: 100%; border-radius: 12px; }
+        .driver-status-online { background: #10b981; }
+        .driver-status-offline { background: #ef4444; }
+        .driver-status-busy { background: #f59e0b; }
+        .driver-card { transition: all 0.3s ease; }
+        .driver-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-blue-600 to-blue-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/admin/dashboard" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Admin Portal</span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/admin/dashboard" class="text-white hover:text-yellow-300 transition-colors duration-300 font-medium">Dashboard</a>
+                    <a href="/admin/driver-management" class="text-white hover:text-yellow-300 transition-colors duration-300 font-medium">Drivers</a>
+                    <a href="/admin/driver-tracking" class="text-yellow-300 font-medium">Live Tracking</a>
+                    <a href="/admin/analytics" class="text-white hover:text-yellow-300 transition-colors duration-300 font-medium">Analytics</a>
+                    <a href="/logout" class="text-white hover:text-yellow-300 transition-colors duration-300 font-medium">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                <i class="fas fa-satellite-dish mr-3 gradient-text"></i>Real-Time Driver Tracking
+            </h1>
+            <p class="text-gray-600">Monitor driver locations and delivery progress in real-time</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Driver List -->
+            <div class="lg:col-span-1">
+                <div class="glass-effect rounded-2xl p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-users mr-2 text-blue-600"></i>Active Drivers
+                    </h2>
+                    
+                    <div id="driverList" class="space-y-3">
+                        <!-- Driver items will be populated by JavaScript -->
+                        <div class="text-center text-gray-500 py-8">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>Loading drivers...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistics</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Online Drivers</span>
+                            <span id="onlineDrivers" class="text-lg font-bold text-green-600">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Active Deliveries</span>
+                            <span id="activeDeliveries" class="text-lg font-bold text-blue-600">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Completed Today</span>
+                            <span id="completedToday" class="text-lg font-bold text-purple-600">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map and Details -->
+            <div class="lg:col-span-3">
+                <div class="glass-effect rounded-2xl p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-gray-900">
+                            <i class="fas fa-map mr-2 text-green-600"></i>Live Driver Locations
+                        </h2>
+                        <div class="flex items-center space-x-2">
+                            <span id="lastUpdate" class="text-sm text-gray-600">
+                                <i class="fas fa-clock mr-1"></i>Last update: Never
+                            </span>
+                            <button onclick="refreshData()" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-colors">
+                                <i class="fas fa-sync-alt mr-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="map"></div>
+                </div>
+
+                <!-- Selected Driver Details -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-info-circle mr-2 text-purple-600"></i>Driver Details
+                    </h3>
+                    <div id="driverDetails" class="text-center text-gray-500 py-8">
+                        <i class="fas fa-user mr-2"></i>
+                        <p>Select a driver to view details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let drivers = [];
+        let selectedDriver = null;
+        let markers = {};
+        let infoWindows = {};
+        let refreshInterval;
+
+        // Sample driver data (in real app, this would come from the backend)
+        const sampleDrivers = [
+            {
+                id: 1,
+                name: 'John Smith',
+                phone: '+27 82 123 4567',
+                status: 'online',
+                currentLocation: { lat: -26.2041, lng: 28.0473 },
+                vehicle: 'Toyota Hilux',
+                licensePlate: 'ABC123GP',
+                currentPackage: 'RC001234567',
+                packagesToday: 8,
+                lastUpdate: new Date()
+            },
+            {
+                id: 2,
+                name: 'Sarah Johnson',
+                phone: '+27 83 987 6543',
+                status: 'busy',
+                currentLocation: { lat: -26.1941, lng: 28.0573 },
+                vehicle: 'Ford Ranger',
+                licensePlate: 'XYZ789GP',
+                currentPackage: 'RC001234568',
+                packagesToday: 12,
+                lastUpdate: new Date()
+            },
+            {
+                id: 3,
+                name: 'Mike Wilson',
+                phone: '+27 84 555 1234',
+                status: 'offline',
+                currentLocation: null,
+                vehicle: 'Nissan Navara',
+                licensePlate: 'DEF456GP',
+                currentPackage: null,
+                packagesToday: 5,
+                lastUpdate: new Date(Date.now() - 30 * 60 * 1000) // 30 minutes ago
+            }
+        ];
+
+        function initMap() {
+            // Initialize map centered on Johannesburg
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 10,
+                center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            });
+
+            // Load driver data
+            loadDriverData();
+            
+            // Set up auto-refresh
+            refreshInterval = setInterval(loadDriverData, 30000); // Refresh every 30 seconds
+        }
+
+        async function loadDriverData() {
+            try {
+                // In a real app, this would fetch from the backend
+                drivers = sampleDrivers;
+                
+                // Simulate location updates
+                drivers.forEach(driver => {
+                    if (driver.status === 'online' || driver.status === 'busy') {
+                        // Add small random movement to simulate driving
+                        driver.currentLocation.lat += (Math.random() - 0.5) * 0.001;
+                        driver.currentLocation.lng += (Math.random() - 0.5) * 0.001;
+                        driver.lastUpdate = new Date();
+                    }
+                });
+                
+                updateDriverList();
+                updateMapMarkers();
+                updateStatistics();
+                updateLastUpdateTime();
+                
+            } catch (error) {
+                console.error('Error loading driver data:', error);
+            }
+        }
+
+        function updateDriverList() {
+            const driverList = document.getElementById('driverList');
+            driverList.innerHTML = drivers.map(driver => `
+                <div class="driver-card p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 ${selectedDriver && selectedDriver.id === driver.id ? 'border-blue-500 bg-blue-50' : ''}" 
+                     onclick="selectDriver(${driver.id})" data-driver-id="${driver.id}">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="font-semibold text-gray-900">${driver.name}</div>
+                        <div class="w-3 h-3 rounded-full driver-status-${driver.status}"></div>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-2">
+                        <div><strong>Vehicle:</strong> ${driver.vehicle} (${driver.licensePlate})</div>
+                        <div><strong>Packages Today:</strong> ${driver.packagesToday}</div>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        <div><strong>Status:</strong> ${driver.status.charAt(0).toUpperCase() + driver.status.slice(1)}</div>
+                        <div><strong>Current Package:</strong> ${driver.currentPackage || 'None'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateMapMarkers() {
+            // Clear existing markers
+            Object.values(markers).forEach(marker => marker.setMap(null));
+            Object.values(infoWindows).forEach(infoWindow => infoWindow.close());
+            markers = {};
+            infoWindows = {};
+
+            drivers.forEach(driver => {
+                if (driver.currentLocation && (driver.status === 'online' || driver.status === 'busy')) {
+                    const markerColor = driver.status === 'online' ? '#10b981' : '#f59e0b';
+                    
+                    const marker = new google.maps.Marker({
+                        position: driver.currentLocation,
+                        map: map,
+                        title: driver.name,
+                        icon: {
+                            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+                                <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="15" cy="15" r="12" fill="${markerColor}" stroke="white" stroke-width="3"/>
+                                    <text x="15" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${driver.name.charAt(0)}</text>
+                                </svg>
+                            `)}`,
+                            scaledSize: new google.maps.Size(30, 30),
+                            anchor: new google.maps.Point(15, 15)
+                        }
+                    });
+
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: createDriverInfoWindow(driver)
+                    });
+
+                    marker.addListener('click', () => {
+                        selectDriver(driver.id);
+                        infoWindow.open(map, marker);
+                    });
+
+                    markers[driver.id] = marker;
+                    infoWindows[driver.id] = infoWindow;
+                }
+            });
+        }
+
+        function createDriverInfoWindow(driver) {
+            return `
+                <div class="p-3">
+                    <h3 class="font-semibold text-gray-900 mb-2">${driver.name}</h3>
+                    <div class="text-sm text-gray-600 space-y-1">
+                        <div><strong>Status:</strong> <span class="text-${driver.status === 'online' ? 'green' : driver.status === 'busy' ? 'yellow' : 'red'}-600">${driver.status.charAt(0).toUpperCase() + driver.status.slice(1)}</span></div>
+                        <div><strong>Vehicle:</strong> ${driver.vehicle}</div>
+                        <div><strong>License:</strong> ${driver.licensePlate}</div>
+                        <div><strong>Current Package:</strong> ${driver.currentPackage || 'None'}</div>
+                        <div><strong>Packages Today:</strong> ${driver.packagesToday}</div>
+                        <div><strong>Last Update:</strong> ${formatTime(driver.lastUpdate)}</div>
+                    </div>
+                    <div class="mt-3">
+                        <button onclick="selectDriver(${driver.id})" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectDriver(driverId) {
+            selectedDriver = drivers.find(d => d.id === driverId);
+            
+            // Update driver list selection
+            document.querySelectorAll('.driver-card').forEach(card => {
+                card.classList.remove('border-blue-500', 'bg-blue-50');
+                card.classList.add('border-gray-200');
+            });
+            
+            const selectedCard = document.querySelector(`[data-driver-id="${driverId}"]`);
+            if (selectedCard) {
+                selectedCard.classList.remove('border-gray-200');
+                selectedCard.classList.add('border-blue-500', 'bg-blue-50');
+            }
+            
+            // Center map on driver
+            if (selectedDriver && selectedDriver.currentLocation) {
+                map.setCenter(selectedDriver.currentLocation);
+                map.setZoom(15);
+                
+                // Open info window
+                if (infoWindows[driverId]) {
+                    infoWindows[driverId].open(map, markers[driverId]);
+                }
+            }
+            
+            // Update driver details
+            updateDriverDetails();
+        }
+
+        function updateDriverDetails() {
+            const driverDetails = document.getElementById('driverDetails');
+            
+            if (!selectedDriver) {
+                driverDetails.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-user mr-2"></i>
+                        <p>Select a driver to view details</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            driverDetails.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-3">Driver Information</h4>
+                        <div class="space-y-2 text-sm">
+                            <div><strong>Name:</strong> ${selectedDriver.name}</div>
+                            <div><strong>Phone:</strong> ${selectedDriver.phone}</div>
+                            <div><strong>Status:</strong> 
+                                <span class="px-2 py-1 rounded-full text-xs ${selectedDriver.status === 'online' ? 'bg-green-100 text-green-800' : selectedDriver.status === 'busy' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}">
+                                    ${selectedDriver.status.charAt(0).toUpperCase() + selectedDriver.status.slice(1)}
+                                </span>
+                            </div>
+                            <div><strong>Last Update:</strong> ${formatTime(selectedDriver.lastUpdate)}</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-3">Vehicle & Package Info</h4>
+                        <div class="space-y-2 text-sm">
+                            <div><strong>Vehicle:</strong> ${selectedDriver.vehicle}</div>
+                            <div><strong>License Plate:</strong> ${selectedDriver.licensePlate}</div>
+                            <div><strong>Current Package:</strong> ${selectedDriver.currentPackage || 'None'}</div>
+                            <div><strong>Packages Today:</strong> ${selectedDriver.packagesToday}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${selectedDriver.currentLocation ? `
+                    <div class="mt-6">
+                        <h4 class="font-semibold text-gray-900 mb-3">Location</h4>
+                        <div class="text-sm text-gray-600">
+                            <div><strong>Latitude:</strong> ${selectedDriver.currentLocation.lat.toFixed(6)}</div>
+                            <div><strong>Longitude:</strong> ${selectedDriver.currentLocation.lng.toFixed(6)}</div>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        function updateStatistics() {
+            const onlineDrivers = drivers.filter(d => d.status === 'online').length;
+            const activeDeliveries = drivers.filter(d => d.status === 'busy').length;
+            const completedToday = drivers.reduce((sum, d) => sum + d.packagesToday, 0);
+            
+            document.getElementById('onlineDrivers').textContent = onlineDrivers;
+            document.getElementById('activeDeliveries').textContent = activeDeliveries;
+            document.getElementById('completedToday').textContent = completedToday;
+        }
+
+        function updateLastUpdateTime() {
+            const now = new Date();
+            document.getElementById('lastUpdate').innerHTML = `
+                <i class="fas fa-clock mr-1"></i>Last update: ${formatTime(now)}
+            `;
+        }
+
+        function formatTime(date) {
+            return date.toLocaleTimeString('en-ZA', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function refreshData() {
+            loadDriverData();
+        }
+
+        // Clean up interval when page unloads
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

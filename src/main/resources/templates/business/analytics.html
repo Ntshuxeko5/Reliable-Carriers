@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Analytics - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
+                            800: '#1e3a8a', 900: '#1e40af',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-reliable-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/business/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a>
+                    <a href="/business/analytics" class="text-white bg-reliable-yellow-400 text-reliable-blue-800 px-3 py-1 rounded-lg font-medium">Analytics</a>
+                    <a href="/business/shipments" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Shipments</a>
+                    <a href="/business/team" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Team</a>
+                    <a href="/business/billing" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Billing</a>
+                    <a href="/business/settings" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Settings</a>
+                    <a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                <span class="gradient-text">Business Analytics</span>
+            </h1>
+            <p class="text-xl text-gray-600">Insights and performance metrics for your business</p>
+        </div>
+
+        <!-- Date Range Selector -->
+        <div class="glass-effect rounded-2xl p-6 mb-8">
+            <div class="flex flex-wrap items-center gap-4">
+                <label class="text-sm font-medium text-gray-700">Date Range:</label>
+                <select id="dateRange" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="365">Last year</option>
+                </select>
+                <button id="refreshData" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-effect rounded-2xl p-6 hover-lift">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-chart-line text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Revenue</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalRevenue">R0</p>
+                        <p class="text-sm text-green-600" id="revenueChange">+0%</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-2xl p-6 hover-lift">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-boxes text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Shipments</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalShipments">0</p>
+                        <p class="text-sm text-green-600" id="shipmentsChange">+0%</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-2xl p-6 hover-lift">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <i class="fas fa-clock text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Avg Delivery Time</p>
+                        <p class="text-2xl font-bold text-gray-900" id="avgDeliveryTime">0h</p>
+                        <p class="text-sm text-red-600" id="deliveryTimeChange">+0%</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-2xl p-6 hover-lift">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <i class="fas fa-star text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Customer Rating</p>
+                        <p class="text-2xl font-bold text-gray-900" id="customerRating">0.0</p>
+                        <p class="text-sm text-green-600" id="ratingChange">+0.0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Shipment Trends -->
+            <div class="glass-effect rounded-2xl p-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-chart-area mr-3 gradient-text"></i>Shipment Trends
+                </h3>
+                <canvas id="shipmentTrendsChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Revenue Breakdown -->
+            <div class="glass-effect rounded-2xl p-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-chart-pie mr-3 gradient-text"></i>Revenue by Service Type
+                </h3>
+                <canvas id="revenueBreakdownChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Delivery Performance -->
+            <div class="glass-effect rounded-2xl p-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-truck mr-3 gradient-text"></i>Delivery Performance
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">On Time</span>
+                        <span class="font-bold text-green-600" id="onTimeRate">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" id="onTimeBar" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Delayed</span>
+                        <span class="font-bold text-red-600" id="delayedRate">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-red-500 h-2 rounded-full" id="delayedBar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Destinations -->
+            <div class="glass-effect rounded-2xl p-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-map-marker-alt mr-3 gradient-text"></i>Top Destinations
+                </h3>
+                <div class="space-y-3" id="topDestinations">
+                    <!-- Top destinations will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Peak Hours -->
+            <div class="glass-effect rounded-2xl p-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-clock mr-3 gradient-text"></i>Peak Shipping Hours
+                </h3>
+                <canvas id="peakHoursChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Reports -->
+        <div class="glass-effect rounded-2xl p-8">
+            <h3 class="text-xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-file-alt mr-3 gradient-text"></i>Detailed Reports
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <button class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-300 text-left">
+                    <i class="fas fa-download text-blue-600 text-2xl mb-2"></i>
+                    <h4 class="font-semibold text-gray-900">Export CSV</h4>
+                    <p class="text-sm text-gray-600">Download shipment data</p>
+                </button>
+                <button class="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors duration-300 text-left">
+                    <i class="fas fa-chart-bar text-green-600 text-2xl mb-2"></i>
+                    <h4 class="font-semibold text-gray-900">Performance Report</h4>
+                    <p class="text-sm text-gray-600">Generate detailed report</p>
+                </button>
+                <button class="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors duration-300 text-left">
+                    <i class="fas fa-envelope text-purple-600 text-2xl mb-2"></i>
+                    <h4 class="font-semibold text-gray-900">Email Report</h4>
+                    <p class="text-sm text-gray-600">Send to stakeholders</p>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let charts = {};
+
+        // Load analytics data
+        async function loadAnalyticsData() {
+            try {
+                const dateRange = document.getElementById('dateRange').value;
+                const response = await fetch(`/api/business/analytics?days=${dateRange}`);
+                const data = await response.json();
+                
+                updateMetrics(data);
+                updateCharts(data);
+                updateTopDestinations(data.topDestinations || []);
+            } catch (error) {
+                console.error('Error loading analytics data:', error);
+            }
+        }
+
+        function updateMetrics(data) {
+            document.getElementById('totalRevenue').textContent = 'R' + (data.totalRevenue || 0);
+            document.getElementById('revenueChange').textContent = '+' + (data.revenueChange || 0) + '%';
+            document.getElementById('totalShipments').textContent = data.totalShipments || 0;
+            document.getElementById('shipmentsChange').textContent = '+' + (data.shipmentsChange || 0) + '%';
+            document.getElementById('avgDeliveryTime').textContent = (data.avgDeliveryTime || 0) + 'h';
+            document.getElementById('deliveryTimeChange').textContent = '+' + (data.deliveryTimeChange || 0) + '%';
+            document.getElementById('customerRating').textContent = (data.customerRating || 0).toFixed(1);
+            document.getElementById('ratingChange').textContent = '+' + (data.ratingChange || 0).toFixed(1);
+            
+            // Update delivery performance
+            const onTimeRate = data.onTimeRate || 0;
+            const delayedRate = data.delayedRate || 0;
+            document.getElementById('onTimeRate').textContent = onTimeRate + '%';
+            document.getElementById('delayedRate').textContent = delayedRate + '%';
+            document.getElementById('onTimeBar').style.width = onTimeRate + '%';
+            document.getElementById('delayedBar').style.width = delayedRate + '%';
+        }
+
+        function updateCharts(data) {
+            // Shipment Trends Chart
+            const trendsCtx = document.getElementById('shipmentTrendsChart').getContext('2d');
+            if (charts.shipmentTrends) charts.shipmentTrends.destroy();
+            charts.shipmentTrends = new Chart(trendsCtx, {
+                type: 'line',
+                data: {
+                    labels: data.trendsLabels || [],
+                    datasets: [{
+                        label: 'Shipments',
+                        data: data.trendsData || [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Revenue Breakdown Chart
+            const revenueCtx = document.getElementById('revenueBreakdownChart').getContext('2d');
+            if (charts.revenueBreakdown) charts.revenueBreakdown.destroy();
+            charts.revenueBreakdown = new Chart(revenueCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.revenueLabels || [],
+                    datasets: [{
+                        data: data.revenueData || [],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Peak Hours Chart
+            const peakCtx = document.getElementById('peakHoursChart').getContext('2d');
+            if (charts.peakHours) charts.peakHours.destroy();
+            charts.peakHours = new Chart(peakCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.peakHoursLabels || [],
+                    datasets: [{
+                        label: 'Shipments',
+                        data: data.peakHoursData || [],
+                        backgroundColor: '#8b5cf6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function updateTopDestinations(destinations) {
+            const container = document.getElementById('topDestinations');
+            container.innerHTML = destinations.map((dest, index) => `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mr-3">${index + 1}</span>
+                        <span class="text-gray-900">${dest.city}</span>
+                    </div>
+                    <span class="text-gray-600">${dest.count}</span>
+                </div>
+            `).join('');
+        }
+
+        // Event listeners
+        document.getElementById('dateRange').addEventListener('change', loadAnalyticsData);
+        document.getElementById('refreshData').addEventListener('click', loadAnalyticsData);
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadAnalyticsData);
+    </script>
+</body>
+</html>
+
+

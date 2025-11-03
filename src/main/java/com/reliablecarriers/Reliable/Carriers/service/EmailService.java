@@ -58,4 +58,14 @@ public interface EmailService {
      * Send bulk email to multiple recipients
      */
     void sendBulkEmail(String[] recipients, String subject, String templateName, Map<String, Object> variables);
+    
+    /**
+     * Send booking confirmation email with verification codes
+     */
+    void sendBookingConfirmationEmail(String to, String customerName, String bookingNumber, String trackingNumber, 
+                                    String serviceType, String totalAmount, String estimatedDelivery,
+                                    String pickupAddress, String deliveryAddress, String weight, String description,
+                                    String customerPickupCode, String customerDeliveryCode, String pickupContactName,
+                                    String pickupContactPhone, String deliveryContactName, String deliveryContactPhone,
+                                    String dimensions, String specialInstructions);
 }

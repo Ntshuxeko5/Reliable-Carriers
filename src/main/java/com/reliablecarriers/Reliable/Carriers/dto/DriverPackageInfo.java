@@ -31,6 +31,10 @@ public class DriverPackageInfo {
     private String suggestedRoute;
     private Boolean isCurrentlyCarrying; // true if driver has this package in vehicle
     
+    // Code verification fields
+    private String collectionCode; // Code for pickup verification
+    private String dropOffCode; // Code for delivery verification
+    
     public DriverPackageInfo() {}
     
     public DriverPackageInfo(Shipment shipment) {
@@ -49,6 +53,8 @@ public class DriverPackageInfo {
         this.status = shipment.getStatus();
         this.estimatedDeliveryDate = shipment.getEstimatedDeliveryDate();
         this.actualDeliveryDate = shipment.getActualDeliveryDate();
+        this.collectionCode = shipment.getCollectionCode();
+        this.dropOffCode = shipment.getDropOffCode();
         
         // Format status for display
         this.formattedStatus = formatStatus(shipment.getStatus());
@@ -249,5 +255,21 @@ public class DriverPackageInfo {
 
     public void setIsCurrentlyCarrying(Boolean isCurrentlyCarrying) {
         this.isCurrentlyCarrying = isCurrentlyCarrying;
+    }
+    
+    public String getCollectionCode() {
+        return collectionCode;
+    }
+    
+    public void setCollectionCode(String collectionCode) {
+        this.collectionCode = collectionCode;
+    }
+    
+    public String getDropOffCode() {
+        return dropOffCode;
+    }
+    
+    public void setDropOffCode(String dropOffCode) {
+        this.dropOffCode = dropOffCode;
     }
 }

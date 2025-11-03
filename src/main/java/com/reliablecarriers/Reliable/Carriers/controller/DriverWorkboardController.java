@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,12 +44,13 @@ public class DriverWorkboardController {
 
     /**
      * Get available packages for pickup (distance-based recommendations)
+     * Default 50km radius unless assigned by admin/tracking manager
      */
     @GetMapping("/available-packages")
     public ResponseEntity<List<DriverPackageInfo>> getAvailablePackages(
             @RequestParam(required = false) Double currentLat,
             @RequestParam(required = false) Double currentLng,
-            @RequestParam(defaultValue = "10.0") Double maxDistance,
+            @RequestParam(defaultValue = "50.0") Double maxDistance,
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "20") Integer size) {
         
@@ -56,6 +58,50 @@ public class DriverWorkboardController {
         List<DriverPackageInfo> packages = workboardService.getAvailablePackagesForPickup(
             driverId, currentLat, currentLng, maxDistance, page, size);
         return ResponseEntity.ok(packages);
+    }
+    
+    /**
+     * Assign package to current driver
+     */
+    @PostMapping("/assign-package")
+    public ResponseEntity<Map<String, Object>> assignPackage(@RequestBody Map<String, Object> request) {
+        try {
+            Long driverId = authService.getCurrentUser().getId();
+            Long packageId = Long.valueOf(request.get("packageId").toString());
+            
+            boolean success = workboardService.assignPackageToDriver(driverId, packageId);
+            
+            Map<String, Object> response = new HashMap<>();
+            if (success) {
+                response.put("success", true);
+                response.put("message", "Package assigned successfully");
+            } else {
+                response.put("success", false);
+                response.put("message", "Failed to assign package");
+            }
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Error assigning package: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * Debug endpoint to check all packages in database
+     */
+    @GetMapping("/debug/all-packages")
+    public ResponseEntity<Map<String, Object>> debugAllPackages() {
+        try {
+            Map<String, Object> debugInfo = workboardService.debugAllPackages();
+            return ResponseEntity.ok(debugInfo);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.ok(error);
+        }
     }
 
     /**
@@ -95,7 +141,8 @@ public class DriverWorkboardController {
             @RequestParam(required = false) MultipartFile packagePhoto,
             @RequestParam(required = false) String pickupNotes,
             @RequestParam(required = false) Double pickupLat,
-            @RequestParam(required = false) Double pickupLng) {
+            @RequestParam(required = false) Double pickupLng,
+            @RequestParam(required = false) String collectionCode) {
         
         Long driverId = authService.getCurrentUser().getId();
         
@@ -108,6 +155,7 @@ public class DriverWorkboardController {
         request.setPickupNotes(pickupNotes);
         request.setPickupLat(pickupLat);
         request.setPickupLng(pickupLng);
+        request.setCollectionCode(collectionCode);
         
         DriverPackageInfo updatedPackage = workboardService.pickupPackage(request);
         return ResponseEntity.ok(updatedPackage);
@@ -127,7 +175,8 @@ public class DriverWorkboardController {
             @RequestParam(required = false) String recipientIdNumber,
             @RequestParam(required = false) String deliveryNotes,
             @RequestParam(required = false) Double deliveryLat,
-            @RequestParam(required = false) Double deliveryLng) {
+            @RequestParam(required = false) Double deliveryLng,
+            @RequestParam(required = false) String dropOffCode) {
         
         Long driverId = authService.getCurrentUser().getId();
         
@@ -143,6 +192,7 @@ public class DriverWorkboardController {
         request.setDeliveryNotes(deliveryNotes);
         request.setDeliveryLat(deliveryLat);
         request.setDeliveryLng(deliveryLng);
+        request.setDropOffCode(dropOffCode);
         
         DriverPackageInfo updatedPackage = workboardService.deliverPackage(request);
         return ResponseEntity.ok(updatedPackage);
@@ -180,6 +230,28 @@ public class DriverWorkboardController {
         Long driverId = authService.getCurrentUser().getId();
         Map<String, Object> details = workboardService.getPackageDetails(driverId, packageId);
         return ResponseEntity.ok(details);
+    }
+    
+    /**
+     * Verify collection code for package pickup
+     */
+    @PostMapping("/packages/{packageId}/verify-collection-code")
+    public ResponseEntity<Map<String, Object>> verifyCollectionCode(
+            @PathVariable Long packageId,
+            @RequestParam String collectionCode) {
+        Map<String, Object> result = workboardService.verifyCollectionCode(packageId, collectionCode);
+        return ResponseEntity.ok(result);
+    }
+    
+    /**
+     * Verify drop-off code for package delivery
+     */
+    @PostMapping("/packages/{packageId}/verify-dropoff-code")
+    public ResponseEntity<Map<String, Object>> verifyDropOffCode(
+            @PathVariable Long packageId,
+            @RequestParam String dropOffCode) {
+        Map<String, Object> result = workboardService.verifyDropOffCode(packageId, dropOffCode);
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -309,6 +381,104 @@ public class DriverWorkboardController {
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Error rejecting package: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Batch pick up multiple packages
+     */
+    @PostMapping("/packages/batch-pickup")
+    public ResponseEntity<Map<String, Object>> batchPickupPackages(
+            @RequestParam List<Long> packageIds,
+            @RequestParam(required = false) Double currentLat,
+            @RequestParam(required = false) Double currentLng) {
+        try {
+            Long driverId = authService.getCurrentUser().getId();
+            List<DriverPackageInfo> pickedUp = workboardService.batchPickupPackages(
+                driverId, packageIds, currentLat, currentLng);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Successfully picked up " + pickedUp.size() + " package(s)",
+                "packages", pickedUp
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Error in batch pickup: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Batch deliver multiple packages
+     */
+    @PostMapping("/packages/batch-deliver")
+    public ResponseEntity<Map<String, Object>> batchDeliverPackages(
+            @RequestParam List<Long> packageIds,
+            @RequestParam(required = false) Double currentLat,
+            @RequestParam(required = false) Double currentLng) {
+        try {
+            Long driverId = authService.getCurrentUser().getId();
+            List<DriverPackageInfo> delivered = workboardService.batchDeliverPackages(
+                driverId, packageIds, currentLat, currentLng);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Successfully delivered " + delivered.size() + " package(s)",
+                "packages", delivered
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Error in batch delivery: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Get optimized route with Google Maps waypoints for multiple packages
+     */
+    @GetMapping("/optimized-route-with-waypoints")
+    public ResponseEntity<Map<String, Object>> getOptimizedRouteWithWaypoints(
+            @RequestParam(required = false) Double currentLat,
+            @RequestParam(required = false) Double currentLng,
+            @RequestParam(required = false) String routeType) { // "pickup" or "delivery"
+        
+        try {
+            Long driverId = authService.getCurrentUser().getId();
+            Map<String, Object> routeData = workboardService.getOptimizedRouteWithWaypoints(
+                driverId, currentLat, currentLng, routeType);
+            
+            return ResponseEntity.ok(routeData);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", "Error optimizing route: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Get all packages on map (nearby + assigned)
+     */
+    @GetMapping("/packages-on-map")
+    public ResponseEntity<Map<String, Object>> getPackagesOnMap(
+            @RequestParam Double currentLat,
+            @RequestParam Double currentLng,
+            @RequestParam(defaultValue = "50.0") Double radius) {
+        
+        try {
+            Long driverId = authService.getCurrentUser().getId();
+            Map<String, Object> mapData = workboardService.getPackagesOnMap(
+                driverId, currentLat, currentLng, radius);
+            
+            return ResponseEntity.ok(mapData);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", "Error getting map data: " + e.getMessage()
             ));
         }
     }

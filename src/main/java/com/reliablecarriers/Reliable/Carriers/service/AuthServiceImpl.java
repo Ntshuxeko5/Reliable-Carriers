@@ -3,6 +3,8 @@ package com.reliablecarriers.Reliable.Carriers.service;
 import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.model.UserRole;
 import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +21,8 @@ import java.util.Date;
 @Service
 public class AuthServiceImpl implements AuthService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
+    
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -31,13 +35,29 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public User registerUser(User user) {
+        logger.debug("Starting user registration for email: " + user.getEmail());
+        
         // Check if email already exists
         if (userRepository.existsByEmail(user.getEmail())) {
+            logger.warn("Registration attempt with existing email: " + user.getEmail());
             throw new IllegalArgumentException("Email already in use: " + user.getEmail());
         }
 
-        // Encode password
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        // Encode password if not already a BCrypt hash
+        String rawOrHashedPassword = user.getPassword();
+        if (rawOrHashedPassword == null || rawOrHashedPassword.isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        boolean looksLikeBCrypt = rawOrHashedPassword.startsWith("$2a$")
+                || rawOrHashedPassword.startsWith("$2b$")
+                || rawOrHashedPassword.startsWith("$2y$");
+        if (!looksLikeBCrypt) {
+            String encodedPassword = passwordEncoder.encode(rawOrHashedPassword);
+            user.setPassword(encodedPassword);
+            logger.debug("Password encoded for user: " + user.getEmail());
+        } else {
+            logger.debug("Password appears already encoded for user: " + user.getEmail());
+        }
 
         // Set default role if not specified
         if (user.getRole() == null) {
@@ -49,7 +69,13 @@ public class AuthServiceImpl implements AuthService {
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
 
-        return userRepository.save(user);
+        // Save user and flush to ensure it's immediately available
+        User savedUser = userRepository.save(user);
+        userRepository.flush(); // Ensure the user is immediately available in the database
+        
+        logger.debug("User successfully saved to database with ID: " + savedUser.getId());
+        
+        return savedUser;
     }
 
     @Override

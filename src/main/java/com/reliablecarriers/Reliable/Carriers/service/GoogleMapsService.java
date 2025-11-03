@@ -27,6 +27,8 @@ public class GoogleMapsService {
             return null;
         }
         
+        System.out.println("Google Maps API key configured, making API call...");
+        
         try {
             String url = UriComponentsBuilder.fromHttpUrl(DISTANCE_MATRIX_URL)
                     .queryParam("origins", origin)
@@ -45,7 +47,10 @@ public class GoogleMapsService {
             Map<String, Object> responseBody = response.getBody();
             
             if (responseBody != null && "OK".equals(responseBody.get("status"))) {
+                System.out.println("Google Maps API call successful");
                 return parseDistanceMatrixResponse(responseBody);
+            } else {
+                System.out.println("Google Maps API call failed with status: " + (responseBody != null ? responseBody.get("status") : "null"));
             }
             
         } catch (Exception e) {

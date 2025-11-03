@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
+                            800: '#1e3a8a', 900: '#1e40af',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-shipping-fast text-3xl text-reliable-yellow-400 mr-3"></i>
+                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a>
+                    <a href="/services" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Services</a>
+                    <a href="/pricing" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Pricing</a>
+                    <a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a>
+                    <a href="/careers" class="text-white bg-reliable-yellow-400 text-reliable-blue-800 px-3 py-1 rounded-lg font-medium">Careers</a>
+                    <a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a>
+                    <a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+                <span class="gradient-text">Join Our Team</span>
+            </h1>
+            <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+                Be part of South Africa's leading courier and logistics company. Help us deliver excellence every day.
+            </p>
+            <a href="#open-positions" class="bg-reliable-yellow-400 text-reliable-blue-800 px-8 py-4 rounded-lg font-bold text-lg hover:bg-reliable-yellow-300 transition-colors duration-300">
+                <i class="fas fa-search mr-2"></i>View Open Positions
+            </a>
+        </div>
+    </section>
+
+    <!-- Why Work With Us -->
+    <section class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Why Work With Us?</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    We're building the future of logistics in South Africa, and we want you to be part of it.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-rocket text-3xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Growth Opportunities</h3>
+                    <p class="text-gray-600">Advance your career with opportunities for professional development and growth.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-users text-3xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Great Culture</h3>
+                    <p class="text-gray-600">Work in a supportive, inclusive environment that values diversity and collaboration.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-lightbulb text-3xl text-purple-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Innovation</h3>
+                    <p class="text-gray-600">Be part of cutting-edge technology and innovative solutions in logistics.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-heart text-3xl text-yellow-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Work-Life Balance</h3>
+                    <p class="text-gray-600">Flexible working arrangements and comprehensive benefits package.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-graduation-cap text-3xl text-red-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Learning & Development</h3>
+                    <p class="text-gray-600">Access to training programs, conferences, and skill development opportunities.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
+                    <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-trophy text-3xl text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Recognition</h3>
+                    <p class="text-gray-600">Your contributions are valued and recognized through our reward programs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Open Positions -->
+    <section id="open-positions" class="py-20 bg-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Open Positions</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Find your next career opportunity with us.
+                </p>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Job Listing 1 -->
+                <div class="glass-effect rounded-2xl p-8 hover-lift">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Senior Software Developer</h3>
+                            <div class="flex flex-wrap gap-4 mb-4">
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Full-time</span>
+                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Remote</span>
+                                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">R45,000 - R65,000</span>
+                            </div>
+                            <p class="text-gray-600 mb-4">Join our development team to build cutting-edge logistics solutions using modern technologies.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Java</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Spring Boot</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">React</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">AWS</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 md:mt-0 md:ml-6">
+                            <a href="/careers/apply?position=senior-software-developer" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                                Apply Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Listing 2 -->
+                <div class="glass-effect rounded-2xl p-8 hover-lift">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Driver</h3>
+                            <div class="flex flex-wrap gap-4 mb-4">
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Full-time</span>
+                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">Cape Town</span>
+                                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">R15,000 - R25,000</span>
+                            </div>
+                            <p class="text-gray-600 mb-4">Deliver packages safely and efficiently while providing excellent customer service.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Valid Driver's License</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Clean Record</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Customer Service</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 md:mt-0 md:ml-6">
+                            <a href="/careers/apply?position=driver" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                                Apply Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Listing 3 -->
+                <div class="glass-effect rounded-2xl p-8 hover-lift">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Customer Success Manager</h3>
+                            <div class="flex flex-wrap gap-4 mb-4">
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Full-time</span>
+                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Hybrid</span>
+                                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">R35,000 - R50,000</span>
+                            </div>
+                            <p class="text-gray-600 mb-4">Help our business customers succeed by providing exceptional support and strategic guidance.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Customer Success</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Account Management</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Analytics</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Communication</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 md:mt-0 md:ml-6">
+                            <a href="/careers/apply?position=customer-success-manager" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                                Apply Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Listing 4 -->
+                <div class="glass-effect rounded-2xl p-8 hover-lift">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Operations Manager</h3>
+                            <div class="flex flex-wrap gap-4 mb-4">
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Full-time</span>
+                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">Johannesburg</span>
+                                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">R55,000 - R75,000</span>
+                            </div>
+                            <p class="text-gray-600 mb-4">Oversee daily operations and ensure efficient delivery of our courier services.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Operations</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Management</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Logistics</span>
+                                <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">Leadership</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 md:mt-0 md:ml-6">
+                            <a href="/careers/apply?position=operations-manager" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                                Apply Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits -->
+    <section class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Benefits & Perks</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    We offer comprehensive benefits to support you and your family.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="glass-effect rounded-2xl p-8 text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-medical-kit text-2xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Health Insurance</h3>
+                    <p class="text-gray-600">Comprehensive medical, dental, and vision coverage for you and your family.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-piggy-bank text-2xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Retirement Plan</h3>
+                    <p class="text-gray-600">Company-matched retirement savings plan to secure your future.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-calendar-alt text-2xl text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Flexible Time Off</h3>
+                    <p class="text-gray-600">Generous paid time off and flexible working arrangements.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center">
+                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-graduation-cap text-2xl text-yellow-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Learning Budget</h3>
+                    <p class="text-gray-600">Annual budget for courses, conferences, and professional development.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-utensils text-2xl text-red-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Meal Allowance</h3>
+                    <p class="text-gray-600">Daily meal allowance and free snacks in the office.</p>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-center">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-home text-2xl text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Work From Home</h3>
+                    <p class="text-gray-600">Flexible remote work options and home office setup allowance.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl font-bold text-white mb-6">
+                Don't See Your Role?
+            </h2>
+            <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+                We're always looking for talented individuals. Send us your resume and we'll keep you in mind for future opportunities.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/careers/apply" class="bg-reliable-yellow-400 text-reliable-blue-800 px-8 py-4 rounded-lg font-bold text-lg hover:bg-reliable-yellow-300 transition-colors duration-300">
+                    <i class="fas fa-paper-plane mr-2"></i>Send Resume
+                </a>
+                <a href="/contact" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-reliable-blue-800 transition-colors duration-300">
+                    <i class="fas fa-phone mr-2"></i>Contact HR
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-shipping-fast text-2xl text-reliable-yellow-400 mr-2"></i>
+                        <span class="text-xl font-bold">Reliable Carriers</span>
+                    </div>
+                    <p class="text-gray-400">Your trusted partner for all courier and logistics needs.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Standard Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Economy Delivery</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">International</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Company</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="/careers" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="/news" class="hover:text-white transition-colors">News</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Support</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/help" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="/tracking" class="hover:text-white transition-colors">Track Package</a></li>
+                        <li><a href="/terms" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

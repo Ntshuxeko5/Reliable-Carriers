@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Tracking Manager Dashboard</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-map-marker-alt text-reliable-500 mr-2"></i>
+                        Tracking Manager
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/tracking-manager/dashboard" class="text-reliable-600 hover:text-reliable-800 font-medium">
+                        <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
+                    </a>
+                    <a href="/tracking-manager/packages" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-box mr-1"></i> Packages
+                    </a>
+                    <a href="/tracking-manager/drivers" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-users mr-1"></i> Drivers
+                    </a>
+                    <a href="/tracking-manager/live-tracking" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-map mr-1"></i> Live Tracking
+                    </a>
+                    <a href="/tracking-manager/analytics" class="text-gray-600 hover:text-gray-800 font-medium">
+                        <i class="fas fa-chart-bar mr-1"></i> Analytics
+                    </a>
+                    <a href="/logout" class="text-red-600 hover:text-red-800 font-medium">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Welcome Section -->
+        <div class="bg-gradient-to-r from-reliable-500 to-reliable-600 rounded-lg p-6 text-white mb-8">
+            <h2 class="text-2xl font-bold mb-2">Welcome to Tracking Manager Dashboard</h2>
+            <p class="text-reliable-100">Monitor and manage all shipments, drivers, and fleet operations in real-time.</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-box text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Packages</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalPackages">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-truck text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Active Drivers</p>
+                        <p class="text-2xl font-bold text-gray-900" id="activeDrivers">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">In Transit</p>
+                        <p class="text-2xl font-bold text-gray-900" id="inTransitPackages">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Delivered Today</p>
+                        <p class="text-2xl font-bold text-gray-900" id="deliveredToday">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Recent Packages -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold text-gray-900">Recent Packages</h3>
+                            <a href="/tracking-manager/packages" class="text-reliable-600 hover:text-reliable-800 text-sm font-medium">
+                                View All <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4" id="recentPackages">
+                            <!-- Recent packages will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Driver Status -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold text-gray-900">Driver Status</h3>
+                            <a href="/tracking-manager/drivers" class="text-reliable-600 hover:text-reliable-800 text-sm font-medium">
+                                View All <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4" id="driverStatus">
+                            <!-- Driver status will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-8">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <button onclick="refreshData()" class="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-reliable-500 hover:bg-reliable-50 transition-colors">
+                            <div class="text-center">
+                                <i class="fas fa-sync-alt text-2xl text-gray-400 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600">Refresh Data</p>
+                            </div>
+                        </button>
+
+                        <a href="/tracking-manager/live-tracking" class="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-reliable-500 hover:bg-reliable-50 transition-colors">
+                            <div class="text-center">
+                                <i class="fas fa-map text-2xl text-gray-400 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600">Live Tracking</p>
+                            </div>
+                        </a>
+
+                        <a href="/tracking-manager/packages" class="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-reliable-500 hover:bg-reliable-50 transition-colors">
+                            <div class="text-center">
+                                <i class="fas fa-box text-2xl text-gray-400 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600">Manage Packages</p>
+                            </div>
+                        </a>
+
+                        <a href="/tracking-manager/analytics" class="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-reliable-500 hover:bg-reliable-50 transition-colors">
+                            <div class="text-center">
+                                <i class="fas fa-chart-bar text-2xl text-gray-400 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600">View Analytics</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load package statistics
+                const packageStatsResponse = await fetch('/tracking-manager/api/package-statistics');
+                const packageStats = await packageStatsResponse.json();
+                
+                document.getElementById('totalPackages').textContent = packageStats.totalPackages || 0;
+                document.getElementById('inTransitPackages').textContent = packageStats.inTransitPackages || 0;
+                document.getElementById('deliveredToday').textContent = packageStats.deliveredPackages || 0;
+
+                // Load driver statistics
+                const driverStatsResponse = await fetch('/tracking-manager/api/driver-statistics');
+                const driverStats = await driverStatsResponse.json();
+                
+                document.getElementById('activeDrivers').textContent = driverStats.onlineDrivers || 0;
+
+                // Load recent packages
+                const packagesResponse = await fetch('/tracking-manager/api/packages?size=5');
+                const packagesData = await packagesResponse.json();
+                updateRecentPackages(packagesData.packages || []);
+
+                // Load driver status
+                const driversResponse = await fetch('/tracking-manager/api/drivers');
+                const drivers = await driversResponse.json();
+                updateDriverStatus(drivers || []);
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Update recent packages display
+        function updateRecentPackages(packages) {
+            const container = document.getElementById('recentPackages');
+            container.innerHTML = '';
+
+            packages.forEach(pkg => {
+                const packageItem = document.createElement('div');
+                packageItem.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg';
+                
+                const statusColor = getStatusColor(pkg.status);
+                
+                packageItem.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="p-2 rounded-full ${statusColor}">
+                            <i class="fas fa-box text-white text-sm"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">${pkg.trackingNumber}</p>
+                            <p class="text-sm text-gray-500">${pkg.recipientName || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">
+                            ${pkg.status}
+                        </span>
+                        <p class="text-xs text-gray-500 mt-1">${formatDate(pkg.createdAt)}</p>
+                    </div>
+                `;
+                container.appendChild(packageItem);
+            });
+        }
+
+        // Update driver status display
+        function updateDriverStatus(drivers) {
+            const container = document.getElementById('driverStatus');
+            container.innerHTML = '';
+
+            drivers.slice(0, 5).forEach(driver => {
+                const driverItem = document.createElement('div');
+                driverItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                
+                const statusColor = driver.isOnline ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                
+                driverItem.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="p-2 rounded-full ${driver.isOnline ? 'bg-green-500' : 'bg-red-500'}">
+                            <i class="fas fa-user text-white text-sm"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-900">${driver.name}</p>
+                            <p class="text-xs text-gray-500">${driver.assignedPackages || 0} packages</p>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">
+                        ${driver.isOnline ? 'Online' : 'Offline'}
+                    </span>
+                `;
+                container.appendChild(driverItem);
+            });
+        }
+
+        // Get status color class
+        function getStatusColor(status) {
+            switch (status) {
+                case 'PENDING': return 'bg-yellow-500';
+                case 'IN_TRANSIT': return 'bg-blue-500';
+                case 'OUT_FOR_DELIVERY': return 'bg-purple-500';
+                case 'DELIVERED': return 'bg-green-500';
+                case 'FAILED_DELIVERY': return 'bg-red-500';
+                case 'CANCELLED': return 'bg-gray-500';
+                default: return 'bg-gray-500';
+            }
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        // Refresh data
+        function refreshData() {
+            loadDashboardData();
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadDashboardData, 30000);
+        });
+    </script>
+</body>
+</html>

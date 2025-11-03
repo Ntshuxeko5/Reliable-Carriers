@@ -3,26 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reliable Carriers - Professional Courier Services</title>
+    <title>Reliable Carriers - Professional Courier Services in South Africa</title>
+    
+    <!-- SEO Meta Tags -->
+    <div th:replace="fragments/seo-meta :: seo-meta(
+        'Reliable Carriers - Professional Courier Services in South Africa',
+        'Professional courier and logistics services across South Africa. Fast, reliable package delivery with real-time tracking. Book your shipment today!',
+        '${app.base.url}/images/Reliable 1.png',
+        '${app.base.url}/',
+        'website'
+    )"></div>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'brand': {
-                            50: '#fefce8',
-                            100: '#fef9c3',
-                            200: '#fef08a',
-                            300: '#fde047',
-                            400: '#facc15',
-                            500: '#dbb714',
-                            600: '#dbb714',
-                            700: '#eab308',
-                            800: '#ca8a04',
-                            900: '#a16207',
-                        },
-                        'brand-blue': {
+                        'reliable-blue': {
                             50: '#eff6ff',
                             100: '#dbeafe',
                             200: '#bfdbfe',
@@ -31,8 +28,32 @@
                             500: '#3b82f6',
                             600: '#2563eb',
                             700: '#1e40af',
-                            800: '#0c4a6e',
-                            900: '#073763',
+                            800: '#1e3a8a',
+                            900: '#1e40af',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
                         }
                     },
                     animation: {
@@ -85,12 +106,84 @@
         }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Dark Mode Styles -->
+    <link rel="stylesheet" th:href="@{/css/dark-mode.css}">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Reliable Carriers">
+    <link rel="apple-touch-icon" href="/images/Reliable 1.png">
+    
+    <!-- PWA Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+    
     <style>
         .animation-delay-200 { animation-delay: 200ms; }
         .animation-delay-400 { animation-delay: 400ms; }
         .animation-delay-600 { animation-delay: 600ms; }
         .animation-delay-800 { animation-delay: 800ms; }
         .animation-delay-1000 { animation-delay: 1000ms; }
+        
+        /* Enhanced Dark Mode Support - Additional styles specific to index page */
+        .dark-mode,
+        .dark-mode html {
+            background-color: #0f172a !important;
+        }
+        
+        .dark-mode .bg-gradient-to-br {
+            background: linear-gradient(to bottom right, #0f172a, #1e293b) !important;
+        }
+        
+        .dark-mode .hero-section {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important;
+        }
+        
+        /* Enhanced card styles for dark mode */
+        .dark-mode .feature-card,
+        .dark-mode .service-card,
+        .dark-mode .testimonial-card {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%) !important;
+            border-color: rgba(71, 85, 105, 0.3) !important;
+        }
+        
+        /* Navigation in dark mode */
+        .dark-mode nav.bg-gradient-to-r {
+            background: linear-gradient(to right, #1e40af, #1e3a8a) !important;
+        }
+        
+        /* Particle effects in dark mode */
+        .dark-mode .particle {
+            opacity: 0.3;
+        }
+        
+        /* Footer in dark mode */
+        .dark-mode footer.bg-gray-900 {
+            background-color: #0f172a !important;
+        }
+        
+        /* Gradient text adjustments for dark mode */
+        .dark-mode .text-illuminated {
+            background: linear-gradient(135deg, #f1f5f9 0%, #fde047 25%, #facc15 50%, #fde047 75%, #f1f5f9 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
         .animation-delay-1200 { animation-delay: 1200ms; }
         .animation-delay-1400 { animation-delay: 1400ms; }
         .animation-delay-1600 { animation-delay: 1600ms; }
@@ -356,26 +449,29 @@
         .bg-reliable-yellow-400 { background-color: #facc15 !important; }
         .bg-reliable-yellow-500 { background-color: #eab308 !important; }
         .bg-reliable-yellow-600 { background-color: #ca8a04 !important; }
-        .bg-reliable-600 { background-color: #0284c7 !important; }
-        .bg-reliable-700 { background-color: #0369a1 !important; }
-        .bg-reliable-800 { background-color: #075985 !important; }
-        .bg-reliable-900 { background-color: #0c4a6e !important; }
-        .text-reliable-600 { color: #0284c7 !important; }
-        .from-reliable-900 { background-color: #0c4a6e !important; }
-        .to-reliable-700 { background-color: #0369a1 !important; }
-        .from-reliable-800 { background-color: #075985 !important; }
-        .to-reliable-900 { background-color: #0c4a6e !important; }
+        .bg-reliable-blue-600 { background-color: #2563eb !important; }
+        .bg-reliable-blue-700 { background-color: #1e40af !important; }
+        .bg-reliable-blue-800 { background-color: #1e3a8a !important; }
+        .bg-reliable-blue-900 { background-color: #1e40af !important; }
+        .text-reliable-blue-600 { color: #2563eb !important; }
+        .from-reliable-blue-900 { background-color: #1e40af !important; }
+        .to-reliable-blue-700 { background-color: #1e40af !important; }
+        .from-reliable-blue-800 { background-color: #1e3a8a !important; }
+        .to-reliable-blue-900 { background-color: #1e40af !important; }
         .from-reliable-yellow-500 { background-color: #eab308 !important; }
         .to-reliable-yellow-600 { background-color: #ca8a04 !important; }
-        .from-reliable-50 { background-color: #f0f9ff !important; }
-        .to-reliable-100 { background-color: #e0f2fe !important; }
+        .from-reliable-blue-50 { background-color: #eff6ff !important; }
+        .to-reliable-blue-100 { background-color: #dbeafe !important; }
         
         /* Ensure hero section has proper colors and full viewport height */
         header { position: relative; z-index: 40; }
         .hero-section {
-            background: linear-gradient(135deg, #0c4a6e 0%, #075985 50%, #0369a1 100%) !important;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1e40af 100%) !important;
             color: white !important;
             min-height: calc(100vh - 72px); /* leave space for header (approx 72px) */
+            width: 100vw !important;
+            margin-left: calc(-50vw + 50%) !important;
+            margin-right: calc(-50vw + 50%) !important;
         }
         @media (max-width: 640px) {
             .hero-section { min-height: calc(100vh - 64px); }
@@ -389,7 +485,7 @@
         
         /* Ensure navigation has proper colors */
         .nav-header {
-            background: linear-gradient(135deg, #075985 0%, #0c4a6e 100%) !important;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
             color: white !important;
         }
         
@@ -584,51 +680,61 @@
 </head>
 <body class="bg-gray-50 font-sans">
     <!-- Header -->
-    <header class="bg-gradient-to-r from-reliable-800 to-reliable-900 text-white shadow-lg nav-header">
+    <header class="bg-gradient-to-r from-reliable-blue-800 to-reliable-blue-900 text-white shadow-lg nav-header">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <!-- Inline SVG logo to avoid missing static image issues -->
-                    <span class="inline-flex items-center justify-center bg-white/10 rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="h-8 w-8 text-white" fill="currentColor" aria-hidden="true">
-                            <rect x="4" y="20" width="40" height="20" rx="2" />
-                            <rect x="44" y="28" width="12" height="8" rx="1" />
-                            <circle cx="18" cy="44" r="4" fill="white" />
-                            <circle cx="46" cy="44" r="4" fill="white" />
-                        </svg>
-                    </span>
-                    <span>Reliable Carriers</span>
+                <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                    <!-- Company Logo -->
+                    <img src="/images/Reliable 1.png" alt="Reliable Carriers Logo - Professional Courier Services" style="height:50px; width:auto; " loading="lazy">
+
                 </a>
                 <ul class="hidden md:flex space-x-8">
-                                    <li><a href="/" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Home</a></li>
-                <li><a href="/tracking" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                <li><a href="/about" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">About</a></li>
-                <li><a href="/contact" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Contact</a></li>
-                                 <li class="guest-only"><a href="/login" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Login</a></li>
-                 <li class="guest-only"><a href="/register" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Register</a></li>
-                 <li><a href="/staff-login" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Staff Portal</a></li>
-                <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                <li class="auth-required hidden"><a href="/booking" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Book Service</a></li>
-                <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Logout</a></li>
+                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/register/business" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Business Solutions</a></li>
+                    <li><a href="/register/driver" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Become a Driver</a></li>
+                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li class="auth-required hidden"><a href="/customer/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/customer/analytics" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Analytics</a></li>
+                    <li class="auth-required hidden"><a href="/customer/quote" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Quote</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                    <!-- Dark Mode Toggle -->
+                    <li class="flex items-center">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="darkModeToggle" class="sr-only">
+                            <div class="relative">
+                                <div class="w-12 h-6 bg-gray-600 rounded-full shadow-inner"></div>
+                                <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300 ease-in-out"></div>
+                            </div>
+                            <span class="ml-2 text-white">
+                                <i class="fas fa-moon"></i>
+                            </span>
+                        </label>
+                    </li>
                 </ul>
                 <!-- Mobile menu button -->
-                <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
+                <button class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300" id="mobileMenuBtn">
                     <i class="fas fa-bars text-xl"></i>
                 </button>
             </div>
             <!-- Mobile menu -->
             <div class="md:hidden hidden" id="mobileMenu">
                 <ul class="py-4 space-y-4">
-                                    <li><a href="/" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">Home</a></li>
-                <li><a href="/tracking" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                <li><a href="/about" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">About</a></li>
-                <li><a href="/contact" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">Contact</a></li>
-                                 <li class="guest-only"><a href="/login" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">Login</a></li>
-                 <li class="guest-only"><a href="/register" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">Register</a></li>
-                 <li><a href="/staff-login" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">Staff Portal</a></li>
-                <li class="auth-required hidden"><a href="/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                <li class="auth-required hidden"><a href="/booking" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">Book Service</a></li>
-                <li class="auth-required hidden"><a href="#" id="logoutBtnMobile" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium">Logout</a></li>
+                    <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
+                    <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                    <li><a href="/register/business" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Business Solutions</a></li>
+                    <li><a href="/register/driver" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Become a Driver</a></li>
+                    <li><a href="/about" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                    <li><a href="/contact" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                    <li class="guest-only"><a href="/login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                    <li class="guest-only"><a href="/register" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                    <li><a href="/staff-login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Staff Portal</a></li>
+                    <li class="auth-required hidden"><a href="/customer/dashboard" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                    <li class="auth-required hidden"><a href="/customer/analytics" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Analytics</a></li>
+                    <li class="auth-required hidden"><a href="/customer/quote" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
+                    <li class="auth-required hidden"><a href="#" id="logoutBtnMobile" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
                 </ul>
             </div>
         </nav>
@@ -640,7 +746,7 @@
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Enhanced Hero Section -->
-        <section class="relative h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-brand-blue-900 via-brand-blue-800 to-brand-blue-700 text-white hero-section">
+        <section class="relative w-full h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-reliable-blue-900 via-reliable-blue-800 to-reliable-blue-700 text-white hero-section">
             <!-- Animated Background Elements -->
             <div class="absolute inset-0">
                 <!-- Gradient Overlay -->
@@ -675,18 +781,9 @@
             
             <!-- Main Content -->
             <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <!-- Logo and Icon with Enhanced Animations -->
                 <div class="mb-8 animate-zoom-in">
-                    <div class="inline-flex items-center justify-center w-32 h-32 md:w-40 md:h-40 bg-gradient-to-br from-reliable-yellow-400 to-reliable-yellow-500 rounded-full shadow-2xl mb-6 animate-pulse-glow perspective-3d">
-                        <!-- Inline SVG hero logo -->
-                        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="w-16 h-16 md:w-20 md:h-20 text-white" fill="currentColor" aria-hidden="true">
-                                <rect x="4" y="18" width="36" height="18" rx="2" />
-                                <rect x="40" y="26" width="12" height="8" rx="1" />
-                                <circle cx="18" cy="44" r="4" fill="white" />
-                                <circle cx="46" cy="44" r="4" fill="white" />
-                            </svg>
-                        </div>
+                    <div class="inline-flex items-center justify-center w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-reliable-yellow-400 to-reliable-yellow-500 rounded-full shadow-2xl mb-6 animate-pulse-glow perspective-3d">
+                        <i class="fas fa-truck text-4xl md:text-6xl text-illuminated animate-tilt"></i>
                     </div>
                 </div>
                 
@@ -713,11 +810,11 @@
                 
                 <!-- Call to Action Buttons with Enhanced Animations -->
                 <div class="flex flex-col sm:flex-row gap-6 justify-center mb-16 animate-slide-in-up animation-delay-800">
-                                         <a href="/booking" class="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-gradient-to-r from-brand-500 to-brand-600 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 overflow-hidden btn-primary animate-pulse-glow hover-lift">
+                    <a href="/customer/quote" class="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 overflow-hidden btn-primary animate-pulse-glow hover-lift">
                         <span class="absolute inset-0 bg-gradient-to-r from-reliable-yellow-600 to-reliable-yellow-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
                         <span class="relative flex items-center">
-                            <i class="fas fa-calendar-plus mr-3 text-xl animate-wobble"></i>
-                            Book Your Delivery
+                            <i class="fas fa-calculator mr-3 text-xl animate-wobble"></i>
+                            Get Free Quote
                         </span>
                         <!-- Ripple effect -->
                         <span class="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -752,19 +849,19 @@
                 <!-- Stats Section with Enhanced Animations -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
                     <div class="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 glass-effect animate-slide-in-left animation-delay-1200 hover-lift">
-                        <div class="text-4xl md:text-5xl font-bold mb-2 group-hover:text-brand-300 transition-colors animate-pulse-glow">
+                        <div class="text-4xl md:text-5xl font-bold mb-2 group-hover:text-reliable-yellow-300 transition-colors animate-pulse-glow">
                             <span class="counter hover-illuminated" data-target="10000">0</span>+
                         </div>
                         <div class="text-gray-200 font-medium">Happy Customers</div>
                     </div>
                     <div class="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 glass-effect animate-slide-in-up animation-delay-1400 hover-lift">
-                        <div class="text-4xl md:text-5xl font-bold mb-2 group-hover:text-brand-300 transition-colors animate-pulse-glow">
+                        <div class="text-4xl md:text-5xl font-bold mb-2 group-hover:text-reliable-yellow-300 transition-colors animate-pulse-glow">
                             <span class="counter hover-illuminated" data-target="99">0</span>%
                         </div>
                         <div class="text-gray-200 font-medium">Success Rate</div>
                     </div>
                     <div class="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 glass-effect animate-slide-in-right animation-delay-1600 hover-lift">
-                        <div class="text-4xl md:text-5xl font-bold mb-2 group-hover:text-brand-300 transition-colors animate-pulse-glow">
+                        <div class="text-4xl md:text-5xl font-bold mb-2 group-hover:text-reliable-yellow-300 transition-colors animate-pulse-glow">
                             <span class="counter hover-illuminated" data-target="50000">0</span>+
                         </div>
                         <div class="text-gray-200 font-medium">Deliveries Completed</div>
@@ -788,10 +885,10 @@
                     <div>
                         <label for="trackingNumber" class="block text-sm font-medium text-gray-700 mb-2">Tracking Number</label>
                         <input type="text" id="trackingNumber" name="trackingNumber" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-blue-500 focus:border-transparent transition-all duration-300"
                                placeholder="Enter your tracking number" required>
                     </div>
-                    <button type="submit" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105">
+                    <button type="submit" class="w-full bg-reliable-blue-600 hover:bg-reliable-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105">
                         Track Package
                     </button>
                 </form>
@@ -800,7 +897,7 @@
             <!-- Tracking Results -->
             <div id="trackingSection" class="hidden mt-8">
                 <div class="bg-gray-50 rounded-lg p-6">
-                    <h3 class="text-2xl font-bold text-reliable-800 mb-4" id="trackingNumberDisplay"></h3>
+                    <h3 class="text-2xl font-bold text-reliable-blue-800 mb-4" id="trackingNumberDisplay"></h3>
                     <div class="space-y-4" id="trackingTimeline">
                         <!-- Timeline will be populated by JavaScript -->
                     </div>
@@ -812,34 +909,34 @@
         <section class="mb-8">
                          <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center animate-slide-in-up">Our Services</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                 <div class="bg-white p-6 text-center hover:shadow-lg transition-all duration-300 rounded-2xl hover-lift animate-slide-in-left animation-delay-200 perspective-3d">
+                <div class="bg-white p-6 text-center hover:shadow-lg transition-all duration-300 rounded-2xl hover-lift animate-slide-in-left animation-delay-200 perspective-3d">
                     <div class="relative">
-                                                 <i class="fas fa-shipping-fast text-5xl text-illuminated-blue mb-4 animate-float-faster hover-rotate"></i>
-                        <div class="absolute inset-0 bg-gradient-to-r from-reliable-400/20 to-reliable-600/20 rounded-full blur-xl animate-pulse"></div>
+                        <i class="fas fa-shipping-fast text-5xl text-reliable-blue-600 mb-4 animate-float-faster hover-rotate"></i>
+                        <div class="absolute inset-0 bg-gradient-to-r from-reliable-blue-400/20 to-reliable-blue-600/20 rounded-full blur-xl animate-pulse"></div>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3 animate-slide-in-up animation-delay-400">Express Delivery</h3>
                     <p class="text-gray-600 animate-slide-in-up animation-delay-600">Same-day and next-day delivery options for urgent shipments</p>
                 </div>
-                                 <div class="bg-white p-6 text-center hover:shadow-lg transition-all duration-300 rounded-2xl hover-lift animate-slide-in-up animation-delay-400 perspective-3d">
+                <div class="bg-white p-6 text-center hover:shadow-lg transition-all duration-300 rounded-2xl hover-lift animate-slide-in-up animation-delay-400 perspective-3d">
                     <div class="relative">
-                                                 <i class="fas fa-globe text-5xl text-illuminated-blue mb-4 animate-morph hover-scale"></i>
-                        <div class="absolute inset-0 bg-gradient-to-r from-reliable-400/20 to-reliable-600/20 rounded-full blur-xl animate-pulse" style="animation-delay: 1s;"></div>
+                        <i class="fas fa-globe text-5xl text-reliable-blue-600 mb-4 animate-morph hover-scale"></i>
+                        <div class="absolute inset-0 bg-gradient-to-r from-reliable-blue-400/20 to-reliable-blue-600/20 rounded-full blur-xl animate-pulse" style="animation-delay: 1s;"></div>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3 animate-slide-in-up animation-delay-600">National Shipping</h3>
                     <p class="text-gray-600 animate-slide-in-up animation-delay-800">National delivery services with customs clearance</p>
                 </div>
-                                 <div class="bg-white p-6 text-center hover:shadow-lg transition-all duration-300 rounded-2xl hover-lift animate-slide-in-up animation-delay-600 perspective-3d">
+                <div class="bg-white p-6 text-center hover:shadow-lg transition-all duration-300 rounded-2xl hover-lift animate-slide-in-up animation-delay-600 perspective-3d">
                     <div class="relative">
-                                                 <i class="fas fa-shield-alt text-5xl text-illuminated-blue mb-4 animate-pulse-glow hover-rotate"></i>
-                        <div class="absolute inset-0 bg-gradient-to-r from-reliable-400/20 to-reliable-600/20 rounded-full blur-xl animate-pulse" style="animation-delay: 2s;"></div>
+                        <i class="fas fa-shield-alt text-5xl text-reliable-blue-600 mb-4 animate-pulse-glow hover-rotate"></i>
+                        <div class="absolute inset-0 bg-gradient-to-r from-reliable-blue-400/20 to-reliable-blue-600/20 rounded-full blur-xl animate-pulse" style="animation-delay: 2s;"></div>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3 animate-slide-in-up animation-delay-800">Secure Handling</h3>
                     <p class="text-gray-600 animate-slide-in-up animation-delay-1000">Professional handling and insurance for valuable items</p>
                 </div>
-                                 <div class="bg-white p-6 text-center hover:shadow-lg transition-all duration-300 rounded-2xl hover-lift animate-slide-in-right animation-delay-800 perspective-3d">
+                <div class="bg-white p-6 text-center hover:shadow-lg transition-all duration-300 rounded-2xl hover-lift animate-slide-in-right animation-delay-800 perspective-3d">
                     <div class="relative">
-                                                 <i class="fas fa-map-marker-alt text-5xl text-illuminated-blue mb-4 animate-wobble hover-scale"></i>
-                        <div class="absolute inset-0 bg-gradient-to-r from-reliable-400/20 to-reliable-600/20 rounded-full blur-xl animate-pulse" style="animation-delay: 3s;"></div>
+                        <i class="fas fa-map-marker-alt text-5xl text-reliable-blue-600 mb-4 animate-wobble hover-scale"></i>
+                        <div class="absolute inset-0 bg-gradient-to-r from-reliable-blue-400/20 to-reliable-blue-600/20 rounded-full blur-xl animate-pulse" style="animation-delay: 3s;"></div>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3 animate-slide-in-up animation-delay-1000">Real-time Tracking</h3>
                     <p class="text-gray-600 animate-slide-in-up animation-delay-1200">Live GPS tracking and status updates</p>
@@ -848,26 +945,26 @@
         </section>
 
         <!-- Features Section -->
-        <section class="bg-gradient-to-r from-reliable-50 to-reliable-100 rounded-2xl p-8 mb-8">
+        <section class="bg-gradient-to-r from-reliable-blue-50 to-reliable-blue-100 rounded-2xl p-8 mb-8">
             <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Why Choose Reliable Carriers?</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="text-center">
-                    <div class="bg-reliable-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-clock text-2xl text-illuminated"></i>
+                    <div class="bg-reliable-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-clock text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3">Fast Delivery</h3>
                     <p class="text-gray-600">Quick and efficient delivery times with real-time tracking</p>
                 </div>
                 <div class="text-center">
-                    <div class="bg-reliable-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-shield-alt text-2xl text-illuminated"></i>
+                    <div class="bg-reliable-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shield-alt text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3">Secure & Safe</h3>
                     <p class="text-gray-600">Your packages are handled with care and fully insured</p>
                 </div>
                 <div class="text-center">
-                    <div class="bg-reliable-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-headset text-2xl text-illuminated"></i>
+                    <div class="bg-reliable-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-headset text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3">24/7 Support</h3>
                     <p class="text-gray-600">Round-the-clock customer support for all your needs</p>
@@ -876,12 +973,18 @@
         </section>
 
         <!-- CTA Section -->
-                    <section class="bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-2xl p-8 text-center">
+        <section class="bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 text-white rounded-2xl p-8 text-center">
             <h2 class="text-3xl font-bold mb-4">Ready to Ship?</h2>
-            <p class="text-xl mb-6 opacity-90">Get started with our professional courier services today</p>
-                            <a href="/booking" class="bg-white text-reliable-yellow-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
-                Book Your Shipment
-            </a>
+            <p class="text-xl mb-6 opacity-90">Get a free quote for your delivery needs - no account required!</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="/quote" class="bg-white text-reliable-blue-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+                    Get Free Quote
+                </a>
+                <div class="text-sm opacity-80">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Account required for payment and booking
+                </div>
+            </div>
         </section>
     </div>
 
@@ -890,25 +993,25 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
-                    <h3 class="text-xl font-bold mb-4 text-brand-400">Reliable Carriers</h3>
+                    <h3 class="text-xl font-bold mb-4 text-reliable-yellow-400">Reliable Carriers</h3>
                     <p class="text-gray-300">Professional courier services you can trust for all your delivery needs.</p>
                 </div>
                 <div>
                     <h4 class="font-bold mb-4">Services</h4>
                     <ul class="space-y-2 text-gray-300">
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Express Delivery</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">National Shipping</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Moving Services</a></li>
-                        <li><a href="#" class="hover:text-brand-400 transition-colors">Load Transport</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Express Delivery</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">National Shipping</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Moving Services</a></li>
+                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Load Transport</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="font-bold mb-4">Company</h4>
                     <ul class="space-y-2 text-gray-300">
-                        <li><a href="/about" class="hover:text-brand-400 transition-colors">About Us</a></li>
-                        <li><a href="/contact" class="hover:text-brand-400 transition-colors">Contact</a></li>
-                        <li><a href="/tracking" class="hover:text-brand-400 transition-colors">Track Package</a></li>
-                        <li><a href="/price-list" class="hover:text-brand-400 transition-colors">Price List</a></li>
+                        <li><a href="/about" class="hover:text-reliable-yellow-400 transition-colors">About Us</a></li>
+                        <li><a href="/contact" class="hover:text-reliable-yellow-400 transition-colors">Contact</a></li>
+                        <li><a href="/tracking" class="hover:text-reliable-yellow-400 transition-colors">Track Package</a></li>
+                        <li><a href="/price-list" class="hover:text-reliable-yellow-400 transition-colors">Price List</a></li>
                     </ul>
                 </div>
                                  <div>
@@ -938,11 +1041,11 @@
 
     <!-- Chatbot Widget -->
     <div class="chatbot-widget fixed bottom-6 right-6 z-50">
-        <div class="chatbot-toggle bg-reliable-600 hover:bg-reliable-700 text-white p-4 rounded-full cursor-pointer shadow-lg transition-all duration-300 transform hover:scale-110" id="chatbotToggle">
+        <div class="chatbot-toggle bg-reliable-blue-600 hover:bg-reliable-blue-700 text-white p-4 rounded-full cursor-pointer shadow-lg transition-all duration-300 transform hover:scale-110" id="chatbotToggle">
             <i class="fas fa-comments text-xl"></i>
         </div>
         <div class="chatbot-container absolute bottom-16 right-0 w-80 h-96 bg-white rounded-lg shadow-2xl hidden" id="chatbotContainer">
-            <div class="chatbot-header bg-reliable-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+            <div class="chatbot-header bg-reliable-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
                 <h3 class="font-bold">Customer Support</h3>
                 <button class="chatbot-close text-white hover:text-gray-200" id="chatbotClose">
                     <i class="fas fa-times"></i>
@@ -956,8 +1059,8 @@
             <div class="chatbot-input p-4 border-t">
                 <div class="flex space-x-2">
                     <input type="text" id="chatbotInput" placeholder="Type your message..." 
-                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                    <button class="chatbot-send bg-reliable-600 text-white p-2 rounded-lg hover:bg-reliable-700 transition-colors" id="chatbotSend">
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-blue-500 focus:border-transparent">
+                    <button class="chatbot-send bg-reliable-blue-600 text-white p-2 rounded-lg hover:bg-reliable-blue-700 transition-colors" id="chatbotSend">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
@@ -966,6 +1069,8 @@
     </div>
 
     <script th:src="@{/js/app.js}"></script>
+    <!-- Dark Mode Script -->
+    <script th:src="@{/js/dark-mode.js}"></script>
     <script>
         // Mobile menu toggle
         document.getElementById('mobileMenuBtn').addEventListener('click', function() {
@@ -973,6 +1078,9 @@
             mobileMenu.classList.toggle('hidden');
         });
         
+        // Dark Mode is now handled by the shared dark-mode.js script
+        // Additional initialization for page-specific elements can be added here
+
         // Initialize animations when page loads
         document.addEventListener('DOMContentLoaded', function() {
             // Animate counters
@@ -990,6 +1098,13 @@
             
             // Add mouse movement effects
             initMouseEffects();
+            
+            // Dark mode is initialized automatically by dark-mode.js
+            // Apply dark mode to html element as well
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            if (currentTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            }
             
             // Ensure illuminated text effect works
             initIlluminatedText();
@@ -1215,7 +1330,7 @@
         function addMessage(text, sender) {
             const messages = document.getElementById('chatbotMessages');
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message ${sender === 'user' ? 'bg-reliable-600 text-white ml-auto' : 'bg-gray-100 text-gray-800'} p-3 rounded-lg mb-2 max-w-xs`;
+            messageDiv.className = `message ${sender}-message ${sender === 'user' ? 'bg-reliable-blue-600 text-white ml-auto' : 'bg-gray-100 text-gray-800'} p-3 rounded-lg mb-2 max-w-xs`;
             messageDiv.textContent = text;
             messages.appendChild(messageDiv);
             messages.scrollTop = messages.scrollHeight;

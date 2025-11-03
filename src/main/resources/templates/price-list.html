@@ -10,30 +10,55 @@
             theme: {
                 extend: {
                     colors: {
-                        'reliable': {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
+                        'reliable-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1e40af',
+                            800: '#1e3a8a',
+                            900: '#1e40af',
                         },
                         'reliable-yellow': {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            200: '#fed7aa',
-                            300: '#fdba74',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                            800: '#9a3412',
-                            900: '#7c2d12',
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1e40af',
+                            800: '#1e3a8a',
+                            900: '#1e40af',
+                        },
+                        'brand-yellow': {
+                            50: '#fff8e6',
+                            100: '#ffeed1',
+                            200: '#ffe3aa',
+                            300: '#ffd780',        // lighter yellow
+                            400: '#ffcc55',
+                            500: '#ffbf2b',        // medium-light yellow
+                            600: '#e6aa00',
+                            700: '#b38600',
+                            800: '#805f00',
+                            900: '#4d3900',
                         }
+
                     },
                     animation: {
                         'fade-in': 'fadeIn 0.5s ease-in-out',
@@ -62,53 +87,72 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 font-sans">
-    <!-- Header -->
-    <header class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <i class="fas fa-truck text-brand-400"></i>
-                    <span>Reliable Carriers</span>
-                </a>
-                <ul class="hidden md:flex space-x-8">
-                    <li><a href="/" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium">Home</a></li>
-                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                    <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                    <li class="auth-required hidden"><a href="/booking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Book Service</a></li>
-                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
-                </ul>
-            </div>
-        </nav>
-    </header>
+<!-- Header -->
+<header class="bg-gradient-to-r from-reliable-blue-800 to-reliable-blue-900 text-white shadow-lg nav-header">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+            <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
+                <!-- Company Logo -->
+                <img src="/images/Reliable 1.png" alt="Reliable Carriers" style="height:50px; width:auto; ">
+
+            </a>
+            <ul class="hidden md:flex space-x-8">
+                <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                <li class="auth-required hidden"><a href="/customer/quote" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Quote</a></li>
+                <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+            </ul>
+            <!-- Mobile menu button -->
+            <button class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300" id="mobileMenuBtn">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+        <!-- Mobile menu -->
+        <div class="md:hidden hidden" id="mobileMenu">
+            <ul class="py-4 space-y-4">
+                <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
+                <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
+                <li><a href="/about" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
+                <li><a href="/contact" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
+                <li class="guest-only"><a href="/login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
+                <li class="guest-only"><a href="/register" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
+                <li><a href="/staff-login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Staff Portal</a></li>
+                <li class="auth-required hidden"><a href="/dashboard" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
+                <li class="auth-required hidden"><a href="/customer/quote" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
+                <li class="auth-required hidden"><a href="#" id="logoutBtnMobile" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+</header>
 
     <!-- Alert Container -->
     <div id="alertContainer" class="fixed top-4 right-4 z-50"></div>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
         <!-- Hero Section -->
                 <div class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white rounded-2xl p-8 md:p-12 mb-8 text-center animate-fade-in">
             <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-slide-up">Our Price List</h1>
             <p class="text-xl md:text-2xl mb-8 opacity-90 animate-slide-up">Transparent pricing for all our professional courier and moving services</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
-                <a href="/booking" class="bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                <a href="/customer/quote" class="bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                     Book Now
                 </a>
-                <a href="/moving-services" class="bg-white hover:bg-gray-100 text-reliable-800 font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                <a href="/customer/quote" class="bg-reliable-yellow-500 hover:bg-gray-100 text-reliable-800 font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                     Moving Services
                 </a>
             </div>
         </div>
 
         <!-- Important Notice -->
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-8 rounded-lg animate-fade-in">
+        <div class="bg-white border-l-4 border-yellow-500 p-6 mb-8 rounded-lg animate-fade-in">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <i class="fas fa-info-circle text-yellow-400 text-xl"></i>
+                    <i class="fas fa-info-circle text-yellow-500 text-xl"></i>
                 </div>
                 <div class="ml-3">
                     <h3 class="text-lg font-medium text-yellow-800">Service Availability</h3>
@@ -133,7 +177,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Same Day Delivery -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                <div class="bg-white  rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
                     <div class="text-center">
                         <div class="bg-brand-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-bolt text-brand-600 text-2xl"></i>
@@ -146,7 +190,7 @@
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Priority handling</li>
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Real-time tracking</li>
                         </ul>
-                        <a href="/booking?service=same-day" class="w-full bg-brand-blue-600 hover:bg-brand-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <a href="/customer/quote" class="w-full bg-brand-blue-600 hover:bg-brand-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
                             Book Now
                         </a>
                     </div>
@@ -166,7 +210,7 @@
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Secure handling</li>
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Status updates</li>
                         </ul>
-                        <a href="/booking?service=overnight" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <a href="/customer/quote" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
                             Book Now
                         </a>
                     </div>
@@ -186,7 +230,7 @@
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Reliable delivery</li>
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Package tracking</li>
                         </ul>
-                        <a href="/booking?service=economy" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <a href="/customer/quote" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
                             Book Now
                         </a>
                     </div>
@@ -264,7 +308,7 @@
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Furniture protection</li>
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Assembly/disassembly</li>
                         </ul>
-                        <a href="/moving-services?type=furniture" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <a href="/customer/quote" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
                             Book Moving
                         </a>
                     </div>
@@ -284,7 +328,7 @@
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Secure loading</li>
                             <li><i class="fas fa-check text-green-500 mr-2"></i>Specialized vehicles</li>
                         </ul>
-                        <a href="/moving-services?type=load-transport" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <a href="/customer/quote" class="w-full bg-reliable-600 hover:bg-reliable-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
                             Book Transport
                         </a>
                     </div>

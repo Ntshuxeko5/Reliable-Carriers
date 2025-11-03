@@ -1,7 +1,6 @@
 package com.reliablecarriers.Reliable.Carriers.service;
 
 import com.reliablecarriers.Reliable.Carriers.dto.DriverPackageInfo;
-import com.reliablecarriers.Reliable.Carriers.model.User;
 
 import java.util.List;
 import java.util.Map;

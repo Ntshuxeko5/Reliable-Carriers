@@ -118,8 +118,9 @@
                                 <i class="fas fa-phone text-gray-400"></i>
                             </div>
                             <input id="phone" name="phone" type="tel" required 
+                                   pattern="^(\+27|0)[0-9]{9}$"
                                    class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
-                                   placeholder="Enter your phone number">
+                                   placeholder="e.g., 0123456789 or +27123456789">
                         </div>
                     </div>
                 </div>
@@ -173,29 +174,70 @@
                     </div>
                     <div>
                         <label for="country" class="block text-sm font-medium text-gray-700 mb-2">
-                            Country (optional)
-                        </label>
-                        <select id="country" name="country" 
-                                class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300">
-                            <option value="South Africa">South Africa</option>
-                            <option value="Other">Other</option>
-                        </select>
+                            Country
+                            </label>
+                            <p id="country" class="block w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100">
+                                South Africa
+                            </p>
                     </div>
                 </div>
 
+
                 <!-- Account Type -->
                 <div>
-                    <label for="userRole" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
                         Account Type *
                     </label>
-                    <select id="userRole" name="userRole" required 
-                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300">
-                        <option value="">Select Account Type</option>
-                        <option value="CUSTOMER">Customer - I want to ship packages</option>
-                        <option value="STAFF">Staff - I work for Reliable Carriers</option>
-                    </select>
-                    <p class="text-xs text-gray-500 mt-1">Driver and Tracking Manager accounts can only be created by administrators</p>
+                    <div class="space-y-3">
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="radio" name="isBusiness" value="false" checked 
+                                   onchange="toggleBusinessFields(false)"
+                                   class="w-4 h-4 text-reliable-600 border-gray-300 focus:ring-reliable-500">
+                            <span class="text-gray-700">Individual Account</span>
+                        </label>
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="radio" name="isBusiness" value="true" 
+                                   onchange="toggleBusinessFields(true)"
+                                   class="w-4 h-4 text-reliable-600 border-gray-300 focus:ring-reliable-500">
+                            <span class="text-gray-700">Business Account</span>
+                        </label>
+                    </div>
+                    <input type="hidden" id="userRole" name="userRole" value="CUSTOMER">
                 </div>
+
+                <!-- Business Registration Fields (Hidden by default) -->
+                <div id="businessFields" class="hidden space-y-6 bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-building text-blue-600 mr-2"></i>Business Information
+                    </h3>
+                    <div>
+                        <label for="businessName" class="block text-sm font-medium text-gray-700 mb-2">
+                            Business Name *
+                        </label>
+                        <input id="businessName" name="businessName" type="text" 
+                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
+                               placeholder="Enter your business name">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="taxId" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tax ID / VAT Number
+                            </label>
+                            <input id="taxId" name="taxId" type="text" 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
+                                   placeholder="e.g., IT1234567890">
+                        </div>
+                        <div>
+                            <label for="registrationNumber" class="block text-sm font-medium text-gray-700 mb-2">
+                                Registration Number
+                            </label>
+                            <input id="registrationNumber" name="registrationNumber" type="text" 
+                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
+                                   placeholder="e.g., CK123456789">
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- Password -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -215,6 +257,13 @@
                             </button>
                         </div>
                         <p class="text-xs text-gray-500 mt-1">Must be at least 8 characters long</p>
+                        <!-- Password Strength Indicator -->
+                        <div id="passwordStrengthContainer" class="mt-2">
+                            <div class="w-full bg-gray-200 rounded-full h-2 mb-1">
+                                <div id="passwordStrengthIndicator" class="password-strength-bar h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p id="passwordStrengthText" class="text-xs"></p>
+                        </div>
                     </div>
                     <div>
                         <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
@@ -234,17 +283,17 @@
                     </div>
                 </div>
 
-                <!-- Liability Waiver and Terms -->
+                <!!-- Liability Waiver and Terms -->
                 <div class="flex items-start">
                     <div class="flex items-center h-5">
-                        <input id="terms" name="terms" type="checkbox" required 
+                        <input id="terms" name="terms" type="checkbox" required
                                class="h-4 w-4 text-reliable-600 focus:ring-reliable-500 border-gray-300 rounded">
                     </div>
                     <div class="ml-3 text-sm">
                         <label for="terms" class="text-gray-700">
-                            I agree to the 
-                            <a href="#" class="text-reliable-600 hover:text-reliable-500 transition-colors">Terms of Service</a> 
-                            and 
+                            I agree to the
+                            <a href="/terms" class="text-reliable-600 hover:text-reliable-500 transition-colors">Terms of Service</a>
+                            and
                             <a href="#" class="text-reliable-600 hover:text-reliable-500 transition-colors">Privacy Policy</a>
                         </label>
                     </div>
@@ -252,7 +301,7 @@
 
                 <div class="flex items-start">
                     <div class="flex items-center h-5">
-                        <input id="waiver" name="waiver" type="checkbox" required 
+                        <input id="waiver" name="waiver" type="checkbox" required
                                class="h-4 w-4 text-reliable-600 focus:ring-reliable-500 border-gray-300 rounded">
                     </div>
                     <div class="ml-3 text-sm">
@@ -262,19 +311,6 @@
                     </div>
                 </div>
 
-                <!-- Insurance Preference -->
-                <div>
-                    <label for="insurancePreference" class="block text-sm font-medium text-gray-700 mb-2">
-                        Insurance Preference
-                    </label>
-                    <select id="insurancePreference" name="insurancePreference" 
-                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300">
-                        <option value="BUDGET" selected>Budget Insurance (default)</option>
-                        <option value="BASIC">Basic</option>
-                        <option value="STANDARD">Standard</option>
-                        <option value="PREMIUM">Premium</option>
-                    </select>
-                </div>
 
                 <!-- Newsletter Subscription -->
                 <div class="flex items-start">
@@ -300,6 +336,35 @@
                     </button>
                 </div>
             </form>
+            
+            <!-- 2FA Verification Stage -->
+            <div id="otpStage" class="hidden">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Verify Your Account</h2>
+                    <p class="text-gray-600">We've sent a verification code to your email. Please enter it below.</p>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">Verification Code</label>
+                    <input type="text" id="otpCode" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-reliable-500"
+                           placeholder="Enter 6-digit code" maxlength="6" required>
+                </div>
+                
+                <div class="mb-6">
+                    <button id="verifyOtpBtn" 
+                            class="w-full bg-reliable-600 hover:bg-reliable-700 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200">
+                        Verify Account
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <button id="resendCodeBtn" 
+                            class="text-reliable-600 hover:text-reliable-700 font-medium">
+                        Resend Code
+                    </button>
+                </div>
+            </div>
 
             <!-- Or register with social providers -->
             <div class="mt-6">
@@ -349,6 +414,20 @@
 
     <script th:src="@{/js/app.js}"></script>
     <script>
+        // Toggle business fields visibility
+        function toggleBusinessFields(show) {
+            const businessFields = document.getElementById('businessFields');
+            const businessNameInput = document.getElementById('businessName');
+            if (businessFields) {
+                if (show) {
+                    businessFields.classList.remove('hidden');
+                    if (businessNameInput) businessNameInput.required = true;
+                } else {
+                    businessFields.classList.add('hidden');
+                    if (businessNameInput) businessNameInput.required = false;
+                }
+            }
+        }
         // Hide social buttons if the OAuth2 endpoints are not available
         (function checkSocialEndpoints(){
             const googleBtn = document.getElementById('reg-google');
@@ -409,6 +488,7 @@
             submitBtn.disabled = true;
             
             // Collect form data
+            const isBusiness = document.querySelector('input[name="isBusiness"]:checked')?.value === 'true';
             const formData = {
                 firstName: document.getElementById('firstName').value,
                 lastName: document.getElementById('lastName').value,
@@ -419,11 +499,15 @@
                 state: document.getElementById('state').value,
                 zipCode: document.getElementById('zipCode').value,
                 country: document.getElementById('country').value,
-                userRole: document.getElementById('userRole').value,
+                role: document.getElementById('userRole').value,
+                isBusiness: isBusiness,
+                businessName: isBusiness ? document.getElementById('businessName')?.value : null,
+                taxId: isBusiness ? document.getElementById('taxId')?.value : null,
+                registrationNumber: isBusiness ? document.getElementById('registrationNumber')?.value : null,
                 password: password,
+                confirmPassword: confirmPassword,
                 newsletter: document.getElementById('newsletter').checked,
-                waiverAccepted: document.getElementById('waiver').checked,
-                insurancePreference: document.getElementById('insurancePreference').value
+                waiverAccepted: document.getElementById('waiver').checked
             };
             
             // Simulate API call
@@ -436,14 +520,38 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Backend returns an AuthResponse on success; check for token or id
-                if (data && (data.token || data.id)) {
-                    showAlert('Account created successfully! Redirecting to login...', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
+                // Check if registration was successful
+                if (data && data.success) {
+                    if (data.requires2fa) {
+                        // Store user info for 2FA step
+                        sessionStorage.setItem('pending2faEmail', data.email);
+                        sessionStorage.setItem('pending2faRole', data.role || 'CUSTOMER');
+                        
+                        // Show 2FA step
+                        document.getElementById('registerForm').style.display = 'none';
+                        document.getElementById('otpStage').classList.remove('hidden');
+                        
+                        // 2FA token already sent by backend during registration
+                        
+                        showAlert('Verification code sent to your email. Please check your inbox.', 'success');
+                    } else {
+                        // Direct registration success (no 2FA required)
+                        showAlert(data.message || 'Account created successfully! Redirecting to login...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    }
                 } else {
-                    showAlert(data.message || 'Registration failed. Please try again.', 'error');
+                    // Handle validation errors
+                    if (data && data.errors) {
+                        let errorMessage = 'Please fix the following errors:\n';
+                        for (const [field, error] of Object.entries(data.errors)) {
+                            errorMessage += `• ${error}\n`;
+                        }
+                        showAlert(errorMessage, 'error');
+                    } else {
+                        showAlert(data.message || 'Registration failed. Please try again.', 'error');
+                    }
                 }
             })
             .catch(error => {
@@ -453,6 +561,85 @@
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             });
+        });
+
+        // Helper to request method-based token for registration (EMAIL or SMS)
+        function sendMethodToken(email, method) {
+            fetch('/api/auth/register/resend?email=' + encodeURIComponent(email) + '&method=' + encodeURIComponent(method), {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message || 'Verification code sent via ' + method + '. Check your ' + (method === 'EMAIL' ? 'email' : 'phone') + '.', 'success');
+                } else {
+                    showAlert(data.message || 'Failed to send verification code. Please try again.', 'error');
+                }
+            })
+            .catch(() => showAlert('Failed to send verification code. Network error.', 'error'));
+        }
+
+        // OTP verification handler
+        document.getElementById('verifyOtpBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const code = document.getElementById('otpCode').value;
+            const email = sessionStorage.getItem('pending2faEmail');
+            if (!email || !code) {
+                showAlert('Please enter the 6-digit code.', 'error');
+                return;
+            }
+
+            fetch('/api/auth/register/verify?email=' + encodeURIComponent(email) + '&code=' + encodeURIComponent(code), {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Verification failed');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    // Store the JWT token if provided
+                    if (data.user && data.user.token) {
+                        localStorage.setItem('token', data.user.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                    }
+                    
+                    showAlert(data.message || 'Registration completed successfully! Welcome to Reliable Carriers.', 'success');
+                    setTimeout(() => {
+                        // Redirect to appropriate dashboard based on role
+                        const role = data.user?.role || sessionStorage.getItem('pending2faRole') || 'CUSTOMER';
+                        if (role === 'CUSTOMER') {
+                            window.location.href = '/customer/dashboard';
+                        } else if (role === 'DRIVER') {
+                            window.location.href = '/driver/dashboard';
+                        } else if (role === 'ADMIN' || role === 'TRACKING_MANAGER') {
+                            window.location.href = '/admin/dashboard';
+                        } else {
+                            window.location.href = '/customer/dashboard';
+                        }
+                    }, 2000);
+                } else {
+                    showAlert(data.message || 'Invalid verification code', 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Verification failed: ' + error.message, 'error');
+            });
+        });
+
+        // Resend code handler
+        document.getElementById('resendCodeBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const email = sessionStorage.getItem('pending2faEmail');
+            if (email) {
+                sendMethodToken(email, 'EMAIL');
+            } else {
+                showAlert('No email found. Please try registering again.', 'error');
+            }
         });
 
         function showAlert(message, type) {
@@ -481,5 +668,25 @@
             }, 5000);
         }
     </script>
+    
+    <!-- Password Strength Meter -->
+    <script src="/js/password-strength.js"></script>
+    <style>
+        .password-strength-bar {
+            transition: all 0.3s ease;
+        }
+        .password-strength-weak {
+            background-color: #ef4444; /* red-500 */
+        }
+        .password-strength-fair {
+            background-color: #eab308; /* yellow-500 */
+        }
+        .password-strength-good {
+            background-color: #3b82f6; /* blue-500 */
+        }
+        .password-strength-strong {
+            background-color: #22c55e; /* green-500 */
+        }
+    </style>
 </body>
 </html>

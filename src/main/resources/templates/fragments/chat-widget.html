@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Chat Widget Fragment -->
+    <div th:fragment="chat-widget">
+        <!-- Chat Button (Fixed Bottom Right) -->
+        <button id="chatToggleButton" 
+                class="fixed bottom-6 right-6 bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition-colors z-40">
+            <i class="fas fa-comments text-2xl"></i>
+            <span id="chatUnreadBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center hidden">0</span>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chatWindow" class="hidden fixed bottom-24 right-6 w-96 h-[600px] bg-white rounded-lg shadow-2xl z-50 flex flex-col border border-gray-200">
+            <!-- Chat Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-lg flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <div id="chatConnectionStatus" class="w-2 h-2 bg-green-500 rounded-full mr-2 absolute -top-1 -right-1 border-2 border-blue-600"></div>
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold">Customer Support</h3>
+                        <p class="text-xs text-blue-100">AI Assistant</p>
+                    </div>
+                </div>
+                <button id="chatCloseButton" class="text-white hover:text-blue-200 transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                <div class="text-center text-gray-500 py-8 empty-state">
+                    <i class="fas fa-comments text-4xl mb-2"></i>
+                    <p>Start a conversation</p>
+                </div>
+            </div>
+
+            <!-- Message Input -->
+            <div class="p-4 border-t border-gray-200 bg-white">
+                <div class="flex space-x-2 items-end">
+                    <textarea id="chatMessageInput" 
+                           placeholder="Type your message..."
+                           rows="1"
+                           class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none max-h-32 overflow-y-auto"
+                           style="min-height: 40px;"></textarea>
+                    <button id="chatSendButton" 
+                            class="bg-blue-600 text-white px-4 py-4 rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-400 mt-2">
+                    <i class="fas fa-robot mr-1"></i> AI-powered support • Press Enter to send
+                </p>
+            </div>
+        </div>
+
+        <script src="/js/chat-enhanced.js"></script>
+        <script>
+            // Toggle chat window
+            document.getElementById('chatToggleButton').addEventListener('click', function() {
+                const chatWindow = document.getElementById('chatWindow');
+                chatWindow.classList.toggle('hidden');
+                
+                // Initialize chat if not already initialized
+                if (!chatWindow.classList.contains('hidden') && typeof chatSystem === 'undefined') {
+                    const userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
+                    if (userEmail) {
+                        // Try to get existing chat or create new one
+                        initiateChat(userEmail, '', 'General Inquiry')
+                            .catch(error => {
+                                console.error('Failed to initialize chat:', error);
+                            });
+                    }
+                }
+            });
+
+            // Close chat window
+            document.getElementById('chatCloseButton').addEventListener('click', function() {
+                document.getElementById('chatWindow').classList.add('hidden');
+            });
+        </script>
+    </div>
+</body>
+</html>

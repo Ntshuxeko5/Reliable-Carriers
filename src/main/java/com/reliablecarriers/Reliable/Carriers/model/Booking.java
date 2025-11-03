@@ -72,6 +72,13 @@ public class Booking {
     @Size(max = 15)
     private String pickupContactPhone;
     
+    // Google Maps coordinates for pickup
+    @Column(precision = 10, scale = 8)
+    private BigDecimal pickupLatitude;
+    
+    @Column(precision = 11, scale = 8)
+    private BigDecimal pickupLongitude;
+    
     // Delivery details
     @Column(nullable = false, length = 200)
     @NotBlank
@@ -102,6 +109,13 @@ public class Booking {
     @NotBlank
     @Size(max = 15)
     private String deliveryContactPhone;
+    
+    // Google Maps coordinates for delivery
+    @Column(precision = 10, scale = 8)
+    private BigDecimal deliveryLatitude;
+    
+    @Column(precision = 11, scale = 8)
+    private BigDecimal deliveryLongitude;
     
     // Package details
     @Column(nullable = false)
@@ -189,6 +203,15 @@ public class Booking {
     @Column(length = 50)
     @Size(max = 50)
     private String shipmentId;
+    
+    // Customer verification codes
+    @Column(length = 10)
+    @Size(max = 10)
+    private String customerPickupCode;
+    
+    @Column(length = 10)
+    @Size(max = 10)
+    private String customerDeliveryCode;
     
     // Driver assignment
     @ManyToOne
@@ -333,6 +356,22 @@ public class Booking {
         this.pickupContactPhone = pickupContactPhone;
     }
 
+    public BigDecimal getPickupLatitude() {
+        return pickupLatitude;
+    }
+
+    public void setPickupLatitude(BigDecimal pickupLatitude) {
+        this.pickupLatitude = pickupLatitude;
+    }
+
+    public BigDecimal getPickupLongitude() {
+        return pickupLongitude;
+    }
+
+    public void setPickupLongitude(BigDecimal pickupLongitude) {
+        this.pickupLongitude = pickupLongitude;
+    }
+
     public String getDeliveryAddress() {
         return deliveryAddress;
     }
@@ -379,6 +418,22 @@ public class Booking {
 
     public void setDeliveryContactPhone(String deliveryContactPhone) {
         this.deliveryContactPhone = deliveryContactPhone;
+    }
+
+    public BigDecimal getDeliveryLatitude() {
+        return deliveryLatitude;
+    }
+
+    public void setDeliveryLatitude(BigDecimal deliveryLatitude) {
+        this.deliveryLatitude = deliveryLatitude;
+    }
+
+    public BigDecimal getDeliveryLongitude() {
+        return deliveryLongitude;
+    }
+
+    public void setDeliveryLongitude(BigDecimal deliveryLongitude) {
+        this.deliveryLongitude = deliveryLongitude;
     }
 
     public Double getWeight() {
@@ -571,5 +626,21 @@ public class Booking {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getCustomerPickupCode() {
+        return customerPickupCode;
+    }
+
+    public void setCustomerPickupCode(String customerPickupCode) {
+        this.customerPickupCode = customerPickupCode;
+    }
+
+    public String getCustomerDeliveryCode() {
+        return customerDeliveryCode;
+    }
+
+    public void setCustomerDeliveryCode(String customerDeliveryCode) {
+        this.customerDeliveryCode = customerDeliveryCode;
     }
 }

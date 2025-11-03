@@ -74,6 +74,21 @@ public class CustomerPackageController {
         }
     }
 
+    // Public tracking endpoint for guests (no authentication required)
+    @GetMapping("/public/track/{trackingNumber}")
+    public ResponseEntity<CustomerPackageResponse> trackPackagePublic(@PathVariable String trackingNumber) {
+        try {
+            if (!customerPackageService.isValidTrackingNumber(trackingNumber)) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
+            return ResponseEntity.ok(packageInfo);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/track/{trackingNumber}/estimated-delivery")
     public ResponseEntity<Map<String, String>> getEstimatedDeliveryDate(@PathVariable String trackingNumber) {
         try {

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.ArrayList;
 import com.reliablecarriers.Reliable.Carriers.model.DriverLocation;
 import com.reliablecarriers.Reliable.Carriers.model.User;
-import com.reliablecarriers.Reliable.Carriers.model.Vehicle;
 
 public class DriverLocationResponse {
     private Long id;
@@ -72,8 +71,8 @@ public class DriverLocationResponse {
         this.zipCode = driverLocation.getZipCode();
         this.country = driverLocation.getCountry();
         this.notes = driverLocation.getNotes();
-        this.timestamp = driverLocation.getTimestamp();
-        this.formattedTimestamp = formatTimestamp(driverLocation.getTimestamp());
+        this.timestamp = java.sql.Timestamp.valueOf(driverLocation.getTimestamp());
+        this.formattedTimestamp = formatTimestamp(java.sql.Timestamp.valueOf(driverLocation.getTimestamp()));
         
         // Driver information
         if (driverLocation.getDriver() != null) {
@@ -84,18 +83,16 @@ public class DriverLocationResponse {
             this.driverPhone = driver.getPhone();
         }
         
-        // Vehicle information
+        // Vehicle information (stored as String in DriverLocation)
         if (driverLocation.getVehicle() != null) {
-            Vehicle vehicle = driverLocation.getVehicle();
-            this.vehicleId = vehicle.getId();
-            this.vehicleMake = vehicle.getMake();
-            this.vehicleModel = vehicle.getModel();
-            this.vehiclePlate = vehicle.getRegistrationNumber();
-            this.vehicleType = vehicle.getType().toString();
+            this.vehiclePlate = driverLocation.getVehicle(); // Vehicle is stored as registration string
+            this.vehicleMake = "Unknown"; // Not available in String format
+            this.vehicleModel = "Unknown"; // Not available in String format
+            this.vehicleType = "Unknown"; // Not available in String format
         }
         
         // Set default status as online if location is recent (within last 5 minutes)
-        this.isOnline = isLocationRecent(driverLocation.getTimestamp());
+        this.isOnline = isLocationRecent(java.sql.Timestamp.valueOf(driverLocation.getTimestamp()));
         this.status = this.isOnline ? "ACTIVE" : "OFFLINE";
         
         // Initialize shipment information (will be populated by service layer)

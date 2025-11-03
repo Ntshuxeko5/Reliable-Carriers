@@ -10,7 +10,7 @@ import com.reliablecarriers.Reliable.Carriers.service.DriverLocationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -35,11 +35,9 @@ public class DriverLocationServiceImpl implements DriverLocationService {
         User driver = userRepository.findById(driverLocation.getDriver().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Driver not found"));
         
-        // Validate vehicle exists if provided
-        if (driverLocation.getVehicle() != null && driverLocation.getVehicle().getId() != null) {
-            Vehicle vehicle = vehicleRepository.findById(driverLocation.getVehicle().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
-            driverLocation.setVehicle(vehicle);
+        // Validate vehicle exists if provided (vehicle is stored as String in DriverLocation)
+        if (driverLocation.getVehicle() != null) {
+            // Vehicle is already stored as String, no need to validate
         }
         
         // Set the driver
@@ -47,7 +45,7 @@ public class DriverLocationServiceImpl implements DriverLocationService {
         
         // Set timestamp if not provided
         if (driverLocation.getTimestamp() == null) {
-            driverLocation.setTimestamp(new Date());
+            driverLocation.setTimestamp(LocalDateTime.now());
         }
         
         return driverLocationRepository.save(driverLocation);
@@ -70,7 +68,7 @@ public class DriverLocationServiceImpl implements DriverLocationService {
         userRepository.findById(driver.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Driver not found"));
                 
-        return driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver);
+        return driverLocationRepository.findTopByDriverOrderByTimestampDesc(driver.getId());
     }
 
     @Override
@@ -79,16 +77,16 @@ public class DriverLocationServiceImpl implements DriverLocationService {
         userRepository.findById(driver.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Driver not found"));
                 
-        return driverLocationRepository.findByDriverOrderByTimestampDesc(driver);
+        return driverLocationRepository.findByDriverOrderByTimestampDesc(driver.getId());
     }
 
     @Override
-    public List<DriverLocation> getDriverLocationsByDriverAndTimeRange(User driver, Date startTime, Date endTime) {
+    public List<DriverLocation> getDriverLocationsByDriverAndTimeRange(User driver, LocalDateTime startTime, LocalDateTime endTime) {
         // Validate driver exists
         userRepository.findById(driver.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Driver not found"));
                 
-        return driverLocationRepository.findByDriverAndTimestampBetweenOrderByTimestampDesc(driver, startTime, endTime);
+        return driverLocationRepository.findByDriverIdAndTimestampBetween(driver.getId(), startTime, endTime);
     }
 
     @Override
@@ -97,7 +95,8 @@ public class DriverLocationServiceImpl implements DriverLocationService {
         vehicleRepository.findById(vehicle.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
                 
-        return driverLocationRepository.findByVehicleOrderByTimestampDesc(vehicle);
+        // Since DriverLocation stores vehicle as String, we need to find by vehicle registration
+        return driverLocationRepository.findByVehicleOrderByTimestampDesc(vehicle.getRegistrationNumber());
     }
 
     @Override
@@ -139,9 +138,8 @@ public class DriverLocationServiceImpl implements DriverLocationService {
         }
         
         if (driverLocationDetails.getVehicle() != null) {
-            Vehicle vehicle = vehicleRepository.findById(driverLocationDetails.getVehicle().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
-            driverLocation.setVehicle(vehicle);
+            // Vehicle is stored as String in DriverLocation
+            driverLocation.setVehicle(driverLocationDetails.getVehicle());
         }
         
         if (driverLocationDetails.getNotes() != null) {

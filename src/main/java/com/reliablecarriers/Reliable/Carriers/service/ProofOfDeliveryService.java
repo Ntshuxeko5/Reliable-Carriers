@@ -1,7 +1,6 @@
 package com.reliablecarriers.Reliable.Carriers.service;
 
 import com.reliablecarriers.Reliable.Carriers.model.ProofOfDelivery;
-import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

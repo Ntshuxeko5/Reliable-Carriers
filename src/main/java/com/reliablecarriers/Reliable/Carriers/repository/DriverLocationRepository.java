@@ -1,60 +1,104 @@
 package com.reliablecarriers.Reliable.Carriers.repository;
 
 import com.reliablecarriers.Reliable.Carriers.model.DriverLocation;
-import com.reliablecarriers.Reliable.Carriers.model.User;
-import com.reliablecarriers.Reliable.Carriers.model.Vehicle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface DriverLocationRepository extends JpaRepository<DriverLocation, Long> {
     
-    // Find the most recent location for a specific driver
-    DriverLocation findTopByDriverOrderByTimestampDesc(User driver);
+    /**
+     * Find the latest location for a specific driver
+     */
+    DriverLocation findTopByDriverIdOrderByTimestampDesc(Long driverId);
     
-    // Find all locations for a specific driver ordered by timestamp (most recent first)
-    List<DriverLocation> findByDriverOrderByTimestampDesc(User driver);
+    /**
+     * Find locations for a driver after a specific timestamp
+     */
+    List<DriverLocation> findByDriverIdAndTimestampAfterOrderByTimestampDesc(
+        Long driverId, LocalDateTime timestamp);
     
-    // Find locations for a specific driver within a time range
-    List<DriverLocation> findByDriverAndTimestampBetweenOrderByTimestampDesc(User driver, Date startTime, Date endTime);
+    /**
+     * Find all locations for a driver within a time range
+     */
+    @Query("SELECT dl FROM DriverLocation dl WHERE dl.driverId = :driverId " +
+           "AND dl.timestamp BETWEEN :startTime AND :endTime " +
+           "ORDER BY dl.timestamp DESC")
+    List<DriverLocation> findByDriverIdAndTimestampBetween(
+        @Param("driverId") Long driverId,
+        @Param("startTime") LocalDateTime startTime,
+        @Param("endTime") LocalDateTime endTime);
     
-    // Find locations for a specific vehicle
-    List<DriverLocation> findByVehicleOrderByTimestampDesc(Vehicle vehicle);
+    /**
+     * Find recent locations for all drivers (within last 5 minutes)
+     */
+    @Query("SELECT dl FROM DriverLocation dl WHERE dl.timestamp > :cutoffTime " +
+           "ORDER BY dl.timestamp DESC")
+    List<DriverLocation> findRecentLocations(@Param("cutoffTime") LocalDateTime cutoffTime);
     
-    // Find the most recent location for a specific vehicle
-    DriverLocation findTopByVehicleOrderByTimestampDesc(Vehicle vehicle);
+    /**
+     * Find locations within a geographic bounding box
+     */
+    @Query("SELECT dl FROM DriverLocation dl WHERE " +
+           "dl.latitude BETWEEN :minLat AND :maxLat AND " +
+           "dl.longitude BETWEEN :minLng AND :maxLng AND " +
+           "dl.timestamp > :cutoffTime " +
+           "ORDER BY dl.timestamp DESC")
+    List<DriverLocation> findLocationsInBounds(
+        @Param("minLat") Double minLat,
+        @Param("maxLat") Double maxLat,
+        @Param("minLng") Double minLng,
+        @Param("maxLng") Double maxLng,
+        @Param("cutoffTime") LocalDateTime cutoffTime);
     
-    // Find locations for a specific vehicle within a time range
-    List<DriverLocation> findByVehicleAndTimestampBetweenOrderByTimestampDesc(Vehicle vehicle, Date startTime, Date endTime);
+    /**
+     * Delete old location records (cleanup)
+     */
+    void deleteByTimestampBefore(LocalDateTime cutoffTime);
     
-    // Find locations within a geographic area (approximate by city and state)
+    /**
+     * Count locations for a driver
+     */
+    long countByDriverId(Long driverId);
+    
+    /**
+     * Find the first location for a driver
+     */
+    DriverLocation findFirstByDriverIdOrderByTimestampAsc(Long driverId);
+    
+    // Additional methods for compatibility - using driverId instead of driver object
+    @Query("SELECT dl FROM DriverLocation dl WHERE dl.driverId = :driverId ORDER BY dl.timestamp DESC")
+    DriverLocation findTopByDriverOrderByTimestampDesc(@Param("driverId") Long driverId);
+    
+    @Query("SELECT dl FROM DriverLocation dl WHERE dl.driverId = :driverId ORDER BY dl.timestamp DESC")
+    List<DriverLocation> findByDriverOrderByTimestampDesc(@Param("driverId") Long driverId);
+    
+    @Query("SELECT dl FROM DriverLocation dl WHERE dl.driverId = :driverId " +
+           "AND dl.timestamp BETWEEN :startDate AND :endDate ORDER BY dl.timestamp DESC")
+    List<DriverLocation> findByDriverAndTimestampBetweenOrderByTimestampDesc(
+        @Param("driverId") Long driverId, 
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate);
+    
+    @Query("SELECT dl FROM DriverLocation dl WHERE dl.vehicle = :vehicleRegistration ORDER BY dl.timestamp DESC")
+    DriverLocation findTopByVehicleOrderByTimestampDesc(@Param("vehicleRegistration") String vehicleRegistration);
+    
     List<DriverLocation> findByCityAndStateOrderByTimestampDesc(String city, String state);
-    
-    // Find locations by city and state (simplified method name)
+    List<DriverLocation> findByLatitudeBetweenAndLongitudeBetween(Double minLat, Double maxLat, Double minLng, Double maxLng);
     List<DriverLocation> findByCityAndState(String city, String state);
     
-    // Find locations within a geographic bounding box
-    @Query("SELECT dl FROM DriverLocation dl WHERE dl.latitude BETWEEN :minLat AND :maxLat AND dl.longitude BETWEEN :minLng AND :maxLng")
-    List<DriverLocation> findByLatitudeBetweenAndLongitudeBetween(
-        @Param("minLat") Double minLat, 
-        @Param("maxLat") Double maxLat, 
-        @Param("minLng") Double minLng, 
-        @Param("maxLng") Double maxLng
-    );
+    @Query("SELECT dl FROM DriverLocation dl WHERE dl.vehicle = :vehicleRegistration " +
+           "AND dl.timestamp BETWEEN :startDate AND :endDate ORDER BY dl.timestamp DESC")
+    List<DriverLocation> findByVehicleAndTimestampBetweenOrderByTimestampDesc(
+        @Param("vehicleRegistration") String vehicleRegistration, 
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate);
     
-    // Find locations within a specific radius (would require custom implementation or native query)
-    // This is a placeholder for future implementation
-    // List<DriverLocation> findByLatitudeAndLongitudeWithinRadius(Double latitude, Double longitude, Double radiusInKm);
-    
-    // Driver workboard methods
-    DriverLocation findByDriverIdOrderByTimestampDesc(Long driverId);
-    
-    // Analytics methods
-    @Query("SELECT COUNT(DISTINCT dl.driver.id) FROM DriverLocation dl WHERE dl.timestamp >= :timestamp")
-    long countActiveDrivers(@Param("timestamp") Date timestamp);
+    // Additional method for finding by vehicle registration string
+    List<DriverLocation> findByVehicleOrderByTimestampDesc(String vehicleRegistration);
 }

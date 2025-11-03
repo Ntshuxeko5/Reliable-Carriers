@@ -122,10 +122,23 @@ class ReliableCarriersApp {
             });
 
             if (response.ok) {
-                this.showAlert('Registration successful! Please login.', 'success');
-                setTimeout(() => {
-                    window.location.href = '/login';
-                }, 1500);
+                const result = await response.json();
+                if (result.token) {
+                    // Registration successful with token, redirect to dashboard
+                    this.showAlert('Registration successful! Redirecting to dashboard...', 'success');
+                    localStorage.setItem('jwtToken', result.token);
+                    localStorage.setItem('userRole', result.role);
+                    localStorage.setItem('userEmail', result.email);
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1500);
+                } else {
+                    // Registration successful but no token, redirect to login
+                    this.showAlert('Registration successful! Please login to continue.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1500);
+                }
             } else {
                 const error = await response.json();
                 this.showAlert(error.message || 'Registration failed', 'danger');
@@ -141,7 +154,8 @@ class ReliableCarriersApp {
         const trackingNumber = formData.get('trackingNumber');
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/customer/track/${encodeURIComponent(trackingNumber)}`);
+            // Use public endpoint for guest tracking
+            const response = await fetch(`${this.apiBaseUrl}/customer/public/track/${encodeURIComponent(trackingNumber)}`);
             if (response.ok) {
                 const trackingData = await response.json();
                 this.displayTrackingInfo(trackingData);
@@ -187,6 +201,12 @@ class ReliableCarriersApp {
         const recipientEl = document.getElementById('recipientAddress');
         if (recipientEl) recipientEl.textContent = trackingData.deliveryCity ? `${trackingData.deliveryCity}, ${trackingData.deliveryState || ''}` : (trackingData.deliveryAddress || '');
 
+        const recipientNameEl = document.getElementById('recipientName');
+        if (recipientNameEl) recipientNameEl.textContent = trackingData.recipientName || '';
+
+        const shippingCostEl = document.getElementById('shippingCost');
+        if (shippingCostEl) shippingCostEl.textContent = trackingData.shippingCost ? 'R ' + trackingData.shippingCost : '';
+
         const sigEl = document.getElementById('signatureRequired');
         if (sigEl) sigEl.textContent = trackingData.signatureRequired ? 'Yes' : 'No';
 
@@ -228,7 +248,12 @@ class ReliableCarriersApp {
             timeline.appendChild(timelineItem);
         });
 
-        trackingSection.style.display = 'block';
+        // Show tracking section and hide loading/no results
+        trackingSection.classList.remove('hidden');
+        const noResults = document.getElementById('noResults');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        if (noResults) noResults.classList.add('hidden');
+        if (loadingSpinner) loadingSpinner.classList.add('hidden');
     }
 
     async handleBooking(e) {

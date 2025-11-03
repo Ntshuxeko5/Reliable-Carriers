@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Furniture Moving Quote Result - Reliable Carriers</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .price-highlight {
+            background: linear-gradient(45deg, #10b981, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Header -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-truck text-blue-600 text-2xl mr-3"></i>
+                        <span class="font-bold text-xl text-gray-800">Reliable Carriers</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-gray-600 hover:text-blue-600 transition duration-300">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <a href="/furniture-moving-quote" class="text-gray-600 hover:text-blue-600 transition duration-300">
+                        <i class="fas fa-calculator mr-2"></i>New Quote
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-4">
+                <i class="fas fa-check-circle mr-3 text-green-400"></i>Your Furniture Moving Quote
+            </h1>
+            <p class="text-xl text-white opacity-90">
+                Quote generated successfully - Valid for 30 days
+            </p>
+        </div>
+
+        <!-- Quote Details -->
+        <div class="max-w-4xl mx-auto">
+            <div class="glass-effect rounded-2xl shadow-2xl p-8 mb-8">
+                <!-- Quote Header -->
+                <div class="flex justify-between items-center mb-8 pb-6 border-b">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Quote Details</h2>
+                        <p class="text-gray-600">Quote ID: <span id="quoteId" class="font-mono font-semibold"></span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">Generated on</p>
+                        <p id="quoteDate" class="font-semibold text-gray-800"></p>
+                    </div>
+                </div>
+
+                <!-- Customer Information -->
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-user mr-2 text-blue-600"></i>Customer Information
+                        </h3>
+                        <div class="space-y-2">
+                            <p><span class="font-medium">Name:</span> <span id="customerName"></span></p>
+                            <p><span class="font-medium">Email:</span> <span id="customerEmail"></span></p>
+                            <p><span class="font-medium">Phone:</span> <span id="customerPhone"></span></p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-calendar mr-2 text-green-600"></i>Moving Details
+                        </h3>
+                        <div class="space-y-2">
+                            <p><span class="font-medium">Date:</span> <span id="movingDate"></span></p>
+                            <p><span class="font-medium">Time:</span> <span id="movingTime"></span></p>
+                            <p><span class="font-medium">Distance:</span> <span id="distance"></span> km</p>
+                            <p><span class="font-medium">Estimated Duration:</span> <span id="estimatedDuration"></span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Locations -->
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Pickup Location
+                        </h3>
+                        <p id="pickupAddress" class="text-gray-700"></p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-flag-checkered mr-2 text-red-600"></i>Delivery Location
+                        </h3>
+                        <p id="deliveryAddress" class="text-gray-700"></p>
+                    </div>
+                </div>
+
+                <!-- Inventory Summary -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-boxes mr-2 text-purple-600"></i>Inventory Summary
+                    </h3>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="totalItems">0</div>
+                            <div class="text-sm text-gray-600">Total Items</div>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green-600"><span id="totalWeight">0</span> kg</div>
+                            <div class="text-sm text-gray-600">Total Weight</div>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-purple-600"><span id="distance2">0</span> km</div>
+                            <div class="text-sm text-gray-600">Distance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pricing Breakdown -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-calculator mr-2 text-orange-600"></i>Pricing Breakdown
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-700">Base Moving Cost</span>
+                            <span class="font-semibold">R<span id="basePrice">0.00</span></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200" id="serviceAdditionsRow" style="display: none;">
+                            <span class="text-gray-700">Additional Services</span>
+                            <span class="font-semibold">R<span id="serviceAdditions">0.00</span></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200" id="insuranceRow" style="display: none;">
+                            <span class="text-gray-700">Moving Insurance</span>
+                            <span class="font-semibold">R<span id="insuranceCost">0.00</span></span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-t-2 border-gray-300">
+                            <span class="text-xl font-bold text-gray-800">Total Cost</span>
+                            <span class="text-3xl font-bold price-highlight">R<span id="totalPrice">0.00</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Special Instructions -->
+                <div id="specialInstructionsSection" class="mb-8" style="display: none;">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-clipboard-list mr-2 text-indigo-600"></i>Special Instructions
+                    </h3>
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                        <p id="specialInstructions" class="text-gray-700"></p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onclick="bookNow()" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-check mr-2"></i>Book This Move
+                    </button>
+                    <button onclick="downloadQuote()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-download mr-2"></i>Download Quote
+                    </button>
+                    <button onclick="shareQuote()" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-share mr-2"></i>Share Quote
+                    </button>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="glass-effect rounded-2xl shadow-2xl p-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-info-circle mr-2 text-blue-600"></i>Important Information
+                </h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">What's Included:</h4>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Professional moving team</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Moving equipment and tools</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Basic furniture protection</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Loading and unloading</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i>Transportation</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Terms & Conditions:</h4>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li><i class="fas fa-clock text-orange-500 mr-2"></i>Quote valid for 30 days</li>
+                            <li><i class="fas fa-calendar text-orange-500 mr-2"></i>48-hour booking notice required</li>
+                            <li><i class="fas fa-shield-alt text-orange-500 mr-2"></i>Basic liability coverage included</li>
+                            <li><i class="fas fa-credit-card text-orange-500 mr-2"></i>Payment due on completion</li>
+                            <li><i class="fas fa-phone text-orange-500 mr-2"></i>24/7 customer support</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-lg font-medium">Loading quote details...</p>
+        </div>
+    </div>
+
+    <script>
+        let quoteData = null;
+
+        // Load quote data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const quoteId = urlParams.get('quoteId');
+            
+            if (quoteId) {
+                loadQuoteData(quoteId);
+            } else {
+                alert('No quote ID provided');
+                window.location.href = '/furniture-moving-quote';
+            }
+        });
+
+        function loadQuoteData(quoteId) {
+            document.getElementById('loadingModal').classList.remove('hidden');
+            document.getElementById('loadingModal').classList.add('flex');
+
+            fetch(`/api/furniture-moving/quote/${quoteId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loadingModal').classList.add('hidden');
+                    document.getElementById('loadingModal').classList.remove('flex');
+                    
+                    if (data) {
+                        quoteData = data;
+                        populateQuoteData(data);
+                    } else {
+                        alert('Quote not found');
+                        window.location.href = '/furniture-moving-quote';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loadingModal').classList.add('hidden');
+                    document.getElementById('loadingModal').classList.remove('flex');
+                    console.error('Error:', error);
+                    alert('Error loading quote data');
+                });
+        }
+
+        function populateQuoteData(data) {
+            // Basic information
+            document.getElementById('quoteId').textContent = data.quoteId;
+            document.getElementById('customerName').textContent = data.customerName;
+            document.getElementById('customerEmail').textContent = data.customerEmail;
+            document.getElementById('customerPhone').textContent = data.customerPhone;
+            
+            // Locations
+            document.getElementById('pickupAddress').textContent = data.pickupAddress;
+            document.getElementById('deliveryAddress').textContent = data.deliveryAddress;
+            
+            // Moving details
+            document.getElementById('movingDate').textContent = formatDate(data.movingDate);
+            document.getElementById('movingTime').textContent = data.movingTime || 'Flexible';
+            document.getElementById('distance').textContent = data.distance;
+            document.getElementById('distance2').textContent = data.distance;
+            document.getElementById('estimatedDuration').textContent = data.estimatedDuration || 'To be confirmed';
+            
+            // Inventory
+            document.getElementById('totalItems').textContent = data.totalItems;
+            document.getElementById('totalWeight').textContent = Math.round(data.totalWeight);
+            
+            // Pricing
+            document.getElementById('basePrice').textContent = formatPrice(data.basePrice);
+            document.getElementById('totalPrice').textContent = formatPrice(data.totalPrice);
+            
+            // Service additions
+            if (data.serviceAdditions && data.serviceAdditions > 0) {
+                document.getElementById('serviceAdditions').textContent = formatPrice(data.serviceAdditions);
+                document.getElementById('serviceAdditionsRow').style.display = 'flex';
+            }
+            
+            // Insurance
+            if (data.insuranceCost && data.insuranceCost > 0) {
+                document.getElementById('insuranceCost').textContent = formatPrice(data.insuranceCost);
+                document.getElementById('insuranceRow').style.display = 'flex';
+            }
+            
+            // Special instructions
+            if (data.specialInstructions && data.specialInstructions.trim()) {
+                document.getElementById('specialInstructions').textContent = data.specialInstructions;
+                document.getElementById('specialInstructionsSection').style.display = 'block';
+            }
+            
+            // Quote date
+            if (data.createdAt) {
+                document.getElementById('quoteDate').textContent = formatDateTime(data.createdAt);
+            }
+        }
+
+        function formatPrice(price) {
+            return parseFloat(price).toFixed(2);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Not specified';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-ZA', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        function formatDateTime(dateTimeString) {
+            if (!dateTimeString) return 'Unknown';
+            const date = new Date(dateTimeString);
+            return date.toLocaleDateString('en-ZA', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function bookNow() {
+            if (quoteData) {
+                // Redirect to booking page with quote data
+                const bookingUrl = `/furniture-moving-booking?quoteId=${quoteData.quoteId}`;
+                window.location.href = bookingUrl;
+            }
+        }
+
+        function downloadQuote() {
+            if (quoteData) {
+                // Generate PDF or redirect to download endpoint
+                window.open(`/api/furniture-moving/quote/${quoteData.quoteId}/download`, '_blank');
+            }
+        }
+
+        function shareQuote() {
+            if (quoteData && navigator.share) {
+                navigator.share({
+                    title: 'Furniture Moving Quote - Reliable Carriers',
+                    text: `My furniture moving quote for R${formatPrice(quoteData.totalPrice)}`,
+                    url: window.location.href
+                });
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('Quote link copied to clipboard!');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+

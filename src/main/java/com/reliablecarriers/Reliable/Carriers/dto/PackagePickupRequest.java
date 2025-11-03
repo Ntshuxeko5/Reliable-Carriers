@@ -12,6 +12,7 @@ public class PackagePickupRequest {
     private Double pickupLat;
     private Double pickupLng;
     private String pickupAddress;
+    private String collectionCode; // Code provided by customer for pickup verification
 
     // Constructors
     public PackagePickupRequest() {}
@@ -92,5 +93,13 @@ public class PackagePickupRequest {
 
     public void setPickupAddress(String pickupAddress) {
         this.pickupAddress = pickupAddress;
+    }
+    
+    public String getCollectionCode() {
+        return collectionCode;
+    }
+    
+    public void setCollectionCode(String collectionCode) {
+        this.collectionCode = collectionCode;
     }
 }
