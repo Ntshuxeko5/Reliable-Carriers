@@ -305,6 +305,42 @@ public class CustomerPackageController {
         return ResponseEntity.ok(Map.of("valid", isValid));
     }
 
+    // Saved Quotes Management
+    @GetMapping("/quotes")
+    public ResponseEntity<List<Map<String, Object>>> getSavedQuotes(
+            org.springframework.security.core.Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(List.of());
+            }
+            
+            String email = authentication.getName();
+            List<com.reliablecarriers.Reliable.Carriers.model.Quote> quotes = 
+                customerPackageService.getSavedQuotes(email);
+            
+            List<Map<String, Object>> quoteList = quotes.stream().map(quote -> {
+                Map<String, Object> quoteMap = new java.util.HashMap<>();
+                quoteMap.put("quoteId", quote.getQuoteId());
+                quoteMap.put("pickupAddress", quote.getPickupAddress());
+                quoteMap.put("deliveryAddress", quote.getDeliveryAddress());
+                quoteMap.put("weight", quote.getWeight());
+                quoteMap.put("dimensions", quote.getDimensions());
+                quoteMap.put("totalCost", quote.getTotalCost());
+                quoteMap.put("serviceType", quote.getServiceType());
+                quoteMap.put("estimatedDeliveryTime", quote.getEstimatedDeliveryTime());
+                quoteMap.put("estimatedDeliveryDate", quote.getEstimatedDeliveryDate());
+                quoteMap.put("expiryDate", quote.getExpiryDate());
+                quoteMap.put("createdAt", quote.getCreatedAt());
+                quoteMap.put("isActive", quote.getIsActive());
+                return quoteMap;
+            }).collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(quoteList);
+        } catch (Exception e) {
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
     // Health Check
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> healthCheck() {

@@ -184,6 +184,11 @@ public class WebController {
         return "admin/audit";
     }
     
+    @GetMapping("/admin/verification")
+    public String adminVerification() {
+        return "admin/verification-management";
+    }
+    
     @GetMapping("/about")
     public String about() {
         return "about";

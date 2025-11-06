@@ -638,6 +638,11 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
         }
     }
 
+    @Override
+    public List<Quote> getSavedQuotes(String email) {
+        return quoteRepository.findByCustomerEmailAndIsActiveTrueOrderByCreatedAtDesc(email);
+    }
+    
     private double estimateDistanceKm(CustomerPackageRequest request) {
         // Try Google Maps API first if addresses are available and service is configured
         if (googleMapsService != null && request.getPickupAddress() != null && request.getDeliveryAddress() != null) {

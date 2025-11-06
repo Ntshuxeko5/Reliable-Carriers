@@ -203,4 +203,63 @@ public class EmailServiceImpl implements EmailService {
         
         sendHtmlEmail(to, "Booking Confirmation - " + bookingNumber, "email/booking-confirmation", variables);
     }
+
+    @Override
+    public void sendDriverVerificationStatus(String to, String driverName, String documentType, boolean approved, String notes) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("driverName", driverName);
+        variables.put("documentType", documentType);
+        variables.put("approved", approved);
+        variables.put("notes", notes != null ? notes : "");
+        variables.put("status", approved ? "approved" : "rejected");
+        
+        String subject = approved 
+            ? "Document Verified - " + documentType
+            : "Document Verification Rejected - " + documentType;
+        
+        sendHtmlEmail(to, subject, "email/verification-status", variables);
+    }
+
+    @Override
+    public void sendBusinessDocumentVerificationStatus(String to, String businessName, String documentType, boolean approved, String notes) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("businessName", businessName);
+        variables.put("documentType", documentType);
+        variables.put("approved", approved);
+        variables.put("notes", notes != null ? notes : "");
+        variables.put("status", approved ? "approved" : "rejected");
+        
+        String subject = approved 
+            ? "Document Verified - " + documentType
+            : "Document Verification Rejected - " + documentType;
+        
+        sendHtmlEmail(to, subject, "email/verification-status", variables);
+    }
+
+    @Override
+    public void sendBusinessAccountVerificationStatus(String to, String businessName, boolean approved, String notes, String creditLimit, String paymentTerms) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("businessName", businessName);
+        variables.put("approved", approved);
+        variables.put("notes", notes != null ? notes : "");
+        variables.put("creditLimit", creditLimit != null ? creditLimit : "N/A");
+        variables.put("paymentTerms", paymentTerms != null ? paymentTerms + " days" : "N/A");
+        variables.put("status", approved ? "approved" : "rejected");
+        
+        String subject = approved 
+            ? "Business Account Approved - " + businessName
+            : "Business Account Rejected - " + businessName;
+        
+        sendHtmlEmail(to, subject, "email/business-verification-status", variables);
+    }
+
+    @Override
+    public void sendDocumentExpiryWarning(String to, String recipientName, String documentType, String expiryDate) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("recipientName", recipientName);
+        variables.put("documentType", documentType);
+        variables.put("expiryDate", expiryDate);
+        
+        sendHtmlEmail(to, "Document Expiring Soon - " + documentType, "email/document-expiry-warning", variables);
+    }
 }

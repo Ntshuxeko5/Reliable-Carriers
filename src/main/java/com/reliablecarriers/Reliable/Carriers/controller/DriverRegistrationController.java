@@ -5,6 +5,7 @@ import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.model.UserRole;
 import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
 import com.reliablecarriers.Reliable.Carriers.service.AuthService;
+import com.reliablecarriers.Reliable.Carriers.service.UserValidationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ public class DriverRegistrationController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private UserValidationService userValidationService;
     
     
     /**
@@ -59,6 +63,28 @@ public class DriverRegistrationController {
             if (registerRequest.getVehicleRegistration() == null || registerRequest.getVehicleRegistration().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("success", false, "error", "Vehicle registration number is required"));
+            }
+            
+            // Validate registration data
+            try {
+                Map<String, Object> validation = userValidationService.validateRegistration(
+                    registerRequest.getFirstName(),
+                    registerRequest.getLastName(),
+                    registerRequest.getEmail(),
+                    registerRequest.getPassword(),
+                    registerRequest.getConfirmPassword(),
+                    registerRequest.getPhone()
+                );
+                
+                if (!(Boolean) validation.get("valid")) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> errors = (Map<String, String>) validation.get("errors");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Validation failed", "errors", errors));
+                }
+            } catch (Exception validationError) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Validation error: " + validationError.getMessage()));
             }
             
             // Check if email already exists

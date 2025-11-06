@@ -5,11 +5,8 @@ import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.repository.BookingRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.ShipmentRepository;
-import com.reliablecarriers.Reliable.Carriers.repository.UserRepository;
-import com.reliablecarriers.Reliable.Carriers.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -29,12 +26,6 @@ public class CustomerLiveTrackingController {
 
     @Autowired
     private ShipmentRepository shipmentRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private AuthService authService;
 
     /**
      * Get live tracking data for a package

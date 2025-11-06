@@ -6,6 +6,7 @@
     <title>Audit Logs - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/currency-utils.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-gray-50">
@@ -100,13 +101,25 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Action</label>
                     <select id="actionFilter" class="w-full border border-gray-300 rounded-md px-3 py-2">
                         <option value="">All Actions</option>
+                        <option value="PAGE_ACCESS">Page Access</option>
                         <option value="LOGIN">Login</option>
                         <option value="LOGOUT">Logout</option>
                         <option value="SHIPMENT_CREATION">Shipment Creation</option>
                         <option value="SHIPMENT_UPDATE">Shipment Update</option>
+                        <option value="SHIPMENT_STATUS_CHANGE">Shipment Status Change</option>
+                        <option value="DRIVER_ASSIGNMENT">Driver Assignment</option>
                         <option value="PAYMENT">Payment</option>
                         <option value="USER_CREATION">User Creation</option>
                         <option value="USER_UPDATE">User Update</option>
+                        <option value="USER_DELETION">User Deletion</option>
+                        <option value="PASSWORD_CHANGE">Password Change</option>
+                        <option value="PASSWORD_RESET">Password Reset</option>
+                        <option value="FILE_UPLOAD">File Upload</option>
+                        <option value="DATA_EXPORT">Data Export</option>
+                        <option value="DATA_IMPORT">Data Import</option>
+                        <option value="SYSTEM_ERROR">System Error</option>
+                        <option value="SECURITY_EVENT">Security Event</option>
+                        <option value="API_ACCESS">API Access</option>
                     </select>
                 </div>
                 <div>
@@ -366,34 +379,49 @@
                 const statusClass = log.status === 'SUCCESS' ? 'text-green-600' : 
                                   log.status === 'FAILED' ? 'text-red-600' : 'text-yellow-600';
 
+                // Extract page path from additionalData for PAGE_ACCESS actions
+                let actionDisplay = log.action;
+                let entityDisplay = log.entityType || '-';
+                
+                if (log.action === 'PAGE_ACCESS' && log.additionalData) {
+                    // Extract page path from additionalData
+                    const pageMatch = log.additionalData.match(/Page: (.+)/);
+                    if (pageMatch) {
+                        actionDisplay = `Page Access: ${pageMatch[1]}`;
+                        entityDisplay = 'PAGE';
+                    }
+                }
+                
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${new Date(log.createdAt).toLocaleString()}
+                        ${new Date(log.createdAt).toLocaleString('en-ZA')}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${log.userEmail || 'SYSTEM'}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${log.userRole || 'SYSTEM'}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleColor(log.userRole)}">
+                            ${log.userRole || 'SYSTEM'}
+                        </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${log.action}
+                        ${actionDisplay}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${log.entityType || '-'} ${log.entityId ? `#${log.entityId}` : ''}
+                        ${entityDisplay} ${log.entityId ? `#${log.entityId}` : ''}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
                             ${log.status}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         ${log.ipAddress || '-'}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <button onclick="showDetails(${JSON.stringify(log).replace(/"/g, '&quot;')})" 
                                 class="text-blue-600 hover:text-blue-900">
-                            <i class="fas fa-eye"></i>
+                            <i class="fas fa-eye"></i> View
                         </button>
                     </td>
                 `;
@@ -556,6 +584,19 @@
                 closeDetailsModal();
             }
         });
+
+        // Get role color for badges
+        function getRoleColor(role) {
+            const colors = {
+                'ADMIN': 'bg-purple-100 text-purple-800',
+                'DRIVER': 'bg-blue-100 text-blue-800',
+                'CUSTOMER': 'bg-green-100 text-green-800',
+                'STAFF': 'bg-yellow-100 text-yellow-800',
+                'TRACKING_MANAGER': 'bg-indigo-100 text-indigo-800',
+                'SYSTEM': 'bg-gray-100 text-gray-800'
+            };
+            return colors[role] || 'bg-gray-100 text-gray-800';
+        }
 
         function getToken() {
             return (

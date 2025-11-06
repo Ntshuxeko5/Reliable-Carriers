@@ -30,6 +30,8 @@ public class UserValidationService {
             errors.put("firstName", "First name is required");
         } else if (firstName.trim().length() < 2) {
             errors.put("firstName", "First name must be at least 2 characters");
+        } else if (containsNumbers(firstName)) {
+            errors.put("firstName", "First name cannot contain numbers");
         }
         
         // Validate last name
@@ -37,6 +39,8 @@ public class UserValidationService {
             errors.put("lastName", "Last name is required");
         } else if (lastName.trim().length() < 2) {
             errors.put("lastName", "Last name must be at least 2 characters");
+        } else if (containsNumbers(lastName)) {
+            errors.put("lastName", "Last name cannot contain numbers");
         }
         
         // Validate email
@@ -138,6 +142,34 @@ public class UserValidationService {
         String digitsOnly = phone.replaceAll("[^0-9]", "");
         // Check if it's between 10 and 15 digits
         return digitsOnly.length() >= 10 && digitsOnly.length() <= 15;
+    }
+    
+    /**
+     * Check if string contains numbers
+     */
+    private boolean containsNumbers(String str) {
+        return str != null && str.matches(".*[0-9].*");
+    }
+    
+    /**
+     * Validate business name (no numbers)
+     */
+    public Map<String, Object> validateBusinessName(String businessName) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("valid", true);
+        Map<String, String> errors = new HashMap<>();
+        result.put("errors", errors);
+        
+        if (businessName == null || businessName.trim().isEmpty()) {
+            errors.put("businessName", "Business name is required");
+        } else if (businessName.trim().length() < 2) {
+            errors.put("businessName", "Business name must be at least 2 characters");
+        } else if (containsNumbers(businessName)) {
+            errors.put("businessName", "Business name cannot contain numbers");
+        }
+        
+        result.put("valid", errors.isEmpty());
+        return result;
     }
     
     /**

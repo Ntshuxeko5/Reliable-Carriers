@@ -15,19 +15,19 @@
         
         <!-- Open Graph / Facebook -->
         <meta property="og:type" th:content="${type ?: 'website'}">
-        <meta property="og:url" th:content="${url ?: '${app.base.url}'}">
+        <meta property="og:url" th:content="${url ?: (app?.base?.url ?: 'http://localhost:8080')}">
         <meta property="og:title" th:content="${title ?: 'Reliable Carriers - Professional Courier Services'}">
         <meta property="og:description" th:content="${description ?: 'Professional courier and logistics services across South Africa'}">
-        <meta property="og:image" th:content="${image ?: '${app.base.url}/images/Reliable 1.png'}">
+        <meta property="og:image" th:content="${image ?: ((app?.base?.url ?: 'http://localhost:8080') + '/images/Reliable 1.png')}">
         <meta property="og:site_name" content="Reliable Carriers">
         <meta property="og:locale" content="en_ZA">
         
         <!-- Twitter -->
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:url" th:content="${url ?: '${app.base.url}'}">
+        <meta name="twitter:url" th:content="${url ?: (app?.base?.url ?: 'http://localhost:8080')}">
         <meta name="twitter:title" th:content="${title ?: 'Reliable Carriers - Professional Courier Services'}">
         <meta name="twitter:description" th:content="${description ?: 'Professional courier and logistics services across South Africa'}">
-        <meta name="twitter:image" th:content="${image ?: '${app.base.url}/images/Reliable 1.png'}">
+        <meta name="twitter:image" th:content="${image ?: ((app?.base?.url ?: 'http://localhost:8080') + '/images/Reliable 1.png')}">
         
         <!-- Structured Data (JSON-LD) -->
         <script type="application/ld+json" th:inline="text">
@@ -36,7 +36,7 @@
             "@type": "Organization",
             "name": "Reliable Carriers",
             "url": "https://reliablecarriers.co.za",
-            "logo": "[[${app.base.url}]]/images/Reliable 1.png",
+            "logo": "[[${app?.base?.url ?: 'http://localhost:8080'}]]/images/Reliable 1.png",
             "description": "Professional courier and logistics services across South Africa",
             "address": {
                 "@type": "PostalAddress",

@@ -5,10 +5,16 @@ import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.service.AuthService;
 import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,13 +98,44 @@ public class CustomerWebController {
     @GetMapping("/quote")
     public String createQuote(Model model) {
         try {
-            // Get current user information
-            User currentUser = authService.getCurrentUser();
-            if (currentUser != null) {
-                model.addAttribute("isAuthenticated", true);
-                model.addAttribute("userName", currentUser.getFirstName());
-                model.addAttribute("userEmail", currentUser.getEmail());
-                return "customer/quote-logged-in";
+            // Check if user is authenticated via session or SecurityContext
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() && 
+                !(authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
+                
+                // Try to get user
+                try {
+                    User currentUser = authService.getCurrentUser();
+                    if (currentUser != null) {
+                        model.addAttribute("isAuthenticated", true);
+                        model.addAttribute("userName", currentUser.getFirstName());
+                        model.addAttribute("userEmail", currentUser.getEmail());
+                        return "customer/quote-logged-in";
+                    }
+                } catch (Exception e) {
+                    // User might not exist, continue to public page
+                }
+            }
+            
+            // Also check session for user info (fallback for session-based auth)
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                String userEmail = (String) session.getAttribute("userEmail");
+                Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+                if (userEmail != null && Boolean.TRUE.equals(isAuthenticated)) {
+                    try {
+                        User currentUser = authService.getCurrentUser();
+                        if (currentUser != null) {
+                            model.addAttribute("isAuthenticated", true);
+                            model.addAttribute("userName", currentUser.getFirstName());
+                            model.addAttribute("userEmail", currentUser.getEmail());
+                            return "customer/quote-logged-in";
+                        }
+                    } catch (Exception e) {
+                        // Continue to public page
+                    }
+                }
             }
         } catch (Exception e) {
             // If authentication fails, continue with default behavior

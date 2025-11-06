@@ -11,10 +11,12 @@ public class RegisterRequest {
 
     @NotBlank(message = "First name is required")
     @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
+    @Pattern(regexp = "^[A-Za-z\\s'-]+$", message = "First name cannot contain numbers")
     private String firstName;
 
     @NotBlank(message = "Last name is required")
     @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
+    @Pattern(regexp = "^[A-Za-z\\s'-]+$", message = "Last name cannot contain numbers")
     private String lastName;
 
     @NotBlank(message = "Email is required")
@@ -44,6 +46,7 @@ public class RegisterRequest {
     
     // Business registration fields
     private Boolean isBusiness = false;
+    @Pattern(regexp = "^[A-Za-z\\s'-]+$", message = "Business name cannot contain numbers", groups = {})
     private String businessName;
     private String taxId;
     private String registrationNumber;

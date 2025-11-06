@@ -20,7 +20,7 @@ public class Vehicle {
     @Column(nullable = false, length = 50)
     private String model;
     
-    @Column(nullable = false)
+    @Column(nullable = false, name = "vehicle_year")
     private Integer year;
     
     @Enumerated(EnumType.STRING)

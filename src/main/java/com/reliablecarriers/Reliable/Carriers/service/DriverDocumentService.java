@@ -11,9 +11,10 @@ import java.util.List;
 public interface DriverDocumentService {
     
     /**
-     * Upload driver document
+     * Upload driver document (must be certified)
      */
-    DriverDocument uploadDocument(User driver, DriverDocumentType documentType, MultipartFile file, Date expiresAt);
+    DriverDocument uploadDocument(User driver, DriverDocumentType documentType, MultipartFile file, 
+                                 Boolean isCertified, String certifiedBy, Date certificationDate, Date expiresAt);
     
     /**
      * Get all documents for a driver

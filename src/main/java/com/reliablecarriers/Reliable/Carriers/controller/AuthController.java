@@ -275,6 +275,20 @@ public class AuthController {
             
             // Handle business registration
             if (Boolean.TRUE.equals(registerRequest.getIsBusiness())) {
+                // Validate business name if provided
+                if (registerRequest.getBusinessName() != null && !registerRequest.getBusinessName().trim().isEmpty()) {
+                    Map<String, Object> businessNameValidation = userValidationService.validateBusinessName(
+                        registerRequest.getBusinessName()
+                    );
+                    if (!(Boolean) businessNameValidation.get("valid")) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, String> errors = (Map<String, String>) businessNameValidation.get("errors");
+                        logger.info("Business name validation failed: " + errors);
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(Map.of("success", false, "message", "Validation failed", "errors", errors));
+                    }
+                }
+                
                 user.setIsBusiness(true);
                 user.setCustomerTier(com.reliablecarriers.Reliable.Carriers.model.CustomerTier.BUSINESS);
                 user.setBusinessName(registerRequest.getBusinessName());
@@ -596,11 +610,11 @@ public class AuthController {
             // Clear failed login attempts on successful authentication
             accountLockoutService.clearFailedLoginAttempts(loginEmail);
 
-            // Only allow customers to use this public/customer login endpoint.
+            // Allow customers and businesses (businesses have CUSTOMER role) to use this login endpoint.
             // Staff/admin/driver/tracking manager must use the staff portal (/staff-login).
             if (authenticatedUser.getRole() != com.reliablecarriers.Reliable.Carriers.model.UserRole.CUSTOMER) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Access denied. Use the staff portal to sign in for staff accounts.");
+                        .body(Map.of("success", false, "message", "Access denied. Use the staff portal to sign in for staff accounts."));
             }
 
             // For customers, check if 2FA is enabled

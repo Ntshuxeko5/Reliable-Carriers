@@ -30,6 +30,9 @@ public class DriverDocumentController {
     public ResponseEntity<Map<String, Object>> uploadDocument(
             @RequestParam("file") MultipartFile file,
             @RequestParam("documentType") String documentTypeStr,
+            @RequestParam("isCertified") Boolean isCertified,
+            @RequestParam("certifiedBy") String certifiedBy,
+            @RequestParam(value = "certificationDate", required = false) String certificationDateStr,
             @RequestParam(value = "expiresAt", required = false) String expiresAtStr,
             Authentication authentication) {
         
@@ -37,6 +40,21 @@ public class DriverDocumentController {
             User driver = getAuthenticatedDriver(authentication);
             
             DriverDocumentType documentType = DriverDocumentType.valueOf(documentTypeStr);
+            
+            // Parse certification date
+            java.util.Date certificationDate = null;
+            if (certificationDateStr != null && !certificationDateStr.isEmpty()) {
+                try {
+                    certificationDate = java.sql.Date.valueOf(certificationDateStr);
+                } catch (IllegalArgumentException e) {
+                    // If date parsing fails, use current date
+                    certificationDate = new java.util.Date();
+                }
+            } else {
+                certificationDate = new java.util.Date();
+            }
+            
+            // Parse expiry date
             java.util.Date expiresAt = null;
             if (expiresAtStr != null && !expiresAtStr.isEmpty()) {
                 try {
@@ -46,7 +64,8 @@ public class DriverDocumentController {
                 }
             }
             
-            DriverDocument document = documentService.uploadDocument(driver, documentType, file, expiresAt);
+            DriverDocument document = documentService.uploadDocument(driver, documentType, file, 
+                isCertified, certifiedBy, certificationDate, expiresAt);
             
             // Update driver status if documents submitted
             if (driver.getDriverVerificationStatus() == DriverVerificationStatus.PENDING) {
@@ -129,6 +148,44 @@ public class DriverDocumentController {
                 "error", e.getMessage()
             ));
         }
+    }
+    
+    /**
+     * Get required document types
+     * GET /api/driver/documents/required
+     */
+    @GetMapping("/required")
+    public ResponseEntity<Map<String, Object>> getRequiredDocuments() {
+        List<Map<String, Object>> requiredDocs = Arrays.stream(DriverDocumentType.values())
+            .filter(DriverDocumentType::isRequired)
+            .map(docType -> {
+                Map<String, Object> doc = new HashMap<>();
+                doc.put("type", docType.toString());
+                doc.put("name", docType.getDisplayName());
+                doc.put("description", docType.getDescription());
+                doc.put("required", true);
+                return doc;
+            })
+            .toList();
+        
+        List<Map<String, Object>> optionalDocs = Arrays.stream(DriverDocumentType.values())
+            .filter(docType -> !docType.isRequired())
+            .map(docType -> {
+                Map<String, Object> doc = new HashMap<>();
+                doc.put("type", docType.toString());
+                doc.put("name", docType.getDisplayName());
+                doc.put("description", docType.getDescription());
+                doc.put("required", false);
+                return doc;
+            })
+            .toList();
+        
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "required", requiredDocs,
+            "optional", optionalDocs,
+            "note", "All documents must be certified copies. Documents can be certified by a Commissioner of Oaths, Notary Public, or other authorized certifying officer."
+        ));
     }
     
     private User getAuthenticatedDriver(Authentication authentication) {

@@ -5,6 +5,7 @@ import java.util.Date;
 
 /**
  * Driver document model for storing driver verification documents
+ * All documents must be certified copies
  */
 @Entity
 @Table(name = "driver_documents")
@@ -33,6 +34,15 @@ public class DriverDocument {
     
     @Column(name = "mime_type", length = 100)
     private String mimeType;
+    
+    @Column(name = "is_certified", nullable = false)
+    private Boolean isCertified = false; // Must be certified copy
+    
+    @Column(name = "certified_by", length = 255)
+    private String certifiedBy; // Name of person who certified (Commissioner of Oaths, etc.)
+    
+    @Column(name = "certification_date")
+    private Date certificationDate;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "verification_status", nullable = false)
@@ -113,6 +123,15 @@ public class DriverDocument {
     
     public Date getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+    
+    public Boolean getIsCertified() { return isCertified; }
+    public void setIsCertified(Boolean isCertified) { this.isCertified = isCertified; }
+    
+    public String getCertifiedBy() { return certifiedBy; }
+    public void setCertifiedBy(String certifiedBy) { this.certifiedBy = certifiedBy; }
+    
+    public Date getCertificationDate() { return certificationDate; }
+    public void setCertificationDate(Date certificationDate) { this.certificationDate = certificationDate; }
 }
 
 

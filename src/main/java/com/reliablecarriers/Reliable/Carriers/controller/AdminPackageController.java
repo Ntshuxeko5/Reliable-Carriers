@@ -51,6 +51,7 @@ public class AdminPackageController {
                 packageInfo.put("customerName", booking.getCustomerName());
                 packageInfo.put("customerEmail", booking.getCustomerEmail());
                 packageInfo.put("customerPhone", booking.getCustomerPhone());
+                packageInfo.put("status", booking.getStatus() != null ? booking.getStatus().name() : "PENDING");
                 packageInfo.put("serviceType", booking.getServiceType().getDisplayName());
                 packageInfo.put("description", booking.getDescription());
                 packageInfo.put("weight", booking.getWeight());
@@ -254,7 +255,7 @@ public class AdminPackageController {
                 packageInfo.put("id", booking.getId());
                 packageInfo.put("bookingNumber", booking.getBookingNumber());
                 packageInfo.put("trackingNumber", booking.getTrackingNumber());
-                packageInfo.put("status", booking.getStatus());
+                packageInfo.put("status", booking.getStatus() != null ? booking.getStatus().name() : "PENDING");
                 packageInfo.put("customerName", booking.getCustomerName());
                 packageInfo.put("serviceType", booking.getServiceType().getDisplayName());
                 packageInfo.put("totalAmount", booking.getTotalAmount());

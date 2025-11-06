@@ -97,13 +97,12 @@ public class ChatbotServiceImpl implements ChatbotService {
         }
 
         String intent = analyzeIntent(message);
-        String lowerMessage = message.toLowerCase();
 
         // Check for tracking number in message
         String trackingNumber = extractTrackingNumber(message);
 
         // Try FAQ first (rule-based)
-        String faqResponse = getFAQResponse(lowerMessage);
+        String faqResponse = getFAQResponse(message.toLowerCase());
         if (faqResponse != null) {
             ChatbotResponse response = new ChatbotResponse(faqResponse, intent, 0.9);
             response.setQuickResponses(getQuickResponses(message));
@@ -144,8 +143,6 @@ public class ChatbotServiceImpl implements ChatbotService {
         if (message == null || message.trim().isEmpty()) {
             return "UNKNOWN";
         }
-
-        String lowerMessage = message.toLowerCase();
         
         for (Map.Entry<String, Pattern> entry : INTENT_PATTERNS.entrySet()) {
             if (entry.getValue().matcher(message).matches()) {

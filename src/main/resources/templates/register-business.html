@@ -379,53 +379,113 @@
                 });
 
                 const result = await response.json();
-                if (result.requires2fa) {
-                    document.getElementById('businessRegisterForm').classList.add('hidden');
-                    document.getElementById('otpStage').classList.remove('hidden');
-                } else if (result.error) {
-                    showAlert(result.error, 'error');
+                if (result && result.success) {
+                    if (result.requires2fa) {
+                        // Store user info for 2FA step
+                        sessionStorage.setItem('pending2faEmail', result.email);
+                        sessionStorage.setItem('pending2faRole', result.role || 'CUSTOMER');
+                        
+                        // Show 2FA step
+                        document.getElementById('businessRegisterForm').classList.add('hidden');
+                        document.getElementById('otpStage').classList.remove('hidden');
+                        
+                        // Show success message
+                        showAlert('Verification code sent to your email. Please check your inbox.', 'success');
+                        
+                        // Show demo code if available
+                        if (result.demoCode) {
+                            showAlert('Demo code: ' + result.demoCode, 'info');
+                        }
+                    } else {
+                        // Direct registration success (no 2FA required)
+                        showAlert(result.message || 'Business account created successfully! Redirecting to login...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    }
+                } else {
+                    // Handle validation errors
+                    if (result && result.errors) {
+                        let errorMessage = 'Please fix the following errors:\n';
+                        for (const [field, error] of Object.entries(result.errors)) {
+                            errorMessage += `• ${error}\n`;
+                        }
+                        showAlert(errorMessage, 'error');
+                    } else {
+                        showAlert(result.message || result.error || 'Registration failed. Please try again.', 'error');
+                    }
                 }
             } catch (error) {
                 showAlert('Registration failed. Please try again.', 'error');
             }
         });
 
-        document.getElementById('verifyOtpBtn')?.addEventListener('click', async () => {
+        document.getElementById('verifyOtpBtn')?.addEventListener('click', function(e) {
+            e.preventDefault();
             const code = document.getElementById('otpCode').value;
-            const email = document.getElementById('email').value;
+            const email = sessionStorage.getItem('pending2faEmail');
             
-            try {
-                const response = await fetch('/api/auth/register/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, code })
-                });
+            if (!email || !code) {
+                showAlert('Please enter the 6-digit code.', 'error');
+                return;
+            }
 
-                const result = await response.json();
-                if (result.success) {
-                    showAlert('Business account registered successfully! Redirecting...', 'success');
+            fetch('/api/auth/register/verify?email=' + encodeURIComponent(email) + '&code=' + encodeURIComponent(code), {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Verification failed');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    // Store the JWT token if provided
+                    if (data.user && data.user.token) {
+                        localStorage.setItem('token', data.user.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                    }
+                    
+                    showAlert(data.message || 'Business account registered successfully! Welcome to Reliable Carriers.', 'success');
                     setTimeout(() => {
-                        window.location.href = '/customer/dashboard';
+                        // Redirect to appropriate dashboard based on role
+                        const role = data.user?.role || sessionStorage.getItem('pending2faRole') || 'CUSTOMER';
+                        if (role === 'CUSTOMER') {
+                            window.location.href = '/customer/dashboard';
+                        } else {
+                            window.location.href = '/customer/dashboard';
+                        }
                     }, 2000);
                 } else {
-                    showAlert(result.error || 'Verification failed', 'error');
+                    showAlert(data.message || 'Invalid verification code', 'error');
                 }
-            } catch (error) {
-                showAlert('Verification failed. Please try again.', 'error');
-            }
+            })
+            .catch(error => {
+                showAlert('Verification failed: ' + error.message, 'error');
+            });
         });
 
-        document.getElementById('resendCodeBtn')?.addEventListener('click', async () => {
-            const email = document.getElementById('email').value;
-            try {
-                await fetch('/api/auth/register/resend', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-                showAlert('Verification code resent to your email', 'success');
-            } catch (error) {
-                showAlert('Failed to resend code', 'error');
+        document.getElementById('resendCodeBtn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const email = sessionStorage.getItem('pending2faEmail');
+            if (email) {
+                fetch('/api/auth/register/resend?email=' + encodeURIComponent(email) + '&method=EMAIL', {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(data.message || 'Verification code sent via EMAIL. Check your email.', 'success');
+                    } else {
+                        showAlert(data.message || 'Failed to send verification code. Please try again.', 'error');
+                    }
+                })
+                .catch(() => showAlert('Failed to send verification code. Network error.', 'error'));
+            } else {
+                showAlert('No email found. Please try registering again.', 'error');
             }
         });
     </script>

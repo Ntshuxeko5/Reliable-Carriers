@@ -1,5 +1,6 @@
 package com.reliablecarriers.Reliable.Carriers.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,16 +15,15 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class WebPushController {
 
-    // TODO: Load from application properties
-    private static final String VAPID_PUBLIC_KEY = "YOUR_VAPID_PUBLIC_KEY_HERE";
+    @Value("${web.push.vapid.public.key:YOUR_VAPID_PUBLIC_KEY_HERE}")
+    private String vapidPublicKey;
 
     /**
      * Get VAPID public key for client-side subscription
      */
     @GetMapping("/vapid-public-key")
     public ResponseEntity<?> getVapidPublicKey() {
-        // In production, load from secure configuration
-        return ResponseEntity.ok(Map.of("publicKey", VAPID_PUBLIC_KEY));
+        return ResponseEntity.ok(Map.of("publicKey", vapidPublicKey));
     }
 
     /**

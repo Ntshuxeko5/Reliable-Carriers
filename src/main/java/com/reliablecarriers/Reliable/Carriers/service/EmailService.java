@@ -68,4 +68,24 @@ public interface EmailService {
                                     String customerPickupCode, String customerDeliveryCode, String pickupContactName,
                                     String pickupContactPhone, String deliveryContactName, String deliveryContactPhone,
                                     String dimensions, String specialInstructions);
+    
+    /**
+     * Send driver document verification status email
+     */
+    void sendDriverVerificationStatus(String to, String driverName, String documentType, boolean approved, String notes);
+    
+    /**
+     * Send business document verification status email
+     */
+    void sendBusinessDocumentVerificationStatus(String to, String businessName, String documentType, boolean approved, String notes);
+    
+    /**
+     * Send business account verification status email
+     */
+    void sendBusinessAccountVerificationStatus(String to, String businessName, boolean approved, String notes, String creditLimit, String paymentTerms);
+    
+    /**
+     * Send document expiry warning email
+     */
+    void sendDocumentExpiryWarning(String to, String recipientName, String documentType, String expiryDate);
 }

@@ -312,6 +312,31 @@
                     </div>
                 </div>
             </form>
+
+            <!-- 2FA Verification Stage -->
+            <div id="otpStage" class="hidden mt-8">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Verify Your Driver Account</h2>
+                    <p class="text-gray-600">We've sent a verification code to your email. Please enter it below.</p>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">Verification Code</label>
+                    <input type="text" id="otpCode" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Enter 6-digit code" maxlength="6" required>
+                </div>
+                <div class="mb-6">
+                    <button id="verifyOtpBtn" 
+                            class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium transition-colors">
+                        Verify Driver Account
+                    </button>
+                </div>
+                <div class="text-center">
+                    <button id="resendCodeBtn" class="text-green-600 hover:text-green-700 font-medium">
+                        Resend Code
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Login Link -->
@@ -412,23 +437,121 @@
             }
             
             try {
-                const response = await fetch('/api/driver/register', {
+                const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
                 
                 const result = await response.json();
-                if (result.success) {
-                    showAlert('Driver registration successful! Redirecting to login...', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/login?driver=true';
-                    }, 2000);
+                if (result && result.success) {
+                    if (result.requires2fa) {
+                        // Store user info for 2FA step
+                        sessionStorage.setItem('pending2faEmail', result.email);
+                        sessionStorage.setItem('pending2faRole', result.role || 'DRIVER');
+                        
+                        // Hide form and show 2FA step
+                        document.getElementById('driverRegisterForm').style.display = 'none';
+                        document.getElementById('otpStage').classList.remove('hidden');
+                        
+                        // Show success message
+                        showAlert('Verification code sent to your email. Please check your inbox.', 'success');
+                        
+                        // Show demo code if available
+                        if (result.demoCode) {
+                            showAlert('Demo code: ' + result.demoCode, 'info');
+                        }
+                    } else {
+                        // Direct registration success (no 2FA required)
+                        showAlert(result.message || 'Driver registration successful! Redirecting to login...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/login?driver=true';
+                        }, 2000);
+                    }
                 } else {
-                    showAlert(result.error || 'Registration failed', 'error');
+                    // Handle validation errors
+                    if (result && result.errors) {
+                        let errorMessage = 'Please fix the following errors:\n';
+                        for (const [field, error] of Object.entries(result.errors)) {
+                            errorMessage += `• ${error}\n`;
+                        }
+                        showAlert(errorMessage, 'error');
+                    } else {
+                        showAlert(result.message || result.error || 'Registration failed. Please try again.', 'error');
+                    }
                 }
             } catch (error) {
                 showAlert('Registration failed. Please try again.', 'error');
+            }
+        });
+
+        // OTP verification handler
+        document.getElementById('verifyOtpBtn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const code = document.getElementById('otpCode').value;
+            const email = sessionStorage.getItem('pending2faEmail');
+            if (!email || !code) {
+                showAlert('Please enter the 6-digit code.', 'error');
+                return;
+            }
+
+            fetch('/api/auth/register/verify?email=' + encodeURIComponent(email) + '&code=' + encodeURIComponent(code), {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Verification failed');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    // Store the JWT token if provided
+                    if (data.user && data.user.token) {
+                        localStorage.setItem('token', data.user.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                    }
+                    
+                    showAlert(data.message || 'Driver registration completed successfully! Welcome to Reliable Carriers.', 'success');
+                    setTimeout(() => {
+                        // Redirect to driver dashboard
+                        const role = data.user?.role || sessionStorage.getItem('pending2faRole') || 'DRIVER';
+                        if (role === 'DRIVER') {
+                            window.location.href = '/driver/dashboard';
+                        } else {
+                            window.location.href = '/driver/dashboard';
+                        }
+                    }, 2000);
+                } else {
+                    showAlert(data.message || 'Invalid verification code', 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Verification failed: ' + error.message, 'error');
+            });
+        });
+
+        // Resend code handler
+        document.getElementById('resendCodeBtn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const email = sessionStorage.getItem('pending2faEmail');
+            if (email) {
+                fetch('/api/auth/register/resend?email=' + encodeURIComponent(email) + '&method=EMAIL', {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(data.message || 'Verification code sent via EMAIL. Check your email.', 'success');
+                    } else {
+                        showAlert(data.message || 'Failed to send verification code. Please try again.', 'error');
+                    }
+                })
+                .catch(() => showAlert('Failed to send verification code. Network error.', 'error'));
+            } else {
+                showAlert('No email found. Please try registering again.', 'error');
             }
         });
     </script>

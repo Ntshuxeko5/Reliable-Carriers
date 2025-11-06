@@ -54,7 +54,7 @@ public class SecurityConfig {
     @Autowired
     private SessionAuthenticationFilter sessionAuthenticationFilter;
     
-    @Autowired
+    @Autowired(required = false)
     private ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
 
     @Autowired(required = false)
@@ -81,8 +81,10 @@ public class SecurityConfig {
                 .requestMatchers("/", "/home", "/about", "/contact", "/services", "/quote", "/track", "/tracking/**").permitAll()
                 .requestMatchers("/login", "/register", "/staff-login").permitAll()
                 .requestMatchers("/help-center", "/docs/**").permitAll() // Help center and documentation
-                // Test user creation endpoint - only allow in development mode
-                .requestMatchers("/create-test-users").permitAll() // Should be restricted in production
+                // Test user creation endpoint - restricted to development mode only
+                .requestMatchers("/create-test-users").access((authenticationSupplier, object) -> {
+                    return new AuthorizationDecision(!productionMode);
+                })
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                 .requestMatchers("/error").permitAll()
 
@@ -135,9 +137,14 @@ public class SecurityConfig {
                 // All other non-API requests are server-rendered pages; allow
                 .requestMatchers("/**").permitAll()
             )
-            .addFilterBefore(rateLimitFilter != null ? rateLimitFilter : new RateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(sessionAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter != null ? rateLimitFilter : new RateLimitFilter(), UsernamePasswordAuthenticationFilter.class);
+        
+        // Only add API key filter if it's available (not in tests)
+        if (apiKeyAuthenticationFilter != null) {
+            http.addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        }
+        
+        http.addFilterBefore(sessionAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         // Use our custom login page for form login and enable OAuth2 login for social providers
@@ -146,12 +153,14 @@ public class SecurityConfig {
             .permitAll()
         );
 
-        // OAuth2 configuration for Google and Facebook login
-        http.oauth2Login(oauth -> oauth
-            .loginPage("/login")
-            .successHandler(oauth2LoginSuccessHandler)
-            .permitAll()
-        );
+        // OAuth2 configuration for Google and Facebook login (only if handler is available)
+        if (oauth2LoginSuccessHandler != null) {
+            http.oauth2Login(oauth -> oauth
+                .loginPage("/login")
+                .successHandler(oauth2LoginSuccessHandler)
+                .permitAll()
+            );
+        }
 
         // Configure logout
         http.logout(logout -> logout

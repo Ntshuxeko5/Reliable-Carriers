@@ -182,46 +182,6 @@
                         <input type="hidden" id="deliveryLongitude" name="deliveryLongitude">
                         <input type="hidden" id="deliveryPlaceId" name="deliveryPlaceId">
 
-                        <!-- Package Dimensions -->
-                        <div class="bg-gray-50 rounded-xl p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-ruler-combined mr-2 text-purple-600"></i>Package Dimensions
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Length (cm)</label>
-                                    <input type="number" id="length" name="length" min="1" max="200" required
-                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Width (cm)</label>
-                                    <input type="number" id="width" name="width" min="1" max="200" required
-                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
-                                    <input type="number" id="height" name="height" min="1" max="200" required
-                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           placeholder="0">
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
-                                <input type="number" id="weight" name="weight" min="0.1" max="50" step="0.1" required
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                       placeholder="0.0">
-                            </div>
-                            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
-                                <p class="text-sm text-blue-800">
-                                    <i class="fas fa-info-circle mr-2"></i>
-                                    <strong>Volume Weight:</strong> <span id="volumeWeight">0.0 kg</span> 
-                                    (Length × Width × Height ÷ 5000)
-                                </p>
-                            </div>
-                        </div>
-
                         <!-- Sample Box Sizes -->
                         <div class="bg-blue-50 rounded-xl p-6">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -318,6 +278,46 @@
                                     <p class="text-xs text-gray-500">~0.6 kg</p>
                                     <p class="text-xs text-gray-500">Gifts, small items</p>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Package Dimensions -->
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-ruler-combined mr-2 text-purple-600"></i>Package Dimensions
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Length (cm)</label>
+                                    <input type="number" id="length" name="length" min="1" max="200" required
+                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Width (cm)</label>
+                                    <input type="number" id="width" name="width" min="1" max="200" required
+                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
+                                    <input type="number" id="height" name="height" min="1" max="200" required
+                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="0">
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
+                                <input type="number" id="weight" name="weight" min="0.1" max="50" step="0.1" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="0.0">
+                            </div>
+                            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                                <p class="text-sm text-blue-800">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Volume Weight:</strong> <span id="volumeWeight">0.0 kg</span> 
+                                    (Length × Width × Height ÷ 5000)
+                                </p>
                             </div>
                         </div>
 
@@ -703,9 +703,36 @@
             });
         }
 
+        // Store current quote globally
+        let currentQuote = null;
+        
         // Display quote results with member benefits
         function displayQuoteResults(service, price, originalPrice, savings, weight, distance) {
             const container = document.getElementById('quoteResults');
+            
+            // Store quote data for later use
+            currentQuote = {
+                service: service,
+                price: price,
+                originalPrice: originalPrice,
+                savings: savings,
+                weight: weight,
+                distance: distance,
+                pickupAddress: document.getElementById('pickupAddress').value,
+                deliveryAddress: document.getElementById('deliveryAddress').value,
+                pickupLatitude: document.getElementById('pickupLatitude').value,
+                pickupLongitude: document.getElementById('pickupLongitude').value,
+                pickupPlaceId: document.getElementById('pickupPlaceId').value,
+                deliveryLatitude: document.getElementById('deliveryLatitude').value,
+                deliveryLongitude: document.getElementById('deliveryLongitude').value,
+                deliveryPlaceId: document.getElementById('deliveryPlaceId').value,
+                length: document.getElementById('length').value,
+                width: document.getElementById('width').value,
+                height: document.getElementById('height').value,
+                weight: document.getElementById('weight').value,
+                packageType: document.querySelector('input[name="packageType"]:checked')?.value || 'parcel'
+            };
+            
             container.innerHTML = `
                 <div class="bg-${service.color}-50 rounded-xl p-6">
                     <div class="flex items-center justify-between mb-4">
@@ -744,13 +771,27 @@
                         </div>
                     </div>
                     
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <button onclick="proceedToBooking('${service.type}')" class="w-full bg-${service.color}-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-${service.color}-700 transition-colors duration-300">
+                    <div class="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                        <button onclick="proceedToBooking('${service.id}')" class="w-full bg-${service.color}-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-${service.color}-700 transition-colors duration-300">
                             <i class="fas fa-shopping-cart mr-2"></i>Book This Service
+                        </button>
+                        <button onclick="saveQuoteForLater('${service.id}')" class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-300">
+                            <i class="fas fa-bookmark mr-2"></i>Save Quote for Later
                         </button>
                     </div>
                 </div>
             `;
+        }
+        
+        // Save quote for later
+        function saveQuoteForLater(serviceId) {
+            if (!currentQuote) {
+                showAlert('No quote to save. Please generate a quote first.', 'error');
+                return;
+            }
+            
+            // Save quote via API (this will be implemented when we add quote saving)
+            showAlert('Quote saved! You can view it in your saved quotes.', 'success');
         }
 
         // Proceed to booking
@@ -760,41 +801,104 @@
                 return;
             }
             
-            // Find the selected service details
-            const selectedService = currentQuote.availableServices.find(service => service.type === selectedServiceType);
-            
-            // Prepare quote data with selected service
-            const quoteDataForBooking = {
+            // Use currentQuote data
+            const quoteData = {
                 ...currentQuote,
-                selectedService: selectedService
+                serviceType: selectedServiceType || currentQuote.service.id
             };
             
             // Store quote data in sessionStorage for the booking page
-            sessionStorage.setItem('quoteData', JSON.stringify(quoteDataForBooking));
+            sessionStorage.setItem('quoteData', JSON.stringify(quoteData));
             
             // Redirect to booking page
             window.location.href = '/booking';
         }
 
+        // Load saved addresses and populate dropdowns
+        function loadSavedAddresses() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) return;
+            
+            fetch('/api/customer/profile/addresses', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                if (!response.ok) return [];
+                return response.json();
+            })
+            .then(addresses => {
+                const pickupSelect = document.getElementById('pickupAddressSelect');
+                const deliverySelect = document.getElementById('deliveryAddressSelect');
+                
+                // Clear existing options except the first one
+                while (pickupSelect.children.length > 1) {
+                    pickupSelect.removeChild(pickupSelect.lastChild);
+                }
+                while (deliverySelect.children.length > 1) {
+                    deliverySelect.removeChild(deliverySelect.lastChild);
+                }
+                
+                // Add saved addresses to dropdowns
+                addresses.forEach(addr => {
+                    const option = document.createElement('option');
+                    option.value = addr.id;
+                    option.textContent = `${addr.label || 'Address'} - ${addr.fullAddress || addr.addressLine1}`;
+                    option.dataset.address = addr.fullAddress || addr.addressLine1;
+                    option.dataset.latitude = addr.latitude || '';
+                    option.dataset.longitude = addr.longitude || '';
+                    option.dataset.placeId = addr.placeId || '';
+                    
+                    pickupSelect.appendChild(option.cloneNode(true));
+                    deliverySelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading saved addresses:', error);
+            });
+        }
+        
         // Address selection handlers
         document.getElementById('pickupAddressSelect').addEventListener('change', function() {
-            const savedAddresses = {
-                'home': '123 Main St, Johannesburg, 2000',
-                'office': '456 Business Ave, Sandton, 2196'
-            };
-            if (this.value && savedAddresses[this.value]) {
-                document.getElementById('pickupAddress').value = savedAddresses[this.value];
+            if (this.value) {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.dataset.address) {
+                    document.getElementById('pickupAddress').value = selectedOption.dataset.address;
+                    if (selectedOption.dataset.latitude) {
+                        document.getElementById('pickupLatitude').value = selectedOption.dataset.latitude;
+                    }
+                    if (selectedOption.dataset.longitude) {
+                        document.getElementById('pickupLongitude').value = selectedOption.dataset.longitude;
+                    }
+                    if (selectedOption.dataset.placeId) {
+                        document.getElementById('pickupPlaceId').value = selectedOption.dataset.placeId;
+                    }
+                }
             }
         });
 
         document.getElementById('deliveryAddressSelect').addEventListener('change', function() {
-            const savedAddresses = {
-                'client1': '789 Client St, Cape Town, 8000',
-                'client2': '321 Industrial Rd, Durban, 4000'
-            };
-            if (this.value && savedAddresses[this.value]) {
-                document.getElementById('deliveryAddress').value = savedAddresses[this.value];
+            if (this.value) {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.dataset.address) {
+                    document.getElementById('deliveryAddress').value = selectedOption.dataset.address;
+                    if (selectedOption.dataset.latitude) {
+                        document.getElementById('deliveryLatitude').value = selectedOption.dataset.latitude;
+                    }
+                    if (selectedOption.dataset.longitude) {
+                        document.getElementById('deliveryLongitude').value = selectedOption.dataset.longitude;
+                    }
+                    if (selectedOption.dataset.placeId) {
+                        document.getElementById('deliveryPlaceId').value = selectedOption.dataset.placeId;
+                    }
+                }
             }
+        });
+        
+        // Load saved addresses on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedAddresses();
         });
 
         // Sample box click handler

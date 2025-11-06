@@ -35,11 +35,21 @@ public class DriverDocumentServiceImpl implements DriverDocumentService {
     
     @Override
     @Transactional
-    public DriverDocument uploadDocument(User driver, DriverDocumentType documentType, MultipartFile file, Date expiresAt) {
+    public DriverDocument uploadDocument(User driver, DriverDocumentType documentType, MultipartFile file,
+                                        Boolean isCertified, String certifiedBy, Date certificationDate, Date expiresAt) {
         try {
             // Validate file
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("File is empty");
+            }
+            
+            // Validate it's a certified copy (required for all documents)
+            if (isCertified == null || !isCertified) {
+                throw new IllegalArgumentException("All driver documents must be certified copies. Please provide certification details.");
+            }
+            
+            if (certifiedBy == null || certifiedBy.trim().isEmpty()) {
+                throw new IllegalArgumentException("Certified by name is required (e.g., Commissioner of Oaths, Notary Public, etc.)");
             }
             
             // Create upload directory if it doesn't exist
@@ -66,6 +76,9 @@ public class DriverDocumentServiceImpl implements DriverDocumentService {
             document.setFileName(originalFilename);
             document.setFileSize(file.getSize());
             document.setMimeType(file.getContentType());
+            document.setIsCertified(isCertified);
+            document.setCertifiedBy(certifiedBy);
+            document.setCertificationDate(certificationDate != null ? certificationDate : new Date());
             document.setVerificationStatus(DocumentVerificationStatus.PENDING);
             document.setExpiresAt(expiresAt);
             

@@ -2,6 +2,7 @@ package com.reliablecarriers.Reliable.Carriers.service;
 
 import com.reliablecarriers.Reliable.Carriers.dto.QuoteRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.QuoteResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,35 +18,39 @@ import java.util.*;
 @Service
 public class UnifiedQuoteService {
 
-    // UNIFIED SERVICE CONFIGURATIONS - Single source of truth
+    @Autowired(required = false)
+    private GoogleMapsService googleMapsService;
+
+    // UNIFIED SERVICE CONFIGURATIONS - Realistic South African Courier Rates (2025)
+    // Based on market research: PostNet, Fastway, CourierGuy, etc.
     private static final Map<String, ServiceConfig> SERVICE_CONFIGS = Map.of(
         "economy", new ServiceConfig(
-            new BigDecimal("450.00"), // Base price for economy
-            new BigDecimal("0.8"),    // Service multiplier
+            new BigDecimal("120.00"), // Base price for economy (R120 for first 15km, up to 5kg)
+            new BigDecimal("0.85"),    // Service multiplier (15% discount for economy)
             "4-7 Business Days",      // Description
             5,                        // Delivery days
-            new BigDecimal("15.00")   // Rate per km after base distance
+            new BigDecimal("8.50")    // Rate per km after base distance (R8.50/km)
         ),
         "standard", new ServiceConfig(
-            new BigDecimal("550.00"), // Base price for standard
-            new BigDecimal("1.0"),    // Service multiplier
+            new BigDecimal("180.00"), // Base price for standard (R180 for first 15km, up to 5kg)
+            new BigDecimal("1.0"),    // Service multiplier (standard rate)
             "2-3 Business Days",      // Description
             3,                        // Delivery days
-            new BigDecimal("25.00")   // Rate per km after base distance
+            new BigDecimal("12.00")   // Rate per km after base distance (R12/km)
         ),
         "express", new ServiceConfig(
-            new BigDecimal("750.00"), // Base price for express
-            new BigDecimal("1.5"),    // Service multiplier
+            new BigDecimal("350.00"), // Base price for express (R350 for first 15km, up to 5kg)
+            new BigDecimal("1.4"),    // Service multiplier (40% premium for express)
             "Same-day & Next-day",    // Description
             1,                        // Delivery days
-            new BigDecimal("35.00")   // Rate per km after base distance
+            new BigDecimal("20.00")   // Rate per km after base distance (R20/km)
         ),
         "same_day", new ServiceConfig(
-            new BigDecimal("950.00"), // Base price for same day
-            new BigDecimal("2.0"),    // Service multiplier
+            new BigDecimal("550.00"), // Base price for same day (R550 for first 15km, up to 5kg)
+            new BigDecimal("1.8"),    // Service multiplier (80% premium for same-day)
             "Same Day Delivery",      // Description
             0,                        // Same day
-            new BigDecimal("50.00")   // Rate per km after base distance
+            new BigDecimal("30.00")   // Rate per km after base distance (R30/km)
         )
     );
 
@@ -57,12 +62,13 @@ public class UnifiedQuoteService {
         "valuable", new BigDecimal("1.5")
     );
 
-    // UNIFIED CONSTANTS
-    private static final BigDecimal BASE_DISTANCE_KM = new BigDecimal("20.00"); // Free distance included in base price
-    private static final BigDecimal WEIGHT_RATE_PER_KG = new BigDecimal("5.00"); // Additional charge per kg
-    private static final BigDecimal FUEL_SURCHARGE_RATE = new BigDecimal("0.05"); // 5% fuel surcharge
-    private static final BigDecimal SERVICE_FEE_RATE = new BigDecimal("0.03"); // 3% service fee
-    private static final BigDecimal INSURANCE_RATE = new BigDecimal("0.02"); // 2% insurance fee
+    // UNIFIED CONSTANTS - Realistic South African Rates
+    private static final BigDecimal BASE_DISTANCE_KM = new BigDecimal("15.00"); // Free distance included in base price (15km)
+    private static final BigDecimal BASE_WEIGHT_KG = new BigDecimal("5.00"); // Base weight included (5kg)
+    private static final BigDecimal WEIGHT_RATE_PER_KG = new BigDecimal("8.00"); // Additional charge per kg after base weight (R8/kg)
+    private static final BigDecimal FUEL_SURCHARGE_RATE = new BigDecimal("0.08"); // 8% fuel surcharge (realistic for SA)
+    private static final BigDecimal SERVICE_FEE_RATE = new BigDecimal("0.05"); // 5% service fee (platform/processing fee)
+    private static final BigDecimal INSURANCE_RATE = new BigDecimal("0.025"); // 2.5% insurance fee (optional)
 
     /**
      * UNIFIED quote calculation method - replaces all other implementations
@@ -94,14 +100,16 @@ public class UnifiedQuoteService {
             BigDecimal distanceCharge = BigDecimal.ZERO;
             if (distance.compareTo(BASE_DISTANCE_KM) > 0) {
                 BigDecimal extraDistance = distance.subtract(BASE_DISTANCE_KM);
-                distanceCharge = extraDistance.multiply(serviceConfig.getRatePerKm());
+                distanceCharge = extraDistance.multiply(serviceConfig.getRatePerKm())
+                    .setScale(2, RoundingMode.HALF_UP);
             }
 
-            // Weight charges (for weight above 1kg)
+            // Weight charges (for weight above base weight of 5kg)
             BigDecimal weightCharge = BigDecimal.ZERO;
-            if (chargeableWeight.compareTo(BigDecimal.ONE) > 0) {
-                BigDecimal extraWeight = chargeableWeight.subtract(BigDecimal.ONE);
-                weightCharge = extraWeight.multiply(WEIGHT_RATE_PER_KG);
+            if (chargeableWeight.compareTo(BASE_WEIGHT_KG) > 0) {
+                BigDecimal extraWeight = chargeableWeight.subtract(BASE_WEIGHT_KG);
+                weightCharge = extraWeight.multiply(WEIGHT_RATE_PER_KG)
+                    .setScale(2, RoundingMode.HALF_UP);
             }
 
             // Package type multiplier
@@ -208,15 +216,50 @@ public class UnifiedQuoteService {
     }
 
     private BigDecimal calculateDistance(String pickupAddress, String deliveryAddress) {
-        // TODO: Integrate with Google Maps Distance Matrix API for production
-        // For demo purposes, use simplified calculation based on address similarity
-        if (pickupAddress.toLowerCase().contains(deliveryAddress.toLowerCase().split(",")[0]) ||
-            deliveryAddress.toLowerCase().contains(pickupAddress.toLowerCase().split(",")[0])) {
-            return new BigDecimal("15.0"); // Same city
-        } else if (pickupAddress.toLowerCase().contains("gauteng") && deliveryAddress.toLowerCase().contains("gauteng")) {
-            return new BigDecimal("45.0"); // Same province
-        } else {
-            return new BigDecimal("350.0"); // Different provinces
+        // Try Google Maps Distance Matrix API first if available
+        if (googleMapsService != null && pickupAddress != null && deliveryAddress != null) {
+            try {
+                GoogleMapsService.DistanceResult result = googleMapsService.calculateDistance(
+                    pickupAddress, 
+                    deliveryAddress
+                );
+                if (result != null) {
+                    // Convert meters to kilometers and return as BigDecimal
+                    return BigDecimal.valueOf(result.getDistanceKm()).setScale(2, RoundingMode.HALF_UP);
+                }
+            } catch (Exception e) {
+                // Log error but fall back to heuristic calculation
+                System.err.println("Google Maps API call failed, using fallback calculation: " + e.getMessage());
+            }
+        }
+        
+        // Fallback: Simplified calculation based on address similarity
+        // This is used when Google Maps API is not configured or unavailable
+        if (pickupAddress == null || deliveryAddress == null) {
+            return new BigDecimal("100.0"); // Default distance if addresses are null
+        }
+        
+        String pickupLower = pickupAddress.toLowerCase();
+        String deliveryLower = deliveryAddress.toLowerCase();
+        
+        // Extract city names (first part before comma)
+        String pickupCity = pickupLower.split(",")[0].trim();
+        String deliveryCity = deliveryLower.split(",")[0].trim();
+        
+        // Same city or same street
+        if (pickupCity.equals(deliveryCity) || 
+            pickupLower.contains(deliveryCity) || 
+            deliveryLower.contains(pickupCity)) {
+            return new BigDecimal("15.0"); // Same city - approximately 15km
+        } 
+        // Same province (Gauteng)
+        else if ((pickupLower.contains("gauteng") || pickupLower.contains("johannesburg") || pickupLower.contains("pretoria")) &&
+                 (deliveryLower.contains("gauteng") || deliveryLower.contains("johannesburg") || deliveryLower.contains("pretoria"))) {
+            return new BigDecimal("45.0"); // Same province - approximately 45km
+        } 
+        // Different provinces
+        else {
+            return new BigDecimal("350.0"); // Different provinces - approximately 350km
         }
     }
 

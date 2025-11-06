@@ -1,5 +1,6 @@
 package com.reliablecarriers.Reliable.Carriers.config;
 
+import com.reliablecarriers.Reliable.Carriers.service.ApiKeyService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -7,11 +8,17 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.Properties;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @TestConfiguration
 @TestPropertySource(properties = {
@@ -55,5 +62,27 @@ public class TestSecurityConfig {
         props.put("mail.debug", "false");
         
         return mailSender;
+    }
+    
+    @Bean
+    @Primary
+    public ApiKeyService testApiKeyService() {
+        ApiKeyService mockApiKeyService = mock(ApiKeyService.class);
+        // Mock validateApiKey to return null (no API key authentication in tests)
+        when(mockApiKeyService.validateApiKey(anyString())).thenReturn(null);
+        return mockApiKeyService;
+    }
+    
+    @Bean
+    @Primary
+    public ClientRegistrationRepository testClientRegistrationRepository() {
+        // Return a mock repository that returns null for any registration lookup
+        // This prevents OAuth2 configuration issues in tests
+        return new ClientRegistrationRepository() {
+            @Override
+            public ClientRegistration findByRegistrationId(String registrationId) {
+                return null;
+            }
+        };
     }
 }

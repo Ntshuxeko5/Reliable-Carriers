@@ -270,7 +270,17 @@
                 
                 // Handle forbidden response when staff try to login via customer portal
                 if (response.status === 403) {
-                    showAlert(data || 'Access denied. Please use the staff login portal.', 'error');
+                    let errorMessage = 'Access denied. Please use the staff login portal.';
+                    if (data) {
+                        if (typeof data === 'string') {
+                            errorMessage = data;
+                        } else if (data.message) {
+                            errorMessage = data.message;
+                        } else if (data.error) {
+                            errorMessage = data.error;
+                        }
+                    }
+                    showAlert(errorMessage, 'error');
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
                     return;
@@ -330,6 +340,27 @@
                     
                     showAlert('Login successful! Redirecting...', 'success');
                     setTimeout(() => {
+                        // Check for pending quote booking
+                        const pendingQuote = sessionStorage.getItem('pendingQuoteData');
+                        const pendingAction = sessionStorage.getItem('pendingBookingAction');
+                        
+                        if (pendingQuote && pendingAction === 'book') {
+                            // User was trying to book - redirect to booking page with quote data
+                            sessionStorage.setItem('quoteData', pendingQuote);
+                            sessionStorage.removeItem('pendingQuoteData');
+                            sessionStorage.removeItem('pendingBookingAction');
+                            window.location.href = '/booking';
+                            return;
+                        }
+                        
+                        // Check for redirect parameter
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const redirect = urlParams.get('redirect');
+                        if (redirect) {
+                            window.location.href = redirect;
+                            return;
+                        }
+                        
                         // Role-based routing
                         let redirectUrl = '/dashboard'; // Default
                         switch(data.role) {
@@ -354,15 +385,29 @@
                     }, 1200);
                 } else {
                     // Handle login errors with specific messages
-                    if (data && data.success === false) {
-                        showAlert(data.message || 'Login failed. Please try again.', 'error');
-                    } else {
-                        showAlert('Login failed. Please try again.', 'error');
+                    let errorMessage = 'Login failed. Please try again.';
+                    if (data) {
+                        if (typeof data === 'string') {
+                            errorMessage = data;
+                        } else if (data.message) {
+                            errorMessage = data.message;
+                        } else if (data.error) {
+                            errorMessage = data.error;
+                        } else if (data.success === false && data.message) {
+                            errorMessage = data.message;
+                        }
                     }
+                    showAlert(errorMessage, 'error');
                 }
             })
             .catch(error => {
-                showAlert('An error occurred. Please try again.', 'error');
+                let errorMessage = 'An error occurred. Please try again.';
+                if (error && error.message) {
+                    errorMessage = error.message;
+                } else if (error && typeof error === 'string') {
+                    errorMessage = error;
+                }
+                showAlert(errorMessage, 'error');
             })
             .finally(() => {
                 submitBtn.innerHTML = originalText;
@@ -418,7 +463,17 @@
                         window.location.href = redirectUrl;
                     }, 800);
                 } else {
-                    showAlert(data || data.message || 'Invalid 2FA code', 'error');
+                    let errorMessage = 'Invalid 2FA code';
+                    if (data) {
+                        if (typeof data === 'string') {
+                            errorMessage = data;
+                        } else if (data.message) {
+                            errorMessage = data.message;
+                        } else if (data.error) {
+                            errorMessage = data.error;
+                        }
+                    }
+                    showAlert(errorMessage, 'error');
                 }
             })
             .catch(() => showAlert('An error occurred verifying code', 'error'));

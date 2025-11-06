@@ -3,6 +3,7 @@ package com.reliablecarriers.Reliable.Carriers.service;
 import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageResponse;
 import com.reliablecarriers.Reliable.Carriers.dto.QuoteResponse;
+import com.reliablecarriers.Reliable.Carriers.model.Quote;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 
 import java.util.List;
@@ -228,4 +229,9 @@ public interface CustomerPackageService {
             this.coverageAmount = coverageAmount;
         }
     }
+    
+    /**
+     * Get saved quotes for a customer by email
+     */
+    List<Quote> getSavedQuotes(String email);
 }
