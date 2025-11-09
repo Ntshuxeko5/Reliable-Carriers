@@ -345,21 +345,33 @@ public class BookingServiceImpl implements BookingService {
             BigDecimal insuranceFee = BigDecimal.ZERO;
             BigDecimal fuelSurcharge = BigDecimal.ZERO;
             
-            // Calculate base price based on service type
-            if (request.getServiceType().isCourierService()) {
-                basePrice = pricingService.calculateCourierPrice(request.getServiceType());
+            // Use quote base price if provided, otherwise calculate from service type
+            if (request.getBasePrice() != null && request.getBasePrice().compareTo(BigDecimal.ZERO) > 0) {
+                // Use the quote price as base price
+                basePrice = request.getBasePrice();
             } else {
-                // For moving services, calculate distance-based pricing
-                Double distance = estimateDistance(request);
-                basePrice = pricingService.calculateMovingServicePrice(request.getServiceType(), distance);
+                // Calculate base price based on service type
+                if (request.getServiceType().isCourierService()) {
+                    basePrice = pricingService.calculateCourierPrice(request.getServiceType());
+                } else {
+                    // For moving services, calculate distance-based pricing
+                    Double distance = estimateDistance(request);
+                    basePrice = pricingService.calculateMovingServicePrice(request.getServiceType(), distance);
+                }
             }
             
             // Calculate service fee (5% of base price)
             serviceFee = basePrice.multiply(new BigDecimal("0.05"));
             
-            // Calculate insurance fee if requested
+            // Calculate insurance fee - use provided insuranceCost if available, otherwise calculate
             if (request.isInsurance()) {
-                insuranceFee = basePrice.multiply(new BigDecimal("0.02")); // 2% of base price
+                if (request.getInsuranceFee() != null && request.getInsuranceFee().compareTo(BigDecimal.ZERO) > 0) {
+                    // Use provided insurance fee from frontend
+                    insuranceFee = request.getInsuranceFee();
+                } else {
+                    // Calculate insurance fee (2% of base price as fallback)
+                    insuranceFee = basePrice.multiply(new BigDecimal("0.02"));
+                }
             }
             
             // Calculate fuel surcharge (3% of base price)

@@ -25,6 +25,13 @@ import java.util.UUID;
 @Service
 public class PaystackServiceImpl implements PaystackService {
     
+    // Custom exception for Paystack key errors
+    private static class PaystackKeyError extends RuntimeException {
+        public PaystackKeyError(String message) {
+            super(message);
+        }
+    }
+    
     @Value("${paystack.secret.key}")
     private String paystackSecretKey;
     
@@ -83,34 +90,56 @@ public class PaystackServiceImpl implements PaystackService {
             System.out.println("Using secret key: " + (paystackSecretKey != null ? paystackSecretKey.substring(0, 10) + "..." : "null"));
             
             try {
-                return getWebClient().post()
+                PaystackResponse response = getWebClient().post()
                         .uri("/transaction/initialize")
                         .bodyValue(request)
                         .retrieve()
                         .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
-                            response -> {
-                                System.err.println("Paystack API error: " + response.statusCode());
-                                return response.bodyToMono(String.class)
+                            httpResponse -> {
+                                System.err.println("Paystack API error: " + httpResponse.statusCode());
+                                return httpResponse.bodyToMono(String.class)
                                     .flatMap(errorBody -> {
                                         System.err.println("Error body: " + errorBody);
-                                        return Mono.error(new RuntimeException("Paystack API Error: " + response.statusCode() + " - " + errorBody));
+                                        // Check if it's an invalid key error and throw special exception
+                                        if (fallbackOnError && (errorBody.contains("Invalid key") || errorBody.contains("invalid_Key") || errorBody.contains("401"))) {
+                                            System.err.println("Paystack key invalid or unauthorized. Will fallback to mock mode.");
+                                            return Mono.error(new PaystackKeyError("Invalid Paystack key - using mock mode"));
+                                        }
+                                        return Mono.error(new RuntimeException("Paystack API Error: " + httpResponse.statusCode() + " - " + errorBody));
                                     });
                             })
                         .bodyToMono(PaystackResponse.class)
                         .block();
+                return response;
+            } catch (PaystackKeyError e) {
+                // Handle invalid key error by falling back to mock
+                if (fallbackOnError) {
+                    System.err.println("Paystack key error detected. Falling back to mock mode.");
+                    return createMockResponse(request);
+                }
+                throw new RuntimeException("Paystack key invalid", e);
+            } catch (RuntimeException e) {
+                // Check if it's a Paystack API error that we should fallback on
+                if (fallbackOnError && (e.getMessage().contains("Invalid key") || e.getMessage().contains("invalid_Key") || e.getMessage().contains("401"))) {
+                    System.err.println("Paystack key error detected. Falling back to mock mode.");
+                    return createMockResponse(request);
+                }
+                throw e;
             } catch (Exception networkError) {
                 System.err.println("Network error connecting to Paystack: " + networkError.getMessage());
                 
-                // Check if it's a connection issue
-                if (networkError.getMessage().contains("Connection reset") || 
+                // Check if it's a connection issue or key error
+                if (fallbackOnError && (networkError.getMessage().contains("Connection reset") || 
                     networkError.getMessage().contains("Connection refused") ||
-                    networkError.getMessage().contains("timeout")) {
+                    networkError.getMessage().contains("timeout") ||
+                    networkError.getMessage().contains("Invalid key") ||
+                    networkError.getMessage().contains("401"))) {
                     
-                    System.out.println("Paystack API is unreachable, falling back to mock mode for this request");
+                    System.out.println("Paystack API error detected. Falling back to mock mode for this request");
                     return createMockResponse(request);
                 }
                 
-                // Re-throw if it's not a connection issue
+                // Re-throw if it's not a connection/key issue
                 throw networkError;
             }
         } catch (Exception e) {

@@ -3,6 +3,7 @@ package com.reliablecarriers.Reliable.Carriers.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
@@ -61,10 +62,10 @@ public class CustomerAddress {
     
     // Google Maps coordinates
     @Column(precision = 10, scale = 8)
-    private Double latitude;
+    private BigDecimal latitude;
     
     @Column(precision = 11, scale = 8)
-    private Double longitude;
+    private BigDecimal longitude;
     
     @Column(length = 255)
     private String placeId; // Google Place ID
@@ -177,19 +178,19 @@ public class CustomerAddress {
         this.contactName = contactName;
     }
     
-    public Double getLatitude() {
+    public BigDecimal getLatitude() {
         return latitude;
     }
     
-    public void setLatitude(Double latitude) {
+    public void setLatitude(BigDecimal latitude) {
         this.latitude = latitude;
     }
     
-    public Double getLongitude() {
+    public BigDecimal getLongitude() {
         return longitude;
     }
     
-    public void setLongitude(Double longitude) {
+    public void setLongitude(BigDecimal longitude) {
         this.longitude = longitude;
     }
     

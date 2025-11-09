@@ -1,7 +1,6 @@
 package com.reliablecarriers.Reliable.Carriers.service;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
@@ -18,7 +17,6 @@ import java.util.Map;
  * Handles all SMS notifications for the system
  */
 @Service
-@Primary
 public class ComprehensiveSmsService implements SmsService {
 
     private static final Logger logger = LoggerFactory.getLogger(ComprehensiveSmsService.class);

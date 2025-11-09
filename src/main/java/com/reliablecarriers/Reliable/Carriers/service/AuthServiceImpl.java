@@ -66,16 +66,36 @@ public class AuthServiceImpl implements AuthService {
 
         // Set timestamps
         Date now = new Date();
-        user.setCreatedAt(now);
+        if (user.getCreatedAt() == null) {
+            user.setCreatedAt(now);
+        }
         user.setUpdatedAt(now);
+        
+        // Ensure all required fields are set
+        if (user.getCountry() == null || user.getCountry().trim().isEmpty()) {
+            user.setCountry("South Africa"); // Default country
+        }
 
         // Save user and flush to ensure it's immediately available
-        User savedUser = userRepository.save(user);
-        userRepository.flush(); // Ensure the user is immediately available in the database
-        
-        logger.debug("User successfully saved to database with ID: " + savedUser.getId());
-        
-        return savedUser;
+        try {
+            User savedUser = userRepository.save(user);
+            userRepository.flush(); // Ensure the user is immediately available in the database
+            
+            logger.info("User successfully saved to database with ID: " + savedUser.getId() + 
+                       ", Email: " + savedUser.getEmail() + 
+                       ", Role: " + savedUser.getRole());
+            
+            // Verify the user was actually saved by retrieving it
+            User verifiedUser = userRepository.findById(savedUser.getId())
+                .orElseThrow(() -> new RuntimeException("User was not saved properly - ID: " + savedUser.getId()));
+            
+            logger.debug("User verification successful - retrieved from database: " + verifiedUser.getEmail());
+            
+            return verifiedUser;
+        } catch (Exception e) {
+            logger.error("Failed to save user to database: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to save user registration: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -99,15 +119,24 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || 
-                authentication instanceof AnonymousAuthenticationToken) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || 
+                    authentication instanceof AnonymousAuthenticationToken) {
+                return null;
+            }
+
+            String email = authentication.getName();
+            if (email == null || email.trim().isEmpty()) {
+                return null;
+            }
+            
+            return userRepository.findByEmail(email)
+                    .orElse(null); // Return null instead of throwing exception to prevent 500 errors
+        } catch (Exception e) {
+            // Log error but return null to prevent 500 errors on public pages like login/register
             return null;
         }
-
-        String email = authentication.getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 
     @Override

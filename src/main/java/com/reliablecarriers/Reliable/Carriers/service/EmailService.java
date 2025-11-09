@@ -88,4 +88,11 @@ public interface EmailService {
      * Send document expiry warning email
      */
     void sendDocumentExpiryWarning(String to, String recipientName, String documentType, String expiryDate);
+    
+    /**
+     * Send quote saved confirmation email
+     */
+    void sendQuoteSavedEmail(String to, String customerName, String quoteId, String serviceType, 
+                            String totalCost, String pickupAddress, String deliveryAddress, 
+                            String estimatedDelivery, String expiryDate);
 }

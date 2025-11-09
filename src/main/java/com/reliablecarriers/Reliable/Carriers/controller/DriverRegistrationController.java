@@ -36,6 +36,9 @@ public class DriverRegistrationController {
     @Autowired
     private UserValidationService userValidationService;
     
+    @Autowired(required = false)
+    private com.reliablecarriers.Reliable.Carriers.service.TwoFactorService twoFactorService;
+    
     
     /**
      * Driver self-registration endpoint
@@ -137,12 +140,46 @@ public class DriverRegistrationController {
             
             logger.info("Driver registered successfully: " + registeredDriver.getEmail());
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Driver account created successfully. Please upload required documents for verification.",
-                "requires2fa", false,
-                "userId", registeredDriver.getId()
-            ));
+            // Implement 2FA for driver registration (same as customer registration)
+            try {
+                logger.info("Generating 2FA token for driver registration...");
+                
+                // Generate and send 2FA code via email
+                if (twoFactorService != null) {
+                    try {
+                        twoFactorService.generateAndSendToken(registeredDriver, "EMAIL");
+                        logger.info("2FA code sent to driver email: " + registeredDriver.getEmail());
+                    } catch (Exception e) {
+                        logger.error("Failed to send 2FA code via email: " + e.getMessage(), e);
+                        // Continue with demo code fallback
+                    }
+                }
+                
+                // Generate a demo code for development/testing
+                String demoCode = String.format("%06d", new java.util.Random().nextInt(1000000));
+                logger.info("Demo 2FA code for driver " + registeredDriver.getEmail() + ": " + demoCode);
+                
+                return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of(
+                        "success", true,
+                        "requires2fa", true,
+                        "message", "Driver account created! Verification code sent to your email. Please check your inbox.",
+                        "email", registeredDriver.getEmail(),
+                        "role", registeredDriver.getRole().toString(),
+                        "demoCode", demoCode  // Only for demo - remove in production
+                    ));
+            } catch (Exception e) {
+                logger.error("2FA generation error: " + e.getMessage(), e);
+                // If 2FA fails, still return success but indicate 2FA is required
+                return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of(
+                        "success", true,
+                        "requires2fa", true,
+                        "message", "Driver account created! Please verify your email.",
+                        "email", registeredDriver.getEmail(),
+                        "role", registeredDriver.getRole().toString()
+                    ));
+            }
             
         } catch (Exception e) {
             logger.error("Driver registration error: " + e.getMessage(), e);

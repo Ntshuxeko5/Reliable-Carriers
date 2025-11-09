@@ -129,9 +129,73 @@ public class UserValidationService {
     
     /**
      * Check if email is valid
+     * Enhanced validation: checks for proper email format, no spaces, valid domain
      */
     private boolean isValidEmail(String email) {
-        return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+        
+        // Trim whitespace
+        email = email.trim();
+        
+        // Check for spaces
+        if (email.contains(" ")) {
+            return false;
+        }
+        
+        // Check for @ symbol
+        if (!email.contains("@")) {
+            return false;
+        }
+        
+        // Split by @
+        String[] parts = email.split("@");
+        if (parts.length != 2) {
+            return false;
+        }
+        
+        String localPart = parts[0];
+        String domain = parts[1];
+        
+        // Local part validation
+        if (localPart.isEmpty() || localPart.length() > 64) {
+            return false;
+        }
+        
+        // Domain validation
+        if (domain.isEmpty() || domain.length() > 255) {
+            return false;
+        }
+        
+        // Check domain has at least one dot
+        if (!domain.contains(".")) {
+            return false;
+        }
+        
+        // Check domain doesn't start or end with dot
+        if (domain.startsWith(".") || domain.endsWith(".")) {
+            return false;
+        }
+        
+        // Enhanced regex pattern
+        String emailPattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        if (!email.matches(emailPattern)) {
+            return false;
+        }
+        
+        // Check for consecutive dots
+        if (email.contains("..")) {
+            return false;
+        }
+        
+        // Check for valid TLD (at least 2 characters)
+        String[] domainParts = domain.split("\\.");
+        if (domainParts.length < 2 || domainParts[domainParts.length - 1].length() < 2) {
+            return false;
+        }
+        
+        return true;
     }
     
     /**

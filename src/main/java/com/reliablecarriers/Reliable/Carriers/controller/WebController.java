@@ -1,5 +1,9 @@
 package com.reliablecarriers.Reliable.Carriers.controller;
 
+import com.reliablecarriers.Reliable.Carriers.model.User;
+import com.reliablecarriers.Reliable.Carriers.service.AuthService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +19,13 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 public class WebController {
 
+    private final AuthService authService;
+
+    @Autowired
+    public WebController(@Lazy AuthService authService) {
+        this.authService = authService;
+    }
+
     @GetMapping("/")
     public String home() {
         return "index";
@@ -22,16 +33,19 @@ public class WebController {
 
     @GetMapping("/login")
     public String login() {
+        // Simple login page - no authentication check needed
         return "login";
     }
 
     @GetMapping("/staff-login")
     public String staffLogin() {
+        // Simple staff login page - no authentication check needed
         return "staff-login";
     }
 
     @GetMapping("/register")
     public String register() {
+        // Simple register page - no authentication check needed
         return "register";
     }
 
@@ -160,7 +174,22 @@ public class WebController {
     }
 
     @GetMapping("/booking")
-    public String booking() {
+    public String booking(Model model) {
+        try {
+            // Check if user is authenticated and get user data
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userPhone", currentUser.getPhone());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            // If authentication check fails, continue without user data
+            model.addAttribute("isAuthenticated", false);
+        }
         return "booking";
     }
     
@@ -241,7 +270,8 @@ public class WebController {
 
     @GetMapping("/customer/dashboard")
     public String customerDashboard() {
-        return "customer/dashboard";
+        // Redirect to the main customer dashboard to avoid duplicate routes
+        return "redirect:/customer";
     }
     
     @GetMapping("/payment-success")

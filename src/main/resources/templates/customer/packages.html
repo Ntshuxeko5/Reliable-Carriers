@@ -346,6 +346,39 @@
             mobileMenu.classList.toggle('hidden');
         });
 
+        // Check authentication and load user data
+        async function checkAuthAndLoadUser() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) return;
+            
+            try {
+                const response = await fetch('/api/customer/profile', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    // Update page with user data if Thymeleaf didn't load it
+                    if (userData) {
+                        const welcomeText = document.querySelector('.text-xl.text-gray-700 p');
+                        if (welcomeText && !document.querySelector('[th\\:if="${isAuthenticated}"]')) {
+                            welcomeText.textContent = 'Welcome back, ' + userData.firstName + '! Here are all your packages:';
+                            const emailText = document.createElement('p');
+                            emailText.className = 'text-sm text-gray-600 mt-2';
+                            emailText.textContent = 'Account: ' + userData.email;
+                            welcomeText.parentElement.appendChild(emailText);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+        
         // Add form validation
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', function(e) {
@@ -356,6 +389,11 @@
                     emailInput.focus();
                 }
             });
+        });
+        
+        // Check auth on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthAndLoadUser();
         });
     </script>
 </body>

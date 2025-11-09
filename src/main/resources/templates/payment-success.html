@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Successful - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places'" async defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
@@ -90,7 +91,7 @@
                         </div>
                     </div>
 
-                    <!-- Delivery Addresses -->
+                    <!-- Delivery Addresses with Google Maps -->
                     <div class="bg-gray-50 rounded-xl p-6">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">
                             <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Delivery Addresses
@@ -98,16 +99,24 @@
                         <div class="space-y-4">
                             <div class="flex items-start">
                                 <i class="fas fa-hand-holding-box text-blue-500 mt-1 mr-3"></i>
-                                <div>
-                                    <div class="text-sm text-gray-600 font-medium">Pickup Address:</div>
-                                    <div class="text-gray-800" id="pickupAddress">123 Main Street, Johannesburg</div>
+                                <div class="flex-1">
+                                    <div class="text-sm text-gray-600 font-medium mb-1">Pickup Address:</div>
+                                    <div class="text-gray-800 mb-2" id="pickupAddress">123 Main Street, Johannesburg</div>
+                                    <div id="pickupMap" class="w-full h-32 rounded-lg border border-gray-300 mb-2"></div>
+                                    <a id="pickupDirections" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                                        <i class="fas fa-directions mr-1"></i>Get Directions
+                                    </a>
                                 </div>
                             </div>
-                            <div class="flex items-start">
+                            <div class="flex items-start mt-4">
                                 <i class="fas fa-truck text-green-500 mt-1 mr-3"></i>
-                                <div>
-                                    <div class="text-sm text-gray-600 font-medium">Delivery Address:</div>
-                                    <div class="text-gray-800" id="deliveryAddress">456 Oak Avenue, Pretoria</div>
+                                <div class="flex-1">
+                                    <div class="text-sm text-gray-600 font-medium mb-1">Delivery Address:</div>
+                                    <div class="text-gray-800 mb-2" id="deliveryAddress">456 Oak Avenue, Pretoria</div>
+                                    <div id="deliveryMap" class="w-full h-32 rounded-lg border border-gray-300 mb-2"></div>
+                                    <a id="deliveryDirections" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                                        <i class="fas fa-directions mr-1"></i>Get Directions
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -215,25 +224,64 @@
 
     <script>
         // Load booking details from URL parameters
-        function loadBookingDetails() {
+        async function loadBookingDetails() {
             const urlParams = new URLSearchParams(window.location.search);
             const bookingId = urlParams.get('bookingId');
             const reference = urlParams.get('reference');
             
             if (bookingId) {
-                // Fetch booking details from backend
-                fetch(`/api/payment/booking/${bookingId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data) {
-                            updateBookingDisplay(data);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading booking details:', error);
-                        // Fallback to URL parameters
-                        loadFromUrlParams();
+                try {
+                    // Fetch booking details from booking API
+                    const response = await fetch(`/api/booking/${bookingId}`, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
                     });
+                    
+                    if (response.ok) {
+                        const booking = await response.json();
+                        updateBookingDisplay(booking);
+                    } else {
+                        // Try payment endpoint as fallback
+                        const paymentResponse = await fetch(`/api/payment/booking/${bookingId}`, {
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            credentials: 'include'
+                        });
+                        if (paymentResponse.ok) {
+                            const data = await paymentResponse.json();
+                            updateBookingDisplay(data);
+                        } else {
+                            loadFromUrlParams();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading booking details:', error);
+                    loadFromUrlParams();
+                }
+            } else if (reference) {
+                // Try to get booking from payment reference
+                try {
+                    const verifyResponse = await fetch(`/api/paystack/verify?reference=${reference}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (verifyResponse.ok) {
+                        const verifyData = await verifyResponse.json();
+                        if (verifyData.bookingId) {
+                            // Reload with booking ID
+                            window.location.href = `/payment-success?bookingId=${verifyData.bookingId}&reference=${reference}`;
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error verifying payment:', error);
+                }
+                loadFromUrlParams();
             } else {
                 loadFromUrlParams();
             }
@@ -243,26 +291,205 @@
             const urlParams = new URLSearchParams(window.location.search);
             
             // Update display with URL parameters
-            document.getElementById('bookingNumber').textContent = urlParams.get('bookingNumber') || 'RC1234567890';
-            document.getElementById('customerName').textContent = urlParams.get('customerName') || 'Guest User';
-            document.getElementById('serviceType').textContent = urlParams.get('serviceType') || 'Express Delivery';
-            document.getElementById('totalAmount').textContent = urlParams.get('totalAmount') || 'R250.00';
-            document.getElementById('pickupAddress').textContent = urlParams.get('pickupAddress') || '123 Main Street, Johannesburg';
-            document.getElementById('deliveryAddress').textContent = urlParams.get('deliveryAddress') || '456 Oak Avenue, Pretoria';
-            document.getElementById('pickupCode').textContent = urlParams.get('pickupCode') || 'P123456';
-            document.getElementById('deliveryCode').textContent = urlParams.get('deliveryCode') || 'D789012';
+            if (document.getElementById('bookingNumber')) {
+                document.getElementById('bookingNumber').textContent = urlParams.get('bookingNumber') || urlParams.get('tracking') || 'RC1234567890';
+            }
+            if (document.getElementById('customerName')) {
+                document.getElementById('customerName').textContent = urlParams.get('customerName') || 'Guest User';
+            }
+            if (document.getElementById('serviceType')) {
+                document.getElementById('serviceType').textContent = urlParams.get('serviceType') || urlParams.get('service') || 'Express Delivery';
+            }
+            if (document.getElementById('totalAmount')) {
+                document.getElementById('totalAmount').textContent = 'R' + (urlParams.get('totalAmount') || urlParams.get('amount') || '250.00');
+            }
+            if (document.getElementById('pickupAddress')) {
+                document.getElementById('pickupAddress').textContent = urlParams.get('pickupAddress') || '123 Main Street, Johannesburg';
+            }
+            if (document.getElementById('deliveryAddress')) {
+                document.getElementById('deliveryAddress').textContent = urlParams.get('deliveryAddress') || '456 Oak Avenue, Pretoria';
+            }
+            if (document.getElementById('pickupCode')) {
+                document.getElementById('pickupCode').textContent = urlParams.get('pickupCode') || 'P123456';
+            }
+            if (document.getElementById('deliveryCode')) {
+                document.getElementById('deliveryCode').textContent = urlParams.get('deliveryCode') || 'D789012';
+            }
+            
+            // Initialize maps with URL params if available
+            const pickupAddr = urlParams.get('pickupAddress') || '123 Main Street, Johannesburg';
+            const deliveryAddr = urlParams.get('deliveryAddress') || '456 Oak Avenue, Pretoria';
+            const pickupLat = urlParams.get('pickupLatitude');
+            const pickupLng = urlParams.get('pickupLongitude');
+            const deliveryLat = urlParams.get('deliveryLatitude');
+            const deliveryLng = urlParams.get('deliveryLongitude');
+            
+            if (typeof google !== 'undefined' && google.maps) {
+                initializeMaps(pickupAddr, deliveryAddr, pickupLat, pickupLng, deliveryLat, deliveryLng);
+            }
         }
 
+        let pickupMap = null;
+        let deliveryMap = null;
+        let pickupMarker = null;
+        let deliveryMarker = null;
+
         function updateBookingDisplay(data) {
-            document.getElementById('bookingNumber').textContent = data.bookingNumber || 'RC1234567890';
-            document.getElementById('customerName').textContent = data.customerName || 'Guest User';
-            document.getElementById('serviceType').textContent = data.serviceType || 'Express Delivery';
-            document.getElementById('totalAmount').textContent = 'R' + (data.totalAmount || '250.00');
-            document.getElementById('pickupAddress').textContent = data.pickupAddress || '123 Main Street, Johannesburg';
-            document.getElementById('deliveryAddress').textContent = data.deliveryAddress || '456 Oak Avenue, Pretoria';
-            document.getElementById('pickupCode').textContent = data.pickupCode || 'P123456';
-            document.getElementById('deliveryCode').textContent = data.deliveryCode || 'D789012';
-            document.getElementById('status').textContent = data.status || 'Pending Pickup';
+            // Update booking number
+            if (document.getElementById('bookingNumber')) {
+                document.getElementById('bookingNumber').textContent = data.bookingNumber || data.trackingNumber || data.id || 'RC1234567890';
+            }
+            
+            // Update customer name
+            if (document.getElementById('customerName')) {
+                document.getElementById('customerName').textContent = data.customerName || (data.customerFirstName && data.customerLastName ? data.customerFirstName + ' ' + data.customerLastName : 'Guest User');
+            }
+            
+            // Update service type
+            if (document.getElementById('serviceType')) {
+                document.getElementById('serviceType').textContent = data.serviceType || 'Express Delivery';
+            }
+            
+            // Update total amount
+            if (document.getElementById('totalAmount')) {
+                const amount = data.totalAmount || data.amount || '250.00';
+                document.getElementById('totalAmount').textContent = 'R' + parseFloat(amount).toFixed(2);
+            }
+            
+            // Update addresses
+            const pickupAddr = data.pickupAddress || data.pickupLocation || '123 Main Street, Johannesburg';
+            const deliveryAddr = data.deliveryAddress || data.deliveryLocation || '456 Oak Avenue, Pretoria';
+            
+            if (document.getElementById('pickupAddress')) {
+                document.getElementById('pickupAddress').textContent = pickupAddr;
+            }
+            if (document.getElementById('deliveryAddress')) {
+                document.getElementById('deliveryAddress').textContent = deliveryAddr;
+            }
+            
+            // Update codes
+            if (document.getElementById('pickupCode')) {
+                document.getElementById('pickupCode').textContent = data.pickupCode || data.collectionCode || 'P123456';
+            }
+            if (document.getElementById('deliveryCode')) {
+                document.getElementById('deliveryCode').textContent = data.deliveryCode || data.dropOffCode || 'D789012';
+            }
+            
+            // Update status
+            if (document.getElementById('status')) {
+                document.getElementById('status').textContent = data.status || 'Pending Pickup';
+            }
+            
+            // Update Google Maps directions links
+            const pickupDirectionsLink = document.getElementById('pickupDirections');
+            const deliveryDirectionsLink = document.getElementById('deliveryDirections');
+            if (pickupDirectionsLink) {
+                pickupDirectionsLink.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pickupAddr)}`;
+            }
+            if (deliveryDirectionsLink) {
+                deliveryDirectionsLink.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(deliveryAddr)}`;
+            }
+            
+            // Initialize Google Maps with coordinates
+            const pickupLat = data.pickupLatitude || data.pickupLat;
+            const pickupLng = data.pickupLongitude || data.pickupLng;
+            const deliveryLat = data.deliveryLatitude || data.deliveryLat;
+            const deliveryLng = data.deliveryLongitude || data.deliveryLng;
+            
+            if (typeof google !== 'undefined' && google.maps) {
+                initializeMaps(pickupAddr, deliveryAddr, pickupLat, pickupLng, deliveryLat, deliveryLng);
+            } else {
+                // Wait for Google Maps to load
+                window.initMapsCallback = function() {
+                    initializeMaps(pickupAddr, deliveryAddr, pickupLat, pickupLng, deliveryLat, deliveryLng);
+                };
+            }
+        }
+
+        function initializeMaps(pickupAddr, deliveryAddr, pickupLat, pickupLng, deliveryLat, deliveryLng) {
+            // Initialize pickup map
+            const pickupMapElement = document.getElementById('pickupMap');
+            if (pickupMapElement && !pickupMap) {
+                const pickupCenter = pickupLat && pickupLng 
+                    ? { lat: parseFloat(pickupLat), lng: parseFloat(pickupLng) }
+                    : { lat: -26.2041, lng: 28.0473 }; // Default to Johannesburg
+                
+                pickupMap = new google.maps.Map(pickupMapElement, {
+                    zoom: 15,
+                    center: pickupCenter,
+                    mapTypeControl: false,
+                    streetViewControl: false
+                });
+                
+                // Use Geocoder to get coordinates if not provided
+                if (!pickupLat || !pickupLng) {
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ address: pickupAddr }, (results, status) => {
+                        if (status === 'OK' && results[0]) {
+                            pickupMap.setCenter(results[0].geometry.location);
+                            pickupMarker = new google.maps.Marker({
+                                map: pickupMap,
+                                position: results[0].geometry.location,
+                                title: 'Pickup Location',
+                                icon: {
+                                    url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    pickupMarker = new google.maps.Marker({
+                        map: pickupMap,
+                        position: pickupCenter,
+                        title: 'Pickup Location',
+                        icon: {
+                            url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                        }
+                    });
+                }
+            }
+            
+            // Initialize delivery map
+            const deliveryMapElement = document.getElementById('deliveryMap');
+            if (deliveryMapElement && !deliveryMap) {
+                const deliveryCenter = deliveryLat && deliveryLng 
+                    ? { lat: parseFloat(deliveryLat), lng: parseFloat(deliveryLng) }
+                    : { lat: -25.7479, lng: 28.2293 }; // Default to Pretoria
+                
+                deliveryMap = new google.maps.Map(deliveryMapElement, {
+                    zoom: 15,
+                    center: deliveryCenter,
+                    mapTypeControl: false,
+                    streetViewControl: false
+                });
+                
+                // Use Geocoder to get coordinates if not provided
+                if (!deliveryLat || !deliveryLng) {
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ address: deliveryAddr }, (results, status) => {
+                        if (status === 'OK' && results[0]) {
+                            deliveryMap.setCenter(results[0].geometry.location);
+                            deliveryMarker = new google.maps.Marker({
+                                map: deliveryMap,
+                                position: results[0].geometry.location,
+                                title: 'Delivery Location',
+                                icon: {
+                                    url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    deliveryMarker = new google.maps.Marker({
+                        map: deliveryMap,
+                        position: deliveryCenter,
+                        title: 'Delivery Location',
+                        icon: {
+                            url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                        }
+                    });
+                }
+            }
         }
 
         // Action functions

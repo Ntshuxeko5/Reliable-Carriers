@@ -5,6 +5,7 @@ import com.reliablecarriers.Reliable.Carriers.model.MovingService;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
 import com.reliablecarriers.Reliable.Carriers.model.User;
+import com.reliablecarriers.Reliable.Carriers.service.SmsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -33,7 +34,7 @@ public class ComprehensiveNotificationService implements NotificationService {
     private JavaMailSender mailSender;
 
     @Autowired
-    private ComprehensiveSmsService smsService;
+    private SmsService smsService;
 
     @Value("${app.name:Reliable Carriers}")
     private String appName;
@@ -270,14 +271,38 @@ public class ComprehensiveNotificationService implements NotificationService {
      */
     public void sendBookingConfirmation(Booking booking) {
         try {
-            // Email notification
+            // Email notification to sender (customer)
             String subject = "Booking Confirmed - " + booking.getBookingNumber();
             String emailBody = buildBookingConfirmationEmail(booking);
             sendEmail(booking.getCustomerEmail(), subject, emailBody);
 
-            // SMS notification
+            // SMS notification to sender (customer)
             String smsMessage = buildBookingConfirmationSms(booking);
             smsService.sendSms(booking.getCustomerPhone(), smsMessage);
+
+            // Send notification to receiver (delivery contact) if different from sender
+            if (booking.getDeliveryContactPhone() != null && 
+                !booking.getDeliveryContactPhone().trim().isEmpty() &&
+                !booking.getDeliveryContactPhone().equals(booking.getCustomerPhone())) {
+                
+                // SMS to receiver
+                String receiverSms = String.format(
+                    "Package delivery scheduled! Booking: %s. Delivery to: %s, %s. " +
+                    "Delivery code: %s. Expected: %s. Track: %s/track/%s",
+                    booking.getBookingNumber(),
+                    booking.getDeliveryAddress(),
+                    booking.getDeliveryCity(),
+                    booking.getCustomerDeliveryCode() != null ? booking.getCustomerDeliveryCode() : "N/A",
+                    booking.getEstimatedDeliveryDate() != null ? booking.getEstimatedDeliveryDate().toString() : "Soon",
+                    baseUrl,
+                    booking.getTrackingNumber() != null ? booking.getTrackingNumber() : booking.getBookingNumber()
+                );
+                smsService.sendSms(booking.getDeliveryContactPhone(), receiverSms);
+                logger.info("Booking confirmation SMS sent to receiver (delivery contact) for booking: {}", booking.getBookingNumber());
+            }
+
+            // Note: Email to receiver would require deliveryContactEmail field in Booking model
+            // Currently only SMS is sent to receiver if phone is different
 
             logger.info("Booking confirmation sent for booking: {}", booking.getBookingNumber());
         } catch (Exception e) {
@@ -463,6 +488,49 @@ public class ComprehensiveNotificationService implements NotificationService {
             booking.getBookingNumber(), booking.getTrackingNumber(), 
             booking.getCustomerPickupCode(), booking.getCustomerDeliveryCode(),
             baseUrl, booking.getTrackingNumber());
+    }
+
+    /**
+     * Build email content for receiver (delivery contact) - for future use if deliveryContactEmail is added
+     */
+    private String buildReceiverConfirmationEmail(Booking booking) {
+        return String.format("""
+            Dear %s,
+            
+            A package delivery has been scheduled to your address.
+            
+            DELIVERY INFORMATION:
+            Booking Number: %s
+            Tracking Number: %s
+            Delivery Address: %s, %s, %s
+            Delivery Code: %s
+            Expected Delivery: %s
+            
+            Please ensure someone is available to receive the package and provide the delivery code when the driver arrives.
+            
+            Package Details:
+            - Service Type: %s
+            - Weight: %s kg
+            - Description: %s
+            
+            Track your package: %s/track/%s
+            
+            If you have any questions, please contact us.
+            
+            Best regards,
+            %s Team
+            """, 
+            booking.getDeliveryContactName() != null ? booking.getDeliveryContactName() : "Valued Customer",
+            booking.getBookingNumber(),
+            booking.getTrackingNumber() != null ? booking.getTrackingNumber() : booking.getBookingNumber(),
+            booking.getDeliveryAddress(), booking.getDeliveryCity(), booking.getDeliveryState(),
+            booking.getCustomerDeliveryCode() != null ? booking.getCustomerDeliveryCode() : "N/A",
+            booking.getEstimatedDeliveryDate() != null ? booking.getEstimatedDeliveryDate().toString() : "Soon",
+            booking.getServiceType() != null ? booking.getServiceType().getDisplayName() : "Standard Delivery",
+            booking.getWeight() != null ? booking.getWeight().toString() : "N/A",
+            booking.getDescription() != null ? booking.getDescription() : "Package",
+            baseUrl, booking.getTrackingNumber() != null ? booking.getTrackingNumber() : booking.getBookingNumber(),
+            appName);
     }
 
     private String buildDeliveryEstimationEmail(Booking booking, String estimatedDeliveryDate) {

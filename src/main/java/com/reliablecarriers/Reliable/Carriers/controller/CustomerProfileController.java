@@ -392,10 +392,10 @@ public class CustomerProfileController {
             address.setContactName((String) addressData.get("contactName"));
             
             if (addressData.get("latitude") != null) {
-                address.setLatitude(Double.parseDouble(addressData.get("latitude").toString()));
+                address.setLatitude(new java.math.BigDecimal(addressData.get("latitude").toString()));
             }
             if (addressData.get("longitude") != null) {
-                address.setLongitude(Double.parseDouble(addressData.get("longitude").toString()));
+                address.setLongitude(new java.math.BigDecimal(addressData.get("longitude").toString()));
             }
             address.setPlaceId((String) addressData.get("placeId"));
             
@@ -466,10 +466,10 @@ public class CustomerProfileController {
                 address.setContactName((String) addressData.get("contactName"));
             }
             if (addressData.containsKey("latitude")) {
-                address.setLatitude(Double.parseDouble(addressData.get("latitude").toString()));
+                address.setLatitude(new java.math.BigDecimal(addressData.get("latitude").toString()));
             }
             if (addressData.containsKey("longitude")) {
-                address.setLongitude(Double.parseDouble(addressData.get("longitude").toString()));
+                address.setLongitude(new java.math.BigDecimal(addressData.get("longitude").toString()));
             }
             if (addressData.containsKey("placeId")) {
                 address.setPlaceId((String) addressData.get("placeId"));

@@ -340,6 +340,37 @@ public class CustomerPackageController {
             return ResponseEntity.ok(List.of());
         }
     }
+    
+    @PostMapping("/quote/save")
+    public ResponseEntity<Map<String, Object>> saveQuote(
+            @RequestBody Map<String, Object> quoteData,
+            org.springframework.security.core.Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "error", "Authentication required. Please login to save quotes."
+                ));
+            }
+            
+            String email = authentication.getName();
+            com.reliablecarriers.Reliable.Carriers.model.Quote savedQuote = 
+                customerPackageService.saveQuoteFromPage(email, quoteData);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Quote saved successfully! A confirmation email has been sent.",
+                "quoteId", savedQuote.getQuoteId()
+            ));
+        } catch (Exception e) {
+            System.err.println("Error saving quote: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", "Failed to save quote: " + e.getMessage()
+            ));
+        }
+    }
 
     // Health Check
     @GetMapping("/health")

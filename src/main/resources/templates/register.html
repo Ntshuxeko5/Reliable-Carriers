@@ -60,10 +60,14 @@
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gradient-to-br from-reliable-50 to-reliable-100 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-8 animate-fade-in">
+<body class="bg-gradient-to-br from-reliable-50 to-reliable-100 min-h-screen">
+    <!-- Navigation -->
+    <div th:replace="fragments/navbar :: navbar"></div>
+    
+    <div class="py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8 animate-fade-in">
             <div class="mx-auto h-16 w-16 bg-gradient-to-r from-reliable-600 to-reliable-700 rounded-full flex items-center justify-center mb-6 animate-bounce-gentle">
                 <i class="fas fa-truck text-white text-2xl"></i>
             </div>
@@ -183,60 +187,8 @@
                 </div>
 
 
-                <!-- Account Type -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Account Type *
-                    </label>
-                    <div class="space-y-3">
-                        <label class="flex items-center space-x-3 cursor-pointer">
-                            <input type="radio" name="isBusiness" value="false" checked 
-                                   onchange="toggleBusinessFields(false)"
-                                   class="w-4 h-4 text-reliable-600 border-gray-300 focus:ring-reliable-500">
-                            <span class="text-gray-700">Individual Account</span>
-                        </label>
-                        <label class="flex items-center space-x-3 cursor-pointer">
-                            <input type="radio" name="isBusiness" value="true" 
-                                   onchange="toggleBusinessFields(true)"
-                                   class="w-4 h-4 text-reliable-600 border-gray-300 focus:ring-reliable-500">
-                            <span class="text-gray-700">Business Account</span>
-                        </label>
-                    </div>
-                    <input type="hidden" id="userRole" name="userRole" value="CUSTOMER">
-                </div>
-
-                <!-- Business Registration Fields (Hidden by default) -->
-                <div id="businessFields" class="hidden space-y-6 bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                        <i class="fas fa-building text-blue-600 mr-2"></i>Business Information
-                    </h3>
-                    <div>
-                        <label for="businessName" class="block text-sm font-medium text-gray-700 mb-2">
-                            Business Name *
-                        </label>
-                        <input id="businessName" name="businessName" type="text" 
-                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
-                               placeholder="Enter your business name">
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="taxId" class="block text-sm font-medium text-gray-700 mb-2">
-                                Tax ID / VAT Number
-                            </label>
-                            <input id="taxId" name="taxId" type="text" 
-                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
-                                   placeholder="e.g., IT1234567890">
-                        </div>
-                        <div>
-                            <label for="registrationNumber" class="block text-sm font-medium text-gray-700 mb-2">
-                                Registration Number
-                            </label>
-                            <input id="registrationNumber" name="registrationNumber" type="text" 
-                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300"
-                                   placeholder="e.g., CK123456789">
-                        </div>
-                    </div>
-                </div>
+                <!-- Hidden field for user role -->
+                <input type="hidden" id="userRole" name="userRole" value="CUSTOMER">
 
 
                 <!-- Password -->
@@ -398,14 +350,15 @@
                     </a>
                 </p>
             </div>
-        </div>
+            </div>
 
-        <!-- Back to Home -->
-        <div class="text-center mt-8">
-            <a href="/" class="text-reliable-600 hover:text-reliable-500 transition-colors font-medium">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Back to Home
-            </a>
+            <!-- Back to Home -->
+            <div class="text-center mt-8">
+                <a href="/" class="text-reliable-600 hover:text-reliable-500 transition-colors font-medium">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Home
+                </a>
+            </div>
         </div>
     </div>
 
@@ -414,20 +367,6 @@
 
     <script th:src="@{/js/app.js}"></script>
     <script>
-        // Toggle business fields visibility
-        function toggleBusinessFields(show) {
-            const businessFields = document.getElementById('businessFields');
-            const businessNameInput = document.getElementById('businessName');
-            if (businessFields) {
-                if (show) {
-                    businessFields.classList.remove('hidden');
-                    if (businessNameInput) businessNameInput.required = true;
-                } else {
-                    businessFields.classList.add('hidden');
-                    if (businessNameInput) businessNameInput.required = false;
-                }
-            }
-        }
         // Hide social buttons if the OAuth2 endpoints are not available
         (function checkSocialEndpoints(){
             const googleBtn = document.getElementById('reg-google');
@@ -488,7 +427,6 @@
             submitBtn.disabled = true;
             
             // Collect form data
-            const isBusiness = document.querySelector('input[name="isBusiness"]:checked')?.value === 'true';
             const formData = {
                 firstName: document.getElementById('firstName').value,
                 lastName: document.getElementById('lastName').value,
@@ -498,12 +436,9 @@
                 city: document.getElementById('city').value,
                 state: document.getElementById('state').value,
                 zipCode: document.getElementById('zipCode').value,
-                country: document.getElementById('country').value,
+                country: document.getElementById('country').textContent || document.getElementById('country').value,
                 role: document.getElementById('userRole').value,
-                isBusiness: isBusiness,
-                businessName: isBusiness ? document.getElementById('businessName')?.value : null,
-                taxId: isBusiness ? document.getElementById('taxId')?.value : null,
-                registrationNumber: isBusiness ? document.getElementById('registrationNumber')?.value : null,
+                isBusiness: false,
                 password: password,
                 confirmPassword: confirmPassword,
                 newsletter: document.getElementById('newsletter').checked,
@@ -531,9 +466,16 @@
                         document.getElementById('registerForm').style.display = 'none';
                         document.getElementById('otpStage').classList.remove('hidden');
                         
-                        // 2FA token already sent by backend during registration
-                        
-                        showAlert('Verification code sent to your email. Please check your inbox.', 'success');
+                        // Check if code was actually sent
+                        if (data.codeSent === false) {
+                            // Code wasn't sent, automatically resend
+                            showAlert('Sending verification code...', 'info');
+                            setTimeout(() => {
+                                sendMethodToken(data.email, 'EMAIL');
+                            }, 500);
+                        } else {
+                            showAlert('Verification code sent to your email. Please check your inbox.', 'success');
+                        }
                     } else {
                         // Direct registration success (no 2FA required)
                         showAlert(data.message || 'Account created successfully! Redirecting to login...', 'success');

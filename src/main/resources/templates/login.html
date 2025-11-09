@@ -62,10 +62,14 @@
     <!-- Dark Mode Styles -->
     <link rel="stylesheet" th:href="@{/css/dark-mode.css}">
 </head>
-<body class="bg-gradient-to-br from-reliable-50 to-reliable-100 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8 animate-fade-in">
-        <!-- Logo and Header -->
-        <div class="text-center">
+<body class="bg-gradient-to-br from-reliable-50 to-reliable-100 min-h-screen">
+    <!-- Navigation -->
+    <div th:replace="fragments/navbar :: navbar"></div>
+    
+    <div class="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 animate-fade-in">
+            <!-- Logo and Header -->
+            <div class="text-center">
             <div class="mx-auto h-16 w-16 bg-gradient-to-r from-reliable-600 to-reliable-700 rounded-full flex items-center justify-center mb-6 animate-bounce-gentle">
                 <i class="fas fa-truck text-white text-2xl"></i>
             </div>
@@ -178,14 +182,15 @@
                     </a>
                 </p>
             </div>
-        </div>
+            </div>
 
-        <!-- Back to Home -->
-        <div class="text-center">
-            <a href="/" class="text-reliable-600 hover:text-reliable-500 transition-colors font-medium">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Back to Home
-            </a>
+            <!-- Back to Home -->
+            <div class="text-center">
+                <a href="/" class="text-reliable-600 hover:text-reliable-500 transition-colors font-medium">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Home
+                </a>
+            </div>
         </div>
     </div>
 
@@ -232,8 +237,19 @@
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const identifier = document.getElementById('identifier').value;
+            const identifier = document.getElementById('identifier').value.trim();
             const password = document.getElementById('password').value;
+            
+            // Client-side validation
+            if (!identifier) {
+                showAlert('Email or phone number is required', 'error');
+                return;
+            }
+            
+            if (!password) {
+                showAlert('Password is required', 'error');
+                return;
+            }
             
             // Show loading state
             const submitBtn = this.querySelector('button[type="submit"]');
@@ -248,12 +264,32 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    identifier: document.getElementById('identifier').value,
+                    identifier: identifier,
                     password: password
                 })
             })
             .then(async response => {
                 const data = await response.json().catch(() => ({}));
+                
+                // Handle validation errors (400 Bad Request)
+                if (response.status === 400) {
+                    let errorMessage = 'Invalid request. Please check your input.';
+                    if (data) {
+                        if (data.message) {
+                            errorMessage = data.message;
+                        } else if (data.error) {
+                            errorMessage = data.error;
+                        } else if (data.errors && data.errors.identifier) {
+                            errorMessage = data.errors.identifier;
+                        } else if (data.errors && data.errors.password) {
+                            errorMessage = data.errors.password;
+                        }
+                    }
+                    showAlert(errorMessage, 'error');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
                 
                 // Handle account lockout (423 Locked)
                 if (response.status === 423 || data.locked) {
@@ -385,8 +421,22 @@
                     }, 1200);
                 } else {
                     // Handle login errors with specific messages
-                    let errorMessage = 'Login failed. Please try again.';
-                    if (data) {
+                    let errorMessage = 'Login failed. Please check your credentials and try again.';
+                    
+                    // Check response status first for HTTP status codes
+                    if (response.status === 401) {
+                        errorMessage = data?.message || 'Invalid email or password. Please check your credentials and try again.';
+                    } else if (response.status === 403) {
+                        errorMessage = data?.message || 'Access denied. Please use the correct login portal for your account type.';
+                    } else if (response.status === 404) {
+                        errorMessage = data?.message || 'User not found. Please check your email address or register for a new account.';
+                    } else if (response.status === 423 || response.status === 423) {
+                        const remainingMinutes = data?.remainingMinutes || 30;
+                        errorMessage = `Account is temporarily locked due to multiple failed login attempts. Please try again in ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}.`;
+                    } else if (response.status >= 500) {
+                        errorMessage = data?.message || 'Server error. Please try again later or contact support if the problem persists.';
+                    } else if (data) {
+                        // Extract error message from response data
                         if (typeof data === 'string') {
                             errorMessage = data;
                         } else if (data.message) {
@@ -395,13 +445,17 @@
                             errorMessage = data.error;
                         } else if (data.success === false && data.message) {
                             errorMessage = data.message;
+                        } else if (data.details) {
+                            errorMessage = data.details;
                         }
                     }
+                    
                     showAlert(errorMessage, 'error');
                 }
             })
             .catch(error => {
-                let errorMessage = 'An error occurred. Please try again.';
+                console.error('Login error:', error);
+                let errorMessage = 'An error occurred. Please check your connection and try again.';
                 if (error && error.message) {
                     errorMessage = error.message;
                 } else if (error && typeof error === 'string') {

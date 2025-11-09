@@ -25,11 +25,22 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
+    // Skip service worker for API calls - always fetch from network
+    if (event.request.url.includes('/api/') || event.request.url.includes('/auth/')) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+    
+    // For other requests, try cache first, then network
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
                 // Return cached version or fetch from network
                 return response || fetch(event.request);
+            })
+            .catch(() => {
+                // If fetch fails, return cached version if available
+                return caches.match(event.request);
             })
     );
 });

@@ -36,8 +36,10 @@ class ReliableCarriersApp {
         }
 
         // Booking form
+        // Only attach booking handler if not on the booking page (which has its own handler)
         const bookingForm = document.getElementById('bookingForm');
-        if (bookingForm) {
+        if (bookingForm && !document.getElementById('serviceForm')) {
+            // Only attach if this is not the main booking page (which uses serviceForm)
             bookingForm.addEventListener('submit', (e) => this.handleBooking(e));
         }
     }

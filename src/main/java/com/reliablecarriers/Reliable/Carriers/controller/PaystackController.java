@@ -601,6 +601,9 @@ public class PaystackController {
                         response.put("deliveryCountry", shipment.getDeliveryCountry());
                         response.put("customerPhone", shipment.getSender() != null ? shipment.getSender().getPhone() : null);
                         
+                        // Note: Coordinates are not stored in Shipment model, but can be geocoded from addresses
+                        // The frontend will use Google Maps Geocoder to get coordinates from addresses
+                        
                         // Add customer information
                         if (shipment.getSender() != null) {
                             response.put("customerName", shipment.getSender().getFirstName() + " " + shipment.getSender().getLastName());
@@ -610,6 +613,11 @@ public class PaystackController {
                         // Add collection and drop-off codes
                         response.put("collectionCode", shipment.getCollectionCode());
                         response.put("dropOffCode", shipment.getDropOffCode());
+                        
+                        // Add booking number if available
+                        if (shipment.getTrackingNumber() != null) {
+                            response.put("bookingNumber", shipment.getTrackingNumber());
+                        }
                         
                         // Send email confirmation to customer
                         try {
@@ -1004,7 +1012,7 @@ public class PaystackController {
     }
     
     /**
-     * Send payment confirmation email and SMS to customer
+     * Send payment confirmation email and SMS to customer with Google Maps addresses
      */
     private void sendPaymentConfirmationEmail(Shipment shipment, Payment payment) {
         try {
@@ -1012,11 +1020,33 @@ public class PaystackController {
                                  shipment.getRecipientEmail() != null ? shipment.getRecipientEmail() : null;
             String customerPhone = shipment.getSender() != null ? shipment.getSender().getPhone() : 
                                   shipment.getRecipientPhone() != null ? shipment.getRecipientPhone() : null;
+            String customerName = shipment.getSender() != null ? 
+                (shipment.getSender().getFirstName() + " " + (shipment.getSender().getLastName() != null ? shipment.getSender().getLastName() : "")) : 
+                "Customer";
+            
+            // Build Google Maps links for pickup and delivery
+            String pickupAddressFull = String.format("%s, %s, %s", 
+                shipment.getPickupAddress() != null ? shipment.getPickupAddress() : "",
+                shipment.getPickupCity() != null ? shipment.getPickupCity() : "",
+                shipment.getPickupCountry() != null ? shipment.getPickupCountry() : "");
+            String deliveryAddressFull = String.format("%s, %s, %s", 
+                shipment.getDeliveryAddress() != null ? shipment.getDeliveryAddress() : "",
+                shipment.getDeliveryCity() != null ? shipment.getDeliveryCity() : "",
+                shipment.getDeliveryCountry() != null ? shipment.getDeliveryCountry() : "");
+            
+            String pickupMapsLink = "https://www.google.com/maps/search/?api=1&query=" + 
+                java.net.URLEncoder.encode(pickupAddressFull, java.nio.charset.StandardCharsets.UTF_8);
+            String deliveryMapsLink = "https://www.google.com/maps/search/?api=1&query=" + 
+                java.net.URLEncoder.encode(deliveryAddressFull, java.nio.charset.StandardCharsets.UTF_8);
+            String pickupDirectionsLink = "https://www.google.com/maps/dir/?api=1&destination=" + 
+                java.net.URLEncoder.encode(pickupAddressFull, java.nio.charset.StandardCharsets.UTF_8);
+            String deliveryDirectionsLink = "https://www.google.com/maps/dir/?api=1&destination=" + 
+                java.net.URLEncoder.encode(deliveryAddressFull, java.nio.charset.StandardCharsets.UTF_8);
             
             if (customerEmail != null) {
                 String subject = "Payment Confirmation - " + shipment.getTrackingNumber();
                 String message = String.format(
-                    "Dear Customer,\n\n" +
+                    "Dear %s,\n\n" +
                     "Your payment has been processed successfully!\n\n" +
                     "Payment Details:\n" +
                     "- Transaction ID: %s\n" +
@@ -1027,9 +1057,15 @@ public class PaystackController {
                     "- Tracking Number: %s\n" +
                     "- Collection Code: %s\n" +
                     "- Drop-off Code: %s\n" +
-                    "- Status: %s\n" +
-                    "- Pickup Address: %s, %s, %s\n" +
-                    "- Delivery Address: %s, %s, %s\n\n" +
+                    "- Status: %s\n\n" +
+                    "Pickup Address:\n" +
+                    "%s\n" +
+                    "View on Google Maps: %s\n" +
+                    "Get Directions: %s\n\n" +
+                    "Delivery Address:\n" +
+                    "%s\n" +
+                    "View on Google Maps: %s\n" +
+                    "Get Directions: %s\n\n" +
                     "Important Instructions:\n" +
                     "- Use Collection Code '%s' when dropping off your package\n" +
                     "- Use Drop-off Code '%s' when receiving your package\n" +
@@ -1039,22 +1075,23 @@ public class PaystackController {
                     "Thank you for choosing Reliable Carriers!\n\n" +
                     "Best regards,\n" +
                     "Reliable Carriers Team",
+                    customerName,
                     payment.getTransactionId(),
                     payment.getAmount(),
                     payment.getPaymentDate() != null ? payment.getPaymentDate().toString() : "N/A",
-                    shipment.getServiceType(),
+                    shipment.getServiceType() != null ? shipment.getServiceType().toString() : "N/A",
                     shipment.getTrackingNumber(),
-                    shipment.getCollectionCode(),
-                    shipment.getDropOffCode(),
-                    shipment.getStatus(),
-                    shipment.getPickupAddress(),
-                    shipment.getPickupCity(),
-                    shipment.getPickupCountry(),
-                    shipment.getDeliveryAddress(),
-                    shipment.getDeliveryCity(),
-                    shipment.getDeliveryCountry(),
-                    shipment.getCollectionCode(),
-                    shipment.getDropOffCode(),
+                    shipment.getCollectionCode() != null ? shipment.getCollectionCode() : "N/A",
+                    shipment.getDropOffCode() != null ? shipment.getDropOffCode() : "N/A",
+                    shipment.getStatus() != null ? shipment.getStatus().toString() : "N/A",
+                    pickupAddressFull,
+                    pickupMapsLink,
+                    pickupDirectionsLink,
+                    deliveryAddressFull,
+                    deliveryMapsLink,
+                    deliveryDirectionsLink,
+                    shipment.getCollectionCode() != null ? shipment.getCollectionCode() : "N/A",
+                    shipment.getDropOffCode() != null ? shipment.getDropOffCode() : "N/A",
                     shipment.getTrackingNumber(),
                     shipment.getTrackingNumber()
                 );
@@ -1068,8 +1105,7 @@ public class PaystackController {
                     System.out.println("Payment confirmation email sent successfully");
                 } catch (Exception e) {
                     System.err.println("Failed to send email via notification service: " + e.getMessage());
-                    // Fallback: just log the email content
-                    System.out.println("Email content: " + message);
+                    e.printStackTrace();
                 }
                 
                 // Send SMS notification if phone number is available
@@ -1077,10 +1113,12 @@ public class PaystackController {
                     try {
                         String smsMessage = String.format(
                             "Payment Confirmed! Tracking: %s, Collection Code: %s, Drop-off Code: %s. " +
-                            "Track at: http://localhost:8080/tracking/%s",
+                            "Pickup: %s. Delivery: %s. Track: http://localhost:8080/tracking/%s",
                             shipment.getTrackingNumber(),
-                            shipment.getCollectionCode(),
-                            shipment.getDropOffCode(),
+                            shipment.getCollectionCode() != null ? shipment.getCollectionCode() : "N/A",
+                            shipment.getDropOffCode() != null ? shipment.getDropOffCode() : "N/A",
+                            shipment.getPickupAddress() != null ? shipment.getPickupAddress() : "N/A",
+                            shipment.getDeliveryAddress() != null ? shipment.getDeliveryAddress() : "N/A",
                             shipment.getTrackingNumber()
                         );
                         
@@ -1088,11 +1126,42 @@ public class PaystackController {
                         System.out.println("Payment confirmation SMS sent to: " + customerPhone);
                     } catch (Exception e) {
                         System.err.println("Failed to send SMS notification: " + e.getMessage());
+                        e.printStackTrace();
                     }
+                }
+                
+                // Notify admin/drivers about new shipment (for driver assignment)
+                try {
+                    notifyDriversAboutNewShipment(shipment);
+                } catch (Exception e) {
+                    System.err.println("Failed to notify drivers about new shipment: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
         } catch (Exception e) {
             System.err.println("Failed to send payment confirmation notifications: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Notify available drivers about new shipment (for assignment)
+     */
+    private void notifyDriversAboutNewShipment(Shipment shipment) {
+        try {
+            // This will be handled by the admin when assigning drivers
+            // For now, we just log that a new shipment is ready for assignment
+            System.out.println("New shipment ready for driver assignment: " + shipment.getTrackingNumber());
+            System.out.println("Pickup: " + shipment.getPickupAddress() + ", " + shipment.getPickupCity());
+            System.out.println("Delivery: " + shipment.getDeliveryAddress() + ", " + shipment.getDeliveryCity());
+            
+            // In a production system, you would:
+            // 1. Find available drivers in the area
+            // 2. Send notifications to those drivers
+            // 3. Or notify admin to assign a driver
+            
+        } catch (Exception e) {
+            System.err.println("Failed to notify drivers: " + e.getMessage());
         }
     }
     

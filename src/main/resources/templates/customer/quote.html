@@ -777,7 +777,7 @@
         }
         
         // Save quote for later (requires login)
-        function saveQuoteForLater(serviceId) {
+        async function saveQuoteForLater(serviceId) {
             const token = localStorage.getItem('token') || sessionStorage.getItem('token');
             
             if (!token) {
@@ -795,58 +795,140 @@
                 return;
             }
             
-            // Save quote via API (this will be implemented when we add quote saving)
-            showAlert('Quote saved! You can view it in your saved quotes.', 'success');
+            try {
+                // Prepare quote data for API
+                const quoteData = {
+                    pickupAddress: currentQuote.pickupAddress || '',
+                    deliveryAddress: currentQuote.deliveryAddress || '',
+                    weight: parseFloat(currentQuote.weight) || 0,
+                    length: currentQuote.length || '',
+                    width: currentQuote.width || '',
+                    height: currentQuote.height || '',
+                    dimensions: currentQuote.dimensions || '',
+                    serviceType: currentQuote.service?.type || 'SAME_DAY',
+                    price: parseFloat(currentQuote.price) || 0,
+                    distance: parseFloat(currentQuote.distance) || 0
+                };
+                
+                // Call API to save quote
+                const response = await fetch('/api/customer/quote/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(quoteData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showAlert(result.message || 'Quote saved successfully! A confirmation email has been sent.', 'success');
+                } else {
+                    const errorMsg = result.error || 'Failed to save quote. Please try again.';
+                    showAlert(errorMsg, 'error');
+                    
+                    // If authentication failed, redirect to login
+                    if (response.status === 401) {
+                        sessionStorage.setItem('pendingQuoteData', JSON.stringify(currentQuote));
+                        sessionStorage.setItem('pendingBookingAction', 'save');
+                        setTimeout(() => {
+                            window.location.href = '/login?redirect=/customer/quote';
+                        }, 2000);
+                    }
+                }
+            } catch (error) {
+                console.error('Error saving quote:', error);
+                showAlert('An error occurred while saving the quote. Please try again.', 'error');
+            }
         }
 
         // Proceed to booking
         function proceedToBooking(selectedServiceType) {
-            if (!currentQuote) {
-                showAlert('Please generate a quote first before booking.', 'error');
-                return;
-            }
-            
-            // Use currentQuote data
-            const quoteData = {
-                ...currentQuote,
-                serviceType: selectedServiceType || currentQuote.service.id
-            };
-            
-            // Check if user is logged in
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-            
-            if (!token) {
-                // User is not logged in - save quote data and prompt login
-                sessionStorage.setItem('pendingQuoteData', JSON.stringify(quoteData));
-                sessionStorage.setItem('pendingBookingAction', 'book');
-                
-                if (confirm('You need to login or register to book this service. Would you like to login now?')) {
-                    window.location.href = '/login?redirect=/customer/quote';
+            try {
+                if (!currentQuote) {
+                    alert('Please generate a quote first before booking.');
+                    return;
                 }
-                return;
+                
+                // Map service IDs to booking page service types
+                const serviceTypeMap = {
+                    'standard': 'SAME_DAY',
+                    'express': 'OVERNIGHT',
+                    'economy': 'ECONOMY',
+                    'urgent': 'URGENT'
+                };
+                
+                // Get the service type - use the passed parameter or fall back to current quote service
+                const serviceId = selectedServiceType || currentQuote.service?.id || 'standard';
+                const mappedServiceType = serviceTypeMap[serviceId] || 'SAME_DAY';
+                
+                // Use currentQuote data
+                const quoteData = {
+                    ...currentQuote,
+                    serviceType: mappedServiceType,
+                    serviceId: serviceId
+                };
+                
+                // Check if user is logged in
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                
+                if (!token) {
+                    // User is not logged in - save quote data and prompt login
+                    sessionStorage.setItem('pendingQuoteData', JSON.stringify(quoteData));
+                    sessionStorage.setItem('pendingBookingAction', 'book');
+                    
+                    if (confirm('You need to login or register to book this service. Would you like to login now?')) {
+                        window.location.href = '/login?redirect=/customer/quote';
+                    }
+                    return;
+                }
+                
+                // User is logged in - proceed with booking
+                sessionStorage.setItem('quoteData', JSON.stringify(quoteData));
+                window.location.href = '/booking';
+            } catch (error) {
+                console.error('Error proceeding to booking:', error);
+                alert('An error occurred. Please try again.');
             }
-            
-            // User is logged in - proceed with booking
-            sessionStorage.setItem('quoteData', JSON.stringify(quoteData));
-            window.location.href = '/booking';
         }
         
         // Check for pending quote after login/registration
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', async function() {
             const pendingQuote = sessionStorage.getItem('pendingQuoteData');
             const pendingAction = sessionStorage.getItem('pendingBookingAction');
             const token = localStorage.getItem('token') || sessionStorage.getItem('token');
             
-            if (pendingQuote && pendingAction === 'book' && token) {
-                // User just logged in with a pending quote
-                sessionStorage.setItem('quoteData', pendingQuote);
-                sessionStorage.removeItem('pendingQuoteData');
-                sessionStorage.removeItem('pendingBookingAction');
-                
-                // Redirect to booking page
-                setTimeout(() => {
-                    window.location.href = '/booking';
-                }, 500);
+            if (pendingQuote && token) {
+                if (pendingAction === 'book') {
+                    // User just logged in with a pending quote to book
+                    sessionStorage.setItem('quoteData', pendingQuote);
+                    sessionStorage.removeItem('pendingQuoteData');
+                    sessionStorage.removeItem('pendingBookingAction');
+                    
+                    // Redirect to booking page
+                    setTimeout(() => {
+                        window.location.href = '/booking';
+                    }, 500);
+                } else if (pendingAction === 'save') {
+                    // User just logged in with a pending quote to save
+                    try {
+                        const quoteData = JSON.parse(pendingQuote);
+                        currentQuote = quoteData;
+                        
+                        // Automatically save the quote
+                        await saveQuoteForLater();
+                        
+                        // Clear pending data
+                        sessionStorage.removeItem('pendingQuoteData');
+                        sessionStorage.removeItem('pendingBookingAction');
+                    } catch (error) {
+                        console.error('Error auto-saving quote after login:', error);
+                        sessionStorage.removeItem('pendingQuoteData');
+                        sessionStorage.removeItem('pendingBookingAction');
+                    }
+                }
             }
         });
 

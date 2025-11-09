@@ -5,7 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Service - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
+    <script>
+        // Make initMap available globally before Google Maps loads
+        window.initMap = function() {
+            // Initialize autocomplete for pickup address
+            const pickupAddressField = document.querySelector('input[name="pickupAddress"]') || document.querySelector('textarea[name="pickupAddress"]');
+            if (pickupAddressField && window.google && window.google.maps && window.google.maps.places) {
+                if (!window.pickupAutocomplete) {
+                    window.pickupAutocomplete = new google.maps.places.Autocomplete(
+                        pickupAddressField,
+                        {
+                            types: ['address'],
+                            componentRestrictions: { country: 'za' }
+                        }
+                    );
+                }
+            }
+
+            // Initialize autocomplete for delivery address
+            const deliveryAddressField = document.querySelector('input[name="deliveryAddress"]') || document.querySelector('textarea[name="deliveryAddress"]');
+            if (deliveryAddressField && window.google && window.google.maps && window.google.maps.places) {
+                if (!window.deliveryAutocomplete) {
+                    window.deliveryAutocomplete = new google.maps.places.Autocomplete(
+                        deliveryAddressField,
+                        {
+                            types: ['address'],
+                            componentRestrictions: { country: 'za' }
+                        }
+                    );
+                }
+            }
+        };
+    </script>
+    <script th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'}" async defer></script>
     <script>
         tailwind.config = {
             theme: {
@@ -267,47 +299,8 @@
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
-<!-- Header -->
-<header class="bg-gradient-to-r from-reliable-blue-800 to-reliable-blue-900 text-white shadow-lg nav-header">
-    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-4">
-            <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
-                <!-- Company Logo -->
-                <img src="/images/Reliable 1.png" alt="Reliable Carriers" style="height:50px; width:auto; ">
-
-            </a>
-            <ul class="hidden md:flex space-x-8">
-                <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                <li class="auth-required hidden"><a href="/customer/quote" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Quote</a></li>
-                <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
-            </ul>
-            <!-- Mobile menu button -->
-            <button class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300" id="mobileMenuBtn">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-        </div>
-        <!-- Mobile menu -->
-        <div class="md:hidden hidden" id="mobileMenu">
-            <ul class="py-4 space-y-4">
-                <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
-                <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                <li><a href="/about" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                <li><a href="/contact" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                <li class="guest-only"><a href="/login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                <li class="guest-only"><a href="/register" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                <li><a href="/staff-login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Staff Portal</a></li>
-                <li class="auth-required hidden"><a href="/dashboard" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                <li class="auth-required hidden"><a href="/customer/quote" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
-                <li class="auth-required hidden"><a href="#" id="logoutBtnMobile" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
-            </ul>
-        </div>
-    </nav>
-</header>
+<!-- Navigation -->
+<div th:replace="fragments/navbar :: navbar"></div>
 
     <!-- Hero Section -->
     <section class="relative bg-gradient-to-r from-reliable-700 to-reliable-800 text-white py-20">
@@ -345,13 +338,42 @@
                 </div>
             </div>
         </section>
+
+        <!-- Booking Confirmation Section (shown after booking is created) -->
+        <section id="bookingConfirmation" class="mb-8 animate-slide-up hidden">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-lg p-8 border-2 border-blue-200">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-blue-500 rounded-full p-3">
+                            <i class="fas fa-check-circle text-white text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                                <i class="fas fa-clipboard-check mr-2 text-blue-600"></i>Booking Created Successfully!
+                            </h2>
+                            <p class="text-gray-600">Review your booking details and proceed to payment</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="bookingDetails" class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Booking details will be populated by JavaScript -->
+                </div>
+                <div class="text-center pt-6 border-t border-blue-200">
+                    <button id="proceedToPaymentBtn" onclick="proceedToPayment()" 
+                            class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 flex items-center justify-center mx-auto shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i class="fas fa-credit-card mr-3 text-xl"></i>
+                        <span class="text-lg">Proceed to Payment</span>
+                    </button>
+                </div>
+            </div>
+        </section>
         
         <!-- Service Selection -->
         <section class="mb-16 animate-slide-up">
             <h2 class="text-3xl font-bold text-gray-800 mb-12 text-center">Choose Your Service</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <!-- Courier Services -->
-                <div class="service-selection-card p-8 hover-lift" onclick="selectService('courier')">
+                <div class="service-selection-card p-8 hover-lift" onclick="selectService('courier', event)">
                     <div class="text-center mb-6">
                         <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-shipping-fast text-reliable-600 text-2xl"></i>
@@ -377,13 +399,13 @@
                             <span>Urgent Delivery - R425</span>
                         </li>
                     </ul>
-                    <button onclick="selectService('courier')" class="w-full btn-primary font-bold py-3 px-6 rounded-lg hover-lift">
+                    <button onclick="event.stopPropagation(); selectService('courier', event)" class="w-full btn-primary font-bold py-3 px-6 rounded-lg hover-lift">
                         Select Courier Service
                     </button>
                 </div>
 
                 <!-- Moving Services -->
-                <div class="service-selection-card p-8 hover-lift" onclick="selectService('moving')">
+                <div class="service-selection-card p-8 hover-lift" onclick="selectService('moving', event)">
                     <div class="text-center mb-6">
                         <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-truck-moving text-reliable-600 text-2xl"></i>
@@ -409,13 +431,13 @@
                             <span>Distance-based pricing</span>
                         </li>
                     </ul>
-                    <button onclick="selectService('moving')" class="w-full btn-primary font-bold py-3 px-6 rounded-lg hover-lift">
+                    <button onclick="event.stopPropagation(); selectService('moving', event)" class="w-full btn-primary font-bold py-3 px-6 rounded-lg hover-lift">
                         Select Moving Service
                     </button>
                 </div>
 
                 <!-- Express Services -->
-                <div class="service-selection-card p-8 hover-lift" onclick="selectService('express')">
+                <div class="service-selection-card p-8 hover-lift" onclick="selectService('express', event)">
                     <div class="text-center mb-6">
                         <div class="bg-reliable-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-rocket text-reliable-600 text-2xl"></i>
@@ -441,7 +463,7 @@
                             <span>Real-time Tracking</span>
                         </li>
                     </ul>
-                    <button onclick="selectService('express')" class="w-full btn-primary font-bold py-3 px-6 rounded-lg hover-lift">
+                    <button onclick="event.stopPropagation(); selectService('express', event)" class="w-full btn-primary font-bold py-3 px-6 rounded-lg hover-lift">
                         Select Express Service
                     </button>
                 </div>
@@ -451,6 +473,15 @@
         <!-- Booking Form -->
         <section id="bookingForm" class="mb-16 animate-slide-up hidden">
             <div class="bg-white rounded-2xl shadow-lg p-8">
+                <div id="quoteDataNotice" class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 hidden">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                        <div>
+                            <h3 class="font-semibold text-blue-800 mb-1">Information from Quote</h3>
+                            <p class="text-sm text-blue-700">Your package details, addresses, and service selection have been pre-filled from your quote. Please review and complete the remaining fields below.</p>
+                        </div>
+                    </div>
+                </div>
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Service Details</h2>
                 <form id="serviceForm" class="space-y-6">
                     <!-- Service Type Selection -->
@@ -600,14 +631,69 @@
                         </div>
                     </div>
 
+                    <!-- Insurance Selection -->
+                    <div class="bg-blue-50 rounded-lg p-6 border-2 border-blue-200">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">
+                            <i class="fas fa-shield-alt text-blue-600 mr-2"></i>Insurance Coverage
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-4">Select insurance coverage for your package (optional but recommended)</p>
+                        <div class="space-y-3">
+                            <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option bg-white" data-cost="0">
+                                <input type="radio" name="insurance" value="none" class="mr-3 text-blue-500" checked>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">No Additional Insurance</div>
+                                    <div class="text-sm text-gray-600">Standard coverage included (up to R500)</div>
+                                </div>
+                                <div class="text-lg font-bold text-gray-800">R0.00</div>
+                            </label>
+                            
+                            <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option bg-white" data-cost="15">
+                                <input type="radio" name="insurance" value="basic" class="mr-3 text-blue-500">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">Basic Coverage</div>
+                                    <div class="text-sm text-gray-600">Up to R2,000 coverage</div>
+                                </div>
+                                <div class="text-lg font-bold text-gray-800">R15.00</div>
+                            </label>
+                            
+                            <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option bg-white" data-cost="35">
+                                <input type="radio" name="insurance" value="standard" class="mr-3 text-blue-500">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">Standard Coverage</div>
+                                    <div class="text-sm text-gray-600">Up to R5,000 coverage</div>
+                                </div>
+                                <div class="text-lg font-bold text-gray-800">R35.00</div>
+                            </label>
+                            
+                            <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option bg-white" data-cost="65">
+                                <input type="radio" name="insurance" value="premium" class="mr-3 text-blue-500">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">Premium Coverage</div>
+                                    <div class="text-sm text-gray-600">Up to R10,000 coverage</div>
+                                </div>
+                                <div class="text-lg font-bold text-gray-800">R65.00</div>
+                            </label>
+                        </div>
+                        
+                        <!-- Live Price Update Display -->
+                        <div id="insurancePriceUpdate" class="mt-4 p-4 bg-white rounded-lg border border-blue-300" style="display: none;">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm text-blue-600 font-medium">Selected Insurance:</div>
+                                    <div class="text-lg font-bold text-blue-800" id="selectedInsuranceText">No Insurance</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm text-blue-600">Insurance Cost:</div>
+                                    <div class="text-xl font-bold text-blue-800" id="selectedInsuranceCost">R0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Additional Services -->
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 mb-4">Additional Services</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <label class="flex items-center space-x-3 cursor-pointer">
-                                <input type="checkbox" name="insurance" class="w-4 h-4 text-reliable-600 border-gray-300 rounded focus:ring-reliable-500">
-                                <span class="text-gray-700">Additional Insurance</span>
-                            </label>
                             <label class="flex items-center space-x-3 cursor-pointer">
                                 <input type="checkbox" name="packing" class="w-4 h-4 text-reliable-600 border-gray-300 rounded focus:ring-reliable-500">
                                 <span class="text-gray-700">Professional Packing</span>
@@ -634,9 +720,21 @@
                     <!-- Price Estimate -->
                     <div id="priceEstimate" class="bg-reliable-50 rounded-lg p-6 hidden">
                         <h3 class="text-lg font-bold text-gray-800 mb-4">Price Estimate</h3>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-700">Estimated Total:</span>
-                            <span id="estimatedPrice" class="text-2xl font-bold text-reliable-600">R0.00</span>
+                        <div class="space-y-2 mb-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Service Cost:</span>
+                                <span id="serviceCost" class="text-lg font-semibold text-gray-800">R0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Insurance:</span>
+                                <span id="insuranceCostDisplay" class="text-lg font-semibold text-gray-800">R0.00</span>
+                            </div>
+                            <div class="border-t border-gray-300 pt-2 mt-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-800 font-semibold">Estimated Total:</span>
+                                    <span id="estimatedPrice" class="text-2xl font-bold text-reliable-600">R0.00</span>
+                                </div>
+                            </div>
                         </div>
                         <p class="text-sm text-gray-500 mt-2">Final price will be calculated after review</p>
                     </div>
@@ -751,13 +849,51 @@
     <script>
         let selectedService = null;
 
-        function selectService(service) {
+        function selectService(service, event) {
             selectedService = service;
-            document.getElementById('bookingForm').classList.remove('hidden');
-            document.getElementById('bookingForm').scrollIntoView({ behavior: 'smooth' });
+            
+            // Remove selected class from all service cards
+            document.querySelectorAll('.service-selection-card').forEach(card => {
+                card.classList.remove('selected');
+                card.style.border = '';
+                card.style.backgroundColor = '';
+            });
+            
+            // Add selected class to clicked card
+            let clickedCard = null;
+            if (event && event.target) {
+                clickedCard = event.target.closest('.service-selection-card');
+            } else {
+                // Find card by service type using onclick attribute
+                const cards = document.querySelectorAll('.service-selection-card');
+                cards.forEach(card => {
+                    const onclickAttr = card.getAttribute('onclick');
+                    if (onclickAttr && onclickAttr.includes("'" + service + "'")) {
+                        clickedCard = card;
+                    }
+                });
+            }
+            
+            if (clickedCard) {
+                clickedCard.classList.add('selected');
+                clickedCard.style.border = '3px solid #3b82f6';
+                clickedCard.style.backgroundColor = '#eff6ff';
+            }
+            
+            // Show booking form
+            const bookingForm = document.getElementById('bookingForm');
+            if (bookingForm) {
+                bookingForm.classList.remove('hidden');
+                bookingForm.scrollIntoView({ behavior: 'smooth' });
+            }
             
             // Update service type dropdown based on selection
             const serviceTypeSelect = document.getElementById('serviceType');
+            if (!serviceTypeSelect) {
+                console.error('Service type select element not found');
+                return;
+            }
+            
             serviceTypeSelect.innerHTML = '<option value="">Select service type</option>';
             
             if (service === 'courier') {
@@ -787,6 +923,13 @@
                     </optgroup>
                 `;
             }
+            
+            console.log('Service selected: ' + service);
+            
+            // Initialize insurance price updates when form is shown
+            setTimeout(() => {
+                initInsurancePriceUpdates();
+            }, 100);
         }
 
         function resetForm() {
@@ -804,6 +947,10 @@
             }
         }
 
+        // Store booking and payment data globally
+        let currentBookingData = null;
+        let currentPaymentData = null;
+
         // Form submission
         document.getElementById('serviceForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -820,18 +967,31 @@
             // Create booking
             createBooking(formData)
                 .then(booking => {
+                    currentBookingData = booking;
                     // Initialize payment
                     return initializePayment(booking.id);
                 })
                 .then(paymentData => {
+                    currentPaymentData = paymentData;
+                    
                     // Store booking info for payment page
                     sessionStorage.setItem('bookingId', paymentData.bookingId);
                     if (paymentData.payment && paymentData.payment.reference) {
                         sessionStorage.setItem('paymentReference', paymentData.payment.reference);
                     }
                     
-                    // Redirect to payment page
-                    window.location.href = `/payment?bookingId=${paymentData.bookingId}&reference=${paymentData.payment?.reference || ''}`;
+                    // Show booking confirmation section instead of redirecting
+                    displayBookingConfirmation(currentBookingData, paymentData);
+                    
+                    // Hide booking form
+                    document.getElementById('bookingForm').classList.add('hidden');
+                    
+                    // Scroll to confirmation
+                    document.getElementById('bookingConfirmation').scrollIntoView({ behavior: 'smooth' });
+                    
+                    // Reset button
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
                 })
                 .catch(error => {
                     console.error('Booking error:', error);
@@ -843,40 +1003,151 @@
                 });
         });
 
-        // Price calculation
-        document.getElementById('serviceType').addEventListener('change', function() {
-            const serviceType = this.value;
-            const priceEstimate = document.getElementById('priceEstimate');
-            const estimatedPrice = document.getElementById('estimatedPrice');
+        // Display booking confirmation
+        function displayBookingConfirmation(booking, paymentData) {
+            const confirmationSection = document.getElementById('bookingConfirmation');
+            const detailsContainer = document.getElementById('bookingDetails');
             
-            if (serviceType) {
-                let price = 0;
+            let html = `
+                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-2">Booking Number</h3>
+                    <p class="text-xl font-bold text-gray-900">${booking.bookingNumber || 'N/A'}</p>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-2">Service Type</h3>
+                    <p class="text-lg font-semibold text-gray-900">${booking.serviceType || 'N/A'}</p>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-2">Total Amount</h3>
+                    <p class="text-2xl font-bold text-green-600">R${(booking.totalAmount || 0).toFixed(2)}</p>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-2">Status</h3>
+                    <p class="text-lg font-semibold text-yellow-600">Pending Payment</p>
+                </div>
+            `;
+            
+            if (booking.pickupAddress || booking.deliveryAddress) {
+                html += `
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-2"><i class="fas fa-map-marker-alt text-red-500 mr-2"></i>Pickup</h3>
+                        <p class="text-gray-900">${booking.pickupAddress || 'N/A'}</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-2"><i class="fas fa-map-marker-alt text-green-500 mr-2"></i>Delivery</h3>
+                        <p class="text-gray-900">${booking.deliveryAddress || 'N/A'}</p>
+                    </div>
+                `;
+            }
+            
+            detailsContainer.innerHTML = html;
+            confirmationSection.classList.remove('hidden');
+        }
+
+        // Proceed to payment
+        function proceedToPayment() {
+            if (currentPaymentData && currentPaymentData.bookingId) {
+                window.location.href = `/payment?bookingId=${currentPaymentData.bookingId}&reference=${currentPaymentData.payment?.reference || ''}`;
+            } else {
+                showAlert('Payment information not available. Please try again.', 'error');
+            }
+        }
+
+        // Insurance cost helper
+        function getInsuranceCost(insuranceType) {
+            const costs = {
+                'none': 0,
+                'basic': 15,
+                'standard': 35,
+                'premium': 65
+            };
+            return costs[insuranceType] || 0;
+        }
+        
+        // Initialize insurance price updates
+        function initInsurancePriceUpdates() {
+            const insuranceOptions = document.querySelectorAll('input[name="insurance"]');
+            const insurancePriceUpdate = document.getElementById('insurancePriceUpdate');
+            const selectedInsuranceText = document.getElementById('selectedInsuranceText');
+            const selectedInsuranceCost = document.getElementById('selectedInsuranceCost');
+            
+            if (!insuranceOptions.length) return;
+            
+            insuranceOptions.forEach(option => {
+                option.addEventListener('change', function() {
+                    if (this.checked) {
+                        const cost = parseFloat(this.closest('.insurance-option').dataset.cost);
+                        const text = this.closest('.insurance-option').querySelector('.font-semibold').textContent;
+                        
+                        // Update the live price display
+                        if (selectedInsuranceText) selectedInsuranceText.textContent = text;
+                        if (selectedInsuranceCost) selectedInsuranceCost.textContent = `R${cost.toFixed(2)}`;
+                        
+                        // Show the live price update
+                        if (insurancePriceUpdate) insurancePriceUpdate.style.display = 'block';
+                        
+                        // Update total price estimate if visible
+                        updateTotalPrice();
+                    }
+                });
+            });
+        }
+        
+        // Update total price including insurance
+        function updateTotalPrice() {
+            const serviceTypeSelect = document.getElementById('serviceType');
+            if (!serviceTypeSelect) return;
+            
+            const selectedInsurance = document.querySelector('input[name="insurance"]:checked');
+            const insuranceCost = selectedInsurance ? parseFloat(selectedInsurance.closest('.insurance-option').dataset.cost) : 0;
+            
+            // Use quote base price if available, otherwise calculate from service type
+            let basePrice = quoteBasePrice;
+            
+            if (basePrice === 0) {
+                // Fallback: calculate base price from service type if no quote
+                const serviceType = serviceTypeSelect.value;
                 switch(serviceType) {
                     case 'SAME_DAY':
-                        price = 140;
+                        basePrice = 140;
                         break;
                     case 'OVERNIGHT':
-                        price = 120;
+                        basePrice = 120;
                         break;
                     case 'ECONOMY':
-                        price = 100;
+                        basePrice = 100;
                         break;
                     case 'URGENT':
-                        price = 425;
+                        basePrice = 425;
                         break;
                     case 'FURNITURE':
                     case 'MOVING':
                     case 'LOAD_TRANSPORT':
+                        basePrice = 500; // Default for moving services
+                        break;
                     case 'EXPRESS_DELIVERY':
-                        price = 550; // Base price for moving services
+                        basePrice = 200;
                         break;
                 }
-                
-                estimatedPrice.textContent = `R${price.toFixed(2)}`;
-                priceEstimate.classList.remove('hidden');
-            } else {
-                priceEstimate.classList.add('hidden');
             }
+            
+            const totalPrice = basePrice + insuranceCost;
+            const priceEstimate = document.getElementById('priceEstimate');
+            const estimatedPrice = document.getElementById('estimatedPrice');
+            const serviceCost = document.getElementById('serviceCost');
+            const insuranceCostDisplay = document.getElementById('insuranceCostDisplay');
+            
+            if (priceEstimate && estimatedPrice) {
+                if (serviceCost) serviceCost.textContent = `R${basePrice.toFixed(2)}`;
+                if (insuranceCostDisplay) insuranceCostDisplay.textContent = `R${insuranceCost.toFixed(2)}`;
+                estimatedPrice.textContent = `R${totalPrice.toFixed(2)}`;
+                priceEstimate.classList.remove('hidden');
+            }
+        }
+        
+        // Price calculation
+        document.getElementById('serviceType')?.addEventListener('change', function() {
+            updateTotalPrice();
         });
 
         function showAlert(message, type) {
@@ -899,46 +1170,148 @@
             }, 5000);
         }
 
-        // Google Maps integration
-        let pickupAutocomplete, deliveryAutocomplete;
-        
-        function initMap() {
-            // Initialize autocomplete for pickup address
-            const pickupAddressField = document.querySelector('input[name="pickupAddress"]');
-            if (pickupAddressField) {
-                pickupAutocomplete = new google.maps.places.Autocomplete(
-                    pickupAddressField,
-                    {
-                        types: ['address'],
-                        componentRestrictions: { country: 'za' }
-                    }
-                );
-            }
+        // Google Maps integration - variables are now global (window.pickupAutocomplete, window.deliveryAutocomplete)
+        // initMap is already defined globally in the head section
+        // If Google Maps is already loaded when this script runs, initialize it
+        if (window.google && window.google.maps && window.google.maps.places && typeof window.initMap === 'function') {
+            window.initMap();
+        }
 
-            // Initialize autocomplete for delivery address
-            const deliveryAddressField = document.querySelector('input[name="deliveryAddress"]');
-            if (deliveryAddressField) {
-                deliveryAutocomplete = new google.maps.places.Autocomplete(
-                    deliveryAddressField,
-                    {
-                        types: ['address'],
-                        componentRestrictions: { country: 'za' }
+        // Store logged-in user data
+        let loggedInUser = null;
+
+        // Check authentication and load user data
+        async function checkAuthAndLoadUser() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) {
+                // Try to get user data from Thymeleaf model attributes
+                const userName = /*[[${userName}]]*/ null;
+                const userEmail = /*[[${userEmail}]]*/ null;
+                const userPhone = /*[[${userPhone}]]*/ null;
+                const isAuthenticated = /*[[${isAuthenticated}]]*/ false;
+                
+                if (isAuthenticated && userEmail) {
+                    loggedInUser = {
+                        name: userName || '',
+                        email: userEmail || '',
+                        phone: userPhone || ''
+                    };
+                    populateUserData();
+                }
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/customer/profile', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    loggedInUser = {
+                        name: (userData.firstName || '') + ' ' + (userData.lastName || ''),
+                        email: userData.email || '',
+                        phone: userData.phone || ''
+                    };
+                    populateUserData();
+                } else {
+                    // Fallback to Thymeleaf model attributes
+                    const userName = /*[[${userName}]]*/ null;
+                    const userEmail = /*[[${userEmail}]]*/ null;
+                    const userPhone = /*[[${userPhone}]]*/ null;
+                    const isAuthenticated = /*[[${isAuthenticated}]]*/ false;
+                    
+                    if (isAuthenticated && userEmail) {
+                        loggedInUser = {
+                            name: userName || '',
+                            email: userEmail || '',
+                            phone: userPhone || ''
+                        };
+                        populateUserData();
                     }
-                );
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                // Fallback to Thymeleaf model attributes
+                const userName = /*[[${userName}]]*/ null;
+                const userEmail = /*[[${userEmail}]]*/ null;
+                const userPhone = /*[[${userPhone}]]*/ null;
+                const isAuthenticated = /*[[${isAuthenticated}]]*/ false;
+                
+                if (isAuthenticated && userEmail) {
+                    loggedInUser = {
+                        name: userName || '',
+                        email: userEmail || '',
+                        phone: userPhone || ''
+                    };
+                    populateUserData();
+                }
+            }
+        }
+
+        // Populate form with logged-in user data
+        function populateUserData() {
+            if (!loggedInUser) return;
+            
+            // Auto-populate pickup name if empty
+            const pickupNameField = document.getElementById('pickupName');
+            if (pickupNameField && !pickupNameField.value && loggedInUser.name) {
+                pickupNameField.value = loggedInUser.name.trim();
+            }
+            
+            // Auto-populate pickup phone if empty
+            const pickupPhoneField = document.getElementById('pickupPhone');
+            if (pickupPhoneField && !pickupPhoneField.value && loggedInUser.phone) {
+                pickupPhoneField.value = loggedInUser.phone;
+            }
+            
+            // Auto-populate delivery name if empty (can be same as pickup)
+            const deliveryNameField = document.getElementById('deliveryName');
+            if (deliveryNameField && !deliveryNameField.value && loggedInUser.name) {
+                deliveryNameField.value = loggedInUser.name.trim();
+            }
+            
+            // Auto-populate delivery phone if empty (can be same as pickup)
+            const deliveryPhoneField = document.getElementById('deliveryPhone');
+            if (deliveryPhoneField && !deliveryPhoneField.value && loggedInUser.phone) {
+                deliveryPhoneField.value = loggedInUser.phone;
             }
         }
 
         // Load quote data from sessionStorage on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication and load user data first
+            checkAuthAndLoadUser();
+            
+            // Initialize insurance price updates
+            initInsurancePriceUpdates();
+            
             const quoteData = sessionStorage.getItem('quoteData');
             if (quoteData) {
                 try {
                     const quote = JSON.parse(quoteData);
                     displayQuoteConfirmation(quote);
-                    populateFormWithQuoteData(quote);
-                    // Hide service selection and show booking form when quote exists
-                    document.querySelector('section:has(h2:contains("Choose Your Service"))')?.classList.add('hidden');
-                    document.getElementById('bookingForm')?.classList.remove('hidden');
+                    // Wait for Google Maps to load before extracting address components
+                    if (window.google && window.google.maps && window.google.maps.places) {
+                        populateFormWithQuoteData(quote);
+                    } else {
+                        // Wait for Google Maps to load
+                        const checkGoogleMaps = setInterval(() => {
+                            if (window.google && window.google.maps && window.google.maps.places) {
+                                clearInterval(checkGoogleMaps);
+                                populateFormWithQuoteData(quote);
+                            }
+                        }, 100);
+                        // Timeout after 5 seconds
+                        setTimeout(() => {
+                            clearInterval(checkGoogleMaps);
+                            populateFormWithQuoteData(quote);
+                        }, 5000);
+                    }
                 } catch (error) {
                     console.error('Error parsing quote data:', error);
                 }
@@ -954,6 +1327,15 @@
             
             if (!quoteConfirmation || !quoteDetails) return;
             
+            // Store quote base price
+            if (quote.selectedService && quote.selectedService.cost) {
+                quoteBasePrice = parseFloat(quote.selectedService.cost) || 0;
+            } else if (quote.price) {
+                quoteBasePrice = parseFloat(quote.price) || 0;
+            } else if (quote.totalCost) {
+                quoteBasePrice = parseFloat(quote.totalCost) || 0;
+            }
+            
             let html = '';
             
             if (quote.selectedService) {
@@ -963,8 +1345,18 @@
                         <p class="text-xl font-bold text-gray-900">${quote.selectedService.type || 'N/A'}</p>
                     </div>
                     <div class="bg-white rounded-lg p-4 border border-gray-200">
-                        <h3 class="font-semibold text-gray-700 mb-2">Total Cost</h3>
-                        <p class="text-2xl font-bold text-green-600">R${(quote.selectedService.cost || 0).toFixed(2)}</p>
+                        <h3 class="font-semibold text-gray-700 mb-2">Quote Price</h3>
+                        <p class="text-2xl font-bold text-blue-600">R${quoteBasePrice.toFixed(2)}</p>
+                        <p class="text-sm text-gray-500 mt-1">Insurance can be added below</p>
+                    </div>
+                `;
+            } else if (quote.price || quote.totalCost) {
+                const price = quote.price || quote.totalCost || 0;
+                html += `
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-2">Quote Price</h3>
+                        <p class="text-2xl font-bold text-blue-600">R${parseFloat(price).toFixed(2)}</p>
+                        <p class="text-sm text-gray-500 mt-1">Insurance can be added below</p>
                     </div>
                 `;
             }
@@ -998,43 +1390,135 @@
 
         // Store quote data for payment
         let currentQuoteData = null;
+        let quoteBasePrice = 0; // Store the base price from quote
+
+        // Extract address components from Google Places
+        async function extractAddressComponents(placeId, addressType) {
+            if (!placeId || !window.google || !window.google.maps) {
+                return null;
+            }
+            
+            return new Promise((resolve) => {
+                const service = new google.maps.places.PlacesService(document.createElement('div'));
+                service.getDetails({ placeId: placeId }, (place, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+                        const components = {
+                            city: '',
+                            state: '',
+                            postalCode: '',
+                            country: 'South Africa'
+                        };
+                        
+                        // Extract address components
+                        place.address_components.forEach(component => {
+                            const types = component.types;
+                            if (types.includes('locality') || types.includes('sublocality')) {
+                                components.city = component.long_name;
+                            } else if (types.includes('administrative_area_level_1')) {
+                                components.state = component.long_name;
+                            } else if (types.includes('postal_code')) {
+                                components.postalCode = component.long_name;
+                            } else if (types.includes('country')) {
+                                components.country = component.long_name;
+                            }
+                        });
+                        
+                        // Populate form fields
+                        if (addressType === 'pickup') {
+                            if (components.city) {
+                                const cityField = document.getElementById('pickupCity');
+                                if (cityField) cityField.value = components.city;
+                            }
+                            if (components.state) {
+                                const stateField = document.getElementById('pickupState');
+                                if (stateField) stateField.value = components.state;
+                            }
+                            if (components.postalCode) {
+                                const postalField = document.getElementById('pickupPostalCode');
+                                if (postalField) postalField.value = components.postalCode;
+                            }
+                        } else if (addressType === 'delivery') {
+                            if (components.city) {
+                                const cityField = document.getElementById('deliveryCity');
+                                if (cityField) cityField.value = components.city;
+                            }
+                            if (components.state) {
+                                const stateField = document.getElementById('deliveryState');
+                                if (stateField) stateField.value = components.state;
+                            }
+                            if (components.postalCode) {
+                                const postalField = document.getElementById('deliveryPostalCode');
+                                if (postalField) postalField.value = components.postalCode;
+                            }
+                        }
+                        
+                        resolve(components);
+                    } else {
+                        resolve(null);
+                    }
+                });
+            });
+        }
 
         // Populate form with quote data
-        function populateFormWithQuoteData(quote) {
+        async function populateFormWithQuoteData(quote) {
             if (!quote) return;
             
             currentQuoteData = quote; // Store for payment
             
             // Populate addresses if available
             if (quote.pickupAddress) {
-                const pickupField = document.querySelector('input[name="pickupAddress"]');
+                const pickupField = document.querySelector('textarea[name="pickupAddress"]');
                 if (pickupField) pickupField.value = quote.pickupAddress;
+                
+                // Extract address components if Place ID is available
+                if (quote.pickupPlaceId) {
+                    await extractAddressComponents(quote.pickupPlaceId, 'pickup');
+                }
             }
             
             if (quote.deliveryAddress) {
-                const deliveryField = document.querySelector('input[name="deliveryAddress"]');
+                const deliveryField = document.querySelector('textarea[name="deliveryAddress"]');
                 if (deliveryField) deliveryField.value = quote.deliveryAddress;
+                
+                // Extract address components if Place ID is available
+                if (quote.deliveryPlaceId) {
+                    await extractAddressComponents(quote.deliveryPlaceId, 'delivery');
+                }
             }
             
             // Populate package details if available
             if (quote.weight) {
-                const weightField = document.querySelector('input[name="packageWeight"]');
+                const weightField = document.getElementById('packageWeight');
                 if (weightField) weightField.value = quote.weight;
             }
             
-            if (quote.dimensions) {
-                const dimensionsField = document.querySelector('input[name="packageDimensions"]');
+            // Format dimensions from length x width x height
+            if (quote.length && quote.width && quote.height) {
+                const dimensionsField = document.getElementById('packageDimensions');
+                if (dimensionsField) {
+                    dimensionsField.value = `${quote.length}x${quote.width}x${quote.height}`;
+                }
+            } else if (quote.dimensions) {
+                const dimensionsField = document.getElementById('packageDimensions');
                 if (dimensionsField) dimensionsField.value = quote.dimensions;
             }
             
             if (quote.description) {
-                const descriptionField = document.querySelector('input[name="packageDescription"]');
+                const descriptionField = document.querySelector('textarea[name="specialInstructions"]');
                 if (descriptionField) descriptionField.value = quote.description;
             }
             
             // Set service type if available
-            if (quote.selectedService && quote.selectedService.type) {
-                const serviceSelect = document.querySelector('select[name="serviceType"]');
+            if (quote.serviceType) {
+                const serviceSelect = document.getElementById('serviceType');
+                if (serviceSelect) {
+                    serviceSelect.value = quote.serviceType;
+                    // Trigger change event to update price
+                    serviceSelect.dispatchEvent(new Event('change'));
+                }
+            } else if (quote.selectedService && quote.selectedService.type) {
+                const serviceSelect = document.getElementById('serviceType');
                 if (serviceSelect) {
                     serviceSelect.value = quote.selectedService.type;
                     // Trigger change event to update price
@@ -1042,13 +1526,92 @@
                 }
             }
             
-            // Store quote data in sessionStorage for payment page
-            if (quote.selectedService && quote.selectedService.cost) {
-                sessionStorage.setItem('quoteTotalAmount', quote.selectedService.cost.toString());
-                sessionStorage.setItem('quoteServiceType', quote.selectedService.type);
+            // Auto-select service card if service type matches
+            if (quote.serviceType || (quote.selectedService && quote.selectedService.type)) {
+                const serviceType = quote.serviceType || quote.selectedService.type;
+                if (serviceType.includes('SAME_DAY') || serviceType.includes('OVERNIGHT') || 
+                    serviceType.includes('ECONOMY') || serviceType.includes('URGENT')) {
+                    selectService('courier', null);
+                } else if (serviceType.includes('FURNITURE') || serviceType.includes('MOVING') || 
+                          serviceType.includes('LOAD_TRANSPORT')) {
+                    selectService('moving', null);
+                } else if (serviceType.includes('EXPRESS')) {
+                    selectService('express', null);
+                }
             }
             
+            // Hide service selection section since service is already chosen
+            // Find section containing "Choose Your Service" heading
+            const allSections = document.querySelectorAll('section');
+            let serviceSelectionSection = null;
+            for (const section of allSections) {
+                const h2 = section.querySelector('h2');
+                if (h2 && h2.textContent.includes('Choose Your Service')) {
+                    serviceSelectionSection = section;
+                    break;
+                }
+            }
+            if (serviceSelectionSection) {
+                serviceSelectionSection.style.display = 'none';
+            }
+            
+            // Show booking form
+            const bookingForm = document.getElementById('bookingForm');
+            if (bookingForm) {
+                bookingForm.classList.remove('hidden');
+            }
+            
+            // Show notice that quote data was used
+            const quoteNotice = document.getElementById('quoteDataNotice');
+            if (quoteNotice) {
+                quoteNotice.classList.remove('hidden');
+            }
+            
+            // Mark pre-filled fields as read-only or add visual indicator
+            const preFilledFields = [
+                'pickupAddress', 'deliveryAddress', 'packageWeight', 
+                'packageDimensions', 'serviceType'
+            ];
+            preFilledFields.forEach(fieldName => {
+                const field = document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
+                if (field && field.value) {
+                    field.classList.add('bg-gray-50');
+                    field.setAttribute('readonly', 'readonly');
+                    // Add a small icon to indicate it's pre-filled
+                    const parent = field.parentElement;
+                    if (parent && !parent.querySelector('.pre-filled-badge')) {
+                        const badge = document.createElement('span');
+                        badge.className = 'pre-filled-badge text-xs text-green-600 ml-2';
+                        badge.innerHTML = '<i class="fas fa-check-circle"></i> From quote';
+                        parent.appendChild(badge);
+                    }
+                }
+            });
+            
+            // Store quote base price for insurance calculation
+            if (quote.selectedService && quote.selectedService.cost) {
+                quoteBasePrice = parseFloat(quote.selectedService.cost) || 0;
+                sessionStorage.setItem('quoteTotalAmount', quote.selectedService.cost.toString());
+                sessionStorage.setItem('quoteServiceType', quote.selectedService.type);
+            } else if (quote.price) {
+                quoteBasePrice = parseFloat(quote.price) || 0;
+                sessionStorage.setItem('quoteTotalAmount', quote.price.toString());
+            } else if (quote.totalCost) {
+                quoteBasePrice = parseFloat(quote.totalCost) || 0;
+                sessionStorage.setItem('quoteTotalAmount', quote.totalCost.toString());
+            }
+            
+            // Show price estimate section
+            const priceEstimate = document.getElementById('priceEstimate');
+            if (priceEstimate) {
+                priceEstimate.classList.remove('hidden');
+            }
+            
+            // Update price display with quote price
+            updateTotalPrice();
+            
             console.log('Form populated with quote data:', quote);
+            console.log('Quote base price set to:', quoteBasePrice);
         }
 
         // Collect form data
@@ -1056,11 +1619,20 @@
             const form = document.getElementById('serviceForm');
             const formData = new FormData(form);
             
+            // Use logged-in user's email if available, otherwise use form data or fallback
+            let customerEmail = formData.get('pickupEmail');
+            if (!customerEmail && loggedInUser && loggedInUser.email) {
+                customerEmail = loggedInUser.email;
+            }
+            if (!customerEmail) {
+                customerEmail = 'customer@example.com'; // Fallback only if no user data
+            }
+            
             return {
                 serviceType: formData.get('serviceType'),
-                customerName: formData.get('pickupName'),
-                customerEmail: formData.get('pickupEmail') || 'customer@example.com',
-                customerPhone: formData.get('pickupPhone'),
+                customerName: formData.get('pickupName') || (loggedInUser ? loggedInUser.name : ''),
+                customerEmail: customerEmail,
+                customerPhone: formData.get('pickupPhone') || (loggedInUser ? loggedInUser.phone : ''),
                 
                 // Pickup details
                 pickupAddress: formData.get('pickupAddress'),
@@ -1083,8 +1655,17 @@
                 dimensions: formData.get('packageDimensions'),
                 description: formData.get('packageDescription') || 'Package delivery',
                 
+                // Insurance selection - convert to boolean
+                insurance: (formData.get('insurance') && formData.get('insurance') !== 'none') || false,
+                insuranceCost: getInsuranceCost(formData.get('insurance') || 'none'),
+                insuranceFee: (formData.get('insurance') && formData.get('insurance') !== 'none') 
+                    ? getInsuranceCost(formData.get('insurance') || 'none')
+                    : null,
+                
+                // Use quote base price if available
+                basePrice: quoteBasePrice > 0 ? quoteBasePrice : null,
+                
                 // Additional services
-                insurance: formData.get('insurance') === 'on',
                 packing: formData.get('packing') === 'on',
                 saturdayDelivery: formData.get('saturdayDelivery') === 'on',
                 signatureRequired: formData.get('signatureRequired') === 'on',

@@ -185,69 +185,99 @@
                             // Load profile data on page load
                             document.addEventListener('DOMContentLoaded', function() {
                                 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                                
+                                // Prepare headers - use Bearer token if available, otherwise rely on session
+                                const headers = {
+                                    'Content-Type': 'application/json'
+                                };
                                 if (token) {
-                                    fetch('/api/customer/profile', {
-                                        headers: {
-                                            'Authorization': 'Bearer ' + token
+                                    headers['Authorization'] = 'Bearer ' + token;
+                                }
+                                
+                                // Load profile data
+                                fetch('/api/customer/profile', {
+                                    method: 'GET',
+                                    headers: headers,
+                                    credentials: 'include' // Include session cookies
+                                })
+                                .then(response => {
+                                    if (response.ok) {
+                                        return response.json();
+                                    }
+                                    if (response.status === 401) {
+                                        throw new Error('Please login to view your profile');
+                                    }
+                                    return response.json().then(data => {
+                                        throw new Error(data.error || 'Failed to load profile');
+                                    });
+                                })
+                                .then(data => {
+                                    // Populate form fields with actual data
+                                    if (data.firstName) document.getElementById('firstName').value = data.firstName || '';
+                                    if (data.lastName) document.getElementById('lastName').value = data.lastName || '';
+                                    if (data.phone) document.getElementById('phone').value = data.phone || '';
+                                    if (data.address) document.getElementById('address').value = data.address || '';
+                                    if (data.city) document.getElementById('city').value = data.city || '';
+                                    if (data.state) document.getElementById('state').value = data.state || '';
+                                    if (data.zipCode) document.getElementById('zipCode').value = data.zipCode || '';
+                                    if (data.country) document.getElementById('country').value = data.country || '';
+                                })
+                                .catch(error => {
+                                    console.error('Error loading profile:', error);
+                                    alert('Failed to load profile: ' + error.message);
+                                });
+                                
+                                // Handle form submission
+                                const profileForm = document.getElementById('profileForm');
+                                if (profileForm) {
+                                    profileForm.addEventListener('submit', function(e) {
+                                        e.preventDefault();
+                                        const formData = {
+                                            firstName: document.getElementById('firstName').value,
+                                            lastName: document.getElementById('lastName').value,
+                                            phone: document.getElementById('phone').value,
+                                            address: document.getElementById('address').value,
+                                            city: document.getElementById('city').value,
+                                            state: document.getElementById('state').value,
+                                            zipCode: document.getElementById('zipCode').value,
+                                            country: document.getElementById('country').value
+                                        };
+                                        
+                                        // Prepare headers for update
+                                        const updateHeaders = {
+                                            'Content-Type': 'application/json'
+                                        };
+                                        if (token) {
+                                            updateHeaders['Authorization'] = 'Bearer ' + token;
                                         }
-                                    })
-                                    .then(response => {
-                                        if (response.ok) {
-                                            return response.json();
-                                        }
-                                        throw new Error('Failed to load profile');
-                                    })
-                                    .then(data => {
-                                        // Populate form fields with actual data
-                                        if (data.firstName) document.getElementById('firstName').value = data.firstName;
-                                        if (data.lastName) document.getElementById('lastName').value = data.lastName;
-                                        if (data.phone) document.getElementById('phone').value = data.phone;
-                                        if (data.address) document.getElementById('address').value = data.address;
-                                        if (data.city) document.getElementById('city').value = data.city;
-                                        if (data.state) document.getElementById('state').value = data.state;
-                                        if (data.zipCode) document.getElementById('zipCode').value = data.zipCode;
-                                        if (data.country) document.getElementById('country').value = data.country;
-                                    })
-                                    .catch(error => {
-                                        console.error('Error loading profile:', error);
+                                        
+                                        fetch('/api/customer/profile', {
+                                            method: 'PUT',
+                                            headers: updateHeaders,
+                                            credentials: 'include', // Include session cookies
+                                            body: JSON.stringify(formData)
+                                        })
+                                        .then(response => {
+                                            if (response.ok) {
+                                                return response.json();
+                                            }
+                                            return response.json().then(data => {
+                                                throw new Error(data.error || 'Failed to update profile');
+                                            });
+                                        })
+                                        .then(data => {
+                                            alert('Profile updated successfully!');
+                                            location.reload();
+                                        })
+                                        .catch(error => {
+                                            console.error('Error updating profile:', error);
+                                            alert('Error updating profile: ' + error.message);
+                                        });
                                     });
                                 }
                                 
-                                // Handle form submission
-                                document.getElementById('profileForm').addEventListener('submit', function(e) {
-                                    e.preventDefault();
-                                    const formData = {
-                                        firstName: document.getElementById('firstName').value,
-                                        lastName: document.getElementById('lastName').value,
-                                        phone: document.getElementById('phone').value,
-                                        address: document.getElementById('address').value,
-                                        city: document.getElementById('city').value,
-                                        state: document.getElementById('state').value,
-                                        zipCode: document.getElementById('zipCode').value,
-                                        country: document.getElementById('country').value
-                                    };
-                                    
-                                    fetch('/api/customer/profile', {
-                                        method: 'PUT',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Authorization': 'Bearer ' + token
-                                        },
-                                        body: JSON.stringify(formData)
-                                    })
-                                    .then(response => {
-                                        if (response.ok) {
-                                            alert('Profile updated successfully!');
-                                            location.reload();
-                                        } else {
-                                            alert('Failed to update profile');
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error updating profile:', error);
-                                        alert('Error updating profile');
-                                    });
-                                });
+                                // Load saved addresses
+                                loadSavedAddresses();
                             });
                         </script>
                     </div>
@@ -460,6 +490,238 @@
             const mobileMenu = document.getElementById('mobileMenu');
             mobileMenu.classList.toggle('hidden');
         });
+        
+        // Address management functions
+        let editingAddressId = null;
+        
+        function loadSavedAddresses() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            
+            // Prepare headers - use Bearer token if available, otherwise rely on session
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            
+            fetch('/api/customer/profile/addresses', {
+                method: 'GET',
+                headers: headers,
+                credentials: 'include' // Include session cookies
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                if (response.status === 401) {
+                    throw new Error('Please login to view saved addresses');
+                }
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Failed to load addresses');
+                });
+            })
+            .then(addresses => {
+                const container = document.getElementById('savedAddressesList');
+                if (addresses.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-500 py-8">
+                            <i class="fas fa-map-marker-alt text-4xl mb-4"></i>
+                            <p>No saved addresses yet. Add your first address below.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = addresses.map(addr => `
+                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg ${addr.isDefault ? 'bg-blue-50 border-blue-300' : ''}">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-1">
+                                <h4 class="font-semibold text-gray-900">${addr.label || 'Address'}</h4>
+                                ${addr.isDefault ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Default</span>' : ''}
+                            </div>
+                            <p class="text-sm text-gray-600">${addr.fullAddress || (addr.addressLine1 + ', ' + addr.city + ', ' + addr.state + ' ' + addr.zipCode)}</p>
+                            ${addr.contactName ? `<p class="text-xs text-gray-500 mt-1">Contact: ${addr.contactName}${addr.contactPhone ? ' - ' + addr.contactPhone : ''}</p>` : ''}
+                        </div>
+                        <div class="flex space-x-2 ml-4">
+                            <button onclick="editAddress(${addr.id})" class="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteAddress(${addr.id})" class="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            })
+            .catch(error => {
+                console.error('Error loading addresses:', error);
+                document.getElementById('savedAddressesList').innerHTML = `
+                    <div class="text-center text-red-500 py-4">
+                        <p>Failed to load addresses: ${error.message}</p>
+                        <button onclick="loadSavedAddresses()" class="mt-2 text-blue-600 hover:text-blue-800 underline">Retry</button>
+                    </div>
+                `;
+            });
+        }
+        
+        function showAddAddressModal(addressId = null) {
+            editingAddressId = addressId;
+            const modal = document.getElementById('addressModal');
+            const form = document.getElementById('addressForm');
+            const title = document.getElementById('addressModalTitle');
+            
+            if (addressId) {
+                title.textContent = 'Edit Address';
+                loadAddressForEdit(addressId);
+            } else {
+                title.textContent = 'Add New Address';
+                form.reset();
+                document.getElementById('addressId').value = '';
+            }
+            
+            modal.classList.remove('hidden');
+        }
+        
+        function hideAddAddressModal() {
+            document.getElementById('addressModal').classList.add('hidden');
+            document.getElementById('addressForm').reset();
+            editingAddressId = null;
+        }
+        
+        function loadAddressForEdit(addressId) {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            
+            fetch('/api/customer/profile/addresses', {
+                method: 'GET',
+                headers: headers,
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(addresses => {
+                const addr = addresses.find(a => a.id === addressId);
+                if (addr) {
+                    document.getElementById('addressId').value = addr.id;
+                    document.getElementById('addressLabel').value = addr.label || '';
+                    document.getElementById('addressLine1').value = addr.addressLine1 || '';
+                    document.getElementById('addressLine2').value = addr.addressLine2 || '';
+                    document.getElementById('addressCity').value = addr.city || '';
+                    document.getElementById('addressState').value = addr.state || '';
+                    document.getElementById('addressZipCode').value = addr.zipCode || '';
+                    document.getElementById('addressCountry').value = addr.country || 'South Africa';
+                    document.getElementById('addressContactName').value = addr.contactName || '';
+                    document.getElementById('addressContactPhone').value = addr.contactPhone || '';
+                    document.getElementById('addressIsDefault').checked = addr.isDefault || false;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading address:', error);
+                alert('Failed to load address details');
+            });
+        }
+        
+        function editAddress(addressId) {
+            showAddAddressModal(addressId);
+        }
+        
+        function deleteAddress(addressId) {
+            if (!confirm('Are you sure you want to delete this address?')) {
+                return;
+            }
+            
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            
+            fetch(`/api/customer/profile/addresses/${addressId}`, {
+                method: 'DELETE',
+                headers: headers,
+                credentials: 'include'
+            })
+            .then(response => {
+                if (response.ok) {
+                    loadSavedAddresses();
+                    alert('Address deleted successfully');
+                } else {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Failed to delete address');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting address:', error);
+                alert('Error deleting address: ' + error.message);
+            });
+        }
+        
+        // Handle address form submission
+        const addressForm = document.getElementById('addressForm');
+        if (addressForm) {
+            addressForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                
+                const formData = {
+                    label: document.getElementById('addressLabel').value,
+                    addressLine1: document.getElementById('addressLine1').value,
+                    addressLine2: document.getElementById('addressLine2').value,
+                    city: document.getElementById('addressCity').value,
+                    state: document.getElementById('addressState').value,
+                    zipCode: document.getElementById('addressZipCode').value,
+                    country: document.getElementById('addressCountry').value,
+                    contactName: document.getElementById('addressContactName').value,
+                    contactPhone: document.getElementById('addressContactPhone').value,
+                    isDefault: document.getElementById('addressIsDefault').checked
+                };
+                
+                const addressId = document.getElementById('addressId').value;
+                const url = addressId ? 
+                    `/api/customer/profile/addresses/${addressId}` : 
+                    '/api/customer/profile/addresses';
+                const method = addressId ? 'PUT' : 'POST';
+                
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                
+                fetch(url, {
+                    method: method,
+                    headers: headers,
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Failed to save address');
+                    });
+                })
+                .then(data => {
+                    hideAddAddressModal();
+                    loadSavedAddresses();
+                    alert('Address saved successfully');
+                })
+                .catch(error => {
+                    console.error('Error saving address:', error);
+                    alert('Error saving address: ' + error.message);
+                });
+            });
+        }
+        
+        // Load addresses on page load (already handled in the profile loading script above)
+        // This will be called when the page loads
     </script>
 </body>
 </html>

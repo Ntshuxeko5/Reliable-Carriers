@@ -967,9 +967,42 @@
             // Implement package display update logic here
         }
 
+        // Check authentication and load user data
+        async function checkAuthAndLoadUser() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) return;
+            
+            try {
+                const response = await fetch('/api/customer/profile', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    // Update page with user data if Thymeleaf didn't load it
+                    if (userData && !document.querySelector('[th\\:if="${isAuthenticated}"]')) {
+                        const welcomeElement = document.querySelector('h1');
+                        if (welcomeElement && !welcomeElement.textContent.includes(userData.firstName)) {
+                            const userNameSpan = document.createElement('span');
+                            userNameSpan.className = 'text-blue-600';
+                            userNameSpan.textContent = ' ' + userData.firstName;
+                            welcomeElement.insertBefore(userNameSpan, welcomeElement.childNodes[1]);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+        
         // Initialize real-time tracking when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeRealtimeTracking();
+            checkAuthAndLoadUser();
         });
 
         // Cleanup on page unload

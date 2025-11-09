@@ -10,6 +10,7 @@ import com.reliablecarriers.Reliable.Carriers.repository.ShipmentRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.ShipmentTrackingRepository;
 import com.reliablecarriers.Reliable.Carriers.repository.VehicleRepository;
 import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
+import com.reliablecarriers.Reliable.Carriers.service.EmailService;
 import com.reliablecarriers.Reliable.Carriers.service.GoogleMapsService;
 import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
 import com.reliablecarriers.Reliable.Carriers.service.PricingService;
@@ -33,6 +34,7 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
     private final NotificationService notificationService;
     private final PricingService pricingService;
     private final GoogleMapsService googleMapsService;
+    private final EmailService emailService;
     
     // In-memory storage for quote requests (for backward compatibility)
     private final Map<String, CustomerPackageRequest> quoteRequests = new ConcurrentHashMap<>();
@@ -45,6 +47,7 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
                                     UserService userService,
                                     NotificationService notificationService,
                                     PricingService pricingService,
+                                    EmailService emailService,
                                     @Autowired(required = false) GoogleMapsService googleMapsService) {
         this.shipmentRepository = shipmentRepository;
         this.trackingRepository = trackingRepository;
@@ -53,6 +56,7 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
         this.userService = userService;
         this.notificationService = notificationService;
         this.pricingService = pricingService;
+        this.emailService = emailService;
         this.googleMapsService = googleMapsService;
     }
 
@@ -641,6 +645,138 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
     @Override
     public List<Quote> getSavedQuotes(String email) {
         return quoteRepository.findByCustomerEmailAndIsActiveTrueOrderByCreatedAtDesc(email);
+    }
+    
+    @Override
+    public Quote saveQuoteFromPage(String customerEmail, Map<String, Object> quoteData) {
+        try {
+            // Generate unique quote ID
+            String quoteId = "Q" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            
+            // Extract quote data
+            String pickupAddress = (String) quoteData.getOrDefault("pickupAddress", "");
+            String deliveryAddress = (String) quoteData.getOrDefault("deliveryAddress", "");
+            Double weight = quoteData.get("weight") != null ? Double.parseDouble(quoteData.get("weight").toString()) : 0.0;
+            String dimensions = quoteData.get("length") != null && quoteData.get("width") != null && quoteData.get("height") != null
+                ? quoteData.get("length") + "×" + quoteData.get("width") + "×" + quoteData.get("height") + " cm"
+                : (String) quoteData.getOrDefault("dimensions", "");
+            String serviceTypeStr = (String) quoteData.getOrDefault("serviceType", "SAME_DAY");
+            Double price = quoteData.get("price") != null ? Double.parseDouble(quoteData.get("price").toString()) : 0.0;
+            Double distance = quoteData.get("distance") != null ? Double.parseDouble(quoteData.get("distance").toString()) : 0.0;
+            
+            // Map service type string to enum
+            ServiceType serviceType;
+            try {
+                serviceType = ServiceType.valueOf(serviceTypeStr);
+            } catch (IllegalArgumentException e) {
+                // Map common service names to enum values
+                if (serviceTypeStr.equalsIgnoreCase("standard") || serviceTypeStr.equalsIgnoreCase("same-day")) {
+                    serviceType = ServiceType.SAME_DAY;
+                } else if (serviceTypeStr.equalsIgnoreCase("express") || serviceTypeStr.equalsIgnoreCase("overnight")) {
+                    serviceType = ServiceType.OVERNIGHT;
+                } else if (serviceTypeStr.equalsIgnoreCase("economy")) {
+                    serviceType = ServiceType.ECONOMY;
+                } else {
+                    serviceType = ServiceType.SAME_DAY; // Default
+                }
+            }
+            
+            // Create and save quote entity
+            Quote quote = new Quote();
+            quote.setQuoteId(quoteId);
+            quote.setCustomerEmail(customerEmail);
+            quote.setPickupAddress(pickupAddress);
+            quote.setDeliveryAddress(deliveryAddress);
+            quote.setWeight(weight);
+            quote.setDimensions(dimensions);
+            quote.setTotalCost(BigDecimal.valueOf(price));
+            quote.setServiceType(serviceType);
+            quote.setDistanceKm(distance);
+            quote.setIsActive(true);
+            quote.setCreatedAt(new Date());
+            
+            // Calculate expiry date (30 days from now)
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DAY_OF_MONTH, 30);
+            quote.setExpiryDate(cal.getTime());
+            
+            // Set estimated delivery time based on service type
+            String estimatedDeliveryTime = getEstimatedDeliveryTimeForService(serviceType);
+            quote.setEstimatedDeliveryTime(estimatedDeliveryTime);
+            
+            // Calculate estimated delivery date
+            Calendar deliveryCal = Calendar.getInstance();
+            switch (serviceType) {
+                case SAME_DAY:
+                    deliveryCal.add(Calendar.DAY_OF_MONTH, 1);
+                    break;
+                case OVERNIGHT:
+                    deliveryCal.add(Calendar.DAY_OF_MONTH, 2);
+                    break;
+                case ECONOMY:
+                    deliveryCal.add(Calendar.DAY_OF_MONTH, 4);
+                    break;
+                default:
+                    deliveryCal.add(Calendar.DAY_OF_MONTH, 2);
+            }
+            quote.setEstimatedDeliveryDate(deliveryCal.getTime());
+            
+            // Save to database
+            Quote savedQuote = quoteRepository.save(quote);
+            quoteRepository.flush(); // Ensure it's immediately available
+            
+            System.out.println("Quote saved successfully: " + quoteId + " for customer: " + customerEmail);
+            
+            // Get customer name for email
+            String customerName = "Customer";
+            try {
+                User customer = userService.getUserByEmail(customerEmail);
+                if (customer != null && customer.getFirstName() != null) {
+                    customerName = customer.getFirstName() + (customer.getLastName() != null ? " " + customer.getLastName() : "");
+                }
+            } catch (Exception e) {
+                System.err.println("Could not fetch customer name for email: " + e.getMessage());
+            }
+            
+            // Send confirmation email
+            try {
+                java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("dd MMM yyyy");
+                emailService.sendQuoteSavedEmail(
+                    customerEmail,
+                    customerName,
+                    quoteId,
+                    serviceType.name(),
+                    "R " + String.format("%.2f", price),
+                    pickupAddress,
+                    deliveryAddress,
+                    estimatedDeliveryTime,
+                    dateFormat.format(quote.getExpiryDate())
+                );
+                System.out.println("Quote saved email sent to: " + customerEmail);
+            } catch (Exception e) {
+                System.err.println("Failed to send quote saved email: " + e.getMessage());
+                // Don't fail the save operation if email fails
+            }
+            
+            return savedQuote;
+        } catch (Exception e) {
+            System.err.println("Error saving quote: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to save quote: " + e.getMessage(), e);
+        }
+    }
+    
+    private String getEstimatedDeliveryTimeForService(ServiceType serviceType) {
+        switch (serviceType) {
+            case SAME_DAY:
+                return "Same Day Delivery";
+            case OVERNIGHT:
+                return "1-2 Business Days";
+            case ECONOMY:
+                return "4-7 Business Days";
+            default:
+                return "2-3 Business Days";
+        }
     }
     
     private double estimateDistanceKm(CustomerPackageRequest request) {

@@ -11,8 +11,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import org.springframework.context.annotation.Primary;
 
 @Service
+@Primary
 public class SmsServiceImpl implements SmsService {
 
     @Value("${sms.provider:smsportal}")

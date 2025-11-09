@@ -113,9 +113,11 @@ body.dark-mode {
     border-color: #475569 !important;
 }
 
-/* Navigation */
-.dark-mode nav {
-    background: linear-gradient(to right, #1e40af, #1e3a8a) !important;
+/* Navigation - Keep blue in both light and dark mode */
+.dark-mode nav,
+.dark-mode .nav-header,
+.dark-mode header.nav-header {
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;
 }
 
 /* Footer */

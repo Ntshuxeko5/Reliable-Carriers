@@ -262,4 +262,21 @@ public class EmailServiceImpl implements EmailService {
         
         sendHtmlEmail(to, "Document Expiring Soon - " + documentType, "email/document-expiry-warning", variables);
     }
+    
+    @Override
+    public void sendQuoteSavedEmail(String to, String customerName, String quoteId, String serviceType, 
+                                   String totalCost, String pickupAddress, String deliveryAddress, 
+                                   String estimatedDelivery, String expiryDate) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("customerName", customerName);
+        variables.put("quoteId", quoteId);
+        variables.put("serviceType", serviceType);
+        variables.put("totalCost", totalCost);
+        variables.put("pickupAddress", pickupAddress);
+        variables.put("deliveryAddress", deliveryAddress);
+        variables.put("estimatedDelivery", estimatedDelivery);
+        variables.put("expiryDate", expiryDate);
+        
+        sendHtmlEmail(to, "Quote Saved - " + quoteId, "email/quote-saved", variables);
+    }
 }

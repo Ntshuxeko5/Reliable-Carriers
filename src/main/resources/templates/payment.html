@@ -296,15 +296,78 @@
             });
         }
 
-        // Load quote data from URL parameters or session
-        function loadQuoteData() {
+        // Store booking and payment data
+        let currentBooking = null;
+        let paymentInitialized = false;
+
+        // Load booking data from URL parameters or session
+        async function loadQuoteData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingId = urlParams.get('bookingId') || sessionStorage.getItem('bookingId');
+            const paymentReference = urlParams.get('reference') || sessionStorage.getItem('paymentReference');
+            
+            if (bookingId) {
+                try {
+                    // Load booking details from API
+                    const response = await fetch(`/api/booking/${bookingId}`, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+                    
+                    if (response.ok) {
+                        const booking = await response.json();
+                        currentBooking = booking;
+                        
+                        // Update display with booking data
+                        if (booking.serviceType) {
+                            document.getElementById('serviceType').textContent = booking.serviceType;
+                        }
+                        if (booking.weight) {
+                            document.getElementById('weight').textContent = booking.weight + ' kg';
+                        }
+                        if (booking.totalAmount) {
+                            const amount = parseFloat(booking.totalAmount);
+                            document.getElementById('totalAmount').textContent = 'R' + amount.toFixed(2);
+                            document.getElementById('payButtonText').textContent = 'Pay R' + amount.toFixed(2) + ' Securely';
+                        }
+                        if (booking.pickupAddress) {
+                            document.getElementById('pickupAddressDisplay').textContent = booking.pickupAddress;
+                        }
+                        if (booking.deliveryAddress) {
+                            document.getElementById('deliveryAddressDisplay').textContent = booking.deliveryAddress;
+                        }
+                        
+                        // Initialize payment if not already done
+                        if (!paymentInitialized && paymentReference) {
+                            // Payment already initialized, just show the button
+                            paymentInitialized = true;
+                        } else if (!paymentInitialized) {
+                            // Initialize payment
+                            await initializeBookingPayment(bookingId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading booking:', error);
+                    // Fallback to URL parameters
+                    loadFromUrlParams();
+                }
+            } else {
+                // Fallback to URL parameters or sessionStorage
+                loadFromUrlParams();
+            }
+        }
+
+        // Load data from URL parameters (fallback)
+        function loadFromUrlParams() {
             const urlParams = new URLSearchParams(window.location.search);
             
             // Load service details
-            const serviceType = urlParams.get('serviceType') || 'Express Delivery';
+            const serviceType = urlParams.get('serviceType') || sessionStorage.getItem('quoteServiceType') || 'Express Delivery';
             const distance = urlParams.get('distance') || '25';
             const weight = urlParams.get('weight') || '2.5';
-            const totalAmount = urlParams.get('totalAmount') || '0';
+            const totalAmount = urlParams.get('totalAmount') || sessionStorage.getItem('quoteTotalAmount') || '0';
             
             // Update display
             document.getElementById('serviceType').textContent = serviceType;
@@ -325,63 +388,156 @@
             }
         }
 
-        // Paystack payment integration
-        function initializePaystack() {
-            const paystackBtn = document.getElementById('paystackBtn');
-            
-            paystackBtn.addEventListener('click', function() {
-                const customerName = document.getElementById('hiddenCustomerName').value || 'Guest User';
-                const customerEmail = document.getElementById('hiddenCustomerEmail').value || 'guest@example.com';
-                const totalAmount = document.getElementById('totalAmount').textContent.replace('R', '').replace(',', '');
+        // Initialize payment for booking
+        async function initializeBookingPayment(bookingId) {
+            try {
+                const response = await fetch(`/api/booking/${bookingId}/payment/initialize`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
                 
-                // Validate required fields
-                if (!pickupCoordinates || !deliveryCoordinates) {
-                    alert('Please select both pickup and delivery addresses using the Google Maps suggestions.');
-                    return;
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.payment) {
+                        // Store payment reference
+                        sessionStorage.setItem('paymentReference', data.payment.data?.reference || '');
+                        paymentInitialized = true;
+                    }
+                }
+            } catch (error) {
+                console.error('Error initializing payment:', error);
+            }
+        }
+
+        // Get Paystack public key from backend
+        let paystackPublicKey = null;
+        async function getPaystackPublicKey() {
+            try {
+                const response = await fetch('/api/paystack/public-key', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    paystackPublicKey = data.publicKey || data.key;
+                } else {
+                    // Fallback to default test key
+                    paystackPublicKey = 'pk_test_f0b259230b0894830add4ffac1d8075fa2e69286';
+                }
+            } catch (error) {
+                console.error('Error getting Paystack key:', error);
+                // Fallback to default test key
+                paystackPublicKey = 'pk_test_f0b259230b0894830add4ffac1d8075fa2e69286';
+            }
+        }
+
+        // Paystack payment integration
+        async function initializePaystack() {
+            // Get Paystack public key first
+            if (!paystackPublicKey) {
+                await getPaystackPublicKey();
+            }
+            
+            const paystackBtn = document.getElementById('paystackBtn');
+            if (!paystackBtn) return;
+            
+            paystackBtn.addEventListener('click', async function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const bookingId = urlParams.get('bookingId') || sessionStorage.getItem('bookingId');
+                const paymentReference = sessionStorage.getItem('paymentReference');
+                
+                // Get customer email - prefer from booking, then hidden field, then logged-in user
+                let customerEmail = 'guest@example.com';
+                if (currentBooking && currentBooking.customerEmail) {
+                    customerEmail = currentBooking.customerEmail;
+                } else {
+                    const hiddenEmail = document.getElementById('hiddenCustomerEmail');
+                    if (hiddenEmail && hiddenEmail.value) {
+                        customerEmail = hiddenEmail.value;
+                    } else {
+                        // Try to get from logged-in user
+                        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                        if (token) {
+                            try {
+                                const userResponse = await fetch('/api/customer/profile', {
+                                    headers: {
+                                        'Authorization': 'Bearer ' + token,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    credentials: 'include'
+                                });
+                                if (userResponse.ok) {
+                                    const userData = await userResponse.json();
+                                    if (userData.email) customerEmail = userData.email;
+                                }
+                            } catch (e) {
+                                console.error('Error getting user email:', e);
+                            }
+                        }
+                    }
+                }
+                
+                const totalAmount = document.getElementById('totalAmount').textContent.replace('R', '').replace(',', '').trim();
+                const amountInKobo = Math.round(parseFloat(totalAmount) * 100);
+                
+                // If we have a booking, use the payment reference from booking initialization
+                let paymentRef = paymentReference;
+                if (!paymentRef && bookingId) {
+                    // Initialize payment if not already done
+                    try {
+                        const initResponse = await fetch(`/api/booking/${bookingId}/payment/initialize`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            credentials: 'include'
+                        });
+                        if (initResponse.ok) {
+                            const initData = await initResponse.json();
+                            if (initData.success && initData.payment && initData.payment.data) {
+                                paymentRef = initData.payment.data.reference;
+                                sessionStorage.setItem('paymentReference', paymentRef);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error initializing payment:', error);
+                    }
+                }
+                
+                // Fallback reference if none available
+                if (!paymentRef) {
+                    paymentRef = 'RC_' + Date.now();
                 }
                 
                 const handler = PaystackPop.setup({
-                    key: 'pk_test_your_paystack_public_key', // Replace with your actual Paystack public key
+                    key: paystackPublicKey,
                     email: customerEmail,
-                    amount: Math.round(parseFloat(totalAmount) * 100), // Convert to kobo
+                    amount: amountInKobo,
                     currency: 'ZAR',
-                    ref: 'RC_' + Date.now(),
+                    ref: paymentRef,
                     metadata: {
+                        booking_id: bookingId || '',
                         custom_fields: [
                             {
-                                display_name: "Customer Name",
-                                variable_name: "customer_name",
-                                value: customerName
-                            },
-                            {
-                                display_name: "Pickup Address",
-                                variable_name: "pickup_address",
-                                value: pickupCoordinates.formattedAddress
-                            },
-                            {
-                                display_name: "Delivery Address",
-                                variable_name: "delivery_address",
-                                value: deliveryCoordinates.formattedAddress
-                            },
-                            {
-                                display_name: "Pickup Coordinates",
-                                variable_name: "pickup_coordinates",
-                                value: pickupCoordinates.lat + ',' + pickupCoordinates.lng
-                            },
-                            {
-                                display_name: "Delivery Coordinates",
-                                variable_name: "delivery_coordinates",
-                                value: deliveryCoordinates.lat + ',' + deliveryCoordinates.lng
+                                display_name: "Booking ID",
+                                variable_name: "booking_id",
+                                value: bookingId || 'N/A'
                             }
                         ]
                     },
                     callback: function(response) {
-                        // Payment successful
-                        processPaymentSuccess(response);
+                        // Payment successful - verify with backend
+                        verifyAndProcessPayment(response, bookingId);
                     },
                     onClose: function() {
                         // Payment cancelled
-                        console.log('Payment cancelled');
+                        console.log('Payment cancelled by user');
+                        showAlert('Payment was cancelled. You can try again when ready.', 'info');
                     }
                 });
                 
@@ -389,55 +545,77 @@
             });
         }
 
-        // Process successful payment
-        function processPaymentSuccess(response) {
-            // Collect all payment data
-            const paymentData = {
-                reference: response.reference,
-                customerName: document.getElementById('hiddenCustomerName').value,
-                customerEmail: document.getElementById('hiddenCustomerEmail').value,
-                customerPhone: document.getElementById('hiddenCustomerPhone').value,
-                serviceType: document.getElementById('serviceType').textContent,
-                distance: document.getElementById('distance').textContent,
-                weight: document.getElementById('weight').textContent,
-                totalAmount: document.getElementById('totalAmount').textContent,
-                pickupAddress: pickupCoordinates.formattedAddress,
-                pickupLatitude: pickupCoordinates.lat,
-                pickupLongitude: pickupCoordinates.lng,
-                pickupPlaceId: pickupCoordinates.placeId,
-                deliveryAddress: deliveryCoordinates.formattedAddress,
-                deliveryLatitude: deliveryCoordinates.lat,
-                deliveryLongitude: deliveryCoordinates.lng,
-                deliveryPlaceId: deliveryCoordinates.placeId
-            };
-            
-            // Send payment data to backend
-            fetch('/api/payment/process', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(paymentData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Redirect to success page with booking details
-                    window.location.href = '/payment-success?bookingId=' + data.bookingId + '&reference=' + response.reference;
-                } else {
-                    alert('Payment processed but booking creation failed. Please contact support.');
+        // Verify payment and process
+        async function verifyAndProcessPayment(response, bookingId) {
+            try {
+                showAlert('Verifying payment...', 'info');
+                
+                if (bookingId) {
+                    // Verify payment for booking
+                    const verifyResponse = await fetch(`/api/booking/${bookingId}/payment/verify?reference=${response.reference}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+                    
+                    if (verifyResponse.ok) {
+                        const verifyData = await verifyResponse.json();
+                        if (verifyData.success) {
+                            // Redirect to payment success page
+                            window.location.href = `/payment-success?bookingId=${bookingId}&reference=${response.reference}`;
+                            return;
+                        }
+                    }
                 }
-            })
-            .catch(error => {
-                console.error('Error processing payment:', error);
-                alert('Payment successful but there was an error processing your booking. Please contact support.');
-            });
+                
+                // Fallback: use Paystack verify endpoint
+                const verifyResponse = await fetch(`/api/paystack/verify?reference=${response.reference}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (verifyResponse.ok) {
+                    const verifyData = await verifyResponse.json();
+                    if (verifyData.status) {
+                        // Redirect to payment success page
+                        window.location.href = `/payment-success?reference=${response.reference}`;
+                    } else {
+                        showAlert('Payment verification failed. Please contact support.', 'error');
+                    }
+                } else {
+                    showAlert('Payment successful but verification failed. Please contact support with reference: ' + response.reference, 'error');
+                }
+            } catch (error) {
+                console.error('Error verifying payment:', error);
+                showAlert('Payment successful but verification failed. Please contact support with reference: ' + response.reference, 'error');
+            }
+        }
+
+        // Show alert function
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg ${
+                type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+            } text-white`;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 5000);
         }
 
         // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            loadQuoteData();
-            initializePaystack();
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Get Paystack public key first
+            await getPaystackPublicKey();
+            
+            // Load booking/quote data
+            await loadQuoteData();
+            
+            // Initialize Paystack payment handler
+            await initializePaystack();
         });
     </script>
 </body>

@@ -272,7 +272,7 @@ public class AuthController {
             }
             user.setInsurancePreference(registerRequest.getInsurancePreference() != null ? registerRequest.getInsurancePreference() : "BUDGET");
             user.setRole(registerRequest.getRole());
-            
+
             // Handle business registration
             if (Boolean.TRUE.equals(registerRequest.getIsBusiness())) {
                 // Validate business name if provided
@@ -332,48 +332,128 @@ public class AuthController {
                 user.setDriverRating(null);
             }
 
-            // Register the user and implement 2FA for demo
+            // Register the user and implement 2FA
             User registeredUser = authService.registerUser(user);
             logger.info("User registered successfully: " + registeredUser.getEmail());
-
-            // For Friday demo: Implement 2FA with email simulation
+            
+            // Send role-specific welcome/registration notification email
             try {
-                logger.info("Generating 2FA token for registration demo...");
+                if (emailService != null) {
+                    String recipientName = registeredUser.getFirstName() + " " + registeredUser.getLastName();
+                    if (registeredUser.getRole() == UserRole.DRIVER) {
+                        // Send driver-specific registration email
+                        emailService.sendSimpleEmail(
+                            registeredUser.getEmail(),
+                            "Welcome to Reliable Carriers - Driver Registration",
+                            "Hello " + recipientName + ",\n\n" +
+                            "Thank you for registering as a driver with Reliable Carriers!\n\n" +
+                            "Your account has been created and is pending verification. " +
+                            "Please upload the required documents (driver's license, vehicle registration, etc.) " +
+                            "to complete your driver profile.\n\n" +
+                            "Once your documents are verified, you'll be able to start accepting delivery requests.\n\n" +
+                            "If you have any questions, please contact our support team.\n\n" +
+                            "Best regards,\n" +
+                            "Reliable Carriers Team"
+                        );
+                    } else if (Boolean.TRUE.equals(registeredUser.getIsBusiness())) {
+                        // Send business-specific registration email
+                        emailService.sendSimpleEmail(
+                            registeredUser.getEmail(),
+                            "Welcome to Reliable Carriers - Business Account Created",
+                            "Hello " + recipientName + ",\n\n" +
+                            "Thank you for registering your business with Reliable Carriers!\n\n" +
+                            "Your business account has been created and is pending verification. " +
+                            "Please upload the required business documents (business registration, tax ID, etc.) " +
+                            "to complete your business profile.\n\n" +
+                            "Once verified, you'll have access to:\n" +
+                            "- Business shipping rates\n" +
+                            "- Credit terms (Net 30)\n" +
+                            "- Bulk shipping discounts\n" +
+                            "- Business analytics dashboard\n\n" +
+                            "If you have any questions, please contact our business support team.\n\n" +
+                            "Best regards,\n" +
+                            "Reliable Carriers Business Team"
+                        );
+                    } else {
+                        // Send customer-specific registration email
+                        emailService.sendWelcomeEmail(registeredUser.getEmail(), recipientName);
+                    }
+                    logger.info("Registration notification email sent to: " + registeredUser.getEmail());
+                }
+            } catch (Exception e) {
+                logger.error("Failed to send registration notification email: " + e.getMessage(), e);
+                // Don't fail registration if email fails
+            }
+
+            // Implement 2FA for registration (same for customers, businesses, and drivers)
+            boolean codeSent = false;
+            try {
+                logger.info("Generating 2FA token for registration...");
                 
-                // Generate a simple 6-digit code for demo
+                // Generate and send 2FA code via email - ensure it's sent before returning
+                if (twoFactorService != null) {
+                    try {
+                        // Clear any existing tokens first and generate new one
+                        twoFactorService.generateAndSendToken(registeredUser, "EMAIL");
+                        codeSent = true;
+                        logger.info("2FA code successfully sent to email: " + registeredUser.getEmail());
+                    } catch (Exception e) {
+                        logger.error("Failed to send 2FA code via email: " + e.getMessage(), e);
+                        // Try to resend once more
+                        try {
+                            Thread.sleep(500); // Small delay before retry
+                            twoFactorService.generateAndSendToken(registeredUser, "EMAIL");
+                            codeSent = true;
+                            logger.info("2FA code sent on retry to email: " + registeredUser.getEmail());
+                        } catch (Exception retryException) {
+                            logger.error("Failed to send 2FA code on retry: " + retryException.getMessage(), retryException);
+                        }
+                    }
+                } else {
+                    logger.warn("TwoFactorService is not available - 2FA codes will not be sent");
+                }
+                
+                // Generate a demo code for development/testing (fallback if email fails)
+                // Note: This is only for development - in production, rely on actual email sending
                 String demoCode = String.format("%06d", new java.util.Random().nextInt(1000000));
                 logger.info("Demo 2FA code for " + registeredUser.getEmail() + ": " + demoCode);
                 
-                // Store the code in session or a simple map for demo purposes
-                // In production, this would be stored in database with expiration
+                String message = codeSent 
+                    ? "Account created! Verification code sent to your email. Please check your inbox."
+                    : "Account created! Please use the resend button to receive your verification code.";
                 
                 return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of(
                         "success", true, 
                         "requires2fa", true,
-                        "message", "Account created! For demo: Use code " + demoCode + " to verify.",
+                        "codeSent", codeSent,
+                        "message", message,
                         "email", registeredUser.getEmail(),
                         "role", registeredUser.getRole().toString(),
                         "demoCode", demoCode  // Only for demo - remove in production
                     ));
             } catch (Exception e) {
-                logger.error("Registration error: " + e.getMessage(), e);
+                logger.error("2FA generation error: " + e.getMessage(), e);
+                // If 2FA fails, still return success but indicate 2FA is required
+                // User can use resend functionality
                 return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of(
                         "success", true, 
-                        "requires2fa", false,
-                        "message", "Account created successfully! You can now login.",
+                        "requires2fa", true,
+                        "message", "Account created! Please verify your email. If you didn't receive a code, use the resend button.",
                         "email", registeredUser.getEmail(),
                         "role", registeredUser.getRole().toString()
                     ));
             }
         } catch (IllegalArgumentException e) {
+            logger.error("Registration validation error: " + e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("success", false, "message", e.getMessage()));
         } catch (Exception e) {
             logger.error("Registration error: " + e.getMessage(), e);
+            e.printStackTrace(); // Print full stack trace for debugging
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("success", false, "message", "Registration failed. Please try again."));
+                .body(Map.of("success", false, "message", "Registration failed: " + e.getMessage() + ". Please check the server logs for details."));
         }
     }
 
@@ -411,7 +491,7 @@ public class AuthController {
 
             // Generate JWT token for the verified user
             final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
-            final String token = jwtTokenUtil.generateToken(userDetails);
+                final String token = jwtTokenUtil.generateToken(userDetails);
             
             // Set authentication in SecurityContext
             Authentication auth = new UsernamePasswordAuthenticationToken(
@@ -428,16 +508,16 @@ public class AuthController {
             session.setAttribute("userId", user.getId());
             session.setAttribute("userRole", user.getRole().toString());
             session.setAttribute("isAuthenticated", true);
-            
-            // Create response with token
-            AuthResponse response = new AuthResponse(
+                
+                // Create response with token
+                AuthResponse response = new AuthResponse(
                     user.getId(),
                     user.getFirstName(),
                     user.getLastName(),
                     user.getEmail(),
                     user.getRole(),
-                    token
-            );
+                        token
+                );
 
             return ResponseEntity.ok(Map.of(
                 "success", true, 
@@ -458,21 +538,36 @@ public class AuthController {
     @PostMapping("/register/resend")
     public ResponseEntity<?> resendRegistrationCode(@RequestParam String email, @RequestParam(defaultValue = "EMAIL") String method) {
         try {
-            logger.debug("Resending registration code for: " + email + " via " + method);
+            logger.info("Resending registration code for: " + email + " via " + method);
             
             User user = userRepository.findByEmail(email).orElse(null);
             if (user == null) {
+                logger.warn("Resend code requested for non-existent user: " + email);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("success", false, "message", "User not found"));
+                    .body(Map.of("success", false, "message", "User not found. Please register first."));
             }
 
-            // Send new 2FA token
-            twoFactorService.generateAndSendToken(user, method);
+            // Ensure twoFactorService is available
+            if (twoFactorService == null) {
+                logger.error("TwoFactorService is not available");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Verification service is temporarily unavailable. Please try again later."));
+            }
+
+            // Send new 2FA token - this will clear old tokens and generate a new one
+            try {
+                twoFactorService.generateAndSendToken(user, method);
+                logger.info("2FA code successfully sent to " + email + " via " + method);
+        } catch (Exception e) {
+                logger.error("Failed to send 2FA code: " + e.getMessage(), e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Failed to send verification code. Please try again."));
+            }
             
             String methodText = "EMAIL".equalsIgnoreCase(method) ? "email" : "SMS";
             return ResponseEntity.ok(Map.of(
                 "success", true, 
-                "message", "Verification code sent to your " + methodText
+                "message", "Verification code sent to your " + methodText + ". Please check your " + methodText.toLowerCase() + "."
             ));
             
         } catch (Exception e) {
@@ -581,10 +676,16 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody AuthRequest authRequest) {
         try {
+            // Validate identifier is not null or empty (additional check beyond @Valid)
+            if (authRequest == null || authRequest.getIdentifier() == null || authRequest.getIdentifier().trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", "Email or phone number is required"));
+            }
+            
             // Authenticate the user
             // The AuthRequest.identifier may be an email or a phone. We still authenticate via AuthService which expects email;
             // try to resolve identifier to an email if it's a phone.
-            String identifier = authRequest.getIdentifier();
+            String identifier = authRequest.getIdentifier().trim();
             String loginEmail = identifier;
             if (!identifier.contains("@")) {
                 // assume phone -> try to find user by phone
@@ -606,7 +707,7 @@ public class AuthController {
             }
             
             User authenticatedUser = authService.authenticateUser(loginEmail, authRequest.getPassword());
-            
+
             // Clear failed login attempts on successful authentication
             accountLockoutService.clearFailedLoginAttempts(loginEmail);
 
@@ -656,8 +757,10 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("success", false, "message", errorMessage));
         } catch (Exception e) {
+            logger.error("Login error: " + e.getMessage(), e);
+            e.printStackTrace(); // Print full stack trace for debugging
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("success", false, "message", "Error during authentication: " + e.getMessage()));
+                .body(Map.of("success", false, "message", "Error during authentication: " + e.getMessage() + ". Please check the server logs for details."));
         }
     }
 

@@ -7,6 +7,7 @@ import com.reliablecarriers.Reliable.Carriers.model.Quote;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 
 import java.util.List;
+import java.util.Map;
 import java.math.BigDecimal;
 
 public interface CustomerPackageService {
@@ -234,4 +235,9 @@ public interface CustomerPackageService {
      * Get saved quotes for a customer by email
      */
     List<Quote> getSavedQuotes(String email);
+    
+    /**
+     * Save a quote from the quote page (for logged-in users)
+     */
+    Quote saveQuoteFromPage(String customerEmail, Map<String, Object> quoteData);
 }
