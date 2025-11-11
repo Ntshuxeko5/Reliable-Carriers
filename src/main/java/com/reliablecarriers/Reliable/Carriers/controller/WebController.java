@@ -109,7 +109,8 @@ public class WebController {
     }
 
     @GetMapping("/login")
-    public String login() {
+    public String login(Model model) {
+        model.addAttribute("navLinks", createPublicNavLinks());
         // Simple login page - no authentication check needed
         return "login";
     }
@@ -121,7 +122,8 @@ public class WebController {
     }
 
     @GetMapping("/register")
-    public String register() {
+    public String register(Model model) {
+        model.addAttribute("navLinks", createPublicNavLinks());
         // Simple register page - no authentication check needed
         return "register";
     }

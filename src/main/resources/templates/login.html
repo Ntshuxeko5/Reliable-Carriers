@@ -64,7 +64,7 @@
 </head>
 <body class="bg-gradient-to-br from-reliable-50 to-reliable-100 min-h-screen">
     <!-- Navigation -->
-    <div th:replace="fragments/navbar :: navbar"></div>
+    <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
     
     <div class="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md w-full space-y-8 animate-fade-in">
