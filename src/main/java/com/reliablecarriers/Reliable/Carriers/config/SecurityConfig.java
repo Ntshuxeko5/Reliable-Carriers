@@ -69,6 +69,8 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .maximumSessions(1)
                 .maxSessionsPreventsLogin(false)
+                .and()
+                .invalidSessionUrl("/login?timeout=true")
             )
             // Enable CSRF protection (important for production)
             // APIs use JWT/API keys, so exempt from CSRF

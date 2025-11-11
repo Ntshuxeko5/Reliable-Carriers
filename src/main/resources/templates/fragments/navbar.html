@@ -100,6 +100,100 @@
         if (logoutBtnMobile) {
             logoutBtnMobile.addEventListener('click', handleLogout);
         }
+        
+        // Session timeout handler - logout after 20 minutes of inactivity
+        let sessionTimeout;
+        let sessionWarningTimeout;
+        const SESSION_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+        const WARNING_TIME_MS = 18 * 60 * 1000; // Show warning at 18 minutes (2 minutes before timeout)
+        
+        function resetSessionTimer() {
+            // Clear existing timers
+            if (sessionTimeout) clearTimeout(sessionTimeout);
+            if (sessionWarningTimeout) clearTimeout(sessionWarningTimeout);
+            
+            // Set warning timer (at 18 minutes)
+            sessionWarningTimeout = setTimeout(() => {
+                showSessionWarning();
+            }, WARNING_TIME_MS);
+            
+            // Set logout timer (at 20 minutes)
+            sessionTimeout = setTimeout(() => {
+                handleSessionTimeout();
+            }, SESSION_TIMEOUT_MS);
+        }
+        
+        function showSessionWarning() {
+            // Check if user is authenticated
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) return; // Not logged in, no need to warn
+            
+            // Show warning modal
+            const warningModal = document.createElement('div');
+            warningModal.id = 'sessionWarningModal';
+            warningModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+            warningModal.innerHTML = `
+                <div class="bg-white rounded-lg p-8 max-w-md mx-4 shadow-xl">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 text-5xl mb-4"></i>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Session Expiring Soon</h2>
+                        <p class="text-gray-600 mb-6">
+                            Your session will expire in 2 minutes due to inactivity. 
+                            Click "Stay Logged In" to continue your session.
+                        </p>
+                        <div class="flex gap-4 justify-center">
+                            <button id="stayLoggedInBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                                Stay Logged In
+                            </button>
+                            <button id="logoutNowBtn" class="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-colors">
+                                Logout Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(warningModal);
+            
+            // Handle stay logged in button
+            document.getElementById('stayLoggedInBtn').addEventListener('click', () => {
+                resetSessionTimer();
+                document.body.removeChild(warningModal);
+            });
+            
+            // Handle logout now button
+            document.getElementById('logoutNowBtn').addEventListener('click', () => {
+                handleLogout(new Event('click'));
+            });
+        }
+        
+        function handleSessionTimeout() {
+            // Check if user is authenticated
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) return; // Not logged in
+            
+            // Remove warning modal if it exists
+            const warningModal = document.getElementById('sessionWarningModal');
+            if (warningModal) {
+                document.body.removeChild(warningModal);
+            }
+            
+            // Clear tokens
+            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
+            localStorage.removeItem('user');
+            
+            // Redirect to login with timeout message
+            window.location.href = '/login?timeout=true';
+        }
+        
+        // Track user activity to reset session timer
+        const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+        activityEvents.forEach(event => {
+            document.addEventListener(event, resetSessionTimer, true);
+        });
+        
+        // Initialize session timer on page load
+        resetSessionTimer();
     });
 </script>
 
