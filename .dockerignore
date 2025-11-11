@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings
+*.swp
+*.swo
+*~
+
+# Build outputs
+target/
+build/
+*.jar
+*.war
+*.ear
+*.class
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Test files
+src/test/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Maven wrapper (we copy it explicitly in Dockerfile)
+# .mvn/
+
+# Deployment scripts
+deploy.sh
+*.bat
+
+# Database files
+*.db
+*.sqlite
+
+# Uploads directory (should be external in production)
+src/main/resources/static/uploads/
+

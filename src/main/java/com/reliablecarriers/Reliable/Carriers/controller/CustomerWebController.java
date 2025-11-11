@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/customer")
@@ -43,12 +44,60 @@ public class CustomerWebController {
                 model.addAttribute("userEmail", currentUser.getEmail());
                 model.addAttribute("userPhone", currentUser.getPhone());
                 model.addAttribute("isAuthenticated", true);
+                
+                // Check if user is a business
+                boolean isBusiness = currentUser.getIsBusiness() != null && currentUser.getIsBusiness();
+                model.addAttribute("isBusiness", isBusiness);
+                
+                // Load user's packages/bookings
+                try {
+                    List<CustomerPackageResponse> packages = customerPackageService.getPackagesByEmail(currentUser.getEmail());
+                    if (packages != null && !packages.isEmpty()) {
+                        // Get recent packages (limit to 6 for dashboard)
+                        List<CustomerPackageResponse> recentPackages = packages.stream()
+                                .limit(6)
+                                .collect(Collectors.toList());
+                        model.addAttribute("recentPackages", recentPackages);
+                        
+                        // Calculate statistics
+                        long totalPackages = packages.size();
+                        long deliveredCount = packages.stream()
+                                .filter(p -> p.getStatus() != null && p.getStatus().toString().equalsIgnoreCase("DELIVERED"))
+                                .count();
+                        long inTransitCount = packages.stream()
+                                .filter(p -> {
+                                    if (p.getStatus() == null) return false;
+                                    String status = p.getStatus().toString();
+                                    return "IN_TRANSIT".equalsIgnoreCase(status) || 
+                                           "OUT_FOR_DELIVERY".equalsIgnoreCase(status) ||
+                                           "PICKED_UP".equalsIgnoreCase(status);
+                                })
+                                .count();
+                        
+                        model.addAttribute("totalPackages", totalPackages);
+                        model.addAttribute("deliveredCount", deliveredCount);
+                        model.addAttribute("inTransitCount", inTransitCount);
+                    } else {
+                        model.addAttribute("recentPackages", new ArrayList<>());
+                        model.addAttribute("totalPackages", 0);
+                        model.addAttribute("deliveredCount", 0);
+                        model.addAttribute("inTransitCount", 0);
+                    }
+                } catch (Exception e) {
+                    // If there's an error loading packages, set empty lists
+                    model.addAttribute("recentPackages", new ArrayList<>());
+                    model.addAttribute("totalPackages", 0);
+                    model.addAttribute("deliveredCount", 0);
+                    model.addAttribute("inTransitCount", 0);
+                }
             } else {
                 model.addAttribute("isAuthenticated", false);
+                model.addAttribute("isBusiness", false);
             }
         } catch (Exception e) {
             // If there's an error getting current user, treat as not authenticated
             model.addAttribute("isAuthenticated", false);
+            model.addAttribute("isBusiness", false);
         }
         return "customer/dashboard";
     }
@@ -59,19 +108,44 @@ public class CustomerWebController {
         return "customer/track";
     }
 
+    // Package tracking page with tracking number in URL
+    @GetMapping("/track/{trackingNumber}")
+    public String trackPackageByNumber(@PathVariable String trackingNumber, Model model) {
+        try {
+            if (customerPackageService.isValidTrackingNumber(trackingNumber)) {
+                CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
+                model.addAttribute("package", packageInfo);
+                model.addAttribute("trackingNumber", trackingNumber);
+                model.addAttribute("found", true);
+            } else {
+                model.addAttribute("found", false);
+                model.addAttribute("trackingNumber", trackingNumber);
+                model.addAttribute("error", "Invalid tracking number format");
+            }
+        } catch (Exception e) {
+            model.addAttribute("found", false);
+            model.addAttribute("trackingNumber", trackingNumber);
+            model.addAttribute("error", "Package not found");
+        }
+        return "customer/track";
+    }
+
     @PostMapping("/track")
     public String trackPackageResult(@RequestParam String trackingNumber, Model model) {
         try {
             if (customerPackageService.isValidTrackingNumber(trackingNumber)) {
                 CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
                 model.addAttribute("package", packageInfo);
+                model.addAttribute("trackingNumber", trackingNumber);
                 model.addAttribute("found", true);
             } else {
                 model.addAttribute("found", false);
+                model.addAttribute("trackingNumber", trackingNumber);
                 model.addAttribute("error", "Invalid tracking number format");
             }
         } catch (Exception e) {
             model.addAttribute("found", false);
+            model.addAttribute("trackingNumber", trackingNumber);
             model.addAttribute("error", "Package not found");
         }
         return "customer/track";

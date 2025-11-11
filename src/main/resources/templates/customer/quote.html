@@ -43,28 +43,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <a href="/" class="flex items-center">
-                        <i class="fas fa-shipping-fast text-3xl text-reliable-yellow-400 mr-3"></i>
-                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
-                    </a>
-                </div>
-                
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="/" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a>
-                    <a href="/services" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Services</a>
-                    <a href="/pricing" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Pricing</a>
-                    <a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a>
-                    <a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a>
-                    <a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a>
-                    <a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
 
     <!-- Hero Section -->
     <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-16">

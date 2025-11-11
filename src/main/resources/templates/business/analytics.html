@@ -38,28 +38,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <a href="/" class="flex items-center">
-                        <i class="fas fa-shipping-fast text-3xl text-reliable-yellow-400 mr-3"></i>
-                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
-                    </a>
-                </div>
-                
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="/business/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a>
-                    <a href="/business/analytics" class="text-white bg-reliable-yellow-400 text-reliable-blue-800 px-3 py-1 rounded-lg font-medium">Analytics</a>
-                    <a href="/business/shipments" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Shipments</a>
-                    <a href="/business/team" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Team</a>
-                    <a href="/business/billing" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Billing</a>
-                    <a href="/business/settings" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Settings</a>
-                    <a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -268,11 +268,6 @@ public class WebController {
         return "forgot-password";
     }
 
-    @GetMapping("/customer/dashboard")
-    public String customerDashboard() {
-        // Redirect to the main customer dashboard to avoid duplicate routes
-        return "redirect:/customer";
-    }
     
     @GetMapping("/payment-success")
     public String paymentSuccess() {

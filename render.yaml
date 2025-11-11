@@ -1,0 +1,100 @@
+services:
+  # Production/Staging Web Service
+  - type: web
+    name: reliable-carriers
+    env: docker
+    plan: free  # Change to 'starter' ($7/month) for always-on
+    region: oregon  # Options: oregon, frankfurt, singapore, mumbai, ohio
+    branch: main  # Change to 'staging' for staging environment
+    buildCommand: ""  # Docker builds automatically
+    startCommand: ""  # Defined in Dockerfile
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      # Server Configuration
+      - key: SERVER_PORT
+        value: 8080
+      - key: PRODUCTION_MODE
+        value: true  # Set to false for staging
+      
+      # Application URLs (update with your domain)
+      - key: APP_BASE_URL
+        value: https://your-app-name.onrender.com  # Update after deployment
+      - key: APP_TRACKING_URL
+        sync: false  # Set manually after deployment
+      
+      # Database Configuration
+      # For Render PostgreSQL (recommended):
+      # - key: DB_URL
+      #   fromDatabase:
+      #     name: reliable-carriers-db
+      #     property: connectionString
+      # For external MySQL, set manually:
+      - key: DB_URL
+        sync: false  # Set manually: jdbc:mysql://host:3306/dbname
+      - key: DB_USERNAME
+        sync: false  # Set manually
+      - key: DB_PASSWORD
+        sync: false  # Set manually (use Render's secret management)
+      - key: DB_DDL_AUTO
+        value: validate  # Use 'update' only for initial setup
+      
+      # JWT Configuration
+      - key: JWT_SECRET
+        generateValue: true  # Render will generate a secure secret
+      
+      # Email Configuration
+      - key: GMAIL_USERNAME
+        sync: false  # Set manually
+      - key: GMAIL_APP_PASSWORD
+        sync: false  # Set manually (use Render's secret management)
+      
+      # SMS Configuration
+      - key: SMSPORTAL_API_KEY
+        sync: false  # Set manually
+      - key: SMSPORTAL_API_SECRET
+        sync: false  # Set manually
+      
+      # Google Maps
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false  # Set manually
+      
+      # Paystack (use production keys)
+      - key: PAYSTACK_SECRET_KEY
+        sync: false  # Set manually: sk_live_...
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false  # Set manually: pk_live_...
+      - key: PAYSTACK_WEBHOOK_SECRET
+        sync: false  # Set manually
+      
+      # OAuth2 (update redirect URIs in Google/Facebook console)
+      - key: GOOGLE_CLIENT_ID
+        sync: false  # Set manually
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false  # Set manually
+      - key: FACEBOOK_CLIENT_ID
+        sync: false  # Set manually
+      - key: FACEBOOK_CLIENT_SECRET
+        sync: false  # Set manually
+      
+      # Logging
+      - key: LOG_LEVEL_RELIABLE_CARRIERS
+        value: INFO
+      - key: LOG_LEVEL_SECURITY
+        value: WARN
+      
+      # Actuator
+      - key: ACTUATOR_ENDPOINTS
+        value: health,info
+      - key: ACTUATOR_HEALTH_DETAILS
+        value: never
+
+# Optional: PostgreSQL Database Service
+# Uncomment to use Render's managed PostgreSQL
+# databases:
+#   - name: reliable-carriers-db
+#     plan: free  # 90 days free, then $7/month
+#     databaseName: reliable_carriers
+#     user: reliable_user
+

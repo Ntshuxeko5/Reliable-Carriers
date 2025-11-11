@@ -61,47 +61,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 font-sans">
-<!-- Header -->
-<header class="bg-gradient-to-r from-reliable-blue-800 to-reliable-blue-900 text-white shadow-lg nav-header">
-    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-4">
-            <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
-                <!-- Company Logo -->
-                <img src="/images/Reliable 1.png" alt="Reliable Carriers" style="height:50px; width:auto; ">
-
-            </a>
-            <ul class="hidden md:flex space-x-8">
-                <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                <li class="auth-required hidden"><a href="/customer/quote" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Quote</a></li>
-                <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
-            </ul>
-            <!-- Mobile menu button -->
-            <button class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300" id="mobileMenuBtn">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-        </div>
-        <!-- Mobile menu -->
-        <div class="md:hidden hidden" id="mobileMenu">
-            <ul class="py-4 space-y-4">
-                <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
-                <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                <li><a href="/about" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                <li><a href="/contact" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                <li class="guest-only"><a href="/login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                <li class="guest-only"><a href="/register" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                <li><a href="/staff-login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Staff Portal</a></li>
-                <li class="auth-required hidden"><a href="/dashboard" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                <li class="auth-required hidden"><a href="/customer/quote" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
-                <li class="auth-required hidden"><a href="#" id="logoutBtnMobile" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
-            </ul>
-        </div>
-    </nav>
-</header>
+<!-- Navigation -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
     <!-- Hero Section -->
     <section class="relative bg-gradient-to-r from-reliable-700 to-reliable-800 text-white py-20">
         <div class="absolute inset-0 bg-black opacity-50"></div>

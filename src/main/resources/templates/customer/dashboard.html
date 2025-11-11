@@ -307,7 +307,7 @@
                     <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-boxes mr-2"></i>My Packages
                     </a>
-                    <a href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <a th:if="${isBusiness}" href="/customer/store" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-store mr-2"></i>Business
                     </a>
                     <a href="/customer/help" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
@@ -344,7 +344,7 @@
                     <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-boxes mr-2"></i>My Packages
                     </a>
-                    <a href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
+                    <a th:if="${isBusiness}" href="/customer/store" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
                         <i class="fas fa-store mr-2"></i>Business
                     </a>
                     <a href="/customer/help" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
@@ -404,7 +404,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-blue-100 text-sm">Total Packages</p>
-                                <p class="text-3xl font-bold">12</p>
+                                <p class="text-3xl font-bold" th:text="${totalPackages ?: 0}">0</p>
                             </div>
                             <i class="fas fa-boxes text-4xl text-blue-200"></i>
                         </div>
@@ -413,7 +413,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-green-100 text-sm">Delivered</p>
-                                <p class="text-3xl font-bold">8</p>
+                                <p class="text-3xl font-bold" th:text="${deliveredCount ?: 0}">0</p>
                             </div>
                             <i class="fas fa-check-circle text-4xl text-green-200"></i>
                         </div>
@@ -422,7 +422,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-purple-100 text-sm">In Transit</p>
-                                <p class="text-3xl font-bold">4</p>
+                                <p class="text-3xl font-bold" th:text="${inTransitCount ?: 0}">0</p>
                             </div>
                             <i class="fas fa-truck text-4xl text-purple-200"></i>
                         </div>
@@ -476,7 +476,7 @@
                         <p class="text-black">View all your packages by email address</p>
                     </div>
                 </a>
-                <a href="/customer/store" class="group">
+                <a th:if="${isBusiness}" href="/customer/store" class="group">
                     <div class="glass-effect rounded-2xl p-8 text-center hover-lift cursor-pointer">
                         <div class="text-6xl mb-4 text-yellow-400 group-hover:text-yellow-300 transition-colors duration-300">
                             <i class="fas fa-store"></i>
@@ -601,92 +601,64 @@
             </h2>
             
             <!-- Recent Packages Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <div class="glass-effect rounded-2xl p-6 hover-lift">
+            <div th:if="${recentPackages != null && !recentPackages.isEmpty()}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div th:each="pkg : ${recentPackages}" class="glass-effect rounded-2xl p-6 hover-lift">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-check text-green-600"></i>
+                            <div th:classappend="${pkg.status != null && pkg.status.toString() == 'DELIVERED'} ? 'bg-green-100' : 
+                                                      (${pkg.status != null && (pkg.status.toString() == 'IN_TRANSIT' || pkg.status.toString() == 'OUT_FOR_DELIVERY' || pkg.status.toString() == 'PICKED_UP')}) ? 'bg-blue-100' : 
+                                                      'bg-yellow-100'" 
+                                 class="w-12 h-12 rounded-full flex items-center justify-center mr-3">
+                                <i th:classappend="${pkg.status != null && pkg.status.toString() == 'DELIVERED'} ? 'fas fa-check text-green-600' : 
+                                                     (${pkg.status != null && (pkg.status.toString() == 'IN_TRANSIT' || pkg.status.toString() == 'OUT_FOR_DELIVERY' || pkg.status.toString() == 'PICKED_UP')}) ? 'fas fa-truck text-blue-600' : 
+                                                     'fas fa-clock text-yellow-600'"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900">RC12345678</h3>
-                                <p class="text-sm text-gray-600">Delivered</p>
+                                <h3 class="font-semibold text-gray-900" th:text="${pkg.trackingNumber}">Tracking #</h3>
+                                <p class="text-sm text-gray-600" th:text="${pkg.formattedStatus ?: pkg.status}">Status</p>
                             </div>
                         </div>
-                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Delivered</span>
+                        <span th:classappend="${pkg.status != null && pkg.status.toString() == 'DELIVERED'} ? 'px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium' : 
+                                                 (${pkg.status != null && (pkg.status.toString() == 'IN_TRANSIT' || pkg.status.toString() == 'OUT_FOR_DELIVERY' || pkg.status.toString() == 'PICKED_UP')}) ? 'px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium' : 
+                                                 'px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium'"
+                              th:text="${pkg.formattedStatus ?: (pkg.status != null ? pkg.status.toString() : 'Unknown')}">Status</span>
                     </div>
                     <div class="space-y-2 text-sm text-gray-600">
-                        <div class="flex justify-between">
+                        <div class="flex justify-between" th:if="${pkg.pickupAddress}">
                             <span>From:</span>
-                            <span>Johannesburg</span>
+                            <span th:text="${pkg.pickupAddress}">Address</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between" th:if="${pkg.deliveryAddress}">
                             <span>To:</span>
-                            <span>Cape Town</span>
+                            <span th:text="${pkg.deliveryAddress}">Address</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span>Delivered:</span>
-                            <span>2 days ago</span>
+                        <div class="flex justify-between" th:if="${pkg.lastUpdate}">
+                            <span>Updated:</span>
+                            <span th:text="${pkg.lastUpdate}">Date</span>
                         </div>
+                        <div class="flex justify-between" th:if="${!pkg.lastUpdate && pkg.createdAt}">
+                            <span>Created:</span>
+                            <span th:text="${pkg.formattedCreatedAt ?: #temporals.format(pkg.createdAt, 'MMM dd, yyyy')}">Date</span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a th:href="@{/customer/track/{trackingNumber}(trackingNumber=${pkg.trackingNumber})}" 
+                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            <i class="fas fa-search mr-1"></i>Track Package
+                        </a>
                     </div>
                 </div>
-                
-                <div class="glass-effect rounded-2xl p-6 hover-lift">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-truck text-blue-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900">RC12345679</h3>
-                                <p class="text-sm text-gray-600">In Transit</p>
-                            </div>
-                        </div>
-                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">In Transit</span>
-                    </div>
-                    <div class="space-y-2 text-sm text-gray-600">
-                        <div class="flex justify-between">
-                            <span>From:</span>
-                            <span>Durban</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>To:</span>
-                            <span>Pretoria</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>ETA:</span>
-                            <span>Tomorrow</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="glass-effect rounded-2xl p-6 hover-lift">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-clock text-yellow-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900">RC12345680</h3>
-                                <p class="text-sm text-gray-600">Processing</p>
-                            </div>
-                        </div>
-                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">Processing</span>
-                    </div>
-                    <div class="space-y-2 text-sm text-gray-600">
-                        <div class="flex justify-between">
-                            <span>From:</span>
-                            <span>Port Elizabeth</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>To:</span>
-                            <span>Bloemfontein</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Status:</span>
-                            <span>Picked up</span>
-                        </div>
-                    </div>
+            </div>
+            
+            <!-- No packages message -->
+            <div th:if="${recentPackages == null || recentPackages.isEmpty()}" class="text-center py-12">
+                <div class="bg-gradient-to-r from-gray-100 to-gray-200 rounded-2xl p-8 shadow-lg">
+                    <i class="fas fa-box-open text-6xl text-gray-400 mb-4"></i>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">No Packages Yet</h3>
+                    <p class="text-gray-600 mb-6">You don't have any packages yet. Ready to send your first shipment?</p>
+                    <a href="/booking" class="bg-gradient-to-r from-brand-500 to-brand-600 text-white px-8 py-4 rounded-full font-bold hover:from-brand-600 hover:to-brand-700 transition-all duration-300 transform hover:scale-105 inline-flex items-center">
+                        <i class="fas fa-shipping-fast mr-2"></i>Book a Service
+                    </a>
                 </div>
             </div>
             

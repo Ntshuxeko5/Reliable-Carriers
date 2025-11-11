@@ -7,6 +7,85 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
+        // Make initMap available globally before Google Maps loads
+        window.initMap = function() {
+            // Initialize autocomplete for address line 1
+            const addressLine1Field = document.getElementById('addressLine1');
+            if (addressLine1Field && window.google && window.google.maps && window.google.maps.places) {
+                if (!window.addressAutocomplete) {
+                    window.addressAutocomplete = new google.maps.places.Autocomplete(
+                        addressLine1Field,
+                        {
+                            types: ['address'],
+                            componentRestrictions: { country: 'za' },
+                            fields: ['address_components', 'geometry', 'place_id', 'formatted_address']
+                        }
+                    );
+                    
+                    // Listen for place selection
+                    window.addressAutocomplete.addListener('place_changed', function() {
+                        const place = window.addressAutocomplete.getPlace();
+                        if (!place.geometry) {
+                            console.log('No details available for the selected place');
+                            return;
+                        }
+                        
+                        // Extract address components
+                        extractAddressComponentsFromPlace(place);
+                    });
+                }
+            }
+        };
+        
+        // Function to extract address components from Google Places result
+        function extractAddressComponentsFromPlace(place) {
+            const addressComponents = place.address_components || [];
+            let streetNumber = '';
+            let route = '';
+            let city = '';
+            let state = '';
+            let postalCode = '';
+            let country = 'South Africa';
+            
+            addressComponents.forEach(component => {
+                const types = component.types;
+                
+                if (types.includes('street_number')) {
+                    streetNumber = component.long_name;
+                } else if (types.includes('route')) {
+                    route = component.long_name;
+                } else if (types.includes('locality') || types.includes('administrative_area_level_2')) {
+                    city = component.long_name;
+                } else if (types.includes('administrative_area_level_1')) {
+                    state = component.long_name;
+                } else if (types.includes('postal_code')) {
+                    postalCode = component.long_name;
+                } else if (types.includes('country')) {
+                    country = component.long_name;
+                }
+            });
+            
+            // Update form fields
+            const addressLine1 = streetNumber && route ? `${streetNumber} ${route}` : (route || place.formatted_address);
+            document.getElementById('addressLine1').value = addressLine1;
+            
+            if (city) document.getElementById('addressCity').value = city;
+            if (state) document.getElementById('addressState').value = state;
+            if (postalCode) document.getElementById('addressZipCode').value = postalCode;
+            if (country) document.getElementById('addressCountry').value = country;
+            
+            // Store coordinates and place ID for later use
+            if (place.geometry && place.geometry.location) {
+                window.selectedAddressLat = place.geometry.location.lat();
+                window.selectedAddressLng = place.geometry.location.lng();
+            }
+            if (place.place_id) {
+                window.selectedAddressPlaceId = place.place_id;
+            }
+        }
+    </script>
+    <script th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'}" async defer></script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -35,63 +114,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="/customer/dashboard" class="flex items-center space-x-2 text-2xl font-bold text-white hover:text-brand-300 transition-colors duration-300">
-                    <img src="/images/Reliable 1.png" alt="Reliable Carriers Logo" style="height:50px; width:auto;">
-                </a>
-                <div class="hidden md:flex space-x-8">
-                    <a href="/customer/dashboard" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-home mr-2"></i>Dashboard
-                    </a>
-                    <a href="/customer/track" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-search mr-2"></i>Track Package
-                    </a>
-                    <a href="/customer/quote" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-calculator mr-2"></i>Get Quote
-                    </a>
-                    <a href="/customer/packages" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-boxes mr-2"></i>My Packages
-                    </a>
-                    <a href="/customer/profile" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center bg-brand-blue-700 px-4 py-2 rounded-lg">
-                        <i class="fas fa-user-edit mr-2"></i>Profile
-                    </a>
-                    <a href="/logout" class="text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                    </a>
-                </div>
-                <!-- Mobile menu button -->
-                <button class="md:hidden text-white hover:text-brand-300 transition-colors duration-300" id="mobileMenuBtn">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
-            </div>
-
-            <!-- Mobile Menu -->
-            <div class="md:hidden hidden" id="mobileMenu">
-                <div class="py-4 space-y-4">
-                    <a href="/customer/dashboard" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-home mr-2"></i>Dashboard
-                    </a>
-                    <a href="/customer/track" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-search mr-2"></i>Track Package
-                    </a>
-                    <a href="/customer/quote" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-calculator mr-2"></i>Get Quote
-                    </a>
-                    <a href="/customer/packages" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-boxes mr-2"></i>My Packages
-                    </a>
-                    <a href="/customer/profile" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center bg-brand-blue-700 px-4 py-2 rounded-lg">
-                        <i class="fas fa-user-edit mr-2"></i>Profile
-                    </a>
-                    <a href="/logout" class="block text-white hover:text-brand-300 transition-colors duration-300 font-medium flex items-center">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
 
     <!-- Main Content -->
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -311,9 +334,10 @@
                                            placeholder="Home, Office, Warehouse, etc.">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Address Line 1</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Address Line 1 <span class="text-xs text-gray-500">(Start typing to search)</span></label>
                                     <input type="text" id="addressLine1" name="addressLine1" required 
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="Start typing your address...">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Address Line 2 (Optional)</label>
@@ -678,7 +702,11 @@
                     country: document.getElementById('addressCountry').value,
                     contactName: document.getElementById('addressContactName').value,
                     contactPhone: document.getElementById('addressContactPhone').value,
-                    isDefault: document.getElementById('addressIsDefault').checked
+                    isDefault: document.getElementById('addressIsDefault').checked,
+                    // Include Google Maps data if available
+                    latitude: window.selectedAddressLat || null,
+                    longitude: window.selectedAddressLng || null,
+                    placeId: window.selectedAddressPlaceId || null
                 };
                 
                 const addressId = document.getElementById('addressId').value;
