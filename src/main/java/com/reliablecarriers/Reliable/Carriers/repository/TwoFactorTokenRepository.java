@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface TwoFactorTokenRepository extends JpaRepository<TwoFactorToken, Long> {
     Optional<TwoFactorToken> findByUserAndTokenAndUsedFalse(User user, String token);
     void deleteByUser(User user);
+    java.util.List<TwoFactorToken> findByUserAndUsedFalseOrderByExpiresAtDesc(User user);
 }

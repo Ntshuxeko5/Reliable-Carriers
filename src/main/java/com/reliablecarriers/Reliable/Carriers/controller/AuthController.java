@@ -35,6 +35,7 @@ import com.reliablecarriers.Reliable.Carriers.dto.ForgotPasswordRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.ResetPasswordRequest;
 import com.reliablecarriers.Reliable.Carriers.model.PasswordResetToken;
 import com.reliablecarriers.Reliable.Carriers.repository.PasswordResetTokenRepository;
+import com.reliablecarriers.Reliable.Carriers.repository.TwoFactorTokenRepository;
 import com.reliablecarriers.Reliable.Carriers.service.EmailService;
 import com.reliablecarriers.Reliable.Carriers.service.AccountLockoutService;
 import java.security.SecureRandom;
@@ -57,19 +58,21 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final TwoFactorTokenRepository twoFactorTokenRepository;
     private final EmailService emailService;
     private final com.reliablecarriers.Reliable.Carriers.service.TotpService totpService;
     private final com.reliablecarriers.Reliable.Carriers.service.TwoFactorService twoFactorService;
     private final UserValidationService userValidationService;
     private final AccountLockoutService accountLockoutService;
 
-    public AuthController(AuthService authService, JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService, UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService, com.reliablecarriers.Reliable.Carriers.service.TotpService totpService, com.reliablecarriers.Reliable.Carriers.service.TwoFactorService twoFactorService, UserValidationService userValidationService, AccountLockoutService accountLockoutService) {
+    public AuthController(AuthService authService, JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService, UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordResetTokenRepository passwordResetTokenRepository, TwoFactorTokenRepository twoFactorTokenRepository, EmailService emailService, com.reliablecarriers.Reliable.Carriers.service.TotpService totpService, com.reliablecarriers.Reliable.Carriers.service.TwoFactorService twoFactorService, UserValidationService userValidationService, AccountLockoutService accountLockoutService) {
         this.authService = authService;
         this.jwtTokenUtil = jwtTokenUtil;
         this.userDetailsService = userDetailsService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.twoFactorTokenRepository = twoFactorTokenRepository;
         this.emailService = emailService;
         this.totpService = totpService;
         this.twoFactorService = twoFactorService;
@@ -413,14 +416,26 @@ public class AuthController {
                     logger.warn("TwoFactorService is not available - 2FA codes will not be sent");
                 }
                 
-                // Generate a demo code for development/testing (fallback if email fails)
-                // Note: This is only for development - in production, rely on actual email sending
-                String demoCode = String.format("%06d", new java.util.Random().nextInt(1000000));
-                logger.info("Demo 2FA code for " + registeredUser.getEmail() + ": " + demoCode);
+                // Get the actual token from database (in case email failed, user can still verify)
+                String actualToken = null;
+                try {
+                    // Find the most recent unused token for this user
+                    var userTokens = twoFactorTokenRepository.findByUserAndUsedFalseOrderByExpiresAtDesc(registeredUser);
+                    if (!userTokens.isEmpty()) {
+                        actualToken = userTokens.get(0).getToken();
+                        logger.info("Retrieved actual 2FA token from database for " + registeredUser.getEmail() + ": " + actualToken);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Could not retrieve token from database: " + e.getMessage());
+                }
+                
+                // Use actual token if available, otherwise generate demo code
+                String demoCode = actualToken != null ? actualToken : String.format("%06d", new java.util.Random().nextInt(1000000));
+                logger.info("2FA code for " + registeredUser.getEmail() + ": " + demoCode + " (codeSent: " + codeSent + ")");
                 
                 String message = codeSent 
                     ? "Account created! Verification code sent to your email. Please check your inbox."
-                    : "Account created! Please use the resend button to receive your verification code.";
+                    : "Account created! Please use the resend button to receive your verification code. Check application logs if email fails.";
                 
                 return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of(
@@ -430,7 +445,7 @@ public class AuthController {
                         "message", message,
                         "email", registeredUser.getEmail(),
                         "role", registeredUser.getRole().toString(),
-                        "demoCode", demoCode  // Only for demo - remove in production
+                        "demoCode", demoCode  // Actual token from database (for development/testing)
                     ));
             } catch (Exception e) {
                 logger.error("2FA generation error: " + e.getMessage(), e);

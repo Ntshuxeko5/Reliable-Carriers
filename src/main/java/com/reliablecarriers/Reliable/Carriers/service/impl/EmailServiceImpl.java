@@ -36,6 +36,15 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendSimpleEmail(String to, String subject, String text) {
         try {
+            // Validate email configuration
+            if (fromEmail == null || fromEmail.isEmpty()) {
+                throw new IllegalStateException("Email sender (spring.mail.username) is not configured. Please set GMAIL_USERNAME environment variable.");
+            }
+            
+            if (mailSender == null) {
+                throw new IllegalStateException("JavaMailSender is not configured. Please check email configuration.");
+            }
+            
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(to);
@@ -50,15 +59,19 @@ public class EmailServiceImpl implements EmailService {
                 System.err.println("Email error cause: " + e.getCause().getMessage());
             }
             
+            // Log full stack trace for debugging
+            e.printStackTrace();
+            
             // For development/testing, log the email content instead of throwing exception
             System.out.println("=== EMAIL CONTENT (DEVELOPMENT MODE) ===");
             System.out.println("To: " + to);
             System.out.println("Subject: " + subject);
             System.out.println("Message: " + text);
+            System.out.println("From: " + fromEmail);
             System.out.println("=== END EMAIL CONTENT ===");
             
-            // In production, you might want to throw the exception
-            // throw new RuntimeException("Email sending failed", e);
+            // Re-throw exception so caller knows email failed
+            throw new RuntimeException("Email sending failed: " + e.getMessage(), e);
         }
     }
 

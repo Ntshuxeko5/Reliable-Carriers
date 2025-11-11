@@ -100,7 +100,14 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             } catch (Exception e) {
                 System.err.println("Failed to send 2FA email to " + user.getEmail() + ": " + e.getMessage());
                 e.printStackTrace();
-                throw new RuntimeException("Failed to send verification code", e);
+                // Don't throw exception - token is saved, user can use resend or check logs
+                // Log the token for development/debugging purposes
+                System.out.println("=== 2FA TOKEN (EMAIL FAILED - CHECK LOGS) ===");
+                System.out.println("Token: " + token);
+                System.out.println("User: " + user.getEmail());
+                System.out.println("Error: " + e.getMessage());
+                System.out.println("=== END TOKEN ===");
+                // Note: Token is still saved in database, user can use resend functionality
             }
         }
         System.out.println("=== 2FA DEBUG END ===");
