@@ -220,6 +220,13 @@ public class CustomerWebController {
         return "customer/quote";
     }
 
+    // Quote logged-in page (alias for /quote when authenticated)
+    @GetMapping("/quote-logged-in")
+    public String createQuoteLoggedIn(Model model) {
+        // Redirect to /quote which will show logged-in version if authenticated
+        return createQuote(model);
+    }
+
     // Package management by email
     @GetMapping("/packages")
     public String managePackages(Model model) {
