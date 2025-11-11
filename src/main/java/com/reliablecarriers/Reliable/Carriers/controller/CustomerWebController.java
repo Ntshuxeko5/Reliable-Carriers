@@ -16,7 +16,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -32,9 +34,76 @@ public class CustomerWebController {
         this.authService = authService;
     }
 
+    // Helper method to create navbar links for customer pages
+    private List<Map<String, Object>> createCustomerNavLinks(String activePage) {
+        List<Map<String, Object>> links = new ArrayList<>();
+        
+        Map<String, Object> dashboard = new HashMap<>();
+        dashboard.put("label", "Dashboard");
+        dashboard.put("url", "/customer/dashboard");
+        dashboard.put("active", "dashboard".equals(activePage));
+        links.add(dashboard);
+        
+        Map<String, Object> track = new HashMap<>();
+        track.put("label", "Track Package");
+        track.put("url", "/customer/track");
+        track.put("active", "track".equals(activePage));
+        links.add(track);
+        
+        Map<String, Object> quote = new HashMap<>();
+        quote.put("label", "Get Quote");
+        // Check if user is authenticated - if so, link to quote-logged-in
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                quote.put("url", "/customer/quote-logged-in");
+            } else {
+                quote.put("url", "/customer/quote");
+            }
+        } catch (Exception e) {
+            quote.put("url", "/customer/quote");
+        }
+        quote.put("active", "quote".equals(activePage));
+        links.add(quote);
+        
+        Map<String, Object> movingServices = new HashMap<>();
+        movingServices.put("label", "Moving Services");
+        movingServices.put("url", "/moving-services");
+        movingServices.put("active", "moving-services".equals(activePage));
+        links.add(movingServices);
+        
+        Map<String, Object> packages = new HashMap<>();
+        packages.put("label", "My Packages");
+        packages.put("url", "/customer/packages");
+        packages.put("active", "packages".equals(activePage));
+        links.add(packages);
+        
+        Map<String, Object> analytics = new HashMap<>();
+        analytics.put("label", "Analytics");
+        analytics.put("url", "/customer/analytics");
+        analytics.put("active", "analytics".equals(activePage));
+        links.add(analytics);
+        
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("label", "Profile");
+        profile.put("url", "/customer/profile");
+        profile.put("active", "profile".equals(activePage));
+        links.add(profile);
+        
+        Map<String, Object> logout = new HashMap<>();
+        logout.put("label", "Logout");
+        logout.put("url", "/logout");
+        logout.put("active", false);
+        logout.put("id", "logoutBtn");
+        links.add(logout);
+        
+        return links;
+    }
+
     // Main customer dashboard
     @GetMapping({"", "/dashboard"})
     public String customerDashboard(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("dashboard"));
         try {
             // Get current user information
             User currentUser = authService.getCurrentUser();
@@ -171,6 +240,7 @@ public class CustomerWebController {
     // Quote creation page
     @GetMapping("/quote")
     public String createQuote(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("quote"));
         try {
             // Check if user is authenticated via session or SecurityContext
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -223,6 +293,7 @@ public class CustomerWebController {
     // Quote logged-in page (alias for /quote when authenticated)
     @GetMapping("/quote-logged-in")
     public String createQuoteLoggedIn(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("quote"));
         // Redirect to /quote which will show logged-in version if authenticated
         return createQuote(model);
     }
@@ -230,6 +301,7 @@ public class CustomerWebController {
     // Package management by email
     @GetMapping("/packages")
     public String managePackages(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("packages"));
         // Check if user is authenticated
         User currentUser = authService.getCurrentUser();
         if (currentUser != null) {
@@ -419,6 +491,7 @@ public class CustomerWebController {
     // Analytics page
     @GetMapping("/analytics")
     public String analytics(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("analytics"));
         try {
             // Get current user information
             User currentUser = authService.getCurrentUser();
@@ -441,6 +514,7 @@ public class CustomerWebController {
     // Profile page
     @GetMapping("/profile")
     public String profile(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("profile"));
         try {
             // Get current user information
             User currentUser = authService.getCurrentUser();

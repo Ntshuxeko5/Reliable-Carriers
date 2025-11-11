@@ -72,5 +72,41 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(driverUser);
             System.out.println("Test driver created successfully!");
         }
+
+        // Create admin user: ntshuxekochabalala80@gmail.com
+        if (!userRepository.findByEmail("ntshuxekochabalala80@gmail.com").isPresent()) {
+            User adminUser = new User();
+            adminUser.setFirstName("Ntshuxeko");
+            adminUser.setLastName("Chabalala");
+            adminUser.setEmail("ntshuxekochabalala80@gmail.com");
+            adminUser.setPassword(passwordEncoder.encode("Superman_-_0501!"));
+            adminUser.setPhone("+27793803535");
+            adminUser.setAddress("Admin Address");
+            adminUser.setCity("Admin City");
+            adminUser.setState("GA");
+            adminUser.setZipCode("0000");
+            adminUser.setCountry("South Africa");
+            adminUser.setRole(UserRole.ADMIN);
+            userRepository.save(adminUser);
+            System.out.println("Admin user created successfully: ntshuxekochabalala80@gmail.com");
+        }
+
+        // Create driver user: hugorex@gmail.com
+        if (!userRepository.findByEmail("hugorex@gmail.com").isPresent()) {
+            User driverUser = new User();
+            driverUser.setFirstName("Hugo");
+            driverUser.setLastName("Rex");
+            driverUser.setEmail("hugorex@gmail.com");
+            driverUser.setPassword(passwordEncoder.encode("Superman_-_0501!"));
+            driverUser.setPhone("+27123456789");
+            driverUser.setAddress("Driver Address");
+            driverUser.setCity("Driver City");
+            driverUser.setState("GA");
+            driverUser.setZipCode("0000");
+            driverUser.setCountry("South Africa");
+            driverUser.setRole(UserRole.DRIVER);
+            userRepository.save(driverUser);
+            System.out.println("Driver user created successfully: hugorex@gmail.com");
+        }
     }
 }

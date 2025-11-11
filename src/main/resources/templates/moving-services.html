@@ -62,7 +62,7 @@
 </head>
 <body class="bg-gray-50 font-sans">
 <!-- Navigation -->
-<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
     <!-- Hero Section -->
     <section class="relative bg-gradient-to-r from-reliable-700 to-reliable-800 text-white py-20">
         <div class="absolute inset-0 bg-black opacity-50"></div>

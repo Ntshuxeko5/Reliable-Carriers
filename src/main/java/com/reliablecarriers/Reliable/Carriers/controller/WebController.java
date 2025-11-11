@@ -15,6 +15,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class WebController {
@@ -24,6 +28,79 @@ public class WebController {
     @Autowired
     public WebController(@Lazy AuthService authService) {
         this.authService = authService;
+    }
+
+    // Helper method to create navbar links for public pages
+    private List<Map<String, Object>> createPublicNavLinks() {
+        List<Map<String, Object>> links = new ArrayList<>();
+        
+        Map<String, Object> tracking = new HashMap<>();
+        tracking.put("label", "Track Package");
+        tracking.put("url", "/tracking");
+        links.add(tracking);
+        
+        Map<String, Object> business = new HashMap<>();
+        business.put("label", "Business Solutions");
+        business.put("url", "/register/business");
+        links.add(business);
+        
+        Map<String, Object> driver = new HashMap<>();
+        driver.put("label", "Become a Driver");
+        driver.put("url", "/register/driver");
+        links.add(driver);
+        
+        Map<String, Object> about = new HashMap<>();
+        about.put("label", "About");
+        about.put("url", "/about");
+        links.add(about);
+        
+        Map<String, Object> contact = new HashMap<>();
+        contact.put("label", "Contact");
+        contact.put("url", "/contact");
+        links.add(contact);
+        
+        Map<String, Object> login = new HashMap<>();
+        login.put("label", "Login");
+        login.put("url", "/login");
+        links.add(login);
+        
+        Map<String, Object> register = new HashMap<>();
+        register.put("label", "Register");
+        register.put("url", "/register");
+        links.add(register);
+        
+        return links;
+    }
+
+    // Helper method to create navbar links for business pages
+    private List<Map<String, Object>> createBusinessNavLinks(String activePage) {
+        List<Map<String, Object>> links = new ArrayList<>();
+        
+        Map<String, Object> dashboard = new HashMap<>();
+        dashboard.put("label", "Dashboard");
+        dashboard.put("url", "/business/dashboard");
+        dashboard.put("active", "dashboard".equals(activePage));
+        links.add(dashboard);
+        
+        Map<String, Object> analytics = new HashMap<>();
+        analytics.put("label", "Analytics");
+        analytics.put("url", "/business/analytics");
+        analytics.put("active", "analytics".equals(activePage));
+        links.add(analytics);
+        
+        Map<String, Object> apiKeys = new HashMap<>();
+        apiKeys.put("label", "API Keys");
+        apiKeys.put("url", "/customer/api-keys");
+        links.add(apiKeys);
+        
+        Map<String, Object> logout = new HashMap<>();
+        logout.put("label", "Logout");
+        logout.put("url", "#");
+        logout.put("active", false);
+        logout.put("id", "logoutBtn");
+        links.add(logout);
+        
+        return links;
     }
 
     @GetMapping("/")
@@ -147,10 +224,29 @@ public class WebController {
         return "notifications";
     }
 
+    @GetMapping("/services")
+    public String services(Model model) {
+        model.addAttribute("navLinks", createPublicNavLinks());
+        return "services";
+    }
+
     @GetMapping("/moving-services")
     @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
-    public String movingServices() {
+    public String movingServices(Model model) {
+        model.addAttribute("navLinks", createPublicNavLinks());
         return "moving-services";
+    }
+
+    @GetMapping("/business/dashboard")
+    public String businessDashboard(Model model) {
+        model.addAttribute("navLinks", createBusinessNavLinks("dashboard"));
+        return "business/dashboard";
+    }
+
+    @GetMapping("/business/analytics")
+    public String businessAnalytics(Model model) {
+        model.addAttribute("navLinks", createBusinessNavLinks("analytics"));
+        return "business/analytics";
     }
 
     @GetMapping("/shipments")
@@ -175,6 +271,7 @@ public class WebController {
 
     @GetMapping("/booking")
     public String booking(Model model) {
+        model.addAttribute("navLinks", createPublicNavLinks());
         try {
             // Check if user is authenticated and get user data
             User currentUser = authService.getCurrentUser();

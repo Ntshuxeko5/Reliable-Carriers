@@ -1,5 +1,7 @@
-<!-- Standardized Navigation Bar Fragment -->
-<header th:fragment="navbar" class="text-white shadow-lg nav-header" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;">
+<!-- Standardized Navigation Bar Fragment with Custom Links -->
+<!-- Usage: th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}" -->
+<!-- navLinks should be a List<Map<String, String>> where each map has 'label' and 'url' keys -->
+<header th:fragment="navbar(navLinks)" class="text-white shadow-lg nav-header" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
             <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
@@ -7,17 +9,15 @@
                 <img src="/images/Reliable 1.png" alt="Reliable Carriers Logo - Professional Courier Services" style="height:50px; width:auto;" loading="lazy">
             </a>
             <ul class="hidden md:flex space-x-8">
-                <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                <li><a href="/register/business" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Business Solutions</a></li>
-                <li><a href="/register/driver" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Become a Driver</a></li>
-                <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                <li class="auth-required hidden"><a href="/customer/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                <li class="auth-required hidden"><a href="/customer/analytics" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Analytics</a></li>
-                <li class="auth-required hidden"><a href="/customer/quote" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Quote</a></li>
-                <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                <!-- Custom Navigation Links -->
+                <li th:each="link : ${navLinks}" th:if="${link != null}">
+                    <a th:href="${link.url}" 
+                       th:text="${link.label}" 
+                       th:id="${link.id}"
+                       class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                       th:classappend="${link.active != null and link.active} ? 'text-reliable-yellow-300 font-bold' : ''">
+                    </a>
+                </li>
                 <!-- Dark Mode Toggle -->
                 <li class="flex items-center">
                     <label class="flex items-center cursor-pointer">
@@ -40,19 +40,15 @@
         <!-- Mobile menu -->
         <div class="md:hidden hidden" id="mobileMenu">
             <ul class="py-4 space-y-4">
-                <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
-                <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                <li><a href="/register/business" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Business Solutions</a></li>
-                <li><a href="/register/driver" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Become a Driver</a></li>
-                <li><a href="/about" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                <li><a href="/contact" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                <li class="guest-only"><a href="/login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                <li class="guest-only"><a href="/register" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                <li><a href="/staff-login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Staff Portal</a></li>
-                <li class="auth-required hidden"><a href="/customer/dashboard" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                <li class="auth-required hidden"><a href="/customer/analytics" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Analytics</a></li>
-                <li class="auth-required hidden"><a href="/customer/quote" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
-                <li class="auth-required hidden"><a href="#" id="logoutBtnMobile" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
+                <!-- Custom Navigation Links for Mobile -->
+                <li th:each="link : ${navLinks}" th:if="${link != null}">
+                    <a th:href="${link.url}" 
+                       th:text="${link.label}" 
+                       th:id="${link.id != null ? link.id + 'Mobile' : null}"
+                       class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                       th:classappend="${link.active != null and link.active} ? 'text-reliable-yellow-300 font-bold' : ''">
+                    </a>
+                </li>
             </ul>
         </div>
     </nav>
@@ -83,6 +79,26 @@
                 darkModeToggle.checked = true;
                 document.documentElement.classList.add('dark');
             }
+        }
+        
+        // Logout button handlers
+        const logoutBtn = document.getElementById('logoutBtn');
+        const logoutBtnMobile = document.getElementById('logoutBtnMobile');
+        
+        function handleLogout(e) {
+            e.preventDefault();
+            // You can customize this logout logic
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+        
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', handleLogout);
+        }
+        
+        if (logoutBtnMobile) {
+            logoutBtnMobile.addEventListener('click', handleLogout);
         }
     });
 </script>
