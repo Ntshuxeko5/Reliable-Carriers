@@ -11,7 +11,7 @@
             </a>
             <ul class="hidden md:flex space-x-8">
                 <!-- Custom Navigation Links -->
-                <th:block th:if="${navLinks != null}">
+                <th:block th:if="${navLinks != null and !navLinks.isEmpty()}">
                     <li th:each="link : ${navLinks}" th:if="${link != null}">
                         <a th:href="${link.url}" 
                            th:text="${link.label}" 
@@ -21,8 +21,8 @@
                         </a>
                     </li>
                 </th:block>
-                <!-- Default navigation links if navLinks is not provided -->
-                <th:block th:if="${navLinks == null}">
+                <!-- Default navigation links if navLinks is not provided or empty -->
+                <th:block th:if="${navLinks == null or navLinks.isEmpty()}">
                     <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
                     <li><a href="/register/business" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Business Solutions</a></li>
                     <li><a href="/register/driver" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Become a Driver</a></li>
@@ -54,7 +54,7 @@
         <div class="md:hidden hidden" id="mobileMenu">
             <ul class="py-4 space-y-4">
                 <!-- Custom Navigation Links for Mobile -->
-                <th:block th:if="${navLinks != null}">
+                <th:block th:if="${navLinks != null and !navLinks.isEmpty()}">
                     <li th:each="link : ${navLinks}" th:if="${link != null}">
                         <a th:href="${link.url}" 
                            th:text="${link.label}" 
@@ -64,8 +64,8 @@
                         </a>
                     </li>
                 </th:block>
-                <!-- Default navigation links for mobile if navLinks is not provided -->
-                <th:block th:if="${navLinks == null}">
+                <!-- Default navigation links for mobile if navLinks is not provided or empty -->
+                <th:block th:if="${navLinks == null or navLinks.isEmpty()}">
                     <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
                     <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
                     <li><a href="/register/business" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Business Solutions</a></li>
