@@ -15,7 +15,7 @@
                     <li th:each="link : ${navLinks}" th:if="${link != null}">
                         <a th:href="${link.url}" 
                            th:text="${link.label}" 
-                           th:id="${link.id}"
+                           th:id="${link.id != null ? link.id : ''}"
                            class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
                            th:classappend="${link.active != null and link.active} ? 'text-reliable-yellow-300 font-bold' : ''">
                         </a>
