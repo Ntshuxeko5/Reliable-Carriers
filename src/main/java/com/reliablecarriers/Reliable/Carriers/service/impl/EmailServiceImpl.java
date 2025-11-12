@@ -22,7 +22,7 @@ public class EmailServiceImpl implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
 
-    @Autowired(required = false)
+    @Autowired
     private JavaMailSender mailSender;
 
     @Autowired
@@ -42,23 +42,19 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendSimpleEmail(String to, String subject, String text) {
-        // Check if email is enabled
-        if (mailSender == null) {
-            logger.warn("JavaMailSender is not configured. Email sending is disabled. Please configure email settings or set GMAIL_USERNAME and GMAIL_APP_PASSWORD environment variables.");
-            return; // Silently fail - don't throw exception
-        }
-        
-        // Validate email configuration
-        if (fromEmail == null || fromEmail.isEmpty() || fromEmail.equals("your-turbosmtp-username") || fromEmail.contains("example.com")) {
-            logger.warn("Email sender (spring.mail.username) is not configured. Please set GMAIL_USERNAME environment variable. Email not sent to: {}", to);
-            return; // Silently fail - don't throw exception
-        }
-        
         int maxRetries = 3;
         int retryDelay = 2000; // 2 seconds
         
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
+                // Validate email configuration
+                if (fromEmail == null || fromEmail.isEmpty()) {
+                    throw new IllegalStateException("Email sender (spring.mail.username) is not configured. Please set GMAIL_USERNAME environment variable.");
+                }
+                
+                if (mailSender == null) {
+                    throw new IllegalStateException("JavaMailSender is not configured. Please check email configuration.");
+                }
                 
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setFrom(fromEmail);
@@ -94,12 +90,8 @@ public class EmailServiceImpl implements EmailService {
                             "Original error: " + e.getMessage(), e);
                     }
                     
-                    // Log error but don't throw exception - allow application to continue
-                    // Email failures shouldn't break the application flow
-                    logger.error("Email sending failed after {} attempts to {}: {}. Email functionality may be disabled or misconfigured.", 
-                        maxRetries, to, e.getMessage());
-                    // Don't throw - just log and return
-                    return;
+                    // Re-throw exception so caller knows email failed
+                    throw new RuntimeException("Email sending failed after " + maxRetries + " attempts: " + e.getMessage(), e);
                 } else {
                     // Wait before retrying (exponential backoff)
                     try {
@@ -115,18 +107,6 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
-        // Check if email is enabled
-        if (mailSender == null) {
-            logger.warn("JavaMailSender is not configured. HTML email sending is disabled.");
-            return; // Silently fail - don't throw exception
-        }
-        
-        // Validate email configuration
-        if (fromEmail == null || fromEmail.isEmpty() || fromEmail.equals("your-turbosmtp-username") || fromEmail.contains("example.com")) {
-            logger.warn("Email sender (spring.mail.username) is not configured. HTML email not sent to: {}", to);
-            return; // Silently fail - don't throw exception
-        }
-        
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -145,13 +125,8 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
-            logger.info("HTML email sent successfully to {} with subject: {}", to, subject);
         } catch (MessagingException e) {
-            logger.error("Failed to send HTML email to {}: {}", to, e.getMessage(), e);
-            // Don't throw exception - allow application to continue
-        } catch (Exception e) {
-            logger.error("Failed to send HTML email to {}: {}", to, e.getMessage(), e);
-            // Don't throw exception - allow application to continue
+            throw new RuntimeException("Failed to send HTML email", e);
         }
     }
 
