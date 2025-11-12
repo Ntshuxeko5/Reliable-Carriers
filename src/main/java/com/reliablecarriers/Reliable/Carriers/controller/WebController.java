@@ -5,6 +5,8 @@ import com.reliablecarriers.Reliable.Carriers.model.UserRole;
 import com.reliablecarriers.Reliable.Carriers.model.DriverVerificationStatus;
 import com.reliablecarriers.Reliable.Carriers.model.BusinessVerificationStatus;
 import com.reliablecarriers.Reliable.Carriers.service.AuthService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
@@ -22,6 +24,7 @@ import java.util.Map;
 @Controller
 public class WebController {
 
+    private static final Logger logger = LoggerFactory.getLogger(WebController.class);
     private final AuthService authService;
 
     @Autowired
@@ -140,9 +143,20 @@ public class WebController {
 
     @GetMapping("/login")
     public String login(Model model) {
-        model.addAttribute("navLinks", createPublicNavLinks());
-        // Simple login page - no authentication check needed
-        return "login";
+        try {
+            List<Map<String, Object>> navLinks = createPublicNavLinks();
+            if (navLinks != null && !navLinks.isEmpty()) {
+                model.addAttribute("navLinks", navLinks);
+            }
+            // Simple login page - no authentication check needed
+            return "login";
+        } catch (Exception e) {
+            // If there's an error creating nav links, still show the page with default navigation
+            // The navbar fragment will use default links if navLinks is null
+            logger.error("Error loading login page: {}", e.getMessage(), e);
+            // Don't add navLinks to model - let template use default navigation
+            return "login";
+        }
     }
 
     @GetMapping("/staff-login")
@@ -153,9 +167,20 @@ public class WebController {
 
     @GetMapping("/register")
     public String register(Model model) {
-        model.addAttribute("navLinks", createPublicNavLinks());
-        // Simple register page - no authentication check needed
-        return "register";
+        try {
+            List<Map<String, Object>> navLinks = createPublicNavLinks();
+            if (navLinks != null && !navLinks.isEmpty()) {
+                model.addAttribute("navLinks", navLinks);
+            }
+            // Simple register page - no authentication check needed
+            return "register";
+        } catch (Exception e) {
+            // If there's an error creating nav links, still show the page with default navigation
+            // The navbar fragment will use default links if navLinks is null
+            logger.error("Error loading register page: {}", e.getMessage(), e);
+            // Don't add navLinks to model - let template use default navigation
+            return "register";
+        }
     }
 
     @GetMapping("/register/business")
