@@ -247,8 +247,21 @@ public class AuthController {
             if (user == null) user = userRepository.findByPhone(identifier).orElse(null);
             if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
 
-            boolean ok = twoFactorService.verifyToken(user, token);
-            if (!ok) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
+            // Normalize the token (trim whitespace)
+            String normalizedToken = token != null ? token.trim() : "";
+            if (normalizedToken.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", "Verification code is required"));
+            }
+            
+            logger.debug("Verifying 2FA token for user: {}, token: {}", identifier, normalizedToken);
+            
+            boolean ok = twoFactorService.verifyToken(user, normalizedToken);
+            if (!ok) {
+                logger.warn("2FA verification failed for user: {}, token: {}", identifier, normalizedToken);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "error", "Invalid or expired token. Please check the code and try again, or request a new code."));
+            }
 
             // success — generate JWT and return user details
             final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
@@ -309,6 +322,19 @@ public class AuthController {
             logger.debug("Registration request received for email: {}", registerRequest.getEmail());
             logger.debug("Registration request - Email: {}, Role: {}", registerRequest.getEmail(), registerRequest.getRole());
             
+            // Check critical dependencies
+            if (userRepository == null) {
+                logger.error("UserRepository is not available");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Service temporarily unavailable. Please try again later."));
+            }
+            
+            if (authService == null) {
+                logger.error("AuthService is not available");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Service temporarily unavailable. Please try again later."));
+            }
+            
             // Restrict tracking manager role creation - only admins can create these accounts
             // Drivers can self-register via /api/driver/register
             if (registerRequest.getRole() == UserRole.TRACKING_MANAGER) {
@@ -323,21 +349,25 @@ public class AuthController {
 
             // Validate registration data
             try {
-                Map<String, Object> validation = userValidationService.validateRegistration(
-                    registerRequest.getFirstName(),
-                    registerRequest.getLastName(),
-                    registerRequest.getEmail(),
-                    registerRequest.getPassword(),
-                    registerRequest.getConfirmPassword(), // Use actual confirm password
-                    registerRequest.getPhone()
-                );
+                if (userValidationService == null) {
+                    logger.warn("UserValidationService is not available - skipping validation");
+                } else {
+                    Map<String, Object> validation = userValidationService.validateRegistration(
+                        registerRequest.getFirstName(),
+                        registerRequest.getLastName(),
+                        registerRequest.getEmail(),
+                        registerRequest.getPassword(),
+                        registerRequest.getConfirmPassword(), // Use actual confirm password
+                        registerRequest.getPhone()
+                    );
 
-                if (!(Boolean) validation.get("valid")) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, String> errors = (Map<String, String>) validation.get("errors");
-                    logger.info("Validation failed: " + errors);
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("success", false, "message", "Validation failed", "errors", errors));
+                    if (!(Boolean) validation.get("valid")) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, String> errors = (Map<String, String>) validation.get("errors");
+                        logger.info("Validation failed: " + errors);
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(Map.of("success", false, "message", "Validation failed", "errors", errors));
+                    }
                 }
             } catch (Exception validationError) {
                 logger.error("Validation service error: " + validationError.getMessage(), validationError);
@@ -424,8 +454,27 @@ public class AuthController {
             }
 
             // Register the user and implement 2FA
-            User registeredUser = authService.registerUser(user);
-            logger.info("User registered successfully: " + registeredUser.getEmail());
+            User registeredUser;
+            try {
+                registeredUser = authService.registerUser(user);
+                logger.info("User registered successfully: " + registeredUser.getEmail());
+            } catch (Exception dbError) {
+                logger.error("Database error during registration: " + dbError.getMessage(), dbError);
+                // Check if it's a duplicate email error
+                if (dbError.getMessage() != null && dbError.getMessage().toLowerCase().contains("email")) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Email already in use. Please use a different email or try logging in."));
+                }
+                // Check if it's a database connection error
+                if (dbError.getMessage() != null && (dbError.getMessage().toLowerCase().contains("connection") || 
+                    dbError.getMessage().toLowerCase().contains("timeout") ||
+                    dbError.getCause() != null && dbError.getCause().getMessage() != null && 
+                    dbError.getCause().getMessage().toLowerCase().contains("connection"))) {
+                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(Map.of("success", false, "message", "Database connection error. Please try again in a few moments."));
+                }
+                throw dbError; // Re-throw if it's not a known error
+            }
             
             // Send role-specific welcome/registration notification email
             try {
@@ -583,11 +632,21 @@ public class AuthController {
                     .body(Map.of("success", false, "message", "User not found"));
             }
 
+            // Normalize the code (trim whitespace)
+            String normalizedCode = code != null ? code.trim() : "";
+            if (normalizedCode.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Verification code is required"));
+            }
+            
+            logger.debug("Verifying registration code for user: {}, code: {}", email, normalizedCode);
+            
             // Verify the 2FA token
-            boolean verified = twoFactorService.verifyToken(user, code);
+            boolean verified = twoFactorService.verifyToken(user, normalizedCode);
             if (!verified) {
+                logger.warn("Registration verification failed for user: {}, code: {}", email, normalizedCode);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("success", false, "message", "Invalid or expired verification code"));
+                    .body(Map.of("success", false, "message", "Invalid or expired verification code. Please check the code and try again, or request a new code."));
             }
 
             logger.debug("Registration verification successful for: " + email);
@@ -852,6 +911,19 @@ public class AuthController {
                     .body(Map.of("success", false, "error", "Email or phone number is required"));
             }
             
+            // Check critical dependencies
+            if (userRepository == null) {
+                logger.error("UserRepository is not available");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Service temporarily unavailable. Please try again later."));
+            }
+            
+            if (authService == null) {
+                logger.error("AuthService is not available");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Service temporarily unavailable. Please try again later."));
+            }
+            
             // Authenticate the user
             // The AuthRequest.identifier may be an email or a phone. We still authenticate via AuthService which expects email;
             // try to resolve identifier to an email if it's a phone.
@@ -865,7 +937,7 @@ public class AuthController {
             logger.debug("authenticateUser: identifier={}, resolvedEmail={}", identifier, loginEmail);
             
             // Check if account is locked
-            if (accountLockoutService.isAccountLocked(loginEmail)) {
+            if (accountLockoutService != null && accountLockoutService.isAccountLocked(loginEmail)) {
                 long remainingMinutes = accountLockoutService.getRemainingLockoutMinutes(loginEmail);
                 return ResponseEntity.status(HttpStatus.LOCKED)
                     .body(Map.of(
@@ -881,25 +953,40 @@ public class AuthController {
                 authenticatedUser = authService.authenticateUser(loginEmail, authRequest.getPassword());
                 
                 // Clear failed login attempts on successful authentication
-                accountLockoutService.clearFailedLoginAttempts(loginEmail);
+                if (accountLockoutService != null) {
+                    accountLockoutService.clearFailedLoginAttempts(loginEmail);
+                }
             } catch (BadCredentialsException e) {
                 // Record failed login attempt
-                accountLockoutService.recordFailedLoginAttempt(loginEmail);
-                
-                // Check if account is now locked
-                if (accountLockoutService.isAccountLocked(loginEmail)) {
-                    long remainingMinutes = accountLockoutService.getRemainingLockoutMinutes(loginEmail);
-                    return ResponseEntity.status(HttpStatus.LOCKED)
-                        .body(Map.of(
-                            "success", false,
-                            "message", "Account is temporarily locked due to multiple failed login attempts.",
-                            "remainingMinutes", remainingMinutes,
-                            "locked", true
-                        ));
+                if (accountLockoutService != null) {
+                    accountLockoutService.recordFailedLoginAttempt(loginEmail);
+                    
+                    // Check if account is now locked
+                    if (accountLockoutService.isAccountLocked(loginEmail)) {
+                        long remainingMinutes = accountLockoutService.getRemainingLockoutMinutes(loginEmail);
+                        return ResponseEntity.status(HttpStatus.LOCKED)
+                            .body(Map.of(
+                                "success", false,
+                                "message", "Account is temporarily locked due to multiple failed login attempts.",
+                                "remainingMinutes", remainingMinutes,
+                                "locked", true
+                            ));
+                    }
                 }
                 
                 // Re-throw to be handled by exception handler
                 throw e;
+            } catch (Exception authError) {
+                logger.error("Authentication error: " + authError.getMessage(), authError);
+                // Check if it's a database connection error
+                if (authError.getMessage() != null && (authError.getMessage().toLowerCase().contains("connection") || 
+                    authError.getMessage().toLowerCase().contains("timeout") ||
+                    authError.getCause() != null && authError.getCause().getMessage() != null && 
+                    authError.getCause().getMessage().toLowerCase().contains("connection"))) {
+                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(Map.of("success", false, "message", "Service temporarily unavailable. Please try again in a few moments."));
+                }
+                throw authError; // Re-throw if it's not a known error
             }
 
             // Allow customers and businesses (businesses have CUSTOMER role) to use this login endpoint.

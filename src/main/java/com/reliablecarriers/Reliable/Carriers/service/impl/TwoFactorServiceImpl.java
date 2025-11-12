@@ -116,12 +116,77 @@ public class TwoFactorServiceImpl implements TwoFactorService {
 
     @Override
     public boolean verifyToken(User user, String token) {
-        var found = tokenRepository.findByUserAndTokenAndUsedFalse(user, token);
-        if (found.isEmpty()) return false;
+        if (user == null || token == null) {
+            logger.warn("verifyToken called with null user or token");
+            return false;
+        }
+        
+        // Normalize the token: trim whitespace and ensure it's a 6-digit string
+        String normalizedToken = token.trim();
+        
+        // Remove any non-numeric characters (spaces, dashes, etc.)
+        normalizedToken = normalizedToken.replaceAll("[^0-9]", "");
+        
+        // If token is numeric, ensure it's exactly 6 digits with leading zeros
+        try {
+            if (normalizedToken.isEmpty()) {
+                logger.warn("Token is empty after normalization");
+                return false;
+            }
+            
+            // Parse as integer to remove any leading zeros that might cause issues
+            int tokenInt = Integer.parseInt(normalizedToken);
+            
+            // Ensure it's a valid 6-digit code (0-999999)
+            if (tokenInt < 0 || tokenInt > 999999) {
+                logger.warn("Token out of valid range: {}", tokenInt);
+                return false;
+            }
+            
+            // Format as 6-digit string with leading zeros
+            normalizedToken = String.format("%06d", tokenInt);
+        } catch (NumberFormatException e) {
+            // Token is not numeric, use as-is (shouldn't happen but handle gracefully)
+            logger.warn("Token is not numeric: {}", normalizedToken);
+            // If it's already 6 characters, use it as-is
+            if (normalizedToken.length() != 6) {
+                return false;
+            }
+        }
+        
+        logger.debug("Verifying token for user: {}, normalized token: {}", user.getEmail(), normalizedToken);
+        
+        // Try to find the token with normalized value
+        var found = tokenRepository.findByUserAndTokenAndUsedFalse(user, normalizedToken);
+        
+        if (found.isEmpty()) {
+            logger.debug("Token not found for user: {}, token: {}", user.getEmail(), normalizedToken);
+            
+            // Also check if there are any unused tokens for this user (for debugging)
+            var allTokens = tokenRepository.findByUserAndUsedFalseOrderByExpiresAtDesc(user);
+            if (!allTokens.isEmpty()) {
+                logger.debug("Found {} unused tokens for user: {}", allTokens.size(), user.getEmail());
+                for (TwoFactorToken t : allTokens) {
+                    logger.debug("  Token: {}, Expires: {}, Used: {}", 
+                        t.getToken(), t.getExpiresAt(), t.isUsed());
+                }
+            }
+            return false;
+        }
+        
         TwoFactorToken t = found.get();
-        if (t.getExpiresAt() != null && t.getExpiresAt().before(new Date())) return false;
+        
+        // Check expiration
+        if (t.getExpiresAt() != null && t.getExpiresAt().before(new Date())) {
+            logger.debug("Token expired for user: {}, token: {}, expires: {}", 
+                user.getEmail(), normalizedToken, t.getExpiresAt());
+            return false;
+        }
+        
+        // Mark token as used
         t.setUsed(true);
         tokenRepository.save(t);
+        logger.info("Token verified successfully for user: {}", user.getEmail());
         return true;
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
@@ -589,6 +590,15 @@ public class WebController {
         return "forgot-password";
     }
 
+    @GetMapping("/reset-password")
+    public String resetPassword(@RequestParam(required = false) String token, Model model) {
+        if (token == null || token.trim().isEmpty()) {
+            // If no token provided, redirect to forgot password page
+            return "redirect:/forgot-password?error=invalid_token";
+        }
+        model.addAttribute("token", token);
+        return "reset-password";
+    }
     
     @GetMapping("/payment-success")
     public String paymentSuccess() {
