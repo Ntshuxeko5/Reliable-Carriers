@@ -2,7 +2,7 @@
 <!-- Usage: th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}" -->
 <!-- navLinks should be a List<Map<String, String>> where each map has 'label' and 'url' keys -->
 <!-- If navLinks is not provided, uses default public navigation links -->
-<header th:fragment="navbar(navLinks=${null})" class="text-white shadow-lg nav-header" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;">
+<header th:fragment="navbar(navLinks)" class="text-white shadow-lg nav-header" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
             <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">

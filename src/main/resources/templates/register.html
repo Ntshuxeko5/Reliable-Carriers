@@ -63,7 +63,7 @@
 </head>
 <body class="bg-gradient-to-br from-reliable-50 to-reliable-100 min-h-screen">
     <!-- Navigation -->
-    <th:block th:with="navLinksToUse=${navLinks != null ? navLinks : T(java.util.Collections).emptyList()}">
+    <th:block th:with="navLinksToUse=${navLinks != null and !navLinks.isEmpty() ? navLinks : T(java.util.Collections).emptyList()}">
         <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinksToUse})}"></div>
     </th:block>
     
