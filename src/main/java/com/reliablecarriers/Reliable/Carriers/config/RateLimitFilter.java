@@ -7,6 +7,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @Order(1)
 public class RateLimitFilter implements Filter {
 
+    @Value("${app.rate-limit.requests-per-minute:100}")
+    private int requestsPerMinute;
+
+    @Value("${app.rate-limit.enabled:true}")
+    private boolean rateLimitEnabled;
+
     private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
 
     @Override
@@ -32,11 +39,21 @@ public class RateLimitFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
+        // Skip rate limiting if disabled
+        if (!rateLimitEnabled) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // Skip rate limiting for static resources and public pages
         String path = httpRequest.getRequestURI();
         if (path.startsWith("/css/") || path.startsWith("/js/") || 
             path.startsWith("/images/") || path.startsWith("/favicon.ico") ||
-            path.equals("/") || path.equals("/home")) {
+            path.equals("/") || path.equals("/home") ||
+            path.equals("/login") || path.equals("/register") ||
+            path.startsWith("/register/") || path.equals("/staff-login") ||
+            path.startsWith("/tracking") || path.equals("/about") || 
+            path.equals("/contact") || path.startsWith("/services")) {
             chain.doFilter(request, response);
             return;
         }
@@ -61,15 +78,13 @@ public class RateLimitFilter implements Filter {
     }
 
     private Bucket createNewBucket(String clientId) {
-        // Different limits for different endpoints
-        // API endpoints: 100 requests per minute
-        // Public endpoints: 200 requests per minute
-        // Auth endpoints: 10 requests per minute (more restrictive)
-        
-        // Default: 100 requests per minute
+        // Configurable rate limit per minute
         // Using Bandwidth.simple (deprecated but functional) - can be updated to Bandwidth.classic in future versions
         return Bucket.builder()
-            .addLimit(Bandwidth.builder().capacity(100).refillIntervally(100, Duration.ofMinutes(1)).build())
+            .addLimit(Bandwidth.builder()
+                .capacity(requestsPerMinute)
+                .refillIntervally(requestsPerMinute, Duration.ofMinutes(1))
+                .build())
             .build();
     }
 
