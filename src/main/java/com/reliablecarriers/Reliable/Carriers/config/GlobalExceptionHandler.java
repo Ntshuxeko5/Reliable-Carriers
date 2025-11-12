@@ -174,16 +174,38 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGenericException(Exception ex) {
+    public ResponseEntity<Object> handleGenericException(Exception ex, WebRequest request) {
         String requestId = UUID.randomUUID().toString();
-        logger.error("Unexpected error [{}]: {}", requestId, ex.getMessage(), ex);
+        String path = request != null ? request.getDescription(false) : "unknown";
+        logger.error("Unhandled exception [{}] at path [{}]: {}", requestId, path, ex.getMessage(), ex);
+        
+        // Log root cause
+        Throwable rootCause = ex;
+        while (rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+        logger.error("Root cause [{}]: {} - {}", requestId, rootCause.getClass().getName(), rootCause.getMessage());
         
         Map<String, Object> body = new HashMap<>();
         body.put("success", false);
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         body.put("requestId", requestId);
         body.put("error", "Internal server error");
-        body.put("message", "An unexpected error occurred. Please contact support if the problem persists.");
+        
+        // Include error message in development, but hide in production
+        boolean isProduction = System.getenv("PRODUCTION_MODE") != null && 
+                              "true".equalsIgnoreCase(System.getenv("PRODUCTION_MODE"));
+        
+        if (!isProduction) {
+            body.put("message", ex.getMessage());
+            body.put("exception", ex.getClass().getSimpleName());
+            body.put("rootCause", rootCause.getClass().getSimpleName());
+            if (ex.getCause() != null) {
+                body.put("cause", ex.getCause().getMessage());
+            }
+        } else {
+            body.put("message", "An unexpected error occurred. Please contact support if the problem persists.");
+        }
         
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }

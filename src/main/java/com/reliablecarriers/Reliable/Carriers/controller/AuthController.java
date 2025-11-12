@@ -603,9 +603,33 @@ public class AuthController {
                 .body(Map.of("success", false, "message", e.getMessage()));
         } catch (Exception e) {
             logger.error("Registration error: " + e.getMessage(), e);
+            logger.error("Registration error stack trace:", e);
             e.printStackTrace(); // Print full stack trace for debugging
+            
+            // Log the root cause
+            Throwable rootCause = e;
+            while (rootCause.getCause() != null) {
+                rootCause = rootCause.getCause();
+            }
+            logger.error("Root cause: {} - {}", rootCause.getClass().getName(), rootCause.getMessage());
+            
+            // Check for common issues
+            String errorMessage = e.getMessage();
+            if (errorMessage != null) {
+                if (errorMessage.contains("Connection") || errorMessage.contains("timeout") || 
+                    errorMessage.contains("Unable to connect") || errorMessage.contains("database")) {
+                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(Map.of("success", false, "message", "Database connection error. Please try again in a few moments."));
+                }
+                if (errorMessage.contains("Email") || errorMessage.contains("SMTP") || errorMessage.contains("mail")) {
+                    // Email failure shouldn't break registration - token is saved
+                    logger.warn("Email failed but registration should continue");
+                }
+            }
+            
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("success", false, "message", "Registration failed: " + e.getMessage() + ". Please check the server logs for details."));
+                .body(Map.of("success", false, "message", "Registration failed: " + e.getMessage() + ". Please check the server logs for details.", 
+                    "errorType", e.getClass().getSimpleName()));
         }
     }
 
@@ -1031,14 +1055,36 @@ public class AuthController {
 
         } catch (UsernameNotFoundException | BadCredentialsException e) {
             // Use validation service to provide specific error messages
-            String errorMessage = userValidationService.getAuthenticationErrorMessage(authRequest.getIdentifier(), authRequest.getPassword());
+            String errorMessage = userValidationService != null ? 
+                userValidationService.getAuthenticationErrorMessage(authRequest.getIdentifier(), authRequest.getPassword()) :
+                "Invalid email or password";
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("success", false, "message", errorMessage));
         } catch (Exception e) {
             logger.error("Login error: " + e.getMessage(), e);
+            logger.error("Login error stack trace:", e);
             e.printStackTrace(); // Print full stack trace for debugging
+            
+            // Log the root cause
+            Throwable rootCause = e;
+            while (rootCause.getCause() != null) {
+                rootCause = rootCause.getCause();
+            }
+            logger.error("Root cause: {} - {}", rootCause.getClass().getName(), rootCause.getMessage());
+            
+            // Check for common issues
+            String errorMessage = e.getMessage();
+            if (errorMessage != null) {
+                if (errorMessage.contains("Connection") || errorMessage.contains("timeout") || 
+                    errorMessage.contains("Unable to connect") || errorMessage.contains("database")) {
+                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(Map.of("success", false, "message", "Database connection error. Please try again in a few moments."));
+                }
+            }
+            
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("success", false, "message", "Error during authentication: " + e.getMessage() + ". Please check the server logs for details."));
+                .body(Map.of("success", false, "message", "Error during authentication: " + e.getMessage() + ". Please check the server logs for details.",
+                    "errorType", e.getClass().getSimpleName()));
         }
     }
 
