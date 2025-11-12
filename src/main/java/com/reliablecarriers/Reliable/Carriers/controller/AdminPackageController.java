@@ -1,5 +1,6 @@
 package com.reliablecarriers.Reliable.Carriers.controller;
 
+import com.reliablecarriers.Reliable.Carriers.dto.UnifiedPackageDTO;
 import com.reliablecarriers.Reliable.Carriers.model.*;
 import com.reliablecarriers.Reliable.Carriers.repository.*;
 import com.reliablecarriers.Reliable.Carriers.service.*;
@@ -25,14 +26,18 @@ public class AdminPackageController {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private ShipmentRepository shipmentRepository;
+    // Note: shipmentRepository kept for potential future use
+    // @Autowired
+    // private ShipmentRepository shipmentRepository;
 
     @Autowired
     private ComprehensiveNotificationService notificationService;
 
     @Autowired
     private RealtimeTrackingService realtimeTrackingService;
+
+    @Autowired
+    private com.reliablecarriers.Reliable.Carriers.service.UnifiedPackageService unifiedPackageService;
 
     /**
      * Get all packages pending assignment
@@ -164,45 +169,43 @@ public class AdminPackageController {
                 return ResponseEntity.badRequest().body(result);
             }
 
-            // Assign driver
-            booking.setDriver(driver);
-            booking.setStatus(BookingStatus.ASSIGNED);
-            booking.setUpdatedAt(new Date());
-            bookingRepository.save(booking);
+            // Use unified service to assign package (synchronizes Booking and Shipment)
+            if (booking.getTrackingNumber() != null) {
+                UnifiedPackageDTO updatedPackage = unifiedPackageService.assignPackageToDriver(
+                    booking.getTrackingNumber(), driverId);
+                
+                // Send notifications
+                notificationService.sendDriverAssignmentNotification(booking, driver);
 
-            // Create or update shipment
-            Shipment shipment = shipmentRepository.findByTrackingNumber(booking.getTrackingNumber())
-                .orElse(new Shipment());
-            
-            if (shipment.getId() == null) {
-                shipment.setTrackingNumber(booking.getTrackingNumber());
-                shipment.setDescription(booking.getDescription());
-                shipment.setPickupAddress(booking.getPickupAddress() + ", " + booking.getPickupCity());
-                shipment.setDeliveryAddress(booking.getDeliveryAddress() + ", " + booking.getDeliveryCity());
-                shipment.setShippingCost(booking.getTotalAmount());
-                shipment.setServiceType(ServiceType.valueOf(booking.getServiceType().name()));
-                shipment.setCreatedAt(new Date());
+                // Send real-time updates
+                if (updatedPackage.getShipmentStatus() != null) {
+                    realtimeTrackingService.sendPackageStatusUpdate(
+                        booking.getTrackingNumber(), 
+                        updatedPackage.getShipmentStatus(), 
+                        "Package assigned to driver", 
+                        "Package assigned to " + driver.getFirstName() + " " + driver.getLastName()
+                    );
+                }
+
+                result.put("success", true);
+                result.put("message", "Package assigned successfully");
+                result.put("driverName", updatedPackage.getDriverName());
+                result.put("driverPhone", updatedPackage.getDriverPhone());
+                result.put("status", updatedPackage.getUnifiedStatus());
+            } else {
+                // Fallback for bookings without tracking numbers
+                booking.setDriver(driver);
+                booking.setStatus(BookingStatus.ASSIGNED);
+                booking.setUpdatedAt(new Date());
+                bookingRepository.save(booking);
+                
+                notificationService.sendDriverAssignmentNotification(booking, driver);
+                
+                result.put("success", true);
+                result.put("message", "Package assigned successfully");
+                result.put("driverName", driver.getFirstName() + " " + driver.getLastName());
+                result.put("driverPhone", driver.getPhone());
             }
-            
-            shipment.setAssignedDriver(driver);
-            shipment.setStatus(ShipmentStatus.ASSIGNED);
-            shipmentRepository.save(shipment);
-
-            // Send notifications
-            notificationService.sendDriverAssignmentNotification(booking, driver);
-
-            // Send real-time updates
-            realtimeTrackingService.sendPackageStatusUpdate(
-                booking.getTrackingNumber(), 
-                ShipmentStatus.ASSIGNED, 
-                "Package assigned to driver", 
-                "Package assigned to " + driver.getFirstName() + " " + driver.getLastName()
-            );
-
-            result.put("success", true);
-            result.put("message", "Package assigned successfully");
-            result.put("driverName", driver.getFirstName() + " " + driver.getLastName());
-            result.put("driverPhone", driver.getPhone());
 
             return ResponseEntity.ok(result);
 
@@ -214,7 +217,7 @@ public class AdminPackageController {
     }
 
     /**
-     * Get all packages (with filters)
+     * Get all packages (with filters) - Uses UnifiedPackageService for seamless integration
      */
     @GetMapping("/all")
     public ResponseEntity<List<Map<String, Object>>> getAllPackages(
@@ -224,50 +227,71 @@ public class AdminPackageController {
             @RequestParam(defaultValue = "50") int size) {
         
         try {
-            List<Booking> bookings;
+            List<com.reliablecarriers.Reliable.Carriers.dto.UnifiedPackageDTO> unifiedPackages;
             
+            // Use unified service to get packages
             if (status != null && driverId != null) {
-                User driver = userRepository.findById(driverId).orElse(null);
-                bookings = bookingRepository.findByStatusAndDriverOrderByCreatedAtDesc(
-                    BookingStatus.valueOf(status.toUpperCase()), driver);
+                // Filter by both status and driver
+                unifiedPackages = unifiedPackageService.getPackagesByDriverId(driverId);
+                unifiedPackages = unifiedPackages.stream()
+                    .filter(p -> p.getUnifiedStatus() != null && 
+                        p.getUnifiedStatus().equalsIgnoreCase(status))
+                    .collect(java.util.stream.Collectors.toList());
             } else if (status != null) {
-                bookings = bookingRepository.findByStatusOrderByCreatedAtDesc(
-                    BookingStatus.valueOf(status.toUpperCase()));
+                unifiedPackages = unifiedPackageService.getPackagesByStatus(status);
             } else if (driverId != null) {
-                User driver = userRepository.findById(driverId).orElse(null);
-                bookings = bookingRepository.findByDriverOrderByCreatedAtDesc(driver);
+                unifiedPackages = unifiedPackageService.getPackagesByDriverId(driverId);
             } else {
-                bookings = bookingRepository.findAllByOrderByCreatedAtDesc();
+                unifiedPackages = unifiedPackageService.getAllPackages();
             }
 
-            // Apply pagination manually (in a real app, use Pageable)
+            // Apply pagination
             int start = page * size;
-            int end = Math.min(start + size, bookings.size());
-            if (start >= bookings.size()) {
-                bookings = new ArrayList<>();
+            int end = Math.min(start + size, unifiedPackages.size());
+            if (start >= unifiedPackages.size()) {
+                unifiedPackages = new ArrayList<>();
             } else {
-                bookings = bookings.subList(start, end);
+                unifiedPackages = unifiedPackages.subList(start, end);
             }
 
+            // Convert UnifiedPackageDTO to Map for backward compatibility
             List<Map<String, Object>> packages = new ArrayList<>();
-            for (Booking booking : bookings) {
+            for (com.reliablecarriers.Reliable.Carriers.dto.UnifiedPackageDTO unifiedPackage : unifiedPackages) {
                 Map<String, Object> packageInfo = new HashMap<>();
-                packageInfo.put("id", booking.getId());
-                packageInfo.put("bookingNumber", booking.getBookingNumber());
-                packageInfo.put("trackingNumber", booking.getTrackingNumber());
-                packageInfo.put("status", booking.getStatus() != null ? booking.getStatus().name() : "PENDING");
-                packageInfo.put("customerName", booking.getCustomerName());
-                packageInfo.put("serviceType", booking.getServiceType().getDisplayName());
-                packageInfo.put("totalAmount", booking.getTotalAmount());
-                packageInfo.put("createdAt", booking.getCreatedAt());
-                packageInfo.put("updatedAt", booking.getUpdatedAt());
+                packageInfo.put("id", unifiedPackage.getId());
+                packageInfo.put("bookingId", unifiedPackage.getBookingId());
+                packageInfo.put("shipmentId", unifiedPackage.getShipmentId());
+                packageInfo.put("bookingNumber", unifiedPackage.getBookingNumber());
+                packageInfo.put("trackingNumber", unifiedPackage.getTrackingNumber());
+                packageInfo.put("status", unifiedPackage.getUnifiedStatus() != null ? unifiedPackage.getUnifiedStatus() : "PENDING");
+                packageInfo.put("formattedStatus", unifiedPackage.getFormattedStatus());
+                packageInfo.put("customerName", unifiedPackage.getCustomerName() != null ? unifiedPackage.getCustomerName() : unifiedPackage.getSenderName());
+                packageInfo.put("recipientName", unifiedPackage.getRecipientName());
+                packageInfo.put("serviceType", unifiedPackage.getServiceType());
+                packageInfo.put("totalAmount", unifiedPackage.getTotalAmount() != null ? unifiedPackage.getTotalAmount() : unifiedPackage.getShippingCost());
+                packageInfo.put("shippingCost", unifiedPackage.getShippingCost());
+                packageInfo.put("createdAt", unifiedPackage.getCreatedAt());
+                packageInfo.put("estimatedDeliveryDate", unifiedPackage.getEstimatedDeliveryDate());
+                packageInfo.put("pickupAddress", unifiedPackage.getPickupAddress());
+                packageInfo.put("pickupCity", unifiedPackage.getPickupCity());
+                packageInfo.put("pickupState", unifiedPackage.getPickupState());
+                packageInfo.put("deliveryAddress", unifiedPackage.getDeliveryAddress());
+                packageInfo.put("deliveryCity", unifiedPackage.getDeliveryCity());
+                packageInfo.put("deliveryState", unifiedPackage.getDeliveryState());
                 
-                if (booking.getDriver() != null) {
+                // Driver information
+                if (unifiedPackage.getDriverId() != null) {
                     Map<String, Object> driverInfo = new HashMap<>();
-                    driverInfo.put("id", booking.getDriver().getId());
-                    driverInfo.put("name", booking.getDriver().getFirstName() + " " + booking.getDriver().getLastName());
-                    driverInfo.put("phone", booking.getDriver().getPhone());
+                    driverInfo.put("id", unifiedPackage.getDriverId());
+                    driverInfo.put("name", unifiedPackage.getDriverName());
+                    driverInfo.put("phone", unifiedPackage.getDriverPhone());
+                    driverInfo.put("email", unifiedPackage.getDriverEmail());
                     packageInfo.put("driver", driverInfo);
+                    packageInfo.put("assignedDriverName", unifiedPackage.getDriverName());
+                    packageInfo.put("assignedDriverPhone", unifiedPackage.getDriverPhone());
+                } else {
+                    packageInfo.put("assignedDriverName", null);
+                    packageInfo.put("assignedDriverPhone", null);
                 }
                 
                 packages.add(packageInfo);
@@ -280,7 +304,7 @@ public class AdminPackageController {
     }
 
     /**
-     * Update package status manually (admin override)
+     * Update package status manually (admin override) - Uses UnifiedPackageService for synchronization
      */
     @PutMapping("/{bookingId}/status")
     public ResponseEntity<Map<String, Object>> updatePackageStatus(
@@ -296,30 +320,36 @@ public class AdminPackageController {
             String newStatus = request.get("status");
             String notes = request.get("notes");
 
-            BookingStatus bookingStatus = BookingStatus.valueOf(newStatus.toUpperCase());
-            booking.setStatus(bookingStatus);
-            booking.setUpdatedAt(new Date());
-            bookingRepository.save(booking);
-
-            // Update shipment if exists
-            shipmentRepository.findByTrackingNumber(booking.getTrackingNumber())
-                .ifPresent(shipment -> {
-                    ShipmentStatus shipmentStatus = mapBookingToShipmentStatus(bookingStatus);
-                    shipment.setStatus(shipmentStatus);
-                    shipmentRepository.save(shipment);
-                    
-                    // Send real-time updates
+            // Use unified service to update status (synchronizes Booking and Shipment)
+            if (booking.getTrackingNumber() != null) {
+                UnifiedPackageDTO updatedPackage = unifiedPackageService.updatePackageStatus(
+                    booking.getTrackingNumber(), newStatus);
+                
+                // Send real-time updates
+                if (updatedPackage.getShipmentStatus() != null) {
                     realtimeTrackingService.sendPackageStatusUpdate(
                         booking.getTrackingNumber(), 
-                        shipmentStatus, 
+                        updatedPackage.getShipmentStatus(), 
                         "Status updated by admin", 
                         notes != null ? notes : "Status manually updated"
                     );
-                });
-
-            result.put("success", true);
-            result.put("message", "Status updated successfully");
-            result.put("newStatus", bookingStatus);
+                }
+                
+                result.put("success", true);
+                result.put("message", "Status updated successfully");
+                result.put("newStatus", updatedPackage.getUnifiedStatus());
+                result.put("formattedStatus", updatedPackage.getFormattedStatus());
+            } else {
+                // Fallback for bookings without tracking numbers
+                BookingStatus bookingStatus = BookingStatus.valueOf(newStatus.toUpperCase());
+                booking.setStatus(bookingStatus);
+                booking.setUpdatedAt(new Date());
+                bookingRepository.save(booking);
+                
+                result.put("success", true);
+                result.put("message", "Status updated successfully");
+                result.put("newStatus", bookingStatus.toString());
+            }
 
             return ResponseEntity.ok(result);
 
@@ -331,26 +361,26 @@ public class AdminPackageController {
     }
 
     /**
-     * Get package statistics for dashboard
+     * Get package statistics for dashboard - Uses UnifiedPackageService
      */
     @GetMapping("/statistics")
     public ResponseEntity<Map<String, Object>> getPackageStatistics() {
         try {
+            UnifiedPackageService.PackageStatistics unifiedStats = unifiedPackageService.getPackageStatistics();
+            
             Map<String, Object> stats = new HashMap<>();
+            stats.put("total", unifiedStats.getTotalPackages());
+            stats.put("pending", unifiedStats.getPendingPackages());
+            stats.put("assigned", unifiedStats.getAssignedPackages());
+            stats.put("inTransit", unifiedStats.getInTransitPackages());
+            stats.put("delivered", unifiedStats.getDeliveredPackages());
+            stats.put("cancelled", unifiedStats.getCancelledPackages());
             
-            // Count by status
-            for (BookingStatus status : BookingStatus.values()) {
-                long count = bookingRepository.countByStatus(status);
-                stats.put(status.name().toLowerCase() + "Count", count);
-            }
-            
-            // Total packages
-            long totalPackages = bookingRepository.count();
-            stats.put("totalPackages", totalPackages);
-            
-            // Packages needing assignment
-            long needingAssignment = bookingRepository.countByStatus(BookingStatus.CONFIRMED);
-            stats.put("needingAssignment", needingAssignment);
+            // Additional stats for backward compatibility
+            stats.put("totalPackages", unifiedStats.getTotalPackages());
+            stats.put("pendingPackages", unifiedStats.getPendingPackages());
+            stats.put("inTransitPackages", unifiedStats.getInTransitPackages());
+            stats.put("deliveredPackages", unifiedStats.getDeliveredPackages());
             
             // Active deliveries
             long activeDeliveries = bookingRepository.countByStatusIn(
@@ -365,6 +395,8 @@ public class AdminPackageController {
     }
 
     // Helper method to map booking status to shipment status
+    // Kept for potential future use when converting bookings to shipments
+    @SuppressWarnings("unused")
     private ShipmentStatus mapBookingToShipmentStatus(BookingStatus bookingStatus) {
         switch (bookingStatus) {
             case CONFIRMED:

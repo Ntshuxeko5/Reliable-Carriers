@@ -4,7 +4,15 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_users_email", columnList = "email"),
+    @Index(name = "idx_users_role", columnList = "role"),
+    @Index(name = "idx_users_active", columnList = "is_active"),
+    @Index(name = "idx_users_role_active", columnList = "role,is_active"),
+    @Index(name = "idx_users_phone", columnList = "phone"),
+    @Index(name = "idx_users_is_business", columnList = "is_business"),
+    @Index(name = "idx_users_customer_tier", columnList = "customer_tier")
+})
 public class User {
     
     @Id

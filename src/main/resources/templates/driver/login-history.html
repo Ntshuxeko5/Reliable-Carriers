@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Login History - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/error-handling.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#dbb714', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+                            800: '#1e40af', 900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold">Reliable Carriers</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/driver/dashboard" class="hover:text-blue-200">Dashboard</a>
+                    <a href="/driver/workboard" class="hover:text-blue-200">Workboard</a>
+                    <a href="/driver/earnings" class="hover:text-blue-200">Earnings</a>
+                    <a href="/driver/profile" class="hover:text-blue-200">Profile</a>
+                    <a href="/driver/login-history" class="text-blue-200 font-semibold">Login History</a>
+                    <a href="/logout" class="hover:text-blue-200">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="glass-effect rounded-3xl p-8 mb-8">
+            <div class="text-center mb-6">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-history mr-3 gradient-text"></i>Login History
+                </h1>
+                <p class="text-xl text-gray-700" th:if="${userName}">
+                    Review your recent login activity, <span th:text="${userName}"></span>.
+                </p>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Logins</p>
+                        <p class="text-2xl font-bold text-brand-blue-600" id="totalLogins">0</p>
+                    </div>
+                    <div class="p-3 bg-brand-blue-100 rounded-full">
+                        <i class="fas fa-sign-in-alt text-brand-blue-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Successful Logins</p>
+                        <p class="text-2xl font-bold text-green-600" id="successfulLogins">0</p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-full">
+                        <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Failed Logins</p>
+                        <p class="text-2xl font-bold text-red-600" id="failedLogins">0</p>
+                    </div>
+                    <div class="p-3 bg-red-100 rounded-full">
+                        <i class="fas fa-times-circle text-red-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Last Successful Login</p>
+                        <p class="text-lg font-bold text-gray-800" id="lastSuccessfulLogin">N/A</p>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-full">
+                        <i class="fas fa-clock text-gray-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="glass-effect rounded-xl p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Filter Login History</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="datetime-local" id="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-blue-500 focus:ring-brand-blue-500">
+                </div>
+                <div>
+                    <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="datetime-local" id="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-blue-500 focus:ring-brand-blue-500">
+                </div>
+                <div>
+                    <label for="statusFilter" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select id="statusFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-blue-500 focus:ring-brand-blue-500">
+                        <option value="">All</option>
+                        <option value="SUCCESS">Successful</option>
+                        <option value="FAILED">Failed</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="applyFiltersBtn" class="px-6 py-2 bg-brand-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-blue-700 focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:ring-offset-2">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- Login History Table -->
+        <div class="glass-effect rounded-xl p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Login Attempts</h2>
+            <div id="loadingSpinner" class="text-center py-4 hidden">
+                <i class="fas fa-spinner fa-spin text-brand-blue-500 text-3xl"></i>
+                <p class="text-gray-600 mt-2">Loading login history...</p>
+            </div>
+            <div id="errorMessage" class="text-red-600 text-center py-4 hidden"></div>
+            <div id="noHistoryMessage" class="text-gray-600 text-center py-4 hidden">No login history found for the selected criteria.</div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device/Browser</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loginHistoryTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Login history rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        document.addEventListener('DOMContentLoaded', function() {
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const statusFilter = document.getElementById('statusFilter');
+            const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+            const loginHistoryTableBody = document.getElementById('loginHistoryTableBody');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const errorMessageDiv = document.getElementById('errorMessage');
+            const noHistoryMessageDiv = document.getElementById('noHistoryMessage');
+
+            // Set default date range (last 30 days)
+            const defaultEndDate = new Date();
+            const defaultStartDate = new Date();
+            defaultStartDate.setDate(defaultEndDate.getDate() - 30);
+
+            startDateInput.value = formatDateTimeLocal(defaultStartDate);
+            endDateInput.value = formatDateTimeLocal(defaultEndDate);
+
+            function formatDateTimeLocal(date) {
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+
+            function fetchLoginHistory() {
+                showLoading(loadingSpinner);
+                hideElement(errorMessageDiv);
+                hideElement(noHistoryMessageDiv);
+                loginHistoryTableBody.innerHTML = '';
+
+                const startDate = startDateInput.value ? new Date(startDateInput.value).toISOString() : null;
+                const endDate = endDateInput.value ? new Date(endDateInput.value).toISOString() : null;
+                const status = statusFilter.value;
+
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                if (status) params.append('status', status);
+
+                fetch(`/api/customer/login-history?${params.toString()}`)
+                    .then(handleApiResponse)
+                    .then(data => {
+                        hideLoading(loadingSpinner);
+                        if (data.success) {
+                            updateStatistics(data.statistics, data.lastSuccessfulLogin);
+                            if (data.history && data.history.length > 0) {
+                                renderLoginHistory(data.history);
+                            } else {
+                                showElement(noHistoryMessageDiv);
+                            }
+                        } else {
+                            showError(errorMessageDiv, data.message || 'Failed to load login history.');
+                        }
+                    })
+                    .catch(error => {
+                        hideLoading(loadingSpinner);
+                        handleApiError(error, errorMessageDiv);
+                    });
+            }
+
+            function renderLoginHistory(history) {
+                history.forEach(log => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+
+                    const statusClass = log.status === 'SUCCESS' ? 'text-green-600' : 'text-red-600';
+                    const statusIcon = log.status === 'SUCCESS' ? '<i class="fas fa-check-circle mr-1"></i>' : '<i class="fas fa-times-circle mr-1"></i>';
+
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${new Date(log.createdAt).toLocaleString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${statusClass}">${statusIcon}${log.status}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${log.ipAddress || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${log.userAgent || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${log.errorMessage ? `<span class="text-red-500" title="${log.errorMessage}">Error Details</span>` : 'N/A'}
+                        </td>
+                    `;
+                    loginHistoryTableBody.appendChild(row);
+                });
+            }
+
+            function updateStatistics(stats, lastSuccessfulLogin) {
+                document.getElementById('totalLogins').textContent = stats.totalLogins;
+                document.getElementById('successfulLogins').textContent = stats.successfulLogins;
+                document.getElementById('failedLogins').textContent = stats.failedLogins;
+                if (lastSuccessfulLogin) {
+                    document.getElementById('lastSuccessfulLogin').textContent = new Date(lastSuccessfulLogin.createdAt).toLocaleString();
+                } else {
+                    document.getElementById('lastSuccessfulLogin').textContent = 'N/A';
+                }
+            }
+
+            function showLoading(element) {
+                if (element) element.classList.remove('hidden');
+            }
+
+            function hideLoading(element) {
+                if (element) element.classList.add('hidden');
+            }
+
+            function showElement(element) {
+                if (element) element.classList.remove('hidden');
+            }
+
+            function hideElement(element) {
+                if (element) element.classList.add('hidden');
+            }
+
+            function showError(element, message) {
+                if (element) {
+                    element.textContent = message;
+                    element.classList.remove('hidden');
+                }
+            }
+
+            applyFiltersBtn.addEventListener('click', fetchLoginHistory);
+
+            // Initial fetch
+            fetchLoginHistory();
+        });
+        /*]]>*/
+    </script>
+</body>
+</html>
+

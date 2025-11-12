@@ -61,8 +61,10 @@
     </script>
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Leaflet CSS for maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Google Maps API -->
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places,geometry&callback=initMap'" async defer></script>
+    <!-- Unified Google Maps Utility -->
+    <script th:src="@{/js/unified-google-maps.js}"></script>
 </head>
 <body class="h-screen w-screen relative overflow-hidden">
     <div class="h-full w-full relative">
@@ -156,42 +158,30 @@
         </div>
     </div>
 
-    <!-- Leaflet JS for maps -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Custom JS -->
-    <script th:src="@{/js/tracking.js}"></script>
-    
     <script>
         let map;
+        let unifiedMap;
         let markers = {};
+        let infoWindows = {};
+        let driverTrails = {};
+        let polylines = [];
         let realTimeInterval;
         let isRealTimeActive = false;
-        let driverTrails = {};
         let heatmapLayer = null;
         
-        // Initialize map
+        // Initialize Google Maps
         function initMap() {
-            map = L.map('map').setView([40.7128, -74.0060], 10);
+            unifiedMap = new UnifiedGoogleMaps('map', {
+                center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
+                zoom: 10,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                fullscreenControl: true,
+                scaleControl: true
+            });
+            map = unifiedMap.init();
             
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            
-            // Add fullscreen control
-            L.control.fullscreen({
-                position: 'topleft',
-                title: {
-                    'false': 'View Fullscreen',
-                    'true': 'Exit Fullscreen'
-                }
-            }).addTo(map);
-            
-            // Add scale control
-            L.control.scale({
-                imperial: true,
-                metric: true,
-                position: 'bottomleft'
-            }).addTo(map);
+            // Load map data after initialization
+            loadMapData();
         }
         
         // Load map data
@@ -213,73 +203,79 @@
         
         // Update map markers
         function updateMapMarkers(drivers) {
-            // Clear existing markers
-            Object.values(markers).forEach(marker => map.removeLayer(marker));
-            markers = {};
+            if (!unifiedMap || !map) return;
             
-            drivers.forEach(driver => {
+            // Clear existing markers
+            unifiedMap.clearMarkers();
+            markers = {};
+            infoWindows = {};
+            
+            // Filter drivers based on checkboxes
+            const showOnline = document.getElementById('showOnlineDrivers')?.checked !== false;
+            const showOffline = document.getElementById('showOfflineDrivers')?.checked || false;
+            
+            const filteredDrivers = drivers.filter(driver => {
+                if (driver.isOnline && showOnline) return true;
+                if (!driver.isOnline && showOffline) return true;
+                return false;
+            });
+            
+            filteredDrivers.forEach(driver => {
                 if (driver.latitude && driver.longitude) {
                     const marker = createDriverMarker(driver);
                     markers[driver.driverId] = marker;
-                    marker.addTo(map);
                     
                     // Add to trail if enabled
-                    if (document.getElementById('showTrails').checked) {
+                    if (document.getElementById('showTrails')?.checked) {
                         addToTrail(driver);
                     }
                 }
             });
+            
+            // Fit bounds to show all markers
+            unifiedMap.fitBounds();
         }
         
         // Create driver marker
         function createDriverMarker(driver) {
-            const markerColor = driver.isOnline ? '#28a745' : '#dc3545';
-            const icon = L.divIcon({
-                className: 'custom-marker',
-                html: `<div style="background-color: ${markerColor}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
-                iconSize: [20, 20],
-                iconAnchor: [10, 10]
-            });
+            // Determine marker icon color based on status
+            let iconColor = '#4285F4'; // Default blue
+            if (driver.isOnline || driver.status === 'ONLINE' || driver.status === 'IN_TRANSIT') {
+                iconColor = '#34A853'; // Green
+            } else if (!driver.isOnline || driver.status === 'OFFLINE') {
+                iconColor = '#EA4335'; // Red
+            }
             
-            const marker = L.marker([driver.latitude, driver.longitude], { icon })
-                .bindPopup(createDriverPopup(driver));
+            const markerIcon = {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 12,
+                fillColor: iconColor,
+                fillOpacity: 1,
+                strokeColor: '#FFFFFF',
+                strokeWeight: 2
+            };
             
-            return marker;
-        }
-        
-        // Create driver popup
-        function createDriverPopup(driver) {
-            return `
-                <div class="driver-popup">
-                    <h6 class="text-primary mb-2">${driver.driverName}</h6>
-                    <div class="row">
-                        <div class="col-6">
-                            <strong>Vehicle:</strong><br>
-                            ${driver.vehicleModel || 'N/A'}
-                        </div>
-                        <div class="col-6">
-                            <strong>Status:</strong><br>
-                            <span class="badge ${driver.isOnline ? 'bg-success' : 'bg-danger'}">
-                                ${driver.status}
-                            </span>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-12">
-                            <strong>Last Update:</strong><br>
-                            ${driver.formattedTimestamp}
-                        </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-12">
-                            <button class="btn btn-sm btn-primary" onclick="showDriverDetails(${driver.driverId})">
-                                View Details
-                            </button>
-                        </div>
-                    </div>
+            const infoContent = `
+                <div style="min-width: 200px;">
+                    <h6 style="font-weight: bold; margin-bottom: 8px;">${driver.driverName || 'Driver'}</h6>
+                    <p style="margin: 4px 0;"><strong>Vehicle:</strong> ${driver.vehicleModel || 'N/A'}</p>
+                    <p style="margin: 4px 0;"><strong>Plate:</strong> ${driver.vehiclePlate || 'N/A'}</p>
+                    <p style="margin: 4px 0;"><strong>Status:</strong> <span style="color: ${iconColor};">${driver.status || 'Unknown'}</span></p>
+                    <p style="margin: 4px 0;"><strong>Last Update:</strong> ${driver.formattedTimestamp || 'N/A'}</p>
+                    <button onclick="showDriverDetails(${driver.driverId})" style="margin-top: 8px; padding: 6px 12px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        View Details
+                    </button>
                 </div>
             `;
+            
+            return unifiedMap.addMarker(driver.driverId, {
+                lat: driver.latitude,
+                lng: driver.longitude
+            }, {
+                title: driver.driverName || 'Driver',
+                icon: markerIcon,
+                content: infoContent
+            });
         }
         
         // Update map info
@@ -342,34 +338,54 @@
         
         // Fit all markers to view
         function fitAllMarkers() {
-            if (Object.keys(markers).length > 0) {
-                const group = new L.featureGroup(Object.values(markers));
-                map.fitBounds(group.getBounds().pad(0.1));
+            if (unifiedMap) {
+                unifiedMap.fitBounds();
             }
         }
         
         // Clear map
         function clearMap() {
-            Object.values(markers).forEach(marker => map.removeLayer(marker));
-            markers = {};
+            if (unifiedMap) {
+                unifiedMap.clearMarkers();
+            }
             driverTrails = {};
+            polylines.forEach(polyline => polyline.setMap(null));
+            polylines = [];
         }
         
-        // Toggle heatmap
+        // Toggle heatmap (Google Maps Heatmap Layer)
         function toggleHeatmap() {
-            // This would require a heatmap library like Leaflet.heat
-            console.log('Heatmap toggle - requires additional library');
+            if (!map) return;
+            
+            if (!heatmapLayer) {
+                // Create heatmap data from markers
+                const heatmapData = Object.values(markers).map(marker => {
+                    const position = marker.getPosition();
+                    return new google.maps.LatLng(position.lat(), position.lng());
+                });
+                
+                heatmapLayer = new google.maps.visualization.HeatmapLayer({
+                    data: heatmapData,
+                    map: map
+                });
+            } else {
+                heatmapLayer.setMap(null);
+                heatmapLayer = null;
+            }
         }
         
         // Export map data
         function exportMapData() {
             const data = {
                 timestamp: new Date().toISOString(),
-                drivers: Object.values(markers).map(marker => ({
-                    lat: marker.getLatLng().lat,
-                    lng: marker.getLatLng().lng,
-                    driverId: marker.driverId
-                }))
+                drivers: Object.entries(markers).map(([driverId, marker]) => {
+                    const position = marker.getPosition();
+                    return {
+                        driverId: driverId,
+                        lat: position.lat(),
+                        lng: position.lng()
+                    };
+                })
             };
             
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -387,20 +403,22 @@
                 driverTrails[driver.driverId] = [];
             }
             
-            driverTrails[driver.driverId].push([driver.latitude, driver.longitude]);
+            driverTrails[driver.driverId].push({ lat: driver.latitude, lng: driver.longitude });
             
-            // Keep only last 10 points
-            if (driverTrails[driver.driverId].length > 10) {
+            // Keep only last 20 points
+            if (driverTrails[driver.driverId].length > 20) {
                 driverTrails[driver.driverId].shift();
             }
             
-            // Draw trail
+            // Draw trail using Google Maps Polyline
             if (driverTrails[driver.driverId].length > 1) {
-                const polyline = L.polyline(driverTrails[driver.driverId], {
-                    color: driver.isOnline ? '#28a745' : '#dc3545',
-                    weight: 2,
-                    opacity: 0.7
-                }).addTo(map);
+                const color = driver.isOnline ? '#34A853' : '#EA4335';
+                const polyline = unifiedMap.addPolyline(driverTrails[driver.driverId], {
+                    strokeColor: color,
+                    strokeWeight: 3,
+                    strokeOpacity: 0.7
+                });
+                polylines.push(polyline);
             }
         }
         
@@ -419,9 +437,17 @@
         }
         
         // Initialize on page load
+        // Note: initMap is called by Google Maps API callback
+        function checkMapInitialized() {
+            if (typeof google !== 'undefined' && google.maps && map) {
+                // Map already initialized by callback
+            } else {
+                setTimeout(checkMapInitialized, 100);
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
-            initMap();
-            loadMapData();
+            checkMapInitialized();
         });
     </script>
 </body>

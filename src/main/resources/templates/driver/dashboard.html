@@ -9,6 +9,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Maps API -->
     <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
+    <!-- Address Geocoding Utility -->
+    <script th:src="@{/js/address-geocoding.js}"></script>
+    <!-- Error Handling Utility -->
+    <script th:src="@{/js/error-handling.js}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -67,8 +71,7 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Google Maps is used instead of Leaflet -->
 </head>
 <body class="bg-gradient-to-br from-reliable-50 to-reliable-100 min-h-screen">
     
@@ -408,13 +411,15 @@
                     longitude: location.lng,
                     timestamp: new Date().toISOString()
                 })
-            }).catch(error => {
-                console.error('Error updating location:', error);
+            }).catch(async error => {
+                // Silent fail for location updates - don't show error to user
+                console.debug('Location update failed (non-critical):', error);
             });
         }
         
         // Load package data
         async function loadPackageData() {
+            showLoading('Loading packages...');
             try {
                 const params = new URLSearchParams();
                 if (currentLocation) {
@@ -427,6 +432,12 @@
                         'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
                     }
                 });
+                
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to load packages');
+                    return;
+                }
+                
                 const data = await response.json();
                 
                 packages = data;
@@ -436,7 +447,9 @@
                 updateNextRecommended();
                 
             } catch (error) {
-                console.error('Error loading package data:', error);
+                await handleApiError(error, 'Error loading package data');
+            } finally {
+                hideLoading();
             }
         }
         
@@ -547,19 +560,16 @@
                     }
                 });
                 
-                if (response.ok) {
-                    const nextPackage = await response.json();
-                    displayNextRecommended(nextPackage);
-                } else {
-                    document.getElementById('nextRecommended').innerHTML = `
-                        <div class="text-center text-gray-500 py-8">
-                            <i class="fas fa-check-circle text-4xl mb-2 text-green-500"></i>
-                            <p>No packages assigned</p>
-                        </div>
-                    `;
+                if (!response.ok) {
+                    // Silent fail for next recommended - not critical
+                    return;
                 }
+                
+                const nextPackage = await response.json();
+                displayNextRecommended(nextPackage);
             } catch (error) {
-                console.error('Error loading next recommended package:', error);
+                // Silent fail for next recommended - not critical
+                console.debug('Next recommended package load failed (non-critical):', error);
             }
         }
         
@@ -603,38 +613,58 @@
                 }
             });
             
+            const bounds = new google.maps.LatLngBounds();
+            let pendingGeocodes = packages.length;
+            
             packages.forEach(pkg => {
-                const coords = getPackageCoordinates(pkg);
-                if (coords) {
-                    const markerColor = pkg.isCurrentlyCarrying ? '#10b981' : '#f59e0b';
+                getPackageCoordinates(pkg, (coords) => {
+                    if (coords) {
+                        const markerColor = pkg.isCurrentlyCarrying ? '#10b981' : '#f59e0b';
+                        
+                        const marker = new google.maps.Marker({
+                            position: coords,
+                            map: map,
+                            title: pkg.trackingNumber,
+                            icon: {
+                                url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+                                    <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="10" cy="10" r="8" fill="${markerColor}" stroke="white" stroke-width="2"/>
+                                    </svg>
+                                `)}`,
+                                scaledSize: new google.maps.Size(20, 20),
+                                anchor: new google.maps.Point(10, 10)
+                            }
+                        });
+                        
+                        // Add info window
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: createPackageInfoWindow(pkg)
+                        });
+                        
+                        marker.addListener('click', () => {
+                            infoWindow.open(map, marker);
+                        });
+                        
+                        markers[`package_${pkg.id}`] = marker;
+                        bounds.extend(coords);
+                    }
                     
-                    const marker = new google.maps.Marker({
-                        position: coords,
-                        map: map,
-                        title: pkg.trackingNumber,
-                        icon: {
-                            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-                                <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="10" cy="10" r="8" fill="${markerColor}" stroke="white" stroke-width="2"/>
-                                </svg>
-                            `)}`,
-                            scaledSize: new google.maps.Size(20, 20),
-                            anchor: new google.maps.Point(10, 10)
+                    pendingGeocodes--;
+                    if (pendingGeocodes === 0 && packages.length > 0) {
+                        // All markers added, fit bounds
+                        if (currentLocation) {
+                            bounds.extend(currentLocation);
                         }
-                    });
-                    
-                    // Add info window
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: createPackageInfoWindow(pkg)
-                    });
-                    
-                    marker.addListener('click', () => {
-                        infoWindow.open(map, marker);
-                    });
-                    
-                    markers[`package_${pkg.id}`] = marker;
-                }
+                        map.fitBounds(bounds);
+                    }
+                });
             });
+            
+            // If no packages, still fit to current location
+            if (packages.length === 0 && currentLocation) {
+                map.setCenter(currentLocation);
+                map.setZoom(15);
+            }
         }
         
         // Create package info window content
@@ -726,6 +756,7 @@
 
         // Update package status on server
         async function updatePackageStatusOnServer(packageId, status) {
+            showLoading('Updating package status...');
             try {
                 const response = await fetch(`/api/driver/packages/${packageId}/status`, {
                     method: 'PUT',
@@ -737,11 +768,15 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to update package status');
+                    await handleApiError(response, 'Failed to update package status');
+                    return;
                 }
+
+                showSuccess('Package status updated successfully!');
             } catch (error) {
-                console.error('Error updating package status:', error);
-                showNotification('Failed to update package status. Please try again.', 'error');
+                await handleApiError(error, 'Error updating package status');
+            } finally {
+                hideLoading();
             }
         }
 
@@ -765,21 +800,63 @@
             }, 3000);
         }
         
-        // Get package coordinates (simplified - in real app, you'd geocode addresses)
-        function getPackageCoordinates(pkg) {
-            // For demo purposes, generate random coordinates near Johannesburg
-            if (pkg.status === 'PENDING' || pkg.status === 'ASSIGNED') {
-                // Pickup location
-                return {
-                    lat: -26.2041 + (Math.random() - 0.5) * 0.1,
-                    lng: 28.0473 + (Math.random() - 0.5) * 0.1
-                };
+        // Get package coordinates (uses stored coordinates or geocodes address)
+        function getPackageCoordinates(pkg, callback) {
+            if (!callback) {
+                // Support synchronous API for backward compatibility
+                // Check if coordinates are stored
+                const isPickup = pkg.status === 'PENDING' || pkg.status === 'ASSIGNED';
+                const latField = isPickup ? 'pickupLatitude' : 'deliveryLatitude';
+                const lngField = isPickup ? 'pickupLongitude' : 'deliveryLongitude';
+                
+                if (pkg[latField] != null && pkg[lngField] != null) {
+                    return {
+                        lat: parseFloat(pkg[latField]),
+                        lng: parseFloat(pkg[lngField])
+                    };
+                }
+                
+                // Fallback: Use client-side geocoding if available
+                if (typeof addressGeocoding !== 'undefined') {
+                    const coordType = isPickup ? 'pickup' : 'delivery';
+                    let result = null;
+                    addressGeocoding.getPackageCoordinates(pkg, coordType, (lat, lng) => {
+                        result = lat && lng ? { lat: lat, lng: lng } : { lat: -26.2041, lng: 28.0473 };
+                    });
+                    // Note: This is async, so synchronous call will return default
+                    return result || { lat: -26.2041, lng: 28.0473 };
+                }
+                
+                return { lat: -26.2041, lng: 28.0473 }; // Default to Johannesburg
+            }
+            
+            // Async API with callback
+            const isPickup = pkg.status === 'PENDING' || pkg.status === 'ASSIGNED';
+            const coordType = isPickup ? 'pickup' : 'delivery';
+            const latField = isPickup ? 'pickupLatitude' : 'deliveryLatitude';
+            const lngField = isPickup ? 'pickupLongitude' : 'deliveryLongitude';
+            
+            // Check if coordinates are stored
+            if (pkg[latField] != null && pkg[lngField] != null) {
+                callback({
+                    lat: parseFloat(pkg[latField]),
+                    lng: parseFloat(pkg[lngField])
+                });
+                return;
+            }
+            
+            // Fallback: Use client-side geocoding
+            if (typeof addressGeocoding !== 'undefined') {
+                addressGeocoding.getPackageCoordinates(pkg, coordType, (lat, lng) => {
+                    if (lat && lng) {
+                        callback({ lat: lat, lng: lng });
+                    } else {
+                        console.warn('Failed to geocode address, using default location');
+                        callback({ lat: -26.2041, lng: 28.0473 });
+                    }
+                });
             } else {
-                // Delivery location
-                return {
-                    lat: -26.2041 + (Math.random() - 0.5) * 0.1,
-                    lng: 28.0473 + (Math.random() - 0.5) * 0.1
-                };
+                callback({ lat: -26.2041, lng: 28.0473 });
             }
         }
         

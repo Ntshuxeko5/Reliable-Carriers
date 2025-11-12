@@ -69,7 +69,8 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .maximumSessions(1)
                 .maxSessionsPreventsLogin(false)
-                .and()
+            )
+            .sessionManagement(session -> session
                 .invalidSessionUrl("/login?timeout=true")
             )
             // Enable CSRF protection (important for production)

@@ -306,8 +306,53 @@
                 }
                 
                 // Handle account lockout (423 Locked)
-                if (response.status === 423 || data.locked) {
+                if (response.status === 423 || response.status === 423 || data.locked) {
                     const remainingMinutes = data.remainingMinutes || 30;
+                    const lockoutMessage = document.createElement('div');
+                    lockoutMessage.className = 'bg-red-50 border border-red-200 rounded-lg p-4 mt-4';
+                    lockoutMessage.innerHTML = `
+                        <div class="flex items-start">
+                            <i class="fas fa-lock text-red-600 text-xl mr-3 mt-1"></i>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-red-900 mb-1">Account Temporarily Locked</h4>
+                                <p class="text-sm text-red-800 mb-2">
+                                    Your account has been locked due to multiple failed login attempts.
+                                </p>
+                                <p class="text-sm font-semibold text-red-900">
+                                    Please try again in <span id="lockoutCountdown">${remainingMinutes}</span> minute${remainingMinutes !== 1 ? 's' : ''}.
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Insert lockout message after the form
+                    const form = document.getElementById('loginForm');
+                    form.parentElement.insertBefore(lockoutMessage, form.nextSibling);
+                    
+                    // Start countdown timer
+                    let countdown = remainingMinutes * 60; // Convert to seconds
+                    const countdownElement = document.getElementById('lockoutCountdown');
+                    const countdownInterval = setInterval(() => {
+                        countdown--;
+                        const minutes = Math.floor(countdown / 60);
+                        const seconds = countdown % 60;
+                        if (countdownElement) {
+                            countdownElement.textContent = minutes > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : seconds;
+                        }
+                        if (countdown <= 0) {
+                            clearInterval(countdownInterval);
+                            if (lockoutMessage) {
+                                lockoutMessage.innerHTML = `
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                                        <p class="text-green-800">Account unlocked. You can now try logging in again.</p>
+                                    </div>
+                                `;
+                                lockoutMessage.className = 'bg-green-50 border border-green-200 rounded-lg p-4 mt-4';
+                            }
+                        }
+                    }, 1000);
+                    
                     showAlert(
                         `Account is temporarily locked due to multiple failed login attempts. ` +
                         `Please try again in ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}.`,
@@ -408,6 +453,12 @@
                         const redirect = urlParams.get('redirect');
                         if (redirect) {
                             window.location.href = redirect;
+                            return;
+                        }
+                        
+                        // Check if approval is needed
+                        if (data.needsApproval) {
+                            window.location.href = '/waiting-approval';
                             return;
                         }
                         
@@ -513,12 +564,24 @@
             })
             .then(async res => {
                 const data = await res.json().catch(() => ({}));
-                if (res.ok && data.token) {
-                    localStorage.setItem('token', data.token);
-                    sessionStorage.setItem('token', data.token);
+                if (res.ok && (data.token || data.user)) {
+                    const token = data.token || (data.user && data.user.token);
+                    if (token) {
+                        localStorage.setItem('token', token);
+                        sessionStorage.setItem('token', token);
+                    }
                     showAlert('2FA verified — logging in...', 'success');
+                    
+                    // Check if approval is needed
+                    if (data.needsApproval) {
+                        setTimeout(() => {
+                            window.location.href = '/waiting-approval';
+                        }, 800);
+                        return;
+                    }
+                    
                     // Redirect based on role if provided, else default to customer
-                    const role = data.role || data.userRole || 'CUSTOMER';
+                    const role = (data.user && data.user.role) || data.role || data.userRole || 'CUSTOMER';
                     setTimeout(() => {
                         let redirectUrl = '/customer';
                         switch(role) {

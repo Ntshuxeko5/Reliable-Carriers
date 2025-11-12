@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Profile - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#dbb714', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+                            800: '#1e40af', 900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold">Reliable Carriers</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/driver/dashboard" class="hover:text-blue-200">Dashboard</a>
+                    <a href="/driver/workboard" class="hover:text-blue-200">Workboard</a>
+                    <a href="/driver/earnings" class="hover:text-blue-200">Earnings</a>
+                    <a href="/driver/profile" class="text-blue-200 font-semibold">Profile</a>
+                    <a href="/driver/login-history" class="hover:text-blue-200">Login History</a>
+                    <a href="/logout" class="hover:text-blue-200">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="glass-effect rounded-3xl p-8 hover-lift">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-user-edit mr-3 gradient-text"></i>Driver Profile
+                </h1>
+                <p class="text-xl text-gray-600">Manage your account settings and preferences</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Profile Picture and Basic Info -->
+                <div class="lg:col-span-1">
+                    <div class="glass-effect rounded-2xl p-6 text-center">
+                        <div class="relative inline-block mb-6">
+                            <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 border-4 border-white mx-auto">
+                                <img th:src="${user?.profilePicture ?: '/images/default-avatar.svg'}"
+                                     alt="Profile Picture"
+                                     class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2" th:text="${user?.firstName + ' ' + user?.lastName ?: userName}">Driver</h2>
+                        <p class="text-gray-600 mb-4" th:text="${user?.email ?: userEmail}">driver@example.com</p>
+                        <div class="flex items-center justify-center space-x-2 text-sm text-green-600">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Verified Driver</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Forms -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Personal Information -->
+                    <div class="glass-effect rounded-2xl p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">
+                            <i class="fas fa-user mr-2 text-blue-600"></i>Personal Information
+                        </h3>
+                        <form id="profileForm" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                                    <input type="text" id="firstName" name="firstName" th:value="${user?.firstName ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                                    <input type="text" id="lastName" name="lastName" th:value="${user?.lastName ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                <input type="email" id="email" name="email" th:value="${user?.email ?: userEmail}" readonly class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                <input type="tel" id="phone" name="phone" th:value="${user?.phone ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                                <input type="text" id="address" name="address" th:value="${user?.address ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                                    <input type="text" id="city" name="city" th:value="${user?.city ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">State/Province</label>
+                                    <input type="text" id="state" name="state" th:value="${user?.state ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Postal Code</label>
+                                    <input type="text" id="zipCode" name="zipCode" th:value="${user?.zipCode ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                                    <input type="text" id="country" name="country" th:value="${user?.country ?: 'South Africa'}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                            </div>
+                            <button type="submit" class="bg-brand-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-blue-700 transition-colors">
+                                <i class="fas fa-save mr-2"></i>Update Information
+                            </button>
+                        </form>
+                        
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                                const headers = { 'Content-Type': 'application/json' };
+                                if (token) headers['Authorization'] = 'Bearer ' + token;
+                                
+                                fetch('/api/customer/profile', { method: 'GET', headers: headers, credentials: 'include' })
+                                .then(response => response.ok ? response.json() : Promise.reject(response))
+                                .then(data => {
+                                    if (data.firstName) document.getElementById('firstName').value = data.firstName || '';
+                                    if (data.lastName) document.getElementById('lastName').value = data.lastName || '';
+                                    if (data.phone) document.getElementById('phone').value = data.phone || '';
+                                    if (data.address) document.getElementById('address').value = data.address || '';
+                                    if (data.city) document.getElementById('city').value = data.city || '';
+                                    if (data.state) document.getElementById('state').value = data.state || '';
+                                    if (data.zipCode) document.getElementById('zipCode').value = data.zipCode || '';
+                                    if (data.country) document.getElementById('country').value = data.country || '';
+                                })
+                                .catch(error => console.error('Error loading profile:', error));
+                                
+                                document.getElementById('profileForm').addEventListener('submit', function(e) {
+                                    e.preventDefault();
+                                    const formData = {
+                                        firstName: document.getElementById('firstName').value,
+                                        lastName: document.getElementById('lastName').value,
+                                        phone: document.getElementById('phone').value,
+                                        address: document.getElementById('address').value,
+                                        city: document.getElementById('city').value,
+                                        state: document.getElementById('state').value,
+                                        zipCode: document.getElementById('zipCode').value,
+                                        country: document.getElementById('country').value
+                                    };
+                                    
+                                    const updateHeaders = { 'Content-Type': 'application/json' };
+                                    if (token) updateHeaders['Authorization'] = 'Bearer ' + token;
+                                    
+                                    fetch('/api/customer/profile', {
+                                        method: 'PUT',
+                                        headers: updateHeaders,
+                                        credentials: 'include',
+                                        body: JSON.stringify(formData)
+                                    })
+                                    .then(response => response.ok ? response.json() : Promise.reject(response))
+                                    .then(data => { alert('Profile updated successfully!'); location.reload(); })
+                                    .catch(error => { console.error('Error updating profile:', error); alert('Error updating profile'); });
+                                });
+                                
+                                loadNotificationPreferences();
+                                load2FAStatus();
+                            });
+                        </script>
+                    </div>
+
+                    <!-- Notification Preferences -->
+                    <div class="glass-effect rounded-2xl p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">
+                            <i class="fas fa-bell mr-2 text-purple-600"></i>Notification Preferences
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Email Notifications</h4>
+                                    <p class="text-sm text-gray-600">Receive updates about your deliveries via email</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="emailNotifications" class="sr-only peer" onchange="updateNotificationPreferences()">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">SMS Notifications</h4>
+                                    <p class="text-sm text-gray-600">Receive updates about your deliveries via SMS</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="smsNotifications" class="sr-only peer" onchange="updateNotificationPreferences()">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="glass-effect rounded-2xl p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">
+                            <i class="fas fa-shield-alt mr-2 text-red-600"></i>Security Settings
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Change Password</h4>
+                                    <p class="text-sm text-gray-600">Update your account password</p>
+                                </div>
+                                <button onclick="showPasswordChangeModal()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                                    Change
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Two-Factor Authentication</h4>
+                                    <p class="text-sm text-gray-600">Add an extra layer of security to your account</p>
+                                    <p id="2faStatus" class="text-xs text-gray-500 mt-1"></p>
+                                </div>
+                                <button id="2faToggleBtn" onclick="toggle2FA()" class="bg-brand-blue-600 text-white px-4 py-2 rounded-lg hover:bg-brand-blue-700 transition-colors">
+                                    <span id="2faButtonText">Enable</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Change Modal -->
+    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">Change Password</h3>
+                <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="passwordChangeForm" onsubmit="changePassword(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                        <input type="password" id="currentPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                        <input type="password" id="newPassword" required minlength="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Must be at least 6 characters long</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" required minlength="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div id="passwordError" class="hidden text-red-600 text-sm"></div>
+                    <div class="flex space-x-3">
+                        <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                            Change Password
+                        </button>
+                        <button type="button" onclick="closePasswordModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-400 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2FA Setup Modal -->
+    <div id="2faModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Enable Two-Factor Authentication</h3>
+                <button onclick="close2FAModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="2faModalContent">
+                <div id="2faSetupStep1">
+                    <p class="text-gray-700 mb-4">Scan this QR code with your authenticator app:</p>
+                    <div class="text-center mb-4">
+                        <img id="2faQRCode" src="" alt="QR Code" class="mx-auto border-2 border-gray-300 rounded-lg">
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                        <p class="text-sm font-semibold text-gray-700 mb-2">Or enter this code manually:</p>
+                        <p id="2faSecretKey" class="text-xs font-mono text-gray-900 break-all"></p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Enter verification code:</label>
+                        <input type="text" id="2faVerificationCode" maxlength="6" pattern="[0-9]{6}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg font-mono" placeholder="000000">
+                    </div>
+                    <div id="2faError" class="hidden text-red-600 text-sm mb-4"></div>
+                    <div class="flex space-x-3">
+                        <button onclick="verify2FASetup()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                            Verify & Enable
+                        </button>
+                        <button onclick="close2FAModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/error-handling.js"></script>
+    <script>
+        // Load notification preferences
+        async function loadNotificationPreferences() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = {};
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+
+                const response = await fetch('/api/customer/profile', { headers: headers, credentials: 'include' });
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData && userData.id) {
+                        const prefResponse = await fetch(`/api/notifications/preferences/${userData.id}`, { headers: headers, credentials: 'include' });
+                        if (prefResponse.ok) {
+                            const preferences = await prefResponse.json();
+                            const emailCheckbox = document.getElementById('emailNotifications');
+                            const smsCheckbox = document.getElementById('smsNotifications');
+                            if (emailCheckbox) emailCheckbox.checked = preferences.emailEnabled !== false;
+                            if (smsCheckbox) smsCheckbox.checked = preferences.smsEnabled !== false;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading notification preferences:', error);
+            }
+        }
+
+        // Update notification preferences
+        async function updateNotificationPreferences() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+
+                const userResponse = await fetch('/api/customer/profile', { headers: headers, credentials: 'include' });
+                if (!userResponse.ok) throw new Error('Failed to get user data');
+                const userData = await userResponse.json();
+                if (!userData || !userData.id) throw new Error('User ID not found');
+
+                const emailEnabled = document.getElementById('emailNotifications').checked;
+                const smsEnabled = document.getElementById('smsNotifications').checked;
+
+                const updateResponse = await fetch(`/api/notifications/preferences/${userData.id}`, {
+                    method: 'PUT',
+                    headers: headers,
+                    credentials: 'include',
+                    body: JSON.stringify({ emailEnabled: emailEnabled, smsEnabled: smsEnabled })
+                });
+
+                if (updateResponse.ok) {
+                    alert('Notification preferences updated successfully');
+                } else {
+                    const errorData = await updateResponse.json();
+                    throw new Error(errorData.error || 'Failed to update preferences');
+                }
+            } catch (error) {
+                console.error('Error updating notification preferences:', error);
+                alert('Failed to update notification preferences: ' + error.message);
+                loadNotificationPreferences();
+            }
+        }
+
+        // Password change functions
+        function showPasswordChangeModal() {
+            const modal = document.getElementById('passwordModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.getElementById('passwordChangeForm').reset();
+                document.getElementById('passwordError').classList.add('hidden');
+            }
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+            document.getElementById('passwordChangeForm').reset();
+            document.getElementById('passwordError').classList.add('hidden');
+        }
+
+        async function changePassword(event) {
+            event.preventDefault();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorDiv = document.getElementById('passwordError');
+
+            if (newPassword.length < 6) {
+                errorDiv.textContent = 'New password must be at least 6 characters long';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                errorDiv.textContent = 'New passwords do not match';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+
+                const response = await fetch('/api/customer/profile/change-password', {
+                    method: 'POST',
+                    headers: headers,
+                    credentials: 'include',
+                    body: JSON.stringify({ currentPassword: currentPassword, newPassword: newPassword })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Password changed successfully');
+                    closePasswordModal();
+                } else {
+                    errorDiv.textContent = data.error || 'Failed to change password';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error changing password:', error);
+                errorDiv.textContent = 'An error occurred while changing password';
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        // 2FA Management Functions
+        async function load2FAStatus() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = { 'Authorization': 'Bearer ' + token };
+
+                const response = await fetch('/api/auth/2fa/status', { headers: headers, credentials: 'include' });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const statusText = document.getElementById('2faStatus');
+                        const buttonText = document.getElementById('2faButtonText');
+                        const toggleBtn = document.getElementById('2faToggleBtn');
+                        
+                        if (data.totpEnabled) {
+                            statusText.textContent = '✓ TOTP Authenticator enabled';
+                            statusText.className = 'text-xs text-green-600 mt-1';
+                            buttonText.textContent = 'Disable';
+                            toggleBtn.className = 'bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors';
+                        } else if (data.hasPhone) {
+                            statusText.textContent = 'SMS 2FA available (via phone)';
+                            statusText.className = 'text-xs text-blue-600 mt-1';
+                            buttonText.textContent = 'Enable TOTP';
+                        } else {
+                            statusText.textContent = 'Not enabled';
+                            statusText.className = 'text-xs text-gray-500 mt-1';
+                            buttonText.textContent = 'Enable';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading 2FA status:', error);
+            }
+        }
+
+        async function toggle2FA() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = { 'Authorization': 'Bearer ' + token };
+
+                const statusResponse = await fetch('/api/auth/2fa/status', { headers: headers, credentials: 'include' });
+                if (!statusResponse.ok) throw new Error('Failed to get 2FA status');
+                const statusData = await statusResponse.json();
+                
+                if (statusData.success && statusData.totpEnabled) {
+                    if (confirm('Are you sure you want to disable Two-Factor Authentication?')) {
+                        const disableResponse = await fetch('/api/auth/2fa/disable', { method: 'POST', headers: headers, credentials: 'include' });
+                        const disableData = await disableResponse.json();
+                        if (disableData.success) {
+                            alert('2FA has been disabled successfully');
+                            load2FAStatus();
+                        } else {
+                            alert('Failed to disable 2FA: ' + (disableData.error || 'Unknown error'));
+                        }
+                    }
+                } else {
+                    await setup2FA();
+                }
+            } catch (error) {
+                console.error('Error toggling 2FA:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function setup2FA() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = { 'Authorization': 'Bearer ' + token };
+
+                const profileResponse = await fetch('/api/customer/profile', { headers: headers, credentials: 'include' });
+                if (!profileResponse.ok) throw new Error('Failed to get user profile');
+                const userData = await profileResponse.json();
+                const email = userData.email;
+
+                const setupResponse = await fetch(`/api/auth/2fa/setup?identifier=${encodeURIComponent(email)}`, {
+                    method: 'POST',
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                const setupData = await setupResponse.json();
+                if (setupData.success && setupData.secret) {
+                    document.getElementById('2faQRCode').src = setupData.qrCodeUrl;
+                    document.getElementById('2faSecretKey').textContent = setupData.manualEntryKey;
+                    document.getElementById('2faModal').classList.remove('hidden');
+                    window.current2FASecret = setupData.secret;
+                } else {
+                    throw new Error(setupData.error || 'Failed to setup 2FA');
+                }
+            } catch (error) {
+                console.error('Error setting up 2FA:', error);
+                alert('Error setting up 2FA: ' + error.message);
+            }
+        }
+
+        function close2FAModal() {
+            document.getElementById('2faModal').classList.add('hidden');
+            document.getElementById('2faVerificationCode').value = '';
+            document.getElementById('2faError').classList.add('hidden');
+            window.current2FASecret = null;
+        }
+
+        async function verify2FASetup() {
+            const code = document.getElementById('2faVerificationCode').value;
+            const errorDiv = document.getElementById('2faError');
+
+            if (!code || code.length !== 6) {
+                errorDiv.textContent = 'Please enter a 6-digit code';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = { 'Authorization': 'Bearer ' + token };
+
+                const profileResponse = await fetch('/api/customer/profile', { headers: headers, credentials: 'include' });
+                if (!profileResponse.ok) throw new Error('Failed to get user profile');
+                const userData = await profileResponse.json();
+                const email = userData.email;
+
+                const verifyResponse = await fetch(`/api/auth/2fa/verify?identifier=${encodeURIComponent(email)}&code=${code}`, {
+                    method: 'POST',
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                if (verifyResponse.ok) {
+                    alert('2FA has been enabled successfully!');
+                    close2FAModal();
+                    load2FAStatus();
+                } else {
+                    const errorData = await verifyResponse.json();
+                    errorDiv.textContent = errorData.error || 'Invalid verification code';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error verifying 2FA:', error);
+                errorDiv.textContent = 'Error verifying code: ' + error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
+

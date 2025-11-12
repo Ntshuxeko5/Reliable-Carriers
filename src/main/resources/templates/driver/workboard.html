@@ -11,8 +11,10 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Google Maps API -->
+    <!-- Google Maps API (geocoding is included in core API) -->
     <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
+    <!-- Address Geocoding Utility -->
+    <script th:src="@{/js/address-geocoding.js}"></script>
     
     <!-- Signature Pad -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
@@ -1272,37 +1274,9 @@
         </div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- WebSocket and SockJS for real-time updates -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-    
-    <script>
-        let map;
-        let currentLocation = null;
-        let signaturePad;
-        let currentModal = null;
-        let currentPackageId = null;
-        let capturedSignature = null;
-        let capturedPhoto = null;
-        let stream = null;
-        let markers = {}; // Initialize markers object
-        
-    <!-- WebSocket and SockJS for real-time updates -->
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-    
-    <script>
-        let map;
-        let currentLocation = null;
-        let signaturePad;
-        let currentModal = null;
-        let currentPackageId = null;
-        let capturedSignature = null;
-        let capturedPhoto = null;
-        let stream = null;
-        let markers = {}; // Initialize markers object
         let directionsService;
         let directionsRenderer;
         let watchId = null;
@@ -1896,17 +1870,26 @@
                         };
                         
                         // Update map view
-                        map.setView([currentLocation.lat, currentLocation.lng], 15);
+                        map.setCenter(currentLocation);
+                        map.setZoom(15);
                         
                         // Add current location marker
-                        L.marker([currentLocation.lat, currentLocation.lng], {
-                            icon: L.divIcon({
-                                className: 'current-location-marker',
-                                html: '<div style="background-color: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
-                                iconSize: [20, 20],
-                                iconAnchor: [10, 10]
-                            })
-                        }).addTo(map);
+                        if (markers.currentLocation) {
+                            markers.currentLocation.setMap(null);
+                        }
+                        markers.currentLocation = new google.maps.Marker({
+                            position: currentLocation,
+                            map: map,
+                            title: 'Your Location',
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 10,
+                                fillColor: '#3b82f6',
+                                fillOpacity: 1,
+                                strokeColor: '#ffffff',
+                                strokeWeight: 3
+                            }
+                        });
                         
                         // Update location on server
                         updateLocationOnServer(currentLocation.lat, currentLocation.lng);
@@ -2271,53 +2254,108 @@
             // Clear existing package markers
             Object.keys(markers).forEach(key => {
                 if (key !== 'currentLocation') {
-                    map.removeLayer(markers[key]);
+                    if (markers[key] && markers[key].setMap) {
+                        markers[key].setMap(null);
+                    }
                     delete markers[key];
                 }
             });
             
             // Add package markers to map
+            const bounds = new google.maps.LatLngBounds();
+            let pendingGeocodes = packages.length;
+            
             packages.forEach(pkg => {
-                const coords = getPackageCoordinates(pkg);
-                if (coords) {
-                    const markerColor = pkg.status === 'IN_TRANSIT' ? '#10b981' : '#f59e0b';
-                    const icon = L.divIcon({
-                        className: 'package-marker',
-                        html: `<div style="background-color: ${markerColor}; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
-                        iconSize: [16, 16],
-                        iconAnchor: [8, 8]
-                    });
+                getPackageCoordinates(pkg, (coords) => {
+                    if (coords) {
+                        const markerColor = pkg.status === 'IN_TRANSIT' ? '#10b981' : '#f59e0b';
+                        const marker = new google.maps.Marker({
+                            position: coords,
+                            map: map,
+                            title: pkg.trackingNumber,
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 16,
+                                fillColor: markerColor,
+                                fillOpacity: 1,
+                                strokeColor: '#ffffff',
+                                strokeWeight: 2
+                            }
+                        });
+                        
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: createPackagePopup(pkg)
+                        });
+                        
+                        marker.addListener('click', () => {
+                            infoWindow.open(map, marker);
+                        });
+                        
+                        markers[`package_${pkg.id}`] = marker;
+                        bounds.extend(coords);
+                    }
                     
-                    const marker = L.marker([coords.lat, coords.lng], { icon })
-                        .bindPopup(createPackagePopup(pkg))
-                        .addTo(map);
-                    
-                    markers[`package_${pkg.id}`] = marker;
-                }
+                    pendingGeocodes--;
+                    if (pendingGeocodes === 0 && packages.length > 0) {
+                        // All markers added, fit bounds
+                        if (currentLocation) {
+                            bounds.extend(currentLocation);
+                        }
+                        map.fitBounds(bounds);
+                    }
+                });
             });
             
-            // Fit map to show all packages
-            if (packages.length > 0) {
-                const group = new L.featureGroup(Object.values(markers));
-                map.fitBounds(group.getBounds().pad(0.1));
+            // If no packages, still fit to current location
+            if (packages.length === 0 && currentLocation) {
+                map.setCenter(currentLocation);
+                map.setZoom(15);
             }
         }
         
-        // Get package coordinates (simplified - in real app, you'd geocode addresses)
-        function getPackageCoordinates(pkg) {
-            // For demo purposes, generate coordinates near Johannesburg
-            if (pkg.status === 'PENDING' || pkg.status === 'ASSIGNED') {
-                // Pickup location
-                return {
-                    lat: -26.2041 + (Math.random() - 0.5) * 0.1,
-                    lng: 28.0473 + (Math.random() - 0.5) * 0.1
-                };
+        // Get package coordinates (uses stored coordinates or geocodes address)
+        function getPackageCoordinates(pkg, type, callback) {
+            if (!callback) {
+                // Support old synchronous API for backward compatibility
+                callback = type;
+                type = 'pickup';
+            }
+            
+            const isPickup = type === 'pickup';
+            const latField = isPickup ? 'pickupLat' : 'deliveryLat';
+            const lngField = isPickup ? 'pickupLng' : 'deliveryLng';
+            const latFieldAlt = isPickup ? 'pickupLatitude' : 'deliveryLatitude';
+            const lngFieldAlt = isPickup ? 'pickupLongitude' : 'deliveryLongitude';
+            
+            // Check if coordinates are stored in the package data (various formats)
+            if (pkg[latField] != null && pkg[lngField] != null) {
+                callback({ lat: parseFloat(pkg[latField]), lng: parseFloat(pkg[lngField]) });
+                return;
+            }
+            
+            if (pkg[latFieldAlt] != null && pkg[lngFieldAlt] != null) {
+                const lat = typeof pkg[latFieldAlt] === 'number' ? pkg[latFieldAlt] : parseFloat(pkg[latFieldAlt]);
+                const lng = typeof pkg[lngFieldAlt] === 'number' ? pkg[lngFieldAlt] : parseFloat(pkg[lngFieldAlt]);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    callback({ lat: lat, lng: lng });
+                    return;
+                }
+            }
+            
+            // Fallback: Use client-side geocoding if available
+            if (typeof addressGeocoding !== 'undefined') {
+                addressGeocoding.getPackageCoordinates(pkg, type, (lat, lng) => {
+                    if (lat && lng) {
+                        callback({ lat: lat, lng: lng });
+                    } else {
+                        // Last resort: Default to Johannesburg
+                        console.warn('Failed to geocode address, using default location');
+                        callback({ lat: -26.2041, lng: 28.0473 });
+                    }
+                });
             } else {
-                // Delivery location
-                return {
-                    lat: -26.2041 + (Math.random() - 0.5) * 0.1,
-                    lng: 28.0473 + (Math.random() - 0.5) * 0.1
-                };
+                // No geocoding available, use default
+                callback({ lat: -26.2041, lng: 28.0473 });
             }
         }
         
@@ -2916,100 +2954,161 @@
         // Display route preview with available packages
         function displayRoutePreview(packages) {
             // Clear existing markers except current location
-            map.eachLayer((layer) => {
-                if (layer instanceof L.Marker && layer.options.title !== 'Current Location') {
-                    map.removeLayer(layer);
+            Object.keys(markers).forEach(key => {
+                if (key !== 'currentLocation' && markers[key] && markers[key].setMap) {
+                    markers[key].setMap(null);
+                    delete markers[key];
                 }
             });
             
             // Add 50km radius circle
+            if (currentLocation && window.radiusCircle) {
+                window.radiusCircle.setMap(null);
+            }
             if (currentLocation) {
-                const radiusCircle = L.circle([currentLocation.lat, currentLocation.lng], {
-                    radius: 50000, // 50km in meters
-                    color: '#3b82f6',
+                window.radiusCircle = new google.maps.Circle({
+                    strokeColor: '#3b82f6',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 2,
                     fillColor: '#3b82f6',
                     fillOpacity: 0.1,
-                    weight: 2
-                }).addTo(map);
+                    map: map,
+                    center: currentLocation,
+                    radius: 50000 // 50km in meters
+                });
             }
             
             // Add package markers
+            const bounds = new google.maps.LatLngBounds();
+            let pendingGeocodes = packages.length;
+            
             packages.forEach((pkg, index) => {
-                const marker = L.marker([pkg.pickupLat || -26.2041, pkg.pickupLng || 28.0473], {
-                    icon: L.divIcon({
-                        className: 'route-marker',
-                        html: `<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${index + 1}</div>`,
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                }).addTo(map);
+                // Determine which coordinates to use based on package status
+                const usePickup = pkg.status === 'PENDING' || pkg.status === 'ASSIGNED';
+                const coordType = usePickup ? 'pickup' : 'delivery';
                 
-                marker.bindPopup(`
-                    <div class="text-sm">
-                        <strong>Available Package ${index + 1}</strong><br>
-                        <strong>${pkg.trackingNumber}</strong><br>
-                        <strong>From:</strong> ${pkg.senderName}<br>
-                        <strong>To:</strong> ${pkg.recipientName}<br>
-                        <strong>Pickup:</strong> ${pkg.pickupAddress}<br>
-                        <strong>Delivery:</strong> ${pkg.deliveryAddress}<br>
-                        <strong>Distance:</strong> ${pkg.distance ? pkg.distance.toFixed(1) + ' km' : 'Unknown'}<br>
-                        <span class="text-xs text-gray-500">${pkg.formattedStatus}</span>
-                        <div class="mt-2">
-                            <button onclick="assignPackage('${pkg.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs">Assign to Me</button>
-                        </div>
-                    </div>
-                `);
+                getPackageCoordinates(pkg, coordType, (coords) => {
+                    if (coords) {
+                        const position = coords;
+                        const marker = new google.maps.Marker({
+                            position: position,
+                            map: map,
+                            title: `Package ${index + 1}`,
+                            label: {
+                                text: String(index + 1),
+                                color: 'white',
+                                fontWeight: 'bold'
+                            },
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 20,
+                                fillColor: '#10b981',
+                                fillOpacity: 1,
+                                strokeColor: '#ffffff',
+                                strokeWeight: 3
+                            }
+                        });
+                        
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `
+                                <div class="text-sm">
+                                    <strong>Available Package ${index + 1}</strong><br>
+                                    <strong>${pkg.trackingNumber}</strong><br>
+                                    <strong>From:</strong> ${pkg.senderName}<br>
+                                    <strong>To:</strong> ${pkg.recipientName}<br>
+                                    <strong>Pickup:</strong> ${pkg.pickupAddress}<br>
+                                    <strong>Delivery:</strong> ${pkg.deliveryAddress}<br>
+                                    <strong>Distance:</strong> ${pkg.distance ? pkg.distance.toFixed(1) + ' km' : 'Unknown'}<br>
+                                    <span class="text-xs text-gray-500">${pkg.formattedStatus}</span>
+                                    <div class="mt-2">
+                                        <button onclick="assignPackage('${pkg.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs">Assign to Me</button>
+                                    </div>
+                                </div>
+                            `
+                        });
+                        
+                        marker.addListener('click', () => {
+                            infoWindow.open(map, marker);
+                        });
+                        
+                        markers[`package_${pkg.id}`] = marker;
+                        bounds.extend(position);
+                    }
+                    
+                    pendingGeocodes--;
+                    if (pendingGeocodes === 0 && packages.length > 0) {
+                        // All markers added, fit bounds
+                        if (currentLocation) {
+                            bounds.extend(currentLocation);
+                        }
+                        map.fitBounds(bounds);
+                    }
+                });
             });
             
-            // Fit map to show all markers and radius
-            if (packages.length > 0) {
-                const group = new L.featureGroup(packages.map(pkg => 
-                    L.marker([pkg.pickupLat || -26.2041, pkg.pickupLng || 28.0473])
-                ));
-                if (currentLocation) {
-                    group.addLayer(L.marker([currentLocation.lat, currentLocation.lng]));
-                }
-                map.fitBounds(group.getBounds().pad(0.1));
+            // If no packages, still fit to current location
+            if (packages.length === 0 && currentLocation) {
+                map.setCenter(currentLocation);
+                map.setZoom(15);
             }
         }
         
         // Display optimized route on map
         function displayOptimizedRoute(route) {
-            // Clear existing route markers
-            map.eachLayer((layer) => {
-                if (layer instanceof L.Marker && layer.options.title !== 'Current Location') {
-                    map.removeLayer(layer);
+            // Clear existing route markers (except current location)
+            Object.keys(markers).forEach(key => {
+                if (key !== 'currentLocation' && key.startsWith('route_')) {
+                    markers[key].setMap(null);
+                    delete markers[key];
                 }
             });
             
             // Add route markers
+            const bounds = new google.maps.LatLngBounds();
             route.forEach((pkg, index) => {
-                const marker = L.marker([pkg.deliveryLat || -26.2041, pkg.deliveryLng || 28.0473], {
-                    icon: L.divIcon({
-                        className: 'route-marker',
-                        html: `<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold;">${index + 1}</div>`,
-                        iconSize: [16, 16],
-                        iconAnchor: [8, 8]
-                    })
-                }).addTo(map);
+                const position = { lat: pkg.deliveryLat || -26.2041, lng: pkg.deliveryLng || 28.0473 };
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: `Stop ${index + 1}`,
+                    label: {
+                        text: String(index + 1),
+                        color: 'white',
+                        fontWeight: 'bold'
+                    },
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 16,
+                        fillColor: '#3b82f6',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2
+                    }
+                });
                 
-                marker.bindPopup(`
-                    <div class="text-sm">
-                        <strong>Stop ${index + 1}</strong><br>
-                        <strong>${pkg.trackingNumber}</strong><br>
-                        ${pkg.recipientName}<br>
-                        ${pkg.deliveryAddress}<br>
-                        <span class="text-xs text-gray-500">${pkg.formattedStatus}</span>
-                    </div>
-                `);
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div class="text-sm">
+                            <strong>Stop ${index + 1}</strong><br>
+                            <strong>${pkg.trackingNumber}</strong><br>
+                            ${pkg.recipientName}<br>
+                            ${pkg.deliveryAddress}<br>
+                            <span class="text-xs text-gray-500">${pkg.formattedStatus}</span>
+                        </div>
+                    `
+                });
+                
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+                
+                markers[`route_${pkg.id}`] = marker;
+                bounds.extend(position);
             });
             
             // Fit map to show all markers
             if (route.length > 0) {
-                const group = new L.featureGroup(route.map(pkg => 
-                    L.marker([pkg.deliveryLat || -26.2041, pkg.deliveryLng || 28.0473])
-                ));
-                map.fitBounds(group.getBounds().pad(0.1));
+                map.fitBounds(bounds);
             }
         }
         
@@ -3866,25 +3965,37 @@
             if (location.driverId && location.lat && location.lng) {
                 // Remove existing driver marker
                 if (markers['driver_' + location.driverId]) {
-                    map.removeLayer(markers['driver_' + location.driverId]);
+                    markers['driver_' + location.driverId].setMap(null);
                 }
                 
                 // Add new driver marker
-                const driverMarker = L.marker([location.lat, location.lng], {
-                    icon: L.divIcon({
-                        className: 'driver-marker',
-                        html: '<div style="background-color: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                }).addTo(map);
+                const position = { lat: location.lat, lng: location.lng };
+                const driverMarker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: 'Driver Location',
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 10,
+                        fillColor: '#3b82f6',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 3
+                    }
+                });
                 
-                driverMarker.bindPopup(`
-                    <div class="text-center">
-                        <strong>Driver Location</strong><br>
-                        <small>${location.address || 'Location updated'}</small>
-                    </div>
-                `);
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div class="text-center">
+                            <strong>Driver Location</strong><br>
+                            <small>${location.address || 'Location updated'}</small>
+                        </div>
+                    `
+                });
+                
+                driverMarker.addListener('click', () => {
+                    infoWindow.open(map, driverMarker);
+                });
                 
                 markers['driver_' + location.driverId] = driverMarker;
             }
@@ -4040,20 +4151,17 @@
             // Initialize fullscreen map
             setTimeout(() => {
                 if (!fullscreenMap) {
-                    fullscreenMap = L.map('fullscreenMap').setView([-26.2041, 28.0473], 12);
-                    
-                    // Add tile layer
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
-                    }).addTo(fullscreenMap);
+                    fullscreenMap = new google.maps.Map(document.getElementById('fullscreenMap'), {
+                        zoom: 12,
+                        center: { lat: -26.2041, lng: 28.0473 },
+                        mapTypeId: google.maps.MapTypeId.ROADMAP
+                    });
                     
                     // Enable mobile navigation
                     enableMobileNavigation();
                     
                     // Copy current map markers to fullscreen map
                     copyMapMarkersToFullscreen();
-                } else {
-                    fullscreenMap.invalidateSize();
                 }
             }, 200);
             
@@ -4072,49 +4180,74 @@
         function copyMapMarkersToFullscreen() {
             if (!fullscreenMap) return;
             
+            const bounds = new google.maps.LatLngBounds();
+            
             // Copy current location marker
             if (currentLocation) {
-                const currentMarker = L.marker([currentLocation.lat, currentLocation.lng], {
-                    icon: L.divIcon({
-                        className: 'current-location-marker',
-                        html: '<div style="background-color: #ef4444; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                }).addTo(fullscreenMap);
+                const currentMarker = new google.maps.Marker({
+                    position: currentLocation,
+                    map: fullscreenMap,
+                    title: 'Your Location',
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 10,
+                        fillColor: '#ef4444',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 3
+                    }
+                });
                 
-                currentMarker.bindPopup('<div class="text-center"><strong>Your Location</strong></div>');
+                const infoWindow = new google.maps.InfoWindow({
+                    content: '<div class="text-center"><strong>Your Location</strong></div>'
+                });
+                
+                currentMarker.addListener('click', () => {
+                    infoWindow.open(fullscreenMap, currentMarker);
+                });
+                
+                bounds.extend(currentLocation);
             }
             
             // Copy package markers
             if (markers && Object.keys(markers).length > 0) {
                 Object.keys(markers).forEach(key => {
-                    if (key !== 'currentLocation' && markers[key]) {
+                    if (key !== 'currentLocation' && markers[key] && markers[key].getPosition) {
                         const marker = markers[key];
-                        const latlng = marker.getLatLng();
-                        const popup = marker.getPopup();
+                        const position = marker.getPosition();
                         
-                        const newMarker = L.marker(latlng, {
-                            icon: marker.options.icon
-                        }).addTo(fullscreenMap);
+                        const newMarker = new google.maps.Marker({
+                            position: position,
+                            map: fullscreenMap,
+                            title: marker.getTitle(),
+                            icon: marker.getIcon()
+                        });
                         
-                        if (popup) {
-                            newMarker.bindPopup(popup.getContent());
+                        // Copy info window if available
+                        if (marker.infoWindow) {
+                            const infoWindow = new google.maps.InfoWindow({
+                                content: marker.infoWindow.getContent()
+                            });
+                            newMarker.addListener('click', () => {
+                                infoWindow.open(fullscreenMap, newMarker);
+                            });
                         }
+                        
+                        bounds.extend(position);
                     }
                 });
-                
-                // Fit bounds to show all markers
-                const group = new L.featureGroup(Object.values(markers).filter(marker => marker));
-                if (group.getLayers().length > 0) {
-                    fullscreenMap.fitBounds(group.getBounds().pad(0.1));
-                }
+            }
+            
+            // Fit bounds to show all markers
+            if (!bounds.isEmpty()) {
+                fullscreenMap.fitBounds(bounds);
             }
         }
         
         function centerOnCurrentLocation() {
             if (fullscreenMap && currentLocation) {
-                fullscreenMap.setView([currentLocation.lat, currentLocation.lng], 15);
+                fullscreenMap.setCenter(currentLocation);
+                fullscreenMap.setZoom(15);
                 showNotification('Centered on your location', 'info');
             } else {
                 showNotification('Location not available', 'error');
@@ -4171,13 +4304,8 @@
         // Update fullscreen map when packages change
         function updateFullscreenMap() {
             if (isFullscreen && fullscreenMap) {
-                // Clear existing markers
-                fullscreenMap.eachLayer((layer) => {
-                    if (layer instanceof L.Marker) {
-                        fullscreenMap.removeLayer(layer);
-                    }
-                });
-                
+                // Clear existing markers (Google Maps doesn't have eachLayer, so we track markers separately)
+                // Markers are already managed through the markers object
                 // Copy updated markers
                 copyMapMarkersToFullscreen();
             }
@@ -4194,11 +4322,8 @@
         
         // Enhanced mobile support
         function enableMobileNavigation() {
-            // Add touch gestures for mobile
-            if (fullscreenMap) {
-                fullscreenMap.doubleClickZoom.disable();
-                fullscreenMap.scrollWheelZoom.disable();
-            }
+            // Google Maps handles mobile gestures automatically
+            // No specific configuration needed
         }
         
         // Auto-enter fullscreen on mobile when route is active
@@ -4282,60 +4407,97 @@
         // Show route between two points
         function showRouteToDestination(startLat, startLng, endLat, endLng, destinationName) {
             // Clear existing routes
-            if (window.routeLayer) {
-                if (map) map.removeLayer(window.routeLayer);
-                if (fullscreenMap) fullscreenMap.removeLayer(window.routeLayer);
+            if (window.routePolyline) {
+                window.routePolyline.setMap(null);
+            }
+            if (window.fullscreenRoutePolyline) {
+                window.fullscreenRoutePolyline.setMap(null);
             }
             
+            const start = { lat: startLat, lng: startLng };
+            const end = { lat: endLat, lng: endLng };
+            
             // Create route line
-            const routeLine = L.polyline([
-                [startLat, startLng],
-                [endLat, endLng]
-            ], {
-                color: '#3b82f6',
-                weight: 4,
-                opacity: 0.8
+            const routeLine = new google.maps.Polyline({
+                path: [start, end],
+                geodesic: true,
+                strokeColor: '#3b82f6',
+                strokeOpacity: 0.8,
+                strokeWeight: 4
             });
             
             // Add route to main map
             if (map) {
-                window.routeLayer = routeLine.addTo(map);
-                map.fitBounds(routeLine.getBounds().pad(0.1));
+                routeLine.setMap(map);
+                window.routePolyline = routeLine;
+                
+                const bounds = new google.maps.LatLngBounds();
+                bounds.extend(start);
+                bounds.extend(end);
+                map.fitBounds(bounds);
             }
             
             // Add route to fullscreen map
             if (fullscreenMap) {
-                const fullscreenRoute = L.polyline([
-                    [startLat, startLng],
-                    [endLat, endLng]
-                ], {
-                    color: '#3b82f6',
-                    weight: 6,
-                    opacity: 0.9
-                }).addTo(fullscreenMap);
+                const fullscreenRoute = new google.maps.Polyline({
+                    path: [start, end],
+                    geodesic: true,
+                    strokeColor: '#3b82f6',
+                    strokeOpacity: 0.9,
+                    strokeWeight: 6,
+                    map: fullscreenMap
+                });
                 
-                fullscreenMap.fitBounds(fullscreenRoute.getBounds().pad(0.1));
+                window.fullscreenRoutePolyline = fullscreenRoute;
+                
+                const bounds = new google.maps.LatLngBounds();
+                bounds.extend(start);
+                bounds.extend(end);
+                fullscreenMap.fitBounds(bounds);
             }
             
             // Add destination marker
-            const destinationMarker = L.marker([endLat, endLng], {
-                icon: L.divIcon({
-                    className: 'destination-marker',
-                    html: `<div style="background-color: #10b981; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">📍</div>`,
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                })
+            const destinationMarker = new google.maps.Marker({
+                position: end,
+                title: 'Destination',
+                icon: {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#10b981" stroke="white" stroke-width="2"/>
+                            <text x="12" y="16" font-size="12" fill="white" text-anchor="middle">📍</text>
+                        </svg>
+                    `),
+                    scaledSize: new google.maps.Size(24, 24),
+                    anchor: new google.maps.Point(12, 12)
+                }
             });
             
-            if (map) destinationMarker.addTo(map);
-            if (fullscreenMap) destinationMarker.addTo(fullscreenMap);
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div class="text-center">
+                        <strong>Destination</strong><br>
+                        <small>${destinationName || 'Package Location'}</small>
+                    </div>
+                `
+            });
             
-            destinationMarker.bindPopup(`
-                <div class="text-center">
-                    <strong>Destination</strong><br>
-                    <small>${destinationName || 'Package Location'}</small>
-                </div>
-            `);
+            if (map) {
+                destinationMarker.setMap(map);
+                destinationMarker.addListener('click', () => {
+                    infoWindow.open(map, destinationMarker);
+                });
+            }
+            if (fullscreenMap) {
+                const fullscreenMarker = new google.maps.Marker({
+                    position: end,
+                    map: fullscreenMap,
+                    title: 'Destination',
+                    icon: destinationMarker.getIcon()
+                });
+                fullscreenMarker.addListener('click', () => {
+                    infoWindow.open(fullscreenMap, fullscreenMarker);
+                });
+            }
             
             // Calculate and show distance
             const distance = calculateDistanceInternal(startLat, startLng, endLat, endLng);

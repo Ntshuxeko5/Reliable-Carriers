@@ -208,11 +208,21 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
         shipment.setPickupState(request.getPickupState());
         shipment.setPickupZipCode(request.getPickupZipCode());
         shipment.setPickupCountry(request.getPickupCountry());
+        // Set coordinates if provided in request (convert Double to BigDecimal)
+        if (request.getPickupLatitude() != null && request.getPickupLongitude() != null) {
+            shipment.setPickupLatitude(java.math.BigDecimal.valueOf(request.getPickupLatitude()));
+            shipment.setPickupLongitude(java.math.BigDecimal.valueOf(request.getPickupLongitude()));
+        }
         shipment.setDeliveryAddress(request.getDeliveryAddress());
         shipment.setDeliveryCity(request.getDeliveryCity());
         shipment.setDeliveryState(request.getDeliveryState());
         shipment.setDeliveryZipCode(request.getDeliveryZipCode());
         shipment.setDeliveryCountry(request.getDeliveryCountry());
+        // Set coordinates if provided in request (convert Double to BigDecimal)
+        if (request.getDeliveryLatitude() != null && request.getDeliveryLongitude() != null) {
+            shipment.setDeliveryLatitude(java.math.BigDecimal.valueOf(request.getDeliveryLatitude()));
+            shipment.setDeliveryLongitude(java.math.BigDecimal.valueOf(request.getDeliveryLongitude()));
+        }
         shipment.setWeight(request.getWeight());
         shipment.setDimensions(request.getDimensions());
         shipment.setDescription(request.getDescription());

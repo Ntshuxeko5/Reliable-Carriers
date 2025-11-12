@@ -33,8 +33,8 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Google Maps API -->
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
     
     <!-- Admin Utilities -->
     <script src="/js/admin-utils.js"></script>
@@ -215,21 +215,19 @@
         </div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script>
         let map;
         let driverMarkers = {};
         let selectedPackages = new Set();
+        let infoWindows = {};
         
-        // Initialize map
+        // Initialize Google Maps
         function initMap() {
-            map = L.map('driverMap').setView([-26.2041, 28.0473], 10); // Default to Johannesburg
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            map = new google.maps.Map(document.getElementById('driverMap'), {
+                zoom: 10,
+                center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            });
         }
         
         // Load driver locations
@@ -345,8 +343,13 @@
         // Update driver map
         function updateDriverMap(drivers) {
             // Clear existing markers
-            Object.values(driverMarkers).forEach(marker => map.removeLayer(marker));
+            Object.values(driverMarkers).forEach(marker => marker.setMap(null));
+            Object.values(infoWindows).forEach(infoWindow => infoWindow.close());
             driverMarkers = {};
+            infoWindows = {};
+            
+            const bounds = new google.maps.LatLngBounds();
+            let hasMarkers = false;
             
             drivers.forEach(driver => {
                 // Only show online drivers with locations
@@ -370,19 +373,29 @@
                     const lng = typeof driver.longitude === 'object' && driver.longitude !== null 
                         ? parseFloat(driver.longitude) : parseFloat(driver.longitude || 0);
                     
-                    const marker = L.marker([lat, lng], {
-                        icon: L.divIcon({
-                            className: 'driver-marker',
-                            html: `<div style="background-color: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-truck text-white text-xs"></i>
-                            </div>`,
-                            iconSize: [24, 24],
-                            iconAnchor: [12, 12]
-                        })
-                    }).addTo(map);
+                    const position = { lat: lat, lng: lng };
                     
-                    // Build popup content
-                    let popupContent = `
+                    // Create custom marker icon
+                    const icon = {
+                        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+                            <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="15" cy="15" r="12" fill="${markerColor}" stroke="white" stroke-width="3"/>
+                                <text x="15" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">🚚</text>
+                            </svg>
+                        `)}`,
+                        scaledSize: new google.maps.Size(30, 30),
+                        anchor: new google.maps.Point(15, 15)
+                    };
+                    
+                    const marker = new google.maps.Marker({
+                        position: position,
+                        map: map,
+                        title: driverName,
+                        icon: icon
+                    });
+                    
+                    // Build info window content
+                    let infoContent = `
                         <div class="p-3" style="min-width: 200px;">
                             <h3 class="font-bold text-gray-900 mb-2">${driverName}</h3>
                             <div class="space-y-1 text-sm">
@@ -393,23 +406,44 @@
                                     <i class="fas fa-clock mr-1"></i>
                                     ${driver.lastLocationUpdate ? formatTimeAgo(new Date(driver.lastLocationUpdate)) : 'No recent update'}
                                 </p>
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${status === 'ONLINE' ? 'green' : status === 'EN_ROUTE' ? 'blue' : status === 'ON_DELIVERY' ? 'yellow' : 'purple'}-100 text-${status === 'ONLINE' ? 'green' : status === 'EN_ROUTE' ? 'blue' : status === 'ON_DELIVERY' ? 'yellow' : 'purple'}-800 mt-2">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColorClass(status)} mt-2">
                                     ${status.replace('_', ' ')}
                                 </span>
                             </div>
                         </div>
                     `;
                     
-                    marker.bindPopup(popupContent);
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: infoContent
+                    });
+                    
+                    marker.addListener('click', () => {
+                        // Close all other info windows
+                        Object.values(infoWindows).forEach(iw => iw.close());
+                        infoWindow.open(map, marker);
+                        selectDriver(driver.driverId);
+                    });
                     
                     driverMarkers[driver.driverId] = marker;
+                    infoWindows[driver.driverId] = infoWindow;
+                    bounds.extend(position);
+                    hasMarkers = true;
                 }
             });
             
             // Fit map to show all markers if any exist
-            if (Object.keys(driverMarkers).length > 0) {
-                const group = new L.featureGroup(Object.values(driverMarkers));
-                map.fitBounds(group.getBounds().pad(0.1));
+            if (hasMarkers) {
+                map.fitBounds(bounds);
+            }
+        }
+        
+        function getStatusColorClass(status) {
+            switch(status) {
+                case 'ONLINE': return 'bg-green-100 text-green-800';
+                case 'EN_ROUTE': return 'bg-blue-100 text-blue-800';
+                case 'ON_DELIVERY': return 'bg-yellow-100 text-yellow-800';
+                case 'ASSIGNED': return 'bg-purple-100 text-purple-800';
+                default: return 'bg-gray-100 text-gray-800';
             }
         }
         
@@ -523,8 +557,17 @@
         function selectDriver(driverId) {
             // Focus map on selected driver
             if (driverMarkers[driverId]) {
-                map.setView(driverMarkers[driverId].getLatLng(), 15);
-                driverMarkers[driverId].openPopup();
+                const marker = driverMarkers[driverId];
+                map.setCenter(marker.getPosition());
+                map.setZoom(15);
+                
+                // Close all info windows first
+                Object.values(infoWindows).forEach(iw => iw.close());
+                
+                // Open info window for selected driver
+                if (infoWindows[driverId]) {
+                    infoWindows[driverId].open(map, marker);
+                }
             }
             
             // Also update dropdown
@@ -600,15 +643,20 @@
         }
         
         // Initialize on page load
+        // Note: initMap is called by Google Maps API callback
+        // If map is not initialized, wait for it
+        function checkMapInitialized() {
+            if (typeof google !== 'undefined' && google.maps && map) {
+                loadDriverLocations();
+                loadAvailablePackages();
+                startAutoRefresh();
+            } else {
+                setTimeout(checkMapInitialized, 100);
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
-            initMap();
-            loadDriverLocations();
-            loadAvailablePackages();
-            
-            // Start auto-refresh every 10 seconds
-            startAutoRefresh();
-            
-            // Cleanup on page unload
+            checkMapInitialized();
             window.addEventListener('beforeunload', stopAutoRefresh);
         });
 

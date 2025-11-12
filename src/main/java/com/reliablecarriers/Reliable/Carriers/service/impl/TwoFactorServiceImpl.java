@@ -6,6 +6,8 @@ import com.reliablecarriers.Reliable.Carriers.repository.TwoFactorTokenRepositor
 import com.reliablecarriers.Reliable.Carriers.service.EmailService;
 import com.reliablecarriers.Reliable.Carriers.service.SmsService;
 import com.reliablecarriers.Reliable.Carriers.service.TwoFactorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ import java.util.Date;
 @Service
 public class TwoFactorServiceImpl implements TwoFactorService {
 
+    private static final Logger logger = LoggerFactory.getLogger(TwoFactorServiceImpl.class);
+
     private final TwoFactorTokenRepository tokenRepository;
     private final EmailService emailService;
     private final SmsService smsService;
@@ -27,6 +31,9 @@ public class TwoFactorServiceImpl implements TwoFactorService {
     @Value("${app.2fa.enabled:true}")
     private boolean enabled;
 
+    @Value("${app.debug.mode:false}")
+    private boolean debugMode;
+
     public TwoFactorServiceImpl(TwoFactorTokenRepository tokenRepository, EmailService emailService, SmsService smsService) {
         this.tokenRepository = tokenRepository;
         this.emailService = emailService;
@@ -36,17 +43,15 @@ public class TwoFactorServiceImpl implements TwoFactorService {
     @Override
     @Transactional
     public void generateAndSendToken(User user, String method) {
-        System.out.println("=== 2FA DEBUG START ===");
-        System.out.println("User: " + user.getEmail() + ", Phone: " + user.getPhone());
-        System.out.println("Method: " + method);
-        System.out.println("2FA Enabled: " + this.enabled);
+        logger.debug("Generating 2FA token for user: {}, method: {}, 2FA enabled: {}", 
+                     user.getEmail(), method, enabled);
         
         // clear existing tokens
         tokenRepository.deleteByUser(user);
 
         // generate numeric 6-digit token
         String token = String.format("%06d", new SecureRandom().nextInt(1_000_000));
-        System.out.println("Generated token: " + token);
+        logger.debug("Generated 2FA token for user: {}", user.getEmail());
 
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.MINUTE, ttlMinutes);
@@ -54,63 +59,59 @@ public class TwoFactorServiceImpl implements TwoFactorService {
 
         TwoFactorToken t = new TwoFactorToken(token, method, expires, user);
         tokenRepository.save(t);
-        System.out.println("Token saved to database");
+        logger.debug("2FA token saved to database for user: {}", user.getEmail());
 
         String message = "Your verification code is: " + token + ". It expires in " + ttlMinutes + " minutes.";
 
         if ("SMS".equalsIgnoreCase(method)) {
-            System.out.println("Attempting SMS delivery...");
+            logger.debug("Attempting SMS delivery for user: {}", user.getEmail());
             if (user.getPhone() != null) {
                 try {
                     smsService.sendSms(user.getPhone(), message);
-                    System.out.println("2FA SMS sent to " + user.getPhone());
+                    logger.info("2FA SMS sent successfully to phone: {}", user.getPhone());
                 } catch (Exception e) {
-                    System.err.println("Failed to send 2FA SMS to " + user.getPhone() + ": " + e.getMessage());
-                    System.out.println("Falling back to email...");
+                    logger.warn("Failed to send 2FA SMS to {}: {}, falling back to email", 
+                                user.getPhone(), e.getMessage());
                     try {
                         // Fallback to email if SMS fails
                         emailService.sendSimpleEmail(user.getEmail(), "Your verification code", message);
+                        logger.info("2FA email sent successfully as fallback for user: {}", user.getEmail());
                     } catch (Exception emailException) {
-                        System.err.println("Both SMS and email failed: " + emailException.getMessage());
-                        // Don't throw exception - just log the token for development
-                        System.out.println("=== 2FA TOKEN (DEVELOPMENT MODE) ===");
-                        System.out.println("Token: " + token);
-                        System.out.println("User: " + user.getEmail());
-                        System.out.println("=== END TOKEN ===");
+                        logger.error("Both SMS and email failed for user {}: {}", 
+                                   user.getEmail(), emailException.getMessage(), emailException);
+                        if (debugMode) {
+                            logger.debug("2FA Token (DEBUG MODE) - User: {}, Token: {}", user.getEmail(), token);
+                        }
                     }
                 }
             } else {
-                System.err.println("User phone number is null, falling back to email");
+                logger.warn("User phone number is null for user: {}, falling back to email", user.getEmail());
                 try {
                     emailService.sendSimpleEmail(user.getEmail(), "Your verification code", message);
+                    logger.info("2FA email sent successfully to user: {}", user.getEmail());
                 } catch (Exception emailException) {
-                    System.err.println("Email failed: " + emailException.getMessage());
-                    System.out.println("=== 2FA TOKEN (DEVELOPMENT MODE) ===");
-                    System.out.println("Token: " + token);
-                    System.out.println("User: " + user.getEmail());
-                    System.out.println("=== END TOKEN ===");
+                    logger.error("Email failed for user {}: {}", user.getEmail(), emailException.getMessage(), emailException);
+                    if (debugMode) {
+                        logger.debug("2FA Token (DEBUG MODE) - User: {}, Token: {}", user.getEmail(), token);
+                    }
                 }
             }
         } else {
             // default to email
-            System.out.println("Attempting email delivery...");
+            logger.debug("Attempting email delivery for user: {}", user.getEmail());
             try {
                 emailService.sendSimpleEmail(user.getEmail(), "Your verification code", message);
-                System.out.println("2FA Email sent to " + user.getEmail());
+                logger.info("2FA email sent successfully to user: {}", user.getEmail());
             } catch (Exception e) {
-                System.err.println("Failed to send 2FA email to " + user.getEmail() + ": " + e.getMessage());
-                e.printStackTrace();
+                logger.error("Failed to send 2FA email to {}: {}", user.getEmail(), e.getMessage(), e);
                 // Don't throw exception - token is saved, user can use resend or check logs
-                // Log the token for development/debugging purposes
-                System.out.println("=== 2FA TOKEN (EMAIL FAILED - CHECK LOGS) ===");
-                System.out.println("Token: " + token);
-                System.out.println("User: " + user.getEmail());
-                System.out.println("Error: " + e.getMessage());
-                System.out.println("=== END TOKEN ===");
+                if (debugMode) {
+                    logger.debug("2FA Token (DEBUG MODE - EMAIL FAILED) - User: {}, Token: {}, Error: {}", 
+                               user.getEmail(), token, e.getMessage());
+                }
                 // Note: Token is still saved in database, user can use resend functionality
             }
         }
-        System.out.println("=== 2FA DEBUG END ===");
     }
 
     @Override

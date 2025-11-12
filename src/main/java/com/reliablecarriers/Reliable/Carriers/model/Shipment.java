@@ -6,7 +6,16 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "shipments")
+@Table(name = "shipments", indexes = {
+    @Index(name = "idx_shipments_tracking_number", columnList = "trackingNumber"),
+    @Index(name = "idx_shipments_status", columnList = "status"),
+    @Index(name = "idx_shipments_assigned_driver", columnList = "assigned_driver_id"),
+    @Index(name = "idx_shipments_sender", columnList = "sender_id"),
+    @Index(name = "idx_shipments_status_created", columnList = "status,created_at"),
+    @Index(name = "idx_shipments_pickup_coords", columnList = "pickup_latitude,pickup_longitude"),
+    @Index(name = "idx_shipments_delivery_coords", columnList = "delivery_latitude,delivery_longitude"),
+    @Index(name = "idx_shipments_created_at", columnList = "created_at")
+})
 public class Shipment {
     
     @Id
@@ -93,6 +102,20 @@ public class Shipment {
     @NotBlank
     @Size(max = 50)
     private String deliveryCountry;
+    
+    // Google Maps coordinates for pickup
+    @Column(precision = 10, scale = 8)
+    private BigDecimal pickupLatitude;
+    
+    @Column(precision = 11, scale = 8)
+    private BigDecimal pickupLongitude;
+    
+    // Google Maps coordinates for delivery
+    @Column(precision = 10, scale = 8)
+    private BigDecimal deliveryLatitude;
+    
+    @Column(precision = 11, scale = 8)
+    private BigDecimal deliveryLongitude;
     
     @Column(nullable = false)
     @NotNull
@@ -383,5 +406,37 @@ public class Shipment {
     
     public void setDropOffCode(String dropOffCode) {
         this.dropOffCode = dropOffCode;
+    }
+    
+    public BigDecimal getPickupLatitude() {
+        return pickupLatitude;
+    }
+    
+    public void setPickupLatitude(BigDecimal pickupLatitude) {
+        this.pickupLatitude = pickupLatitude;
+    }
+    
+    public BigDecimal getPickupLongitude() {
+        return pickupLongitude;
+    }
+    
+    public void setPickupLongitude(BigDecimal pickupLongitude) {
+        this.pickupLongitude = pickupLongitude;
+    }
+    
+    public BigDecimal getDeliveryLatitude() {
+        return deliveryLatitude;
+    }
+    
+    public void setDeliveryLatitude(BigDecimal deliveryLatitude) {
+        this.deliveryLatitude = deliveryLatitude;
+    }
+    
+    public BigDecimal getDeliveryLongitude() {
+        return deliveryLongitude;
+    }
+    
+    public void setDeliveryLongitude(BigDecimal deliveryLongitude) {
+        this.deliveryLongitude = deliveryLongitude;
     }
 }

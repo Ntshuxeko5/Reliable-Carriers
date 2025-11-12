@@ -515,12 +515,20 @@
                     }
                     
                     showAlert(data.message || 'Driver registration completed successfully! Welcome to Reliable Carriers.', 'success');
+                    
+                    // Store user info in session
+                    if (data.user) {
+                        sessionStorage.setItem('userFirstName', data.user.firstName || '');
+                        sessionStorage.setItem('userEmail', data.user.email || '');
+                        sessionStorage.setItem('userRole', data.user.role || 'DRIVER');
+                    }
+                    
                     setTimeout(() => {
-                        // Redirect to driver dashboard
-                        const role = data.user?.role || sessionStorage.getItem('pending2faRole') || 'DRIVER';
-                        if (role === 'DRIVER') {
-                            window.location.href = '/driver/dashboard';
+                        // Check if approval is needed
+                        if (data.needsApproval) {
+                            window.location.href = '/waiting-approval';
                         } else {
+                            // Redirect to driver dashboard
                             window.location.href = '/driver/dashboard';
                         }
                     }, 2000);

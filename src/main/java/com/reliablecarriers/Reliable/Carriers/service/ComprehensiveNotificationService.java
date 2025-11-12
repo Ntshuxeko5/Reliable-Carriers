@@ -5,7 +5,6 @@ import com.reliablecarriers.Reliable.Carriers.model.MovingService;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus;
 import com.reliablecarriers.Reliable.Carriers.model.User;
-import com.reliablecarriers.Reliable.Carriers.service.SmsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -493,6 +492,7 @@ public class ComprehensiveNotificationService implements NotificationService {
     /**
      * Build email content for receiver (delivery contact) - for future use if deliveryContactEmail is added
      */
+    @SuppressWarnings("unused")
     private String buildReceiverConfirmationEmail(Booking booking) {
         return String.format("""
             Dear %s,

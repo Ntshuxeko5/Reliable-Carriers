@@ -39,6 +39,7 @@
             }
         }
     </script>
+    <script src="/js/error-handling.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .glass-effect {
@@ -180,10 +181,22 @@
                                     </td>
                                     <td class="py-4 px-4 text-brand-200" th:text="${p.lastUpdate ?: (p.formattedCreatedAt ?: 'N/A')}"></td>
                                     <td class="py-4 px-4">
-                                        <a th:href="@{/customer/track/{trackingNumber}(trackingNumber=${p.trackingNumber})}" 
-                                           class="bg-brand-500 hover:bg-brand-600 text-white px-3 py-1 rounded-full text-sm font-medium transition-colors">
-                                            <i class="fas fa-search mr-1"></i>Track
-                                        </a>
+                                        <div class="flex items-center space-x-2">
+                                            <a th:href="@{/customer/track/{trackingNumber}(trackingNumber=${p.trackingNumber})}" 
+                                               class="bg-brand-500 hover:bg-brand-600 text-white px-3 py-1 rounded-full text-sm font-medium transition-colors">
+                                                <i class="fas fa-search mr-1"></i>Track
+                                            </a>
+                                            <button th:if="${p.status != null && p.status.toString() == 'PENDING'}" 
+                                                    th:onclick="'editPackage(\'' + ${p.trackingNumber} + '\', \'' + ${email} + '\')'"
+                                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium transition-colors">
+                                                <i class="fas fa-edit mr-1"></i>Edit
+                                            </button>
+                                            <button th:if="${p.status != null && p.status.toString() == 'PENDING'}" 
+                                                    th:onclick="'cancelPackage(\'' + ${p.trackingNumber} + '\', \'' + ${email} + '\')'"
+                                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium transition-colors">
+                                                <i class="fas fa-times mr-1"></i>Cancel
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -222,6 +235,157 @@
                 <a href="/customer/dashboard" class="bg-gradient-to-r from-brand-blue-600 to-brand-blue-700 text-white px-8 py-4 rounded-full font-bold hover:from-brand-blue-700 hover:to-brand-blue-800 transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto w-fit">
                     <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Package Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 my-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Edit Package Details</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="editModalContent">
+                <p class="text-sm text-gray-600 mb-6">
+                    <strong>Tracking Number:</strong> <span id="editTrackingNumber" class="font-mono"></span>
+                </p>
+                <form id="editPackageForm" class="space-y-4">
+                    <!-- Recipient Information -->
+                    <div class="border-b pb-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">Recipient Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Recipient Name</label>
+                                <input type="text" id="editRecipientName" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Recipient Email</label>
+                                <input type="email" id="editRecipientEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Recipient Phone</label>
+                                <input type="tel" id="editRecipientPhone" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pickup Address -->
+                    <div class="border-b pb-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">Pickup Address</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                                <input type="text" id="editPickupAddress" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                <input type="text" id="editPickupCity" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">State/Province</label>
+                                <input type="text" id="editPickupState" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                                <input type="text" id="editPickupZipCode" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Delivery Address -->
+                    <div class="border-b pb-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">Delivery Address</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                                <input type="text" id="editDeliveryAddress" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                <input type="text" id="editDeliveryCity" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">State/Province</label>
+                                <input type="text" id="editDeliveryState" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                                <input type="text" id="editDeliveryZipCode" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Package Details -->
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-3">Package Details</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                                <input type="number" step="0.1" id="editWeight" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Dimensions (LxWxH)</label>
+                                <input type="text" id="editDimensions" placeholder="e.g., 30x20x15" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea id="editDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="editError" class="hidden text-red-600 text-sm mb-4"></div>
+                    <div class="flex space-x-3 pt-4">
+                        <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-save mr-2"></i>Save Changes
+                        </button>
+                        <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancellation Modal -->
+    <div id="cancelModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Cancel Package</h3>
+                <button onclick="closeCancelModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="cancelModalContent">
+                <p class="text-gray-700 mb-4">Are you sure you want to cancel this package?</p>
+                <p class="text-sm text-gray-600 mb-6">
+                    <strong>Tracking Number:</strong> <span id="cancelTrackingNumber" class="font-mono"></span>
+                </p>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-2 mt-1"></i>
+                        <div class="text-sm text-yellow-800">
+                            <p class="font-semibold mb-1">Important:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>Only packages with PENDING status can be cancelled</li>
+                                <li>Cancellation cannot be undone</li>
+                                <li>You may be eligible for a refund depending on payment status</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="confirmCancel()" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
+                        <i class="fas fa-times mr-2"></i>Yes, Cancel Package
+                    </button>
+                    <button onclick="closeCancelModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors">
+                        Keep Package
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -322,6 +486,199 @@
         // Check auth on page load
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthAndLoadUser();
+        });
+
+        // Package modification
+        let editTrackingNumber = null;
+        let editEmail = null;
+
+        async function editPackage(trackingNumber, email) {
+            editTrackingNumber = trackingNumber;
+            editEmail = email;
+            document.getElementById('editTrackingNumber').textContent = trackingNumber;
+            
+            // Load package details
+            showLoading('Loading package details...');
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+                const response = await fetch(`/api/customer/track/${trackingNumber}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const packageData = await response.json();
+                    
+                    // Populate form fields
+                    if (packageData.recipientName) document.getElementById('editRecipientName').value = packageData.recipientName;
+                    if (packageData.recipientEmail) document.getElementById('editRecipientEmail').value = packageData.recipientEmail;
+                    if (packageData.recipientPhone) document.getElementById('editRecipientPhone').value = packageData.recipientPhone;
+                    if (packageData.pickupAddress) document.getElementById('editPickupAddress').value = packageData.pickupAddress;
+                    if (packageData.pickupCity) document.getElementById('editPickupCity').value = packageData.pickupCity;
+                    if (packageData.pickupState) document.getElementById('editPickupState').value = packageData.pickupState;
+                    if (packageData.pickupZipCode) document.getElementById('editPickupZipCode').value = packageData.pickupZipCode;
+                    if (packageData.deliveryAddress) document.getElementById('editDeliveryAddress').value = packageData.deliveryAddress;
+                    if (packageData.deliveryCity) document.getElementById('editDeliveryCity').value = packageData.deliveryCity;
+                    if (packageData.deliveryState) document.getElementById('editDeliveryState').value = packageData.deliveryState;
+                    if (packageData.deliveryZipCode) document.getElementById('editDeliveryZipCode').value = packageData.deliveryZipCode;
+                    if (packageData.weight) document.getElementById('editWeight').value = packageData.weight;
+                    if (packageData.dimensions) document.getElementById('editDimensions').value = packageData.dimensions;
+                    if (packageData.description) document.getElementById('editDescription').value = packageData.description;
+                    
+                    document.getElementById('editModal').classList.remove('hidden');
+                } else {
+                    await handleApiError(response, 'Failed to load package details');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error loading package details');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editPackageForm').reset();
+            document.getElementById('editError').classList.add('hidden');
+            editTrackingNumber = null;
+            editEmail = null;
+        }
+
+        document.getElementById('editPackageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!editTrackingNumber || !editEmail) {
+                showError('Missing package information');
+                return;
+            }
+
+            const updates = {};
+            
+            // Collect form data
+            const recipientName = document.getElementById('editRecipientName').value;
+            const recipientEmail = document.getElementById('editRecipientEmail').value;
+            const recipientPhone = document.getElementById('editRecipientPhone').value;
+            const pickupAddress = document.getElementById('editPickupAddress').value;
+            const pickupCity = document.getElementById('editPickupCity').value;
+            const pickupState = document.getElementById('editPickupState').value;
+            const pickupZipCode = document.getElementById('editPickupZipCode').value;
+            const deliveryAddress = document.getElementById('editDeliveryAddress').value;
+            const deliveryCity = document.getElementById('editDeliveryCity').value;
+            const deliveryState = document.getElementById('editDeliveryState').value;
+            const deliveryZipCode = document.getElementById('editDeliveryZipCode').value;
+            const weight = document.getElementById('editWeight').value;
+            const dimensions = document.getElementById('editDimensions').value;
+            const description = document.getElementById('editDescription').value;
+            
+            if (recipientName) updates.recipientName = recipientName;
+            if (recipientEmail) updates.recipientEmail = recipientEmail;
+            if (recipientPhone) updates.recipientPhone = recipientPhone;
+            if (pickupAddress) updates.pickupAddress = pickupAddress;
+            if (pickupCity) updates.pickupCity = pickupCity;
+            if (pickupState) updates.pickupState = pickupState;
+            if (pickupZipCode) updates.pickupZipCode = pickupZipCode;
+            if (deliveryAddress) updates.deliveryAddress = deliveryAddress;
+            if (deliveryCity) updates.deliveryCity = deliveryCity;
+            if (deliveryState) updates.deliveryState = deliveryState;
+            if (deliveryZipCode) updates.deliveryZipCode = deliveryZipCode;
+            if (weight) updates.weight = weight;
+            if (dimensions) updates.dimensions = dimensions;
+            if (description) updates.description = description;
+
+            showLoading('Updating package...');
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+                const response = await fetch(`/api/customer/packages/${editTrackingNumber}/modify?email=${encodeURIComponent(editEmail)}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(updates)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showSuccess('Package updated successfully');
+                    closeEditModal();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    const errorDiv = document.getElementById('editError');
+                    errorDiv.textContent = data.error || 'Failed to update package';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error updating package');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Package cancellation
+        let cancelTrackingNumber = null;
+        let cancelEmail = null;
+
+        function cancelPackage(trackingNumber, email) {
+            cancelTrackingNumber = trackingNumber;
+            cancelEmail = email;
+            document.getElementById('cancelTrackingNumber').textContent = trackingNumber;
+            document.getElementById('cancelModal').classList.remove('hidden');
+        }
+
+        function closeCancelModal() {
+            document.getElementById('cancelModal').classList.add('hidden');
+            cancelTrackingNumber = null;
+            cancelEmail = null;
+        }
+
+        async function confirmCancel() {
+            if (!cancelTrackingNumber || !cancelEmail) {
+                showError('Missing package information');
+                return;
+            }
+
+            showLoading('Cancelling package...');
+            try {
+                const response = await fetch(`/api/customer/packages/${cancelTrackingNumber}/cancel?email=${encodeURIComponent(cancelEmail)}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || sessionStorage.getItem('token') || ''),
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.message) {
+                    showSuccess('Package cancelled successfully');
+                    closeCancelModal();
+                    // Reload page after 1 second to show updated status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    await handleApiError(response, data.error || 'Failed to cancel package');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error cancelling package');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('cancelModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCancelModal();
+            }
         });
     </script>
 </body>

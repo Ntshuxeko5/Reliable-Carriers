@@ -1,6 +1,9 @@
 package com.reliablecarriers.Reliable.Carriers.controller;
 
 import com.reliablecarriers.Reliable.Carriers.model.User;
+import com.reliablecarriers.Reliable.Carriers.model.UserRole;
+import com.reliablecarriers.Reliable.Carriers.model.DriverVerificationStatus;
+import com.reliablecarriers.Reliable.Carriers.model.BusinessVerificationStatus;
 import com.reliablecarriers.Reliable.Carriers.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -9,12 +12,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -82,20 +81,51 @@ public class WebController {
         dashboard.put("active", "dashboard".equals(activePage));
         links.add(dashboard);
         
+        Map<String, Object> customerDashboard = new HashMap<>();
+        customerDashboard.put("label", "Customer Portal");
+        customerDashboard.put("url", "/customer/dashboard");
+        customerDashboard.put("active", false);
+        links.add(customerDashboard);
+        
         Map<String, Object> analytics = new HashMap<>();
         analytics.put("label", "Analytics");
         analytics.put("url", "/business/analytics");
         analytics.put("active", "analytics".equals(activePage));
         links.add(analytics);
         
+        Map<String, Object> packages = new HashMap<>();
+        packages.put("label", "My Packages");
+        packages.put("url", "/customer/packages");
+        packages.put("active", false);
+        links.add(packages);
+        
+        Map<String, Object> invoices = new HashMap<>();
+        invoices.put("label", "Invoices");
+        invoices.put("url", "/customer/invoices");
+        invoices.put("active", false);
+        links.add(invoices);
+        
+        Map<String, Object> payments = new HashMap<>();
+        payments.put("label", "Payments");
+        payments.put("url", "/customer/payments");
+        payments.put("active", false);
+        links.add(payments);
+        
+        Map<String, Object> webhooks = new HashMap<>();
+        webhooks.put("label", "Webhooks");
+        webhooks.put("url", "/customer/webhooks");
+        webhooks.put("active", false);
+        links.add(webhooks);
+        
         Map<String, Object> apiKeys = new HashMap<>();
         apiKeys.put("label", "API Keys");
         apiKeys.put("url", "/customer/api-keys");
+        apiKeys.put("active", false);
         links.add(apiKeys);
         
         Map<String, Object> logout = new HashMap<>();
         logout.put("label", "Logout");
-        logout.put("url", "#");
+        logout.put("url", "/logout");
         logout.put("active", false);
         logout.put("id", "logoutBtn");
         links.add(logout);
@@ -140,53 +170,48 @@ public class WebController {
 
     @GetMapping("/dashboard")
     public String dashboard(HttpServletRequest request) {
-        // Get user role from session or authentication
-        String userRole = null;
-        
-        // Try to get from session first
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            userRole = (String) session.getAttribute("userRole");
-        }
-        
-        // If no session, try to get from authentication
-        if (userRole == null) {
-            try {
-                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                if (auth != null && auth.getPrincipal() instanceof UserDetails) {
-                    UserDetails userDetails = (UserDetails) auth.getPrincipal();
-                    // Extract role from authorities
-                    for (GrantedAuthority authority : userDetails.getAuthorities()) {
-                        if (authority.getAuthority().startsWith("ROLE_")) {
-                            userRole = authority.getAuthority().substring(5); // Remove "ROLE_" prefix
-                            break;
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                // If authentication fails, continue with default behavior
+        try {
+            // Get user from authentication
+            User currentUser = authService.getCurrentUser();
+            if (currentUser == null) {
+                return "redirect:/login";
             }
-        }
-        
-        // Redirect based on role
-        if (userRole != null) {
-            switch (userRole) {
-                case "ADMIN":
+
+            // Check verification status for drivers and business users
+            if (currentUser.getRole() == UserRole.DRIVER) {
+                if (currentUser.getDriverVerificationStatus() == null || 
+                    currentUser.getDriverVerificationStatus() == DriverVerificationStatus.PENDING) {
+                    return "redirect:/waiting-approval";
+                }
+                return "redirect:/driver/dashboard";
+            } else if (Boolean.TRUE.equals(currentUser.getIsBusiness())) {
+                if (currentUser.getBusinessVerificationStatus() == null || 
+                    currentUser.getBusinessVerificationStatus() == BusinessVerificationStatus.PENDING) {
+                    return "redirect:/waiting-approval";
+                }
+                // Business users can access both customer and business dashboards
+                // Default to customer dashboard which has more features
+                return "redirect:/customer";
+            }
+
+            // Redirect based on role
+            switch (currentUser.getRole()) {
+                case ADMIN:
                     return "redirect:/admin/dashboard";
-                case "DRIVER":
+                case DRIVER:
                     return "redirect:/driver/dashboard";
-                case "TRACKING_MANAGER":
+                case TRACKING_MANAGER:
                     return "redirect:/tracking/dashboard";
-                case "STAFF":
+                case STAFF:
                     return "redirect:/staff/dashboard";
-                case "CUSTOMER":
+                case CUSTOMER:
                 default:
                     return "redirect:/customer";
             }
+        } catch (Exception e) {
+            // If authentication fails, redirect to login
+            return "redirect:/login";
         }
-        
-        // Default fallback
-        return "redirect:/customer";
     }
 
     @GetMapping("/admin")
@@ -241,14 +266,56 @@ public class WebController {
 
     @GetMapping("/business/dashboard")
     public String businessDashboard(Model model) {
-        model.addAttribute("navLinks", createBusinessNavLinks("dashboard"));
-        return "business/dashboard";
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Verify user is a business user
+            if (currentUser.getIsBusiness() == null || !currentUser.getIsBusiness()) {
+                return "redirect:/customer/dashboard";
+            }
+            
+            // Check verification status
+            if (currentUser.getBusinessVerificationStatus() == null || 
+                currentUser.getBusinessVerificationStatus() == BusinessVerificationStatus.PENDING) {
+                return "redirect:/waiting-approval";
+            }
+            
+            model.addAttribute("navLinks", createBusinessNavLinks("dashboard"));
+            model.addAttribute("user", currentUser);
+            return "business/dashboard";
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
     }
 
     @GetMapping("/business/analytics")
     public String businessAnalytics(Model model) {
-        model.addAttribute("navLinks", createBusinessNavLinks("analytics"));
-        return "business/analytics";
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Verify user is a business user
+            if (currentUser.getIsBusiness() == null || !currentUser.getIsBusiness()) {
+                return "redirect:/customer/analytics";
+            }
+            
+            // Check verification status
+            if (currentUser.getBusinessVerificationStatus() == null || 
+                currentUser.getBusinessVerificationStatus() == BusinessVerificationStatus.PENDING) {
+                return "redirect:/waiting-approval";
+            }
+            
+            model.addAttribute("navLinks", createBusinessNavLinks("analytics"));
+            model.addAttribute("user", currentUser);
+            return "business/analytics";
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
     }
 
     @GetMapping("/shipments")
@@ -332,9 +399,139 @@ public class WebController {
         return "price-list";
     }
 
+    @GetMapping("/waiting-approval")
+    public String waitingApproval(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userRole", currentUser.getRole().toString());
+            }
+        } catch (Exception e) {
+            // Handle error
+        }
+        return "waiting-approval";
+    }
+
     @GetMapping("/driver/dashboard")
-    public String driverDashboard() {
+    public String driverDashboard(HttpServletRequest request) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Check if driver is approved
+            if (currentUser.getRole() == UserRole.DRIVER) {
+                if (currentUser.getDriverVerificationStatus() == null || 
+                    currentUser.getDriverVerificationStatus() == DriverVerificationStatus.PENDING) {
+                    return "redirect:/waiting-approval";
+                }
+            }
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
         return "driver/dashboard";
+    }
+
+    @GetMapping("/driver/earnings")
+    @PreAuthorize("hasRole('DRIVER')")
+    public String driverEarnings() {
+        return "driver/earnings";
+    }
+
+    @GetMapping("/driver/profile")
+    @PreAuthorize("hasRole('DRIVER')")
+    public String driverProfile(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userPhone", currentUser.getPhone());
+            }
+        } catch (Exception e) {
+            // Handle error
+        }
+        return "driver/profile";
+    }
+
+    @GetMapping("/driver/login-history")
+    @PreAuthorize("hasRole('DRIVER')")
+    public String driverLoginHistory(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+            }
+        } catch (Exception e) {
+            // Handle error
+        }
+        return "driver/login-history";
+    }
+
+    @GetMapping("/admin/support-tickets")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public String adminSupportTickets(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+            }
+        } catch (Exception e) {
+            // Handle error
+        }
+        return "admin/support-tickets";
+    }
+
+    @GetMapping("/admin/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminUsers(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+            }
+        } catch (Exception e) {
+            // Handle error
+        }
+        return "admin/users";
+    }
+
+    @GetMapping("/admin/payments")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminPayments(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+            }
+        } catch (Exception e) {
+            // Handle error
+        }
+        return "admin/payments";
+    }
+
+    @GetMapping("/admin/reports")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminReports(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+            }
+        } catch (Exception e) {
+            // Handle error
+        }
+        return "admin/reports";
     }
 
     @GetMapping("/driver/uber-dashboard")

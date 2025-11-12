@@ -11,9 +11,12 @@ import com.reliablecarriers.Reliable.Carriers.service.NotificationService;
 import com.reliablecarriers.Reliable.Carriers.service.PricingService;
 import com.reliablecarriers.Reliable.Carriers.service.ShipmentService;
 import com.reliablecarriers.Reliable.Carriers.service.UserService;
+import com.reliablecarriers.Reliable.Carriers.service.GoogleMapsGeocodingService;
+import com.reliablecarriers.Reliable.Carriers.dto.AddressCoordinates;
 import com.reliablecarriers.Reliable.Carriers.controller.WebSocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -28,6 +31,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final NotificationService notificationService;
     private final PricingService pricingService;
     private final WebSocketController webSocketController;
+    private final GoogleMapsGeocodingService geocodingService;
 
     @Autowired
     public ShipmentServiceImpl(ShipmentRepository shipmentRepository, 
@@ -35,16 +39,19 @@ public class ShipmentServiceImpl implements ShipmentService {
                               UserService userService,
                               NotificationService notificationService,
                               PricingService pricingService,
-                              WebSocketController webSocketController) {
+                              WebSocketController webSocketController,
+                              GoogleMapsGeocodingService geocodingService) {
         this.shipmentRepository = shipmentRepository;
         this.trackingRepository = trackingRepository;
         this.userService = userService;
         this.notificationService = notificationService;
         this.pricingService = pricingService;
         this.webSocketController = webSocketController;
+        this.geocodingService = geocodingService;
     }
 
     @Override
+    @Transactional
     public Shipment createShipment(Shipment shipment) {
         // Generate tracking number
         shipment.setTrackingNumber(generateTrackingNumber());
@@ -58,6 +65,9 @@ public class ShipmentServiceImpl implements ShipmentService {
         if (shipment.getServiceType() == null) {
             shipment.setServiceType(ServiceType.ECONOMY);
         }
+        
+        // Geocode addresses if coordinates are not already set
+        geocodeShipmentAddresses(shipment);
         
         // Calculate shipping cost based on service type
         if (shipment.getShippingCost() == null) {
@@ -85,6 +95,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     @Override
+    @Transactional
     public Shipment updateShipment(Long id, Shipment shipment) {
         Shipment existingShipment = getShipmentById(id);
         
@@ -107,6 +118,15 @@ public class ShipmentServiceImpl implements ShipmentService {
         existingShipment.setDescription(shipment.getDescription());
         existingShipment.setShippingCost(shipment.getShippingCost());
         existingShipment.setEstimatedDeliveryDate(shipment.getEstimatedDeliveryDate());
+        
+        // Update coordinates if addresses changed or coordinates are missing
+        boolean addressesChanged = !existingShipment.getPickupAddress().equals(shipment.getPickupAddress()) ||
+                                  !existingShipment.getDeliveryAddress().equals(shipment.getDeliveryAddress());
+        
+        if (addressesChanged || existingShipment.getPickupLatitude() == null || 
+            existingShipment.getDeliveryLatitude() == null) {
+            geocodeShipmentAddresses(existingShipment);
+        }
         
         // Don't update status, tracking number, or actual delivery date here
         // Those should be updated through specific methods
@@ -218,6 +238,90 @@ public class ShipmentServiceImpl implements ShipmentService {
         sendStatusSpecificNotifications(savedShipment, oldStatus, status, location, notes);
         
         return savedShipment;
+    }
+    
+    /**
+     * Geocode shipment addresses to get coordinates
+     * Only geocodes if coordinates are not already set
+     */
+    private void geocodeShipmentAddresses(Shipment shipment) {
+        try {
+            // Geocode pickup address if coordinates are missing
+            if (shipment.getPickupLatitude() == null || shipment.getPickupLongitude() == null) {
+                String fullPickupAddress = buildFullAddress(
+                    shipment.getPickupAddress(),
+                    shipment.getPickupCity(),
+                    shipment.getPickupState(),
+                    shipment.getPickupZipCode(),
+                    shipment.getPickupCountry()
+                );
+                
+                AddressCoordinates pickupCoords = geocodingService.validateAndNormalizeAddress(fullPickupAddress);
+                if (pickupCoords != null) {
+                    shipment.setPickupLatitude(pickupCoords.getLatitude());
+                    shipment.setPickupLongitude(pickupCoords.getLongitude());
+                    // Optionally update address with formatted version
+                    if (pickupCoords.getFormattedAddress() != null && !pickupCoords.getFormattedAddress().isEmpty()) {
+                        shipment.setPickupAddress(pickupCoords.getFormattedAddress());
+                    }
+                } else {
+                    System.err.println("Failed to geocode pickup address: " + fullPickupAddress);
+                }
+            }
+            
+            // Geocode delivery address if coordinates are missing
+            if (shipment.getDeliveryLatitude() == null || shipment.getDeliveryLongitude() == null) {
+                String fullDeliveryAddress = buildFullAddress(
+                    shipment.getDeliveryAddress(),
+                    shipment.getDeliveryCity(),
+                    shipment.getDeliveryState(),
+                    shipment.getDeliveryZipCode(),
+                    shipment.getDeliveryCountry()
+                );
+                
+                AddressCoordinates deliveryCoords = geocodingService.validateAndNormalizeAddress(fullDeliveryAddress);
+                if (deliveryCoords != null) {
+                    shipment.setDeliveryLatitude(deliveryCoords.getLatitude());
+                    shipment.setDeliveryLongitude(deliveryCoords.getLongitude());
+                    // Optionally update address with formatted version
+                    if (deliveryCoords.getFormattedAddress() != null && !deliveryCoords.getFormattedAddress().isEmpty()) {
+                        shipment.setDeliveryAddress(deliveryCoords.getFormattedAddress());
+                    }
+                } else {
+                    System.err.println("Failed to geocode delivery address: " + fullDeliveryAddress);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error geocoding shipment addresses: " + e.getMessage());
+            // Don't fail shipment creation if geocoding fails
+        }
+    }
+    
+    /**
+     * Build full address string from components
+     */
+    private String buildFullAddress(String address, String city, String state, String zipCode, String country) {
+        StringBuilder fullAddress = new StringBuilder();
+        if (address != null && !address.isEmpty()) {
+            fullAddress.append(address);
+        }
+        if (city != null && !city.isEmpty()) {
+            if (fullAddress.length() > 0) fullAddress.append(", ");
+            fullAddress.append(city);
+        }
+        if (state != null && !state.isEmpty()) {
+            if (fullAddress.length() > 0) fullAddress.append(", ");
+            fullAddress.append(state);
+        }
+        if (zipCode != null && !zipCode.isEmpty()) {
+            if (fullAddress.length() > 0) fullAddress.append(", ");
+            fullAddress.append(zipCode);
+        }
+        if (country != null && !country.isEmpty()) {
+            if (fullAddress.length() > 0) fullAddress.append(", ");
+            fullAddress.append(country);
+        }
+        return fullAddress.toString();
     }
     
     // Helper methods

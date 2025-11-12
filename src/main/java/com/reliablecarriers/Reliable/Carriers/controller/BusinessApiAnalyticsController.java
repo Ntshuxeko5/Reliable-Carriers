@@ -181,8 +181,9 @@ public class BusinessApiAnalyticsController {
                     "businessInfo", Map.of(
                         "businessName", businessUser.getBusinessName(),
                         "verificationStatus", businessUser.getBusinessVerificationStatus(),
-                        "creditLimit", businessUser.getCreditLimit(),
-                        "currentBalance", businessUser.getCurrentBalance()
+                        "creditLimit", businessUser.getCreditLimit() != null ? businessUser.getCreditLimit() : java.math.BigDecimal.ZERO,
+                        "currentBalance", businessUser.getCurrentBalance() != null ? businessUser.getCurrentBalance() : java.math.BigDecimal.ZERO,
+                        "paymentTerms", businessUser.getPaymentTerms() != null ? businessUser.getPaymentTerms() : 30
                     )
                 )
             ));

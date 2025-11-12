@@ -94,9 +94,71 @@ public class AuthController {
             user.setTotpEnabled(true);
             userRepository.save(user);
 
-            return ResponseEntity.ok(Map.of("secret", secret));
+            // Generate QR code URL (using Google Charts API for simplicity)
+            String appName = "Reliable Carriers";
+            String qrCodeUrl = String.format("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/%s:%s?secret=%s&issuer=%s",
+                appName.replace(" ", "%20"),
+                user.getEmail().replace("@", "%40"),
+                secret,
+                appName.replace(" ", "%20"));
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "secret", secret,
+                "qrCodeUrl", qrCodeUrl,
+                "manualEntryKey", secret
+            ));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error setting up 2FA: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("success", false, "error", "Error setting up 2FA: " + e.getMessage()));
+        }
+    }
+
+    // Endpoint to disable 2FA
+    @PostMapping("/2fa/disable")
+    public ResponseEntity<?> disable2fa(Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("success", false, "error", "User not authenticated"));
+            }
+
+            String email = authentication.getName();
+            User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            user.setTotpEnabled(false);
+            user.setTotpSecret(null);
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "2FA has been disabled"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("success", false, "error", "Error disabling 2FA: " + e.getMessage()));
+        }
+    }
+
+    // Endpoint to get 2FA status
+    @GetMapping("/2fa/status")
+    public ResponseEntity<?> get2faStatus(Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("success", false, "error", "User not authenticated"));
+            }
+
+            String email = authentication.getName();
+            User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            boolean enabled = Boolean.TRUE.equals(user.getTotpEnabled());
+            boolean hasPhone = user.getPhone() != null && !user.getPhone().isEmpty();
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "totpEnabled", enabled,
+                "hasPhone", hasPhone,
+                "email", user.getEmail(),
+                "phone", user.getPhone() != null ? user.getPhone() : ""
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("success", false, "error", "Error getting 2FA status: " + e.getMessage()));
         }
     }
 
@@ -140,7 +202,21 @@ public class AuthController {
                     user.getRole(),
                     token
             );
-            return ResponseEntity.ok(response);
+            
+            // Check if user needs approval
+            boolean needsApproval = false;
+            if (user.getRole() == UserRole.DRIVER) {
+                needsApproval = user.getDriverVerificationStatus() == null || 
+                    user.getDriverVerificationStatus() == com.reliablecarriers.Reliable.Carriers.model.DriverVerificationStatus.PENDING;
+            } else if (Boolean.TRUE.equals(user.getIsBusiness())) {
+                needsApproval = user.getBusinessVerificationStatus() == null || 
+                    user.getBusinessVerificationStatus() == com.reliablecarriers.Reliable.Carriers.model.BusinessVerificationStatus.PENDING;
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "user", response,
+                "needsApproval", needsApproval
+            ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error verifying 2FA: " + e.getMessage());
         }
@@ -202,7 +278,21 @@ public class AuthController {
                     user.getRole(),
                     tokenJwt
             );
-            return ResponseEntity.ok(response);
+            
+            // Check if user needs approval
+            boolean needsApproval = false;
+            if (user.getRole() == UserRole.DRIVER) {
+                needsApproval = user.getDriverVerificationStatus() == null || 
+                    user.getDriverVerificationStatus() == com.reliablecarriers.Reliable.Carriers.model.DriverVerificationStatus.PENDING;
+            } else if (Boolean.TRUE.equals(user.getIsBusiness())) {
+                needsApproval = user.getBusinessVerificationStatus() == null || 
+                    user.getBusinessVerificationStatus() == com.reliablecarriers.Reliable.Carriers.model.BusinessVerificationStatus.PENDING;
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "user", response,
+                "needsApproval", needsApproval
+            ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error verifying 2FA token: " + e.getMessage());
         }
@@ -211,15 +301,13 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
         try {
-            logger.info("=== REGISTRATION DEBUG START ===");
             if (registerRequest == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("success", false, "message", "Registration request is required"));
             }
             
-            logger.info("Registration request received for email: " + registerRequest.getEmail());
-            logger.info("Role: " + registerRequest.getRole());
-            logger.info("Request body: " + registerRequest);
+            logger.debug("Registration request received for email: {}", registerRequest.getEmail());
+            logger.debug("Registration request - Email: {}, Role: {}", registerRequest.getEmail(), registerRequest.getRole());
             
             // Restrict tracking manager role creation - only admins can create these accounts
             // Drivers can self-register via /api/driver/register
@@ -534,16 +622,83 @@ public class AuthController {
                         token
                 );
 
+            // Check if user needs approval (driver or business)
+            boolean needsApproval = false;
+            String approvalMessage = "";
+            
+            if (user.getRole() == UserRole.DRIVER) {
+                if (user.getDriverVerificationStatus() == null || 
+                    user.getDriverVerificationStatus() == com.reliablecarriers.Reliable.Carriers.model.DriverVerificationStatus.PENDING) {
+                    needsApproval = true;
+                    approvalMessage = "Your driver account is pending admin approval. You'll receive an email once approved.";
+                }
+            } else if (Boolean.TRUE.equals(user.getIsBusiness())) {
+                if (user.getBusinessVerificationStatus() == null || 
+                    user.getBusinessVerificationStatus() == com.reliablecarriers.Reliable.Carriers.model.BusinessVerificationStatus.PENDING) {
+                    needsApproval = true;
+                    approvalMessage = "Your business account is pending admin approval. You'll receive an email once approved.";
+                }
+            }
+
             return ResponseEntity.ok(Map.of(
                 "success", true, 
-                "message", "Registration completed successfully! Welcome to Reliable Carriers.",
-                "user", response
+                "message", needsApproval ? approvalMessage : "Registration completed successfully! Welcome to Reliable Carriers.",
+                "user", response,
+                "needsApproval", needsApproval,
+                "verificationStatus", user.getRole() == UserRole.DRIVER ? 
+                    (user.getDriverVerificationStatus() != null ? user.getDriverVerificationStatus().toString() : "PENDING") :
+                    (user.getBusinessVerificationStatus() != null ? user.getBusinessVerificationStatus().toString() : "PENDING")
             ));
             
         } catch (Exception e) {
             logger.error("Registration verification error: " + e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "message", "Verification failed. Please try again."));
+        }
+    }
+
+    /**
+     * Check verification status for current user
+     */
+    @GetMapping("/verification-status")
+    public ResponseEntity<?> checkVerificationStatus(Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Not authenticated"));
+            }
+
+            String email = authentication.getName();
+            User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            boolean approved = false;
+            String status = "PENDING";
+
+            if (user.getRole() == UserRole.DRIVER) {
+                status = user.getDriverVerificationStatus() != null ? 
+                    user.getDriverVerificationStatus().toString() : "PENDING";
+                approved = user.getDriverVerificationStatus() == com.reliablecarriers.Reliable.Carriers.model.DriverVerificationStatus.APPROVED;
+            } else if (Boolean.TRUE.equals(user.getIsBusiness())) {
+                status = user.getBusinessVerificationStatus() != null ? 
+                    user.getBusinessVerificationStatus().toString() : "PENDING";
+                approved = user.getBusinessVerificationStatus() == com.reliablecarriers.Reliable.Carriers.model.BusinessVerificationStatus.APPROVED;
+            } else {
+                // Regular customers don't need approval
+                approved = true;
+                status = "APPROVED";
+            }
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "approved", approved,
+                "status", status,
+                "role", user.getRole().toString()
+            ));
+        } catch (Exception e) {
+            logger.error("Error checking verification status: " + e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Error checking status"));
         }
     }
 
@@ -721,10 +876,31 @@ public class AuthController {
                     ));
             }
             
-            User authenticatedUser = authService.authenticateUser(loginEmail, authRequest.getPassword());
-
-            // Clear failed login attempts on successful authentication
-            accountLockoutService.clearFailedLoginAttempts(loginEmail);
+            User authenticatedUser;
+            try {
+                authenticatedUser = authService.authenticateUser(loginEmail, authRequest.getPassword());
+                
+                // Clear failed login attempts on successful authentication
+                accountLockoutService.clearFailedLoginAttempts(loginEmail);
+            } catch (BadCredentialsException e) {
+                // Record failed login attempt
+                accountLockoutService.recordFailedLoginAttempt(loginEmail);
+                
+                // Check if account is now locked
+                if (accountLockoutService.isAccountLocked(loginEmail)) {
+                    long remainingMinutes = accountLockoutService.getRemainingLockoutMinutes(loginEmail);
+                    return ResponseEntity.status(HttpStatus.LOCKED)
+                        .body(Map.of(
+                            "success", false,
+                            "message", "Account is temporarily locked due to multiple failed login attempts.",
+                            "remainingMinutes", remainingMinutes,
+                            "locked", true
+                        ));
+                }
+                
+                // Re-throw to be handled by exception handler
+                throw e;
+            }
 
             // Allow customers and businesses (businesses have CUSTOMER role) to use this login endpoint.
             // Staff/admin/driver/tracking manager must use the staff portal (/staff-login).

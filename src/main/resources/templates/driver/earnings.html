@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earnings Dashboard - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/error-handling.js"></script>
+    <script src="/js/currency-utils.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold">Reliable Carriers</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/driver/dashboard" class="hover:text-blue-200">Dashboard</a>
+                    <a href="/driver/workboard" class="hover:text-blue-200">Workboard</a>
+                    <a href="/driver/earnings" class="text-blue-200 font-semibold">Earnings</a>
+                    <a href="/logout" class="hover:text-blue-200">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Earnings Dashboard</h1>
+            <p class="text-gray-600 mt-2">Track your earnings and payment history</p>
+        </div>
+
+        <!-- Earnings Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Today's Earnings</p>
+                        <p class="text-2xl font-bold text-green-600" id="todayEarnings">R0.00</p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-full">
+                        <i class="fas fa-calendar-day text-green-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">This Week</p>
+                        <p class="text-2xl font-bold text-blue-600" id="weekEarnings">R0.00</p>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-full">
+                        <i class="fas fa-calendar-week text-blue-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">This Month</p>
+                        <p class="text-2xl font-bold text-purple-600" id="monthEarnings">R0.00</p>
+                    </div>
+                    <div class="p-3 bg-purple-100 rounded-full">
+                        <i class="fas fa-calendar-alt text-purple-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Earnings</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalEarnings">R0.00</p>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-full">
+                        <i class="fas fa-wallet text-gray-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Earnings Trend</h3>
+                <div class="relative" style="height: 16rem;">
+                    <canvas id="earningsChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Deliveries vs Earnings</h3>
+                <div class="relative" style="height: 16rem;">
+                    <canvas id="deliveriesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Period</label>
+                    <select id="periodFilter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="loadEarnings()">
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                    <input type="date" id="startDate" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                    <input type="date" id="endDate" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+        </div>
+
+        <!-- Earnings History Table -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-900">Earnings History</h3>
+                    <button onclick="exportEarnings()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Number</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="earningsTableBody" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>Loading earnings...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let earningsChart, deliveriesChart;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEarnings();
+            initCharts();
+        });
+
+        // Initialize charts
+        function initCharts() {
+            const earningsCtx = document.getElementById('earningsChart').getContext('2d');
+            const deliveriesCtx = document.getElementById('deliveriesChart').getContext('2d');
+
+            earningsChart = new Chart(earningsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Earnings (R)',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            deliveriesChart = new Chart(deliveriesCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Deliveries',
+                        data: [],
+                        backgroundColor: '#10b981'
+                    }, {
+                        label: 'Earnings (R)',
+                        data: [],
+                        backgroundColor: '#3b82f6',
+                        type: 'line',
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load earnings data
+        async function loadEarnings() {
+            showLoading('Loading earnings...');
+            try {
+                const period = document.getElementById('periodFilter').value;
+                const response = await fetch(`/api/driver/uber/earnings?period=${period}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to load earnings');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    updateEarningsSummary(data.data);
+                    await loadEarningsHistory();
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error loading earnings');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update earnings summary
+        function updateEarningsSummary(data) {
+            document.getElementById('todayEarnings').textContent = formatZAR(data.todayEarnings || 0);
+            document.getElementById('weekEarnings').textContent = formatZAR(data.weekEarnings || 0);
+            document.getElementById('monthEarnings').textContent = formatZAR(data.monthEarnings || 0);
+            document.getElementById('totalEarnings').textContent = formatZAR(data.totalEarnings || 0);
+        }
+
+        // Load earnings history
+        async function loadEarningsHistory() {
+            try {
+                // Get completed deliveries for earnings history
+                const response = await fetch('/api/driver/uber/deliveries?status=DELIVERED', {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.deliveries) {
+                    displayEarningsHistory(data.deliveries);
+                    updateCharts(data.deliveries);
+                }
+            } catch (error) {
+                console.error('Error loading earnings history:', error);
+            }
+        }
+
+        // Display earnings history
+        function displayEarningsHistory(deliveries) {
+            const tbody = document.getElementById('earningsTableBody');
+            
+            if (deliveries.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2"></i>
+                            <p>No earnings history found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = deliveries.slice(0, 20).map(delivery => {
+                const date = delivery.deliveryDate ? new Date(delivery.deliveryDate) : new Date(delivery.createdAt);
+                const amount = delivery.amount || delivery.totalAmount || 0;
+                
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${date.toLocaleDateString('en-ZA')}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                            ${delivery.bookingNumber || '-'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            ${formatZAR(amount)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Completed
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <button onclick="viewDeliveryDetails('${delivery.bookingNumber}')" class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update charts
+        function updateCharts(deliveries) {
+            // Group by date
+            const earningsByDate = {};
+            const deliveriesByDate = {};
+            
+            deliveries.forEach(delivery => {
+                const date = delivery.deliveryDate ? new Date(delivery.deliveryDate) : new Date(delivery.createdAt);
+                const dateKey = date.toLocaleDateString('en-ZA');
+                const amount = delivery.amount || delivery.totalAmount || 0;
+                
+                earningsByDate[dateKey] = (earningsByDate[dateKey] || 0) + amount;
+                deliveriesByDate[dateKey] = (deliveriesByDate[dateKey] || 0) + 1;
+            });
+
+            const dates = Object.keys(earningsByDate).sort();
+            const earnings = dates.map(date => earningsByDate[date]);
+            const deliveryCounts = dates.map(date => deliveriesByDate[date]);
+
+            earningsChart.data.labels = dates;
+            earningsChart.data.datasets[0].data = earnings;
+            earningsChart.update();
+
+            deliveriesChart.data.labels = dates;
+            deliveriesChart.data.datasets[0].data = deliveryCounts;
+            deliveriesChart.data.datasets[1].data = earnings;
+            deliveriesChart.update();
+        }
+
+        // View delivery details
+        function viewDeliveryDetails(bookingNumber) {
+            window.location.href = `/driver/workboard?booking=${bookingNumber}`;
+        }
+
+        // Export earnings
+        function exportEarnings() {
+            const period = document.getElementById('periodFilter').value;
+            window.location.href = `/api/driver/uber/earnings?period=${period}&export=csv`;
+        }
+
+        function getToken() {
+            return localStorage.getItem('token') || 
+                   sessionStorage.getItem('token') || 
+                   localStorage.getItem('jwtToken') || 
+                   sessionStorage.getItem('jwtToken') || '';
+        }
+    </script>
+</body>
+</html>
+

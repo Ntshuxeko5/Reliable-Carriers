@@ -59,6 +59,7 @@
         }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/js/input-validation.js"></script>
 </head>
 <body class="bg-gradient-to-br from-reliable-50 to-reliable-100 min-h-screen">
     <!-- Navigation -->
@@ -211,10 +212,32 @@
                         <p class="text-xs text-gray-500 mt-1">Must be at least 8 characters long</p>
                         <!-- Password Strength Indicator -->
                         <div id="passwordStrengthContainer" class="mt-2">
-                            <div class="w-full bg-gray-200 rounded-full h-2 mb-1">
+                            <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
                                 <div id="passwordStrengthIndicator" class="password-strength-bar h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
                             </div>
-                            <p id="passwordStrengthText" class="text-xs"></p>
+                            <div id="passwordRequirements" class="text-xs space-y-1">
+                                <div id="reqLength" class="flex items-center text-gray-500">
+                                    <i class="fas fa-circle text-xs mr-2"></i>
+                                    <span>At least 8 characters</span>
+                                </div>
+                                <div id="reqUppercase" class="flex items-center text-gray-500">
+                                    <i class="fas fa-circle text-xs mr-2"></i>
+                                    <span>One uppercase letter</span>
+                                </div>
+                                <div id="reqLowercase" class="flex items-center text-gray-500">
+                                    <i class="fas fa-circle text-xs mr-2"></i>
+                                    <span>One lowercase letter</span>
+                                </div>
+                                <div id="reqNumber" class="flex items-center text-gray-500">
+                                    <i class="fas fa-circle text-xs mr-2"></i>
+                                    <span>One number</span>
+                                </div>
+                                <div id="reqSpecial" class="flex items-center text-gray-500">
+                                    <i class="fas fa-circle text-xs mr-2"></i>
+                                    <span>One special character</span>
+                                </div>
+                            </div>
+                            <p id="passwordStrengthText" class="text-xs font-semibold mt-2"></p>
                         </div>
                     </div>
                     <div>
@@ -402,6 +425,115 @@
 
         setupPasswordToggle('togglePassword', 'password');
         setupPasswordToggle('toggleConfirmPassword', 'confirmPassword');
+
+        // Password strength meter
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const strengthIndicator = document.getElementById('passwordStrengthIndicator');
+        const strengthText = document.getElementById('passwordStrengthText');
+        const requirements = {
+            length: document.getElementById('reqLength'),
+            uppercase: document.getElementById('reqUppercase'),
+            lowercase: document.getElementById('reqLowercase'),
+            number: document.getElementById('reqNumber'),
+            special: document.getElementById('reqSpecial')
+        };
+
+        function updatePasswordStrength(password) {
+            if (!password || password.length === 0) {
+                strengthIndicator.style.width = '0%';
+                strengthIndicator.className = 'password-strength-bar h-2 rounded-full transition-all duration-300';
+                strengthText.textContent = '';
+                resetRequirements();
+                return;
+            }
+
+            // Check requirements
+            const checks = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /\d/.test(password),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            };
+
+            // Update requirement indicators
+            updateRequirement(requirements.length, checks.length);
+            updateRequirement(requirements.uppercase, checks.uppercase);
+            updateRequirement(requirements.lowercase, checks.lowercase);
+            updateRequirement(requirements.number, checks.number);
+            updateRequirement(requirements.special, checks.special);
+
+            // Calculate strength
+            const metCount = Object.values(checks).filter(Boolean).length;
+            const strength = calculateStrength(password, metCount);
+            
+            // Update visual indicator
+            strengthIndicator.style.width = strength.percentage + '%';
+            strengthIndicator.className = `password-strength-bar h-2 rounded-full transition-all duration-300 ${strength.class}`;
+            strengthText.textContent = strength.text;
+            strengthText.className = `text-xs font-semibold mt-2 ${strength.textClass}`;
+        }
+
+        function updateRequirement(element, met) {
+            const icon = element.querySelector('i');
+            const text = element.querySelector('span');
+            if (met) {
+                icon.className = 'fas fa-check-circle text-xs mr-2 text-green-500';
+                text.className = 'text-green-600';
+            } else {
+                icon.className = 'fas fa-circle text-xs mr-2 text-gray-400';
+                text.className = 'text-gray-500';
+            }
+        }
+
+        function resetRequirements() {
+            Object.values(requirements).forEach(req => {
+                const icon = req.querySelector('i');
+                const text = req.querySelector('span');
+                icon.className = 'fas fa-circle text-xs mr-2 text-gray-400';
+                text.className = 'text-gray-500';
+            });
+        }
+
+        function calculateStrength(password, metCount) {
+            if (metCount < 2) {
+                return { percentage: 25, class: 'bg-red-500', text: 'Weak Password', textClass: 'text-red-600' };
+            } else if (metCount === 2) {
+                return { percentage: 50, class: 'bg-orange-500', text: 'Fair Password', textClass: 'text-orange-600' };
+            } else if (metCount === 3) {
+                return { percentage: 75, class: 'bg-yellow-500', text: 'Good Password', textClass: 'text-yellow-600' };
+            } else if (metCount === 4) {
+                return { percentage: 90, class: 'bg-green-500', text: 'Strong Password', textClass: 'text-green-600' };
+            } else {
+                return { percentage: 100, class: 'bg-green-600', text: 'Very Strong Password', textClass: 'text-green-700' };
+            }
+        }
+
+        // Real-time password strength checking
+        passwordInput.addEventListener('input', function() {
+            updatePasswordStrength(this.value);
+            
+            // Also check password match
+            if (confirmPasswordInput.value) {
+                checkPasswordMatch();
+            }
+        });
+
+        function checkPasswordMatch() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (confirmPassword && password !== confirmPassword) {
+                confirmPasswordInput.classList.add('border-red-500');
+                confirmPasswordInput.classList.remove('border-gray-300');
+            } else {
+                confirmPasswordInput.classList.remove('border-red-500');
+                confirmPasswordInput.classList.add('border-gray-300');
+            }
+        }
+
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
 
         // Form validation
         document.getElementById('registerForm').addEventListener('submit', function(e) {

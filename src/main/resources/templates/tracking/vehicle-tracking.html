@@ -1,39 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vehicle Tracking - Reliable Carriers</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Maps API -->
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=geometry&callback=initMap'" async defer></script>
+    <!-- Unified Google Maps Utility -->
+    <script th:src="@{/js/unified-google-maps.js}"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        form { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+        input, button { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #4285F4; color: white; cursor: pointer; }
+        button:hover { background: #357AE8; }
+        #map { width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
 </head>
 <body>
     <div class="container">
         <h3>Vehicle Tracking</h3>
-        <form id="vehicleForm" class="mb-3">
+        <form id="vehicleForm">
             <input id="vehicleId" placeholder="Vehicle ID" required>
             <input id="start" type="datetime-local" required>
             <input id="end" type="datetime-local" required>
             <button type="submit">Load</button>
         </form>
-        <div id="map" style="height: 500px"></div>
+        <div id="map"></div>
     </div>
     <script>
-        const map = L.map('map').setView([0,0], 2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+        let map;
+        let unifiedMap;
+        let routePolyline = null;
+        
+        // Initialize Google Maps
+        function initMap() {
+            unifiedMap = new UnifiedGoogleMaps('map', {
+                center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
+                zoom: 10
+            });
+            map = unifiedMap.init();
+        }
+        
         document.getElementById('vehicleForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const vehicleId = document.getElementById('vehicleId').value;
             const start = new Date(document.getElementById('start').value).toISOString();
             const end = new Date(document.getElementById('end').value).toISOString();
-            const res = await fetch(`/api/tracking/vehicle/${vehicleId}/history?startTime=${encodeURIComponent(start)}&endTime=${encodeURIComponent(end)}`, {
-                headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
-            });
-            const points = await res.json();
-            const latlngs = points.map(p => [p.latitude, p.longitude]);
-            if (latlngs.length) {
-                L.polyline(latlngs, { color: 'red' }).addTo(map);
-                map.fitBounds(latlngs);
+            
+            try {
+                const res = await fetch(`/api/tracking/vehicle/${vehicleId}/history?startTime=${encodeURIComponent(start)}&endTime=${encodeURIComponent(end)}`, {
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
+                });
+                const points = await res.json();
+                
+                if (points && points.length > 0) {
+                    // Clear existing route
+                    if (routePolyline) {
+                        routePolyline.setMap(null);
+                    }
+                    
+                    // Draw route
+                    const path = points.map(p => ({ lat: p.latitude, lng: p.longitude }));
+                    routePolyline = unifiedMap.addPolyline(path, { 
+                        strokeColor: '#EA4335', 
+                        strokeWeight: 4,
+                        strokeOpacity: 0.8
+                    });
+                    
+                    // Fit bounds to show route
+                    const bounds = new google.maps.LatLngBounds();
+                    path.forEach(point => bounds.extend(point));
+                    map.fitBounds(bounds);
+                }
+            } catch (error) {
+                console.error('Error loading vehicle history:', error);
+                alert('Failed to load vehicle history');
             }
         });
     </script>

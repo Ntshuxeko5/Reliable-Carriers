@@ -1,6 +1,8 @@
 package com.reliablecarriers.Reliable.Carriers.service.impl;
 
 import com.reliablecarriers.Reliable.Carriers.service.EmailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -18,6 +20,8 @@ import java.util.Map;
 @Service
 public class EmailServiceImpl implements EmailService {
 
+    private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
+
     @Autowired
     private JavaMailSender mailSender;
 
@@ -33,45 +37,71 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.name:Reliable Carriers}")
     private String appName;
 
+    @Value("${app.debug.mode:false}")
+    private boolean debugMode;
+
     @Override
     public void sendSimpleEmail(String to, String subject, String text) {
-        try {
-            // Validate email configuration
-            if (fromEmail == null || fromEmail.isEmpty()) {
-                throw new IllegalStateException("Email sender (spring.mail.username) is not configured. Please set GMAIL_USERNAME environment variable.");
+        int maxRetries = 3;
+        int retryDelay = 2000; // 2 seconds
+        
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // Validate email configuration
+                if (fromEmail == null || fromEmail.isEmpty()) {
+                    throw new IllegalStateException("Email sender (spring.mail.username) is not configured. Please set GMAIL_USERNAME environment variable.");
+                }
+                
+                if (mailSender == null) {
+                    throw new IllegalStateException("JavaMailSender is not configured. Please check email configuration.");
+                }
+                
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromEmail);
+                message.setTo(to);
+                message.setSubject(subject);
+                message.setText(text);
+                mailSender.send(message);
+                logger.info("Email sent successfully to {} with subject: {}", to, subject);
+                return; // Success, exit retry loop
+            } catch (Exception e) {
+                logger.warn("Failed to send email to {} (Attempt {}/{}): {}", to, attempt, maxRetries, e.getMessage());
+                if (e.getCause() != null) {
+                    logger.debug("Email error cause: {}", e.getCause().getMessage());
+                }
+                
+                // If this is the last attempt, log full details and throw exception
+                if (attempt == maxRetries) {
+                    logger.error("Email sending failed after {} attempts to {}: {}", maxRetries, to, e.getMessage(), e);
+                    
+                    // For development/testing, log the email content if debug mode is enabled
+                    if (debugMode) {
+                        logger.debug("Email content (DEBUG MODE) - To: {}, Subject: {}, From: {}", to, subject, fromEmail);
+                    }
+                    
+                    // Check if it's a connection timeout issue
+                    String errorMessage = e.getMessage();
+                    if (errorMessage != null && (errorMessage.contains("timeout") || errorMessage.contains("Connect timed out") || errorMessage.contains("Couldn't connect"))) {
+                        throw new RuntimeException("Email sending failed: Unable to connect to SMTP server. Please check:\n" +
+                            "1. Network connectivity and firewall settings\n" +
+                            "2. Gmail App Password is correct\n" +
+                            "3. SMTP port 587 is not blocked\n" +
+                            "4. Try using port 465 with SSL instead\n" +
+                            "Original error: " + e.getMessage(), e);
+                    }
+                    
+                    // Re-throw exception so caller knows email failed
+                    throw new RuntimeException("Email sending failed after " + maxRetries + " attempts: " + e.getMessage(), e);
+                } else {
+                    // Wait before retrying (exponential backoff)
+                    try {
+                        Thread.sleep(retryDelay * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Email sending interrupted during retry", ie);
+                    }
+                }
             }
-            
-            if (mailSender == null) {
-                throw new IllegalStateException("JavaMailSender is not configured. Please check email configuration.");
-            }
-            
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(text);
-            mailSender.send(message);
-            System.out.println("Email sent successfully to " + to + " with subject: " + subject);
-        } catch (Exception e) {
-            System.err.println("Failed to send email to " + to + ": " + e.getMessage());
-            System.err.println("Email error details: " + e.getClass().getSimpleName());
-            if (e.getCause() != null) {
-                System.err.println("Email error cause: " + e.getCause().getMessage());
-            }
-            
-            // Log full stack trace for debugging
-            e.printStackTrace();
-            
-            // For development/testing, log the email content instead of throwing exception
-            System.out.println("=== EMAIL CONTENT (DEVELOPMENT MODE) ===");
-            System.out.println("To: " + to);
-            System.out.println("Subject: " + subject);
-            System.out.println("Message: " + text);
-            System.out.println("From: " + fromEmail);
-            System.out.println("=== END EMAIL CONTENT ===");
-            
-            // Re-throw exception so caller knows email failed
-            throw new RuntimeException("Email sending failed: " + e.getMessage(), e);
         }
     }
 

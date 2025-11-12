@@ -33,6 +33,9 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- Currency Utils -->
+    <script src="/js/currency-utils.js"></script>
+    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -93,11 +96,11 @@
             <div class="bg-white rounded-2xl shadow-lg p-6 border border-white/20">
                 <div class="flex items-center">
                     <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
+                        <span class="text-green-600 text-xl font-bold">R</span>
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Total Revenue</p>
-                        <p class="text-2xl font-bold text-gray-900" id="totalRevenue">$0</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalRevenue">R 0.00</p>
                         <p class="text-xs text-green-600" id="revenueGrowth">+0%</p>
                     </div>
                 </div>
@@ -243,7 +246,7 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    return '$' + value.toLocaleString();
+                                    return formatZAR(value);
                                 }
                             }
                         }
@@ -348,9 +351,9 @@
         
         // Update key metrics
         function updateMetrics(metrics) {
-            document.getElementById('totalShipments').textContent = metrics.totalShipments.toLocaleString();
-            document.getElementById('totalRevenue').textContent = '$' + metrics.totalRevenue.toLocaleString();
-            document.getElementById('activeCustomers').textContent = metrics.activeCustomers.toLocaleString();
+            document.getElementById('totalShipments').textContent = metrics.totalShipments.toLocaleString('en-ZA');
+            document.getElementById('totalRevenue').textContent = formatZAR(metrics.totalRevenue || 0);
+            document.getElementById('activeCustomers').textContent = metrics.activeCustomers.toLocaleString('en-ZA');
             document.getElementById('avgRating').textContent = metrics.avgRating.toFixed(1);
             
             // Update growth indicators
@@ -441,7 +444,7 @@
                         <p class="text-sm text-gray-600">${service.orders} orders</p>
                     </div>
                     <div class="text-right">
-                        <p class="font-semibold text-reliable-600">$${service.revenue}</p>
+                        <p class="font-semibold text-reliable-600">${formatZAR(parseFloat(service.revenue || 0))}</p>
                         <p class="text-xs text-gray-500">${service.growth}%</p>
                     </div>
                 </div>

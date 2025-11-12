@@ -61,6 +61,7 @@ public class CustomerWebController {
                 quote.put("url", "/customer/quote");
             }
         } catch (Exception e) {
+            // If error, default to public quote page
             quote.put("url", "/customer/quote");
         }
         quote.put("active", "quote".equals(activePage));
@@ -83,6 +84,44 @@ public class CustomerWebController {
         analytics.put("url", "/customer/analytics");
         analytics.put("active", "analytics".equals(activePage));
         links.add(analytics);
+        
+        Map<String, Object> payments = new HashMap<>();
+        payments.put("label", "Payments");
+        payments.put("url", "/customer/payments");
+        payments.put("active", "payments".equals(activePage));
+        links.add(payments);
+        
+        // Add invoices and webhooks links for business users
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null && currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
+                Map<String, Object> invoices = new HashMap<>();
+                invoices.put("label", "Invoices");
+                invoices.put("url", "/customer/invoices");
+                invoices.put("active", "invoices".equals(activePage));
+                links.add(invoices);
+                
+                Map<String, Object> webhooks = new HashMap<>();
+                webhooks.put("label", "Webhooks");
+                webhooks.put("url", "/customer/webhooks");
+                webhooks.put("active", "webhooks".equals(activePage));
+                links.add(webhooks);
+            }
+        } catch (Exception e) {
+            // Ignore errors
+        }
+        
+        Map<String, Object> support = new HashMap<>();
+        support.put("label", "Support");
+        support.put("url", "/customer/support");
+        support.put("active", "support".equals(activePage));
+        links.add(support);
+        
+        Map<String, Object> loginHistory = new HashMap<>();
+        loginHistory.put("label", "Login History");
+        loginHistory.put("url", "/customer/login-history");
+        loginHistory.put("active", "login-history".equals(activePage));
+        links.add(loginHistory);
         
         Map<String, Object> profile = new HashMap<>();
         profile.put("label", "Profile");
@@ -120,7 +159,11 @@ public class CustomerWebController {
                 
                 // Load user's packages/bookings
                 try {
-                    List<CustomerPackageResponse> packages = customerPackageService.getPackagesByEmail(currentUser.getEmail());
+                    String userEmail = currentUser.getEmail();
+                    if (userEmail == null || userEmail.trim().isEmpty()) {
+                        throw new IllegalArgumentException("User email is missing");
+                    }
+                    List<CustomerPackageResponse> packages = customerPackageService.getPackagesByEmail(userEmail);
                     if (packages != null && !packages.isEmpty()) {
                         // Get recent packages (limit to 6 for dashboard)
                         List<CustomerPackageResponse> recentPackages = packages.stream()
@@ -173,7 +216,19 @@ public class CustomerWebController {
 
     // Package tracking page
     @GetMapping("/track")
-    public String trackPackage() {
+    public String trackPackage(Model model) {
+        try {
+            model.addAttribute("navLinks", createCustomerNavLinks("track"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/track";
     }
 
@@ -181,11 +236,26 @@ public class CustomerWebController {
     @GetMapping("/track/{trackingNumber}")
     public String trackPackageByNumber(@PathVariable String trackingNumber, Model model) {
         try {
+            model.addAttribute("navLinks", createCustomerNavLinks("track"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+            
             if (customerPackageService.isValidTrackingNumber(trackingNumber)) {
-                CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
-                model.addAttribute("package", packageInfo);
-                model.addAttribute("trackingNumber", trackingNumber);
-                model.addAttribute("found", true);
+                try {
+                    CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
+                    model.addAttribute("package", packageInfo);
+                    model.addAttribute("trackingNumber", trackingNumber);
+                    model.addAttribute("found", true);
+                } catch (Exception e) {
+                    model.addAttribute("found", false);
+                    model.addAttribute("trackingNumber", trackingNumber);
+                    model.addAttribute("error", "Package not found");
+                }
             } else {
                 model.addAttribute("found", false);
                 model.addAttribute("trackingNumber", trackingNumber);
@@ -195,6 +265,7 @@ public class CustomerWebController {
             model.addAttribute("found", false);
             model.addAttribute("trackingNumber", trackingNumber);
             model.addAttribute("error", "Package not found");
+            model.addAttribute("isAuthenticated", false);
         }
         return "customer/track";
     }
@@ -202,11 +273,26 @@ public class CustomerWebController {
     @PostMapping("/track")
     public String trackPackageResult(@RequestParam String trackingNumber, Model model) {
         try {
+            model.addAttribute("navLinks", createCustomerNavLinks("track"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+            
             if (customerPackageService.isValidTrackingNumber(trackingNumber)) {
-                CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
-                model.addAttribute("package", packageInfo);
-                model.addAttribute("trackingNumber", trackingNumber);
-                model.addAttribute("found", true);
+                try {
+                    CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
+                    model.addAttribute("package", packageInfo);
+                    model.addAttribute("trackingNumber", trackingNumber);
+                    model.addAttribute("found", true);
+                } catch (Exception e) {
+                    model.addAttribute("found", false);
+                    model.addAttribute("trackingNumber", trackingNumber);
+                    model.addAttribute("error", "Package not found");
+                }
             } else {
                 model.addAttribute("found", false);
                 model.addAttribute("trackingNumber", trackingNumber);
@@ -216,6 +302,7 @@ public class CustomerWebController {
             model.addAttribute("found", false);
             model.addAttribute("trackingNumber", trackingNumber);
             model.addAttribute("error", "Package not found");
+            model.addAttribute("isAuthenticated", false);
         }
         return "customer/track";
     }
@@ -224,15 +311,22 @@ public class CustomerWebController {
     @GetMapping("/api-keys")
     public String apiKeysManagement(Model model) {
         try {
+            model.addAttribute("navLinks", createCustomerNavLinks("api-keys"));
             User currentUser = authService.getCurrentUser();
             if (currentUser != null) {
                 model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
                 model.addAttribute("isBusiness", currentUser.getIsBusiness() != null && currentUser.getIsBusiness());
                 model.addAttribute("isVerified", currentUser.getBusinessVerificationStatus() != null && 
-                    currentUser.getBusinessVerificationStatus().isVerified());
+                    currentUser.getBusinessVerificationStatus().toString().equals("APPROVED"));
+            } else {
+                model.addAttribute("isBusiness", false);
+                model.addAttribute("isVerified", false);
             }
         } catch (Exception e) {
             model.addAttribute("isBusiness", false);
+            model.addAttribute("isVerified", false);
         }
         return "customer/api-keys";
     }
@@ -262,24 +356,28 @@ public class CustomerWebController {
             }
             
             // Also check session for user info (fallback for session-based auth)
-            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-            HttpSession session = request.getSession(false);
-            if (session != null) {
-                String userEmail = (String) session.getAttribute("userEmail");
-                Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
-                if (userEmail != null && Boolean.TRUE.equals(isAuthenticated)) {
-                    try {
-                        User currentUser = authService.getCurrentUser();
-                        if (currentUser != null) {
-                            model.addAttribute("isAuthenticated", true);
-                            model.addAttribute("userName", currentUser.getFirstName());
-                            model.addAttribute("userEmail", currentUser.getEmail());
-                            return "customer/quote-logged-in";
+            try {
+                HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+                HttpSession session = request.getSession(false);
+                if (session != null) {
+                    String userEmail = (String) session.getAttribute("userEmail");
+                    Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+                    if (userEmail != null && Boolean.TRUE.equals(isAuthenticated)) {
+                        try {
+                            User currentUser = authService.getCurrentUser();
+                            if (currentUser != null) {
+                                model.addAttribute("isAuthenticated", true);
+                                model.addAttribute("userName", currentUser.getFirstName());
+                                model.addAttribute("userEmail", currentUser.getEmail());
+                                return "customer/quote-logged-in";
+                            }
+                        } catch (Exception e) {
+                            // Continue to public page
                         }
-                    } catch (Exception e) {
-                        // Continue to public page
                     }
                 }
+            } catch (Exception e) {
+                // RequestContextHolder not available, continue to public page
             }
         } catch (Exception e) {
             // If authentication fails, continue with default behavior
@@ -307,26 +405,33 @@ public class CustomerWebController {
         if (currentUser != null) {
             // User is logged in, automatically load their packages
             try {
-                List<CustomerPackageResponse> packages = customerPackageService.getPackagesByEmail(currentUser.getEmail());
+                String userEmail = currentUser.getEmail();
+                if (userEmail == null || userEmail.trim().isEmpty()) {
+                    throw new IllegalArgumentException("User email is missing");
+                }
+                List<CustomerPackageResponse> packages = customerPackageService.getPackagesByEmail(userEmail);
                 if (packages != null && !packages.isEmpty()) {
                     model.addAttribute("packages", packages);
-                    model.addAttribute("email", currentUser.getEmail());
+                    model.addAttribute("email", userEmail);
                     model.addAttribute("userName", currentUser.getFirstName());
                     model.addAttribute("found", true);
                     model.addAttribute("isAuthenticated", true);
                 } else {
                     model.addAttribute("packages", new ArrayList<>());
-                    model.addAttribute("email", currentUser.getEmail());
+                    model.addAttribute("email", userEmail);
                     model.addAttribute("userName", currentUser.getFirstName());
                     model.addAttribute("found", false);
                     model.addAttribute("isAuthenticated", true);
                 }
             } catch (Exception e) {
+                // Log error but don't fail the page
                 model.addAttribute("packages", new ArrayList<>());
-                model.addAttribute("email", currentUser.getEmail());
+                String userEmail = currentUser.getEmail() != null ? currentUser.getEmail() : "";
+                model.addAttribute("email", userEmail);
                 model.addAttribute("userName", currentUser.getFirstName());
                 model.addAttribute("found", false);
                 model.addAttribute("isAuthenticated", true);
+                model.addAttribute("error", "Unable to load packages. Please try again.");
             }
         } else {
             // User is not logged in
@@ -338,30 +443,52 @@ public class CustomerWebController {
     @PostMapping("/packages")
     public String getPackagesByEmail(@RequestParam String email, Model model) {
         try {
+            model.addAttribute("navLinks", createCustomerNavLinks("packages"));
             List<CustomerPackageResponse> packages = customerPackageService.getPackagesByEmail(email);
+            if (packages == null) {
+                packages = new ArrayList<>();
+            }
             model.addAttribute("packages", packages);
             model.addAttribute("email", email);
-            model.addAttribute("found", true);
+            model.addAttribute("found", !packages.isEmpty());
             
             // Check if the email matches the logged-in user
             User currentUser = authService.getCurrentUser();
             model.addAttribute("isAuthenticated", currentUser != null);
             if (currentUser != null) {
-                model.addAttribute("isOwnEmail", currentUser.getEmail().equals(email));
+                model.addAttribute("isOwnEmail", currentUser.getEmail() != null && currentUser.getEmail().equals(email));
+                model.addAttribute("userName", currentUser.getFirstName());
             }
         } catch (Exception e) {
+            model.addAttribute("packages", new ArrayList<>());
             model.addAttribute("found", false);
-            model.addAttribute("error", "No packages found for this email");
+            model.addAttribute("error", "Unable to load packages. Please try again.");
             
             User currentUser = authService.getCurrentUser();
             model.addAttribute("isAuthenticated", currentUser != null);
+            if (currentUser != null) {
+                model.addAttribute("userName", currentUser.getFirstName());
+            }
         }
         return "customer/packages";
     }
 
     // Package history
     @GetMapping("/history")
-    public String packageHistory() {
+    public String packageHistory(Model model) {
+        try {
+            model.addAttribute("navLinks", createCustomerNavLinks("history"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/history";
     }
 
@@ -370,46 +497,115 @@ public class CustomerWebController {
                                    @RequestParam(defaultValue = "10") int limit, 
                                    Model model) {
         try {
+            model.addAttribute("navLinks", createCustomerNavLinks("history"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+            
             List<CustomerPackageResponse> packages = customerPackageService.getPackageHistory(email, limit);
+            if (packages == null) {
+                packages = new ArrayList<>();
+            }
             model.addAttribute("packages", packages);
             model.addAttribute("email", email);
-            model.addAttribute("found", true);
+            model.addAttribute("found", !packages.isEmpty());
         } catch (Exception e) {
             model.addAttribute("found", false);
             model.addAttribute("error", "No package history found");
+            model.addAttribute("isAuthenticated", false);
         }
         return "customer/history";
     }
 
     // Package statistics
     @GetMapping("/statistics")
-    public String packageStatistics() {
+    public String packageStatistics(Model model) {
+        try {
+            model.addAttribute("navLinks", createCustomerNavLinks("statistics"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/statistics";
     }
 
     @PostMapping("/statistics")
     public String getPackageStatistics(@RequestParam String email, Model model) {
         try {
+            model.addAttribute("navLinks", createCustomerNavLinks("statistics"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+            
             CustomerPackageService.PackageStatistics stats = customerPackageService.getPackageStatistics(email);
-            model.addAttribute("statistics", stats);
+            if (stats != null) {
+                model.addAttribute("statistics", stats);
+                model.addAttribute("found", true);
+            } else {
+                model.addAttribute("found", false);
+                model.addAttribute("error", "No statistics available");
+            }
             model.addAttribute("email", email);
-            model.addAttribute("found", true);
         } catch (Exception e) {
             model.addAttribute("found", false);
             model.addAttribute("error", "No statistics available");
+            model.addAttribute("isAuthenticated", false);
         }
         return "customer/statistics";
     }
 
     // Store/business package creation
     @GetMapping("/store")
-    public String storePackageCreation() {
+    public String storePackageCreation(Model model) {
+        try {
+            model.addAttribute("navLinks", createCustomerNavLinks("store"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/store";
     }
 
     // Package cancellation
     @GetMapping("/cancel")
-    public String cancelPackage() {
+    public String cancelPackage(Model model) {
+        try {
+            model.addAttribute("navLinks", createCustomerNavLinks("cancel"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/cancel";
     }
 
@@ -418,24 +614,116 @@ public class CustomerWebController {
                                      @RequestParam String email, 
                                      Model model) {
         try {
-            boolean cancelled = customerPackageService.cancelPackage(trackingNumber, email);
-            if (cancelled) {
-                model.addAttribute("success", true);
-                model.addAttribute("message", "Package cancelled successfully");
+            model.addAttribute("navLinks", createCustomerNavLinks("cancel"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
             } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+            
+            try {
+                boolean cancelled = customerPackageService.cancelPackage(trackingNumber, email);
+                if (cancelled) {
+                    model.addAttribute("success", true);
+                    model.addAttribute("message", "Package cancelled successfully");
+                } else {
+                    model.addAttribute("success", false);
+                    model.addAttribute("error", "Package cannot be cancelled");
+                }
+            } catch (IllegalArgumentException e) {
                 model.addAttribute("success", false);
-                model.addAttribute("error", "Package cannot be cancelled");
+                model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Invalid cancellation request");
+            } catch (RuntimeException e) {
+                model.addAttribute("success", false);
+                model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Package not found");
             }
         } catch (Exception e) {
             model.addAttribute("success", false);
-            model.addAttribute("error", e.getMessage());
+            model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Failed to cancel package");
+            model.addAttribute("isAuthenticated", false);
         }
         return "customer/cancel";
     }
 
+    // Payment history page
+    @GetMapping("/payments")
+    public String paymentHistory(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("payments"));
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+            }
+        } catch (Exception e) {
+            // User not authenticated or error getting user
+        }
+        return "customer/payments";
+    }
+
+    // Business invoices page
+    @GetMapping("/invoices")
+    public String invoices(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("invoices"));
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("isBusiness", currentUser.getIsBusiness() != null && currentUser.getIsBusiness());
+            } else {
+                return "redirect:/login";
+            }
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
+        return "customer/invoices";
+    }
+
+    // Webhook management page
+    @GetMapping("/webhooks")
+    public String webhooks(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("webhooks"));
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("isBusiness", currentUser.getIsBusiness() != null && currentUser.getIsBusiness());
+                if (currentUser.getIsBusiness() == null || !currentUser.getIsBusiness()) {
+                    return "redirect:/customer/dashboard";
+                }
+            } else {
+                return "redirect:/login";
+            }
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
+        return "customer/webhooks";
+    }
+
     // Pickup request
     @GetMapping("/pickup")
-    public String requestPickup() {
+    public String requestPickup(Model model) {
+        try {
+            model.addAttribute("navLinks", createCustomerNavLinks("pickup"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/pickup";
     }
 
@@ -446,45 +734,117 @@ public class CustomerWebController {
                                      @RequestParam(required = false) String notes,
                                      Model model) {
         try {
-            customerPackageService.requestPickup(trackingNumber, email, preferredDate, notes);
-            model.addAttribute("success", true);
-            model.addAttribute("message", "Pickup request submitted successfully");
+            model.addAttribute("navLinks", createCustomerNavLinks("pickup"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+            
+            try {
+                customerPackageService.requestPickup(trackingNumber, email, preferredDate, notes);
+                model.addAttribute("success", true);
+                model.addAttribute("message", "Pickup request submitted successfully");
+            } catch (IllegalArgumentException e) {
+                model.addAttribute("success", false);
+                model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Invalid pickup request");
+            } catch (RuntimeException e) {
+                model.addAttribute("success", false);
+                model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Package not found");
+            }
         } catch (Exception e) {
             model.addAttribute("success", false);
-            model.addAttribute("error", e.getMessage());
+            model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Failed to submit pickup request");
+            model.addAttribute("isAuthenticated", false);
         }
         return "customer/pickup";
     }
 
     // Insurance options
     @GetMapping("/insurance")
-    public String insuranceOptions() {
+    public String insuranceOptions(Model model) {
+        try {
+            model.addAttribute("navLinks", createCustomerNavLinks("insurance"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/insurance";
     }
 
     @PostMapping("/insurance")
     public String getInsuranceOptions(@RequestParam String trackingNumber, Model model) {
         try {
+            model.addAttribute("navLinks", createCustomerNavLinks("insurance"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+            
             List<CustomerPackageService.InsuranceOption> options = customerPackageService.getInsuranceOptions(trackingNumber);
+            if (options == null) {
+                options = new ArrayList<>();
+            }
             model.addAttribute("options", options);
             model.addAttribute("trackingNumber", trackingNumber);
-            model.addAttribute("found", true);
+            model.addAttribute("found", !options.isEmpty());
         } catch (Exception e) {
             model.addAttribute("found", false);
             model.addAttribute("error", "Package not found");
+            model.addAttribute("isAuthenticated", false);
         }
         return "customer/insurance";
     }
 
     // Help and support
     @GetMapping("/help")
-    public String help() {
+    public String help(Model model) {
+        try {
+            model.addAttribute("navLinks", createCustomerNavLinks("help"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/help";
     }
 
     // Contact page
     @GetMapping("/contact")
-    public String contact() {
+    public String contact(Model model) {
+        try {
+            model.addAttribute("navLinks", createCustomerNavLinks("contact"));
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("isAuthenticated", true);
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("userName", currentUser.getFirstName());
+            } else {
+                model.addAttribute("isAuthenticated", false);
+            }
+        } catch (Exception e) {
+            model.addAttribute("isAuthenticated", false);
+        }
         return "customer/contact";
     }
 
@@ -509,6 +869,40 @@ public class CustomerWebController {
         
         // Redirect to login if not authenticated
         return "redirect:/login";
+    }
+
+    // Support tickets page
+    @GetMapping("/support")
+    public String supportTickets(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("support"));
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+            }
+        } catch (Exception e) {
+            // User not authenticated or error getting user
+        }
+        return "customer/support";
+    }
+
+    // Login history page
+    @GetMapping("/login-history")
+    public String loginHistory(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("login-history"));
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+            }
+        } catch (Exception e) {
+            // User not authenticated or error getting user
+        }
+        return "customer/login-history";
     }
 
     // Profile page

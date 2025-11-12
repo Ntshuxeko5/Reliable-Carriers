@@ -28,9 +28,10 @@
             }
         }
     </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <!-- Google Maps API -->
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places,geometry&callback=initMap'" async defer></script>
+    <!-- Unified Google Maps Utility -->
+    <script th:src="@{/js/unified-google-maps.js}"></script>
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
@@ -230,14 +231,13 @@
         </div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <!-- WebSocket libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.2/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     
     <script>
         let map;
+        let unifiedMap;
         let markers = {};
         let realTimeInterval;
         let isRealTimeActive = false;
@@ -249,20 +249,22 @@
 
         // Initialize enhanced tracking manager
         function initTrackingManager() {
-            initMap();
+            // Map will be initialized by Google Maps callback
             initWebSocket();
             initDarkMode();
             loadDriverData();
             startRealTimeUpdates();
         }
         
-        // Initialize map
+        // Initialize map (called by Google Maps API callback)
         function initMap() {
-            map = L.map('map').setView([-26.2041, 28.0473], 10); // Johannesburg coordinates
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            unifiedMap = new UnifiedGoogleMaps('map', {
+                center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
+                zoom: 10,
+                fullscreenControl: true,
+                scaleControl: true
+            });
+            map = unifiedMap.init();
             
             // Add map controls
             addMapControls();
@@ -270,26 +272,8 @@
         
         // Add map controls
         function addMapControls() {
-            // Zoom controls
-            const zoomControl = L.control.zoom({
-                position: 'topright'
-            });
-            zoomControl.addTo(map);
-            
-            // Custom controls
-            const customControl = L.control({position: 'topleft'});
-            customControl.onAdd = function(map) {
-                const div = L.DomUtil.create('div', 'custom-control');
-                div.innerHTML = `
-                    <div class="bg-white p-2 rounded shadow-lg">
-                        <button onclick="centerMap()" class="block w-full mb-1 bg-blue-500 text-white px-2 py-1 rounded text-sm">Center</button>
-                        <button onclick="toggleTraffic()" class="block w-full mb-1 bg-green-500 text-white px-2 py-1 rounded text-sm">Traffic</button>
-                        <button onclick="toggleSatellite()" class="block w-full bg-purple-500 text-white px-2 py-1 rounded text-sm">Satellite</button>
-                    </div>
-                `;
-                return div;
-            };
-            customControl.addTo(map);
+            // Custom controls will be added via HTML elements
+            // Google Maps has built-in zoom and fullscreen controls
         }
         
         // Initialize WebSocket connection
@@ -324,17 +308,20 @@
                 // Update driver marker
                 const marker = markers[update.driverId];
                 if (marker) {
-                    marker.setLatLng([update.latitude, update.longitude]);
+                    marker.setPosition({ lat: update.latitude, lng: update.longitude });
                     
-                    // Update popup content
-                    marker.setPopupContent(`
-                        <div class="p-2">
-                            <h4 class="font-semibold">${update.driverName}</h4>
-                            <p class="text-sm text-gray-600">Status: ${update.status}</p>
-                            <p class="text-sm text-gray-600">Speed: ${update.speed || 'N/A'} km/h</p>
-                            <p class="text-sm text-gray-600">Last Update: ${new Date().toLocaleTimeString()}</p>
-                        </div>
-                    `);
+                    // Update info window content
+                    const infoWindow = marker.infoWindow;
+                    if (infoWindow) {
+                        infoWindow.setContent(`
+                            <div class="p-2">
+                                <h4 class="font-semibold">${update.driverName}</h4>
+                                <p class="text-sm text-gray-600">Status: ${update.status}</p>
+                                <p class="text-sm text-gray-600">Speed: ${update.speed || 'N/A'} km/h</p>
+                                <p class="text-sm text-gray-600">Last Update: ${new Date().toLocaleTimeString()}</p>
+                            </div>
+                        `);
+                    }
                 }
                 
                 // Update driver list
@@ -437,24 +424,28 @@
 
         // Update map markers
         function updateMapMarkers() {
+            if (!map || !unifiedMap) return;
+            
             // Clear existing markers
-            Object.values(markers).forEach(marker => map.removeLayer(marker));
+            unifiedMap.clearMarkers();
             markers = {};
             
             filteredDrivers.forEach(driver => {
                 if (driver.latitude && driver.longitude) {
-                    const markerColor = driver.isOnline ? 'green' : 'red';
-                    const icon = L.divIcon({
-                        className: 'custom-marker',
-                        html: `<div class="w-6 h-6 bg-${markerColor}-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
-                                  <i class="fas fa-user text-white text-xs"></i>
-                               </div>`,
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
-                    });
+                    const position = { lat: driver.latitude, lng: driver.longitude };
+                    const markerColor = driver.isOnline ? '#10b981' : '#ef4444';
                     
-                    const marker = L.marker([driver.latitude, driver.longitude], { icon })
-                        .bindPopup(`
+                    const marker = unifiedMap.addMarker(`driver_${driver.id}`, position, {
+                        title: driver.name,
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 12,
+                            fillColor: markerColor,
+                            fillOpacity: 1,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 2
+                        },
+                        content: `
                             <div class="p-2">
                                 <h6 class="font-semibold text-gray-900">${driver.name}</h6>
                                 <p class="text-sm text-gray-600">${driver.email}</p>
@@ -466,17 +457,16 @@
                                     View Details
                                 </button>
                             </div>
-                        `)
-                        .addTo(map);
+                        `
+                    });
                     
                     markers[driver.id] = marker;
                 }
             });
             
             // Fit map to show all markers
-            if (filteredDrivers.length > 0) {
-                const group = new L.featureGroup(Object.values(markers));
-                map.fitBounds(group.getBounds().pad(0.1));
+            if (filteredDrivers.length > 0 && Object.keys(markers).length > 0) {
+                unifiedMap.fitBounds(Object.values(markers).map(m => m.getPosition()));
             }
         }
 
@@ -556,18 +546,40 @@
         // Center map on driver
         function centerOnDriver(driverId) {
             const driver = filteredDrivers.find(d => d.id === driverId);
-            if (driver && driver.latitude && driver.longitude) {
-                map.setView([driver.latitude, driver.longitude], 15);
-                markers[driverId].openPopup();
+            if (driver && driver.latitude && driver.longitude && map) {
+                map.setCenter({ lat: driver.latitude, lng: driver.longitude });
+                map.setZoom(15);
+                
+                // Open info window if marker exists
+                const marker = markers[driverId];
+                if (marker && marker.infoWindow) {
+                    marker.infoWindow.open(map, marker);
+                }
             }
             closeDriverModal();
         }
-
-        // Center map
-        function centerMap() {
-            if (filteredDrivers.length > 0) {
-                const group = new L.featureGroup(Object.values(markers));
-                map.fitBounds(group.getBounds().pad(0.1));
+        
+        // Toggle traffic layer
+        function toggleTraffic() {
+            if (!window.trafficLayer) {
+                window.trafficLayer = new google.maps.TrafficLayer();
+            }
+            if (window.trafficLayer.getMap()) {
+                window.trafficLayer.setMap(null);
+            } else {
+                window.trafficLayer.setMap(map);
+            }
+        }
+        
+        // Toggle satellite view
+        function toggleSatellite() {
+            if (map) {
+                const currentMapType = map.getMapTypeId();
+                if (currentMapType === google.maps.MapTypeId.SATELLITE) {
+                    map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+                } else {
+                    map.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+                }
             }
         }
 

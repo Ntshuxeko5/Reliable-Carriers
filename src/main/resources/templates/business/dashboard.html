@@ -106,14 +106,74 @@
             </div>
         </div>
 
+        <!-- Credit Terms Widget (for verified businesses) -->
+        <div id="creditTermsWidget" class="glass-effect rounded-2xl p-8 mb-8 hidden">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-credit-card mr-3 gradient-text"></i>Credit Account
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-blue-50 rounded-xl p-6">
+                    <p class="text-sm font-medium text-gray-600 mb-2">Credit Limit</p>
+                    <p class="text-2xl font-bold text-blue-600" id="creditLimit">R0.00</p>
+                </div>
+                <div class="bg-green-50 rounded-xl p-6">
+                    <p class="text-sm font-medium text-gray-600 mb-2">Available Credit</p>
+                    <p class="text-2xl font-bold text-green-600" id="availableCredit">R0.00</p>
+                </div>
+                <div class="bg-yellow-50 rounded-xl p-6">
+                    <p class="text-sm font-medium text-gray-600 mb-2">Current Balance</p>
+                    <p class="text-2xl font-bold text-yellow-600" id="currentBalance">R0.00</p>
+                </div>
+                <div class="bg-purple-50 rounded-xl p-6">
+                    <p class="text-sm font-medium text-gray-600 mb-2">Payment Terms</p>
+                    <p class="text-2xl font-bold text-purple-600" id="paymentTerms">Net 30</p>
+                </div>
+            </div>
+            <div class="mt-6 p-4 bg-yellow-50 rounded-lg" id="paymentDueAlert" style="display: none;">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-xl mr-3"></i>
+                    <div>
+                        <p class="font-semibold text-gray-900">Payment Due</p>
+                        <p class="text-sm text-gray-700">You have <span id="paymentDueAmount">R0.00</span> due. Payment due date: <span id="paymentDueDate">-</span></p>
+                    </div>
+                    <a href="/customer/invoices" class="ml-auto bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">
+                        View Invoices
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Usage Widget -->
+        <div id="apiUsageWidget" class="glass-effect rounded-2xl p-8 mb-8 hidden">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-code mr-3 gradient-text"></i>API Usage
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-blue-50 rounded-xl p-6">
+                    <p class="text-sm font-medium text-gray-600 mb-2">Total API Requests</p>
+                    <p class="text-2xl font-bold text-blue-600" id="totalApiRequests">0</p>
+                </div>
+                <div class="bg-green-50 rounded-xl p-6">
+                    <p class="text-sm font-medium text-gray-600 mb-2">Active API Keys</p>
+                    <p class="text-2xl font-bold text-green-600" id="activeApiKeys">0</p>
+                </div>
+                <div class="bg-purple-50 rounded-xl p-6">
+                    <a href="/customer/api-keys" class="block text-center">
+                        <i class="fas fa-key text-3xl text-purple-600 mb-2"></i>
+                        <p class="text-sm font-medium text-gray-600">Manage API Keys</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- Quick Actions -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div class="glass-effect rounded-2xl p-8">
                 <h2 class="text-2xl font-bold text-gray-900 mb-6">
                     <i class="fas fa-bolt mr-3 gradient-text"></i>Quick Actions
                 </h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <a href="/business/shipments/new" class="group">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <a href="/customer/quote-logged-in" class="group">
                         <div class="bg-blue-50 rounded-xl p-6 text-center hover:bg-blue-100 transition-colors duration-300">
                             <i class="fas fa-plus text-3xl text-blue-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
                             <h3 class="font-semibold text-gray-900">New Shipment</h3>
@@ -122,19 +182,31 @@
                     <a href="/business/analytics" class="group">
                         <div class="bg-green-50 rounded-xl p-6 text-center hover:bg-green-100 transition-colors duration-300">
                             <i class="fas fa-chart-line text-3xl text-green-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
-                            <h3 class="font-semibold text-gray-900">View Analytics</h3>
+                            <h3 class="font-semibold text-gray-900">Analytics</h3>
                         </div>
                     </a>
-                    <a href="/business/team" class="group">
+                    <a href="/customer/invoices" class="group">
                         <div class="bg-purple-50 rounded-xl p-6 text-center hover:bg-purple-100 transition-colors duration-300">
-                            <i class="fas fa-users text-3xl text-purple-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
-                            <h3 class="font-semibold text-gray-900">Manage Team</h3>
+                            <i class="fas fa-file-invoice text-3xl text-purple-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
+                            <h3 class="font-semibold text-gray-900">Invoices</h3>
                         </div>
                     </a>
-                    <a href="/business/billing" class="group">
+                    <a href="/customer/payments" class="group">
                         <div class="bg-yellow-50 rounded-xl p-6 text-center hover:bg-yellow-100 transition-colors duration-300">
                             <i class="fas fa-credit-card text-3xl text-yellow-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
-                            <h3 class="font-semibold text-gray-900">Billing</h3>
+                            <h3 class="font-semibold text-gray-900">Payments</h3>
+                        </div>
+                    </a>
+                    <a href="/customer/webhooks" class="group">
+                        <div class="bg-indigo-50 rounded-xl p-6 text-center hover:bg-indigo-100 transition-colors duration-300">
+                            <i class="fas fa-plug text-3xl text-indigo-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
+                            <h3 class="font-semibold text-gray-900">Webhooks</h3>
+                        </div>
+                    </a>
+                    <a href="/customer/api-keys" class="group">
+                        <div class="bg-pink-50 rounded-xl p-6 text-center hover:bg-pink-100 transition-colors duration-300">
+                            <i class="fas fa-key text-3xl text-pink-600 mb-3 group-hover:scale-110 transition-transform duration-300"></i>
+                            <h3 class="font-semibold text-gray-900">API Keys</h3>
                         </div>
                     </a>
                 </div>
@@ -194,45 +266,140 @@
         </div>
     </div>
 
+    <script src="/js/currency-utils.js"></script>
     <script>
         // Dark mode functionality
         const darkModeToggle = document.getElementById('darkModeToggle');
         const body = document.body;
         
-        darkModeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            const icon = darkModeToggle.querySelector('i');
-            icon.classList.toggle('fa-moon');
-            icon.classList.toggle('fa-sun');
-            localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
-        });
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', () => {
+                body.classList.toggle('dark-mode');
+                const icon = darkModeToggle.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('fa-moon');
+                    icon.classList.toggle('fa-sun');
+                }
+                localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
+            });
+        }
 
         // Load dark mode preference
         if (localStorage.getItem('darkMode') === 'true') {
             body.classList.add('dark-mode');
-            darkModeToggle.querySelector('i').classList.remove('fa-moon');
-            darkModeToggle.querySelector('i').classList.add('fa-sun');
+            if (darkModeToggle) {
+                const icon = darkModeToggle.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                }
+            }
         }
 
         // Load dashboard data
         async function loadDashboardData() {
             try {
-                const response = await fetch('/api/business/dashboard/metrics');
-                const data = await response.json();
+                const token = getToken();
+                const headers = {
+                    'Authorization': 'Bearer ' + token
+                };
                 
-                document.getElementById('totalShipments').textContent = data.totalShipments || 0;
-                document.getElementById('deliveredToday').textContent = data.deliveredToday || 0;
-                document.getElementById('inTransit').textContent = data.inTransit || 0;
-                document.getElementById('monthlySpend').textContent = 'R' + (data.monthlySpend || 0);
-                document.getElementById('pendingCount').textContent = data.pendingCount || 0;
-                document.getElementById('inTransitCount').textContent = data.inTransitCount || 0;
-                document.getElementById('deliveredCount').textContent = data.deliveredCount || 0;
+                // Load metrics
+                const metricsResponse = await fetch('/api/business/dashboard/metrics', { headers });
+                if (metricsResponse.ok) {
+                    const metricsData = await metricsResponse.json();
+                    if (metricsData.totalShipments !== undefined) {
+                        document.getElementById('totalShipments').textContent = metricsData.totalShipments || 0;
+                    }
+                    if (metricsData.deliveredToday !== undefined) {
+                        document.getElementById('deliveredToday').textContent = metricsData.deliveredToday || 0;
+                    }
+                    if (metricsData.inTransit !== undefined) {
+                        document.getElementById('inTransit').textContent = metricsData.inTransit || 0;
+                    }
+                    if (metricsData.monthlySpend !== undefined) {
+                        document.getElementById('monthlySpend').textContent = formatZAR(metricsData.monthlySpend || 0);
+                    }
+                    if (metricsData.pendingCount !== undefined) {
+                        document.getElementById('pendingCount').textContent = metricsData.pendingCount || 0;
+                    }
+                    if (metricsData.inTransitCount !== undefined) {
+                        document.getElementById('inTransitCount').textContent = metricsData.inTransitCount || 0;
+                    }
+                    if (metricsData.deliveredCount !== undefined) {
+                        document.getElementById('deliveredCount').textContent = metricsData.deliveredCount || 0;
+                    }
+                    loadRecentActivity(metricsData.recentActivity || []);
+                }
                 
-                // Load recent activity
-                loadRecentActivity(data.recentActivity || []);
+                // Load comprehensive dashboard stats
+                const dashboardResponse = await fetch('/api/business/analytics/dashboard', { headers });
+                if (dashboardResponse.ok) {
+                    const dashboardData = await dashboardResponse.json();
+                    if (dashboardData.success && dashboardData.data) {
+                        const data = dashboardData.data;
+                        
+                        // Update shipping stats
+                        if (data.shippingStats) {
+                            const stats = data.shippingStats;
+                            document.getElementById('totalShipments').textContent = stats.totalShipments || 0;
+                            document.getElementById('pendingCount').textContent = stats.pending || 0;
+                            document.getElementById('inTransitCount').textContent = stats.inTransit || 0;
+                            document.getElementById('deliveredCount').textContent = stats.delivered || 0;
+                            if (stats.totalRevenue !== undefined) {
+                                document.getElementById('monthlySpend').textContent = formatZAR(stats.totalRevenue || 0);
+                            }
+                        }
+                        
+                        // Update API stats
+                        if (data.apiStats) {
+                            const apiStats = data.apiStats;
+                            document.getElementById('totalApiRequests').textContent = apiStats.totalRequests || 0;
+                            document.getElementById('activeApiKeys').textContent = apiStats.activeKeys || 0;
+                            if (apiStats.totalRequests > 0 || apiStats.activeKeys > 0) {
+                                document.getElementById('apiUsageWidget').classList.remove('hidden');
+                            }
+                        }
+                        
+                        // Update credit terms
+                        if (data.businessInfo) {
+                            const businessInfo = data.businessInfo;
+                            const creditLimit = businessInfo.creditLimit || 0;
+                            const currentBalance = businessInfo.currentBalance || 0;
+                            const availableCredit = creditLimit - currentBalance;
+                            const paymentTerms = businessInfo.paymentTerms || 30;
+                            
+                            if (creditLimit > 0) {
+                                document.getElementById('creditTermsWidget').classList.remove('hidden');
+                                document.getElementById('creditLimit').textContent = formatZAR(creditLimit);
+                                document.getElementById('currentBalance').textContent = formatZAR(currentBalance);
+                                document.getElementById('availableCredit').textContent = formatZAR(availableCredit);
+                                document.getElementById('paymentTerms').textContent = 'Net ' + paymentTerms;
+                                
+                                // Show payment due alert if balance > 0
+                                if (currentBalance > 0) {
+                                    document.getElementById('paymentDueAlert').style.display = 'block';
+                                    document.getElementById('paymentDueAmount').textContent = formatZAR(currentBalance);
+                                    
+                                    // Calculate due date
+                                    const dueDate = new Date();
+                                    dueDate.setDate(dueDate.getDate() + paymentTerms);
+                                    document.getElementById('paymentDueDate').textContent = dueDate.toLocaleDateString('en-ZA');
+                                }
+                            }
+                        }
+                    }
+                }
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
             }
+        }
+        
+        function getToken() {
+            return localStorage.getItem('token') || 
+                   sessionStorage.getItem('token') || 
+                   localStorage.getItem('jwtToken') || 
+                   sessionStorage.getItem('jwtToken') || '';
         }
 
         function loadRecentActivity(activities) {

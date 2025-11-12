@@ -22,4 +22,12 @@ public class AdminController {
     public String packageManagement() {
         return "admin/package-management";
     }
+
+    /**
+     * System Settings Page
+     */
+    @GetMapping("/settings")
+    public String settings() {
+        return "admin/settings";
+    }
 }

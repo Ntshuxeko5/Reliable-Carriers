@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/currency-utils.js"></script>
+    <script src="/js/error-handling.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-gray-50">
@@ -88,7 +89,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">User Role</label>
-                    <select id="roleFilter" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <select id="roleFilter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Roles</option>
                         <option value="ADMIN">Admin</option>
                         <option value="DRIVER">Driver</option>
@@ -250,6 +251,10 @@
         async function loadAuditStats() {
             try {
                 const response = await fetch('/api/admin/audit/stats', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                if (!response.ok) {
+                    console.error('Failed to load audit stats:', response.status);
+                    return;
+                }
                 const stats = await response.json();
                 
                 document.getElementById('totalLogs').textContent = stats.totalLogs || 0;
@@ -260,21 +265,58 @@
                 const startDate = new Date();
                 startDate.setDate(startDate.getDate() - 7);
                 
-                const analyticsResponse = await fetch(`/api/admin/audit/analytics/counts?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                // Format dates properly for LocalDateTime (YYYY-MM-DDTHH:mm:ss)
+                const formatDateTime = (date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+                };
+                
+                const startDateStr = formatDateTime(startDate);
+                const endDateStr = formatDateTime(endDate);
+                
+                const analyticsResponse = await fetch(`/api/admin/audit/analytics/counts?startDate=${startDateStr}&endDate=${endDateStr}`, { 
+                    headers: { 'Authorization': 'Bearer ' + getToken() } 
+                });
+                
+                if (!analyticsResponse.ok) {
+                    console.error('Failed to load analytics:', analyticsResponse.status);
+                    // Set defaults if analytics fail
+                    document.getElementById('successfulLogs').textContent = 0;
+                    document.getElementById('failedLogs').textContent = 0;
+                    return;
+                }
+                
                 const analytics = await analyticsResponse.json();
                 
                 updateCharts(analytics);
                 updateStatusCounts(analytics);
             } catch (error) {
                 console.error('Error loading audit stats:', error);
+                // Set defaults on error
+                document.getElementById('successfulLogs').textContent = 0;
+                document.getElementById('failedLogs').textContent = 0;
             }
         }
 
         // Update status counts
         function updateStatusCounts(analytics) {
-            const byStatus = analytics.byStatus || {};
-            document.getElementById('successfulLogs').textContent = byStatus.SUCCESS || 0;
-            document.getElementById('failedLogs').textContent = (byStatus.FAILED || 0) + (byStatus.ERROR || 0);
+            if (!analytics || !analytics.byStatus) {
+                document.getElementById('successfulLogs').textContent = 0;
+                document.getElementById('failedLogs').textContent = 0;
+                return;
+            }
+            
+            const byStatus = analytics.byStatus;
+            const successCount = byStatus.SUCCESS || byStatus['SUCCESS'] || 0;
+            const failedCount = (byStatus.FAILED || byStatus['FAILED'] || 0) + (byStatus.ERROR || byStatus['ERROR'] || 0);
+            
+            document.getElementById('successfulLogs').textContent = successCount;
+            document.getElementById('failedLogs').textContent = failedCount;
         }
 
         // Initialize charts
@@ -323,17 +365,42 @@
 
         // Update charts with data
         function updateCharts(analytics) {
+            if (!analytics) {
+                console.warn('No analytics data received');
+                return;
+            }
+            
             // Update role chart
             const byRole = analytics.byRole || {};
-            roleChart.data.labels = Object.keys(byRole);
-            roleChart.data.datasets[0].data = Object.values(byRole);
-            roleChart.update();
+            const roleKeys = Object.keys(byRole);
+            const roleValues = Object.values(byRole);
+            
+            if (roleKeys.length > 0) {
+                roleChart.data.labels = roleKeys;
+                roleChart.data.datasets[0].data = roleValues;
+                roleChart.update();
+            } else {
+                // Show empty state
+                roleChart.data.labels = ['No Data'];
+                roleChart.data.datasets[0].data = [1];
+                roleChart.update();
+            }
 
             // Update action chart
             const byAction = analytics.byAction || {};
-            actionChart.data.labels = Object.keys(byAction).slice(0, 10); // Top 10 actions
-            actionChart.data.datasets[0].data = Object.values(byAction).slice(0, 10);
-            actionChart.update();
+            const actionKeys = Object.keys(byAction);
+            const actionValues = Object.values(byAction);
+            
+            if (actionKeys.length > 0) {
+                actionChart.data.labels = actionKeys.slice(0, 10); // Top 10 actions
+                actionChart.data.datasets[0].data = actionValues.slice(0, 10);
+                actionChart.update();
+            } else {
+                // Show empty state
+                actionChart.data.labels = ['No Data'];
+                actionChart.data.datasets[0].data = [0];
+                actionChart.update();
+            }
         }
 
         // Load audit logs
@@ -345,25 +412,44 @@
                 });
 
                 // Add filters
-                const roleFilter = document.getElementById('roleFilter').value;
-                const actionFilter = document.getElementById('actionFilter').value;
-                const statusFilter = document.getElementById('statusFilter').value;
-                const startDate = document.getElementById('startDate').value;
-                const endDate = document.getElementById('endDate').value;
+                const roleFilter = document.getElementById('roleFilter');
+                const actionFilter = document.getElementById('actionFilter');
+                const statusFilter = document.getElementById('statusFilter');
+                const startDateInput = document.getElementById('startDate');
+                const endDateInput = document.getElementById('endDate');
 
-                if (roleFilter) params.append('userRole', roleFilter);
-                if (actionFilter) params.append('action', actionFilter);
-                if (statusFilter) params.append('status', statusFilter);
-                if (startDate) params.append('startDate', startDate);
-                if (endDate) params.append('endDate', endDate);
+                if (roleFilter && roleFilter.value) {
+                    params.append('userRole', roleFilter.value);
+                }
+                if (actionFilter && actionFilter.value) {
+                    params.append('action', actionFilter.value);
+                }
+                if (statusFilter && statusFilter.value) {
+                    params.append('status', statusFilter.value);
+                }
+                if (startDateInput && startDateInput.value) {
+                    // Convert datetime-local format to ISO format for LocalDateTime
+                    const startDate = new Date(startDateInput.value);
+                    params.append('startDate', startDate.toISOString().slice(0, 19));
+                }
+                if (endDateInput && endDateInput.value) {
+                    const endDate = new Date(endDateInput.value);
+                    params.append('endDate', endDate.toISOString().slice(0, 19));
+                }
 
                 const response = await fetch(`/api/admin/audit/logs?${params}`, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to load audit logs');
+                    return;
+                }
+                
                 const data = await response.json();
 
                 displayAuditLogs(data.content || data);
                 updatePagination(data);
             } catch (error) {
-                console.error('Error loading audit logs:', error);
+                await handleApiError(error, 'Error loading audit logs');
             }
         }
 

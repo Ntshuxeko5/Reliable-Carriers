@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment History - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/error-handling.js"></script>
+    <script src="/js/currency-utils.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#dbb714',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Navigation -->
+    <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="glass-effect rounded-3xl p-8 mb-8">
+            <div class="text-center mb-6">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-credit-card mr-3 gradient-text"></i>Payment History
+                </h1>
+                <p class="text-xl text-gray-700" th:if="${userName}">
+                    Welcome back, <span th:text="${userName}"></span>!
+                </p>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Paid</p>
+                        <p class="text-2xl font-bold text-green-600" id="totalPaid">R0.00</p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-full">
+                        <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Pending</p>
+                        <p class="text-2xl font-bold text-yellow-600" id="totalPending">R0.00</p>
+                    </div>
+                    <div class="p-3 bg-yellow-100 rounded-full">
+                        <i class="fas fa-clock text-yellow-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Refunded</p>
+                        <p class="text-2xl font-bold text-red-600" id="totalRefunded">R0.00</p>
+                    </div>
+                    <div class="p-3 bg-red-100 rounded-full">
+                        <i class="fas fa-undo text-red-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Payments</p>
+                        <p class="text-2xl font-bold text-blue-600" id="totalPayments">0</p>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-full">
+                        <i class="fas fa-list text-blue-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="glass-effect rounded-xl p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select id="statusFilter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All Status</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="FAILED">Failed</option>
+                        <option value="REFUNDED">Refunded</option>
+                        <option value="CANCELLED">Cancelled</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                    <input type="date" id="startDate" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                    <input type="date" id="endDate" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="applyFilters()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-filter mr-2"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment List -->
+        <div class="glass-effect rounded-xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Payment History</h3>
+                <button onclick="exportPayments()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                    <i class="fas fa-download mr-2"></i>Export
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTableBody" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>Loading payments...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-6 flex justify-between items-center">
+                <div class="text-sm text-gray-700">
+                    Showing <span id="showingStart">0</span> to <span id="showingEnd">0</span> of <span id="totalCount">0</span> payments
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="previousPage()" id="prevBtn" class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50" disabled>Previous</button>
+                    <span class="px-3 py-1 text-sm text-gray-700">Page <span id="currentPage">1</span></span>
+                    <button onclick="nextPage()" id="nextBtn" class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Details Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900">Payment Details</h3>
+                        <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="px-6 py-4" id="paymentModalContent">
+                    <!-- Payment details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 0;
+        let pageSize = 20;
+        let totalPages = 0;
+        let currentFilters = {};
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPaymentHistory();
+            loadPaymentStatistics();
+        });
+
+        // Load payment history
+        async function loadPaymentHistory(page = 0) {
+            showLoading('Loading payment history...');
+            try {
+                const params = new URLSearchParams({
+                    page: page,
+                    size: pageSize
+                });
+
+                if (currentFilters.status) {
+                    params.append('status', currentFilters.status);
+                }
+                if (currentFilters.startDate) {
+                    params.append('startDate', currentFilters.startDate + 'T00:00:00');
+                }
+                if (currentFilters.endDate) {
+                    params.append('endDate', currentFilters.endDate + 'T23:59:59');
+                }
+
+                const response = await fetch(`/api/customer/payments/history?${params}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to load payment history');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayPayments(data.payments || []);
+                    updatePagination(data);
+                    updateStatistics(data.statistics);
+                } else {
+                    showError(data.message || 'Failed to load payment history');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error loading payment history');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load payment statistics
+        async function loadPaymentStatistics() {
+            try {
+                const params = new URLSearchParams();
+                if (currentFilters.startDate) {
+                    params.append('startDate', currentFilters.startDate + 'T00:00:00');
+                }
+                if (currentFilters.endDate) {
+                    params.append('endDate', currentFilters.endDate + 'T23:59:59');
+                }
+
+                const response = await fetch(`/api/customer/payments/statistics?${params}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.statistics) {
+                        updateStatistics(data.statistics);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading payment statistics:', error);
+            }
+        }
+
+        // Display payments in table
+        function displayPayments(payments) {
+            const tbody = document.getElementById('paymentsTableBody');
+            
+            if (payments.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2"></i>
+                            <p>No payments found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = payments.map(payment => {
+                const date = payment.paymentDate ? new Date(payment.paymentDate) : new Date(payment.createdAt);
+                const statusClass = getStatusClass(payment.status);
+                const statusIcon = getStatusIcon(payment.status);
+                
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${date.toLocaleDateString('en-ZA')}<br>
+                            <span class="text-xs text-gray-500">${date.toLocaleTimeString('en-ZA')}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                            ${payment.transactionId || '-'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            ${formatZAR(payment.amount || 0)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${formatPaymentMethod(payment.paymentMethod)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                                <i class="${statusIcon} mr-1"></i>${payment.status || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${payment.shipment ? `<a href="/customer/track?tracking=${payment.shipment.trackingNumber}" class="text-blue-600 hover:text-blue-800">${payment.shipment.trackingNumber}</a>` : 
+                              payment.booking ? `<span class="text-gray-600">${payment.booking.bookingNumber}</span>` : '-'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="viewPaymentDetails(${payment.id})" class="text-blue-600 hover:text-blue-900">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                ${payment.status === 'COMPLETED' ? `
+                                    <button onclick="downloadReceipt(${payment.id})" class="text-green-600 hover:text-green-900" title="Download Receipt">
+                                        <i class="fas fa-file-alt"></i>
+                                    </button>
+                                    <button onclick="downloadInvoice(${payment.id})" class="text-purple-600 hover:text-purple-900" title="Download Invoice">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update pagination
+        function updatePagination(data) {
+            currentPage = data.page || 0;
+            totalPages = data.totalPages || 0;
+            const total = data.total || 0;
+
+            document.getElementById('currentPage').textContent = currentPage + 1;
+            document.getElementById('showingStart').textContent = total > 0 ? (currentPage * pageSize) + 1 : 0;
+            document.getElementById('showingEnd').textContent = Math.min((currentPage + 1) * pageSize, total);
+            document.getElementById('totalCount').textContent = total;
+
+            document.getElementById('prevBtn').disabled = currentPage === 0;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages - 1;
+        }
+
+        // Update statistics
+        function updateStatistics(stats) {
+            if (stats) {
+                document.getElementById('totalPaid').textContent = formatZAR(stats.totalPaid || 0);
+                document.getElementById('totalPending').textContent = formatZAR(stats.totalPending || 0);
+                document.getElementById('totalRefunded').textContent = formatZAR(stats.totalRefunded || 0);
+                document.getElementById('totalPayments').textContent = stats.totalPayments || stats.total || 0;
+            }
+        }
+
+        // Apply filters
+        function applyFilters() {
+            currentFilters = {
+                status: document.getElementById('statusFilter').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value
+            };
+            loadPaymentHistory(0);
+            loadPaymentStatistics();
+        }
+
+        // Navigation functions
+        function previousPage() {
+            if (currentPage > 0) {
+                loadPaymentHistory(currentPage - 1);
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages - 1) {
+                loadPaymentHistory(currentPage + 1);
+            }
+        }
+
+        // View payment details
+        async function viewPaymentDetails(paymentId) {
+            showLoading('Loading payment details...');
+            try {
+                const response = await fetch(`/api/customer/payments/${paymentId}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to load payment details');
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.success && data.payment) {
+                    displayPaymentModal(data.payment);
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error loading payment details');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display payment modal
+        function displayPaymentModal(payment) {
+            const modal = document.getElementById('paymentModal');
+            const content = document.getElementById('paymentModalContent');
+            
+            const date = payment.paymentDate ? new Date(payment.paymentDate) : new Date(payment.createdAt);
+            
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Transaction ID</h4>
+                            <p class="text-gray-700 font-mono">${payment.transactionId || '-'}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Date</h4>
+                            <p class="text-gray-700">${date.toLocaleString('en-ZA')}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Amount</h4>
+                            <p class="text-gray-700 text-xl font-bold">${formatZAR(payment.amount || 0)}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Payment Method</h4>
+                            <p class="text-gray-700">${formatPaymentMethod(payment.paymentMethod)}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Status</h4>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(payment.status)}">
+                                ${payment.status || 'N/A'}
+                            </span>
+                        </div>
+                        ${payment.shipment ? `
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Tracking Number</h4>
+                            <a href="/customer/track?tracking=${payment.shipment.trackingNumber}" class="text-blue-600 hover:text-blue-800">${payment.shipment.trackingNumber}</a>
+                        </div>
+                        ` : ''}
+                    </div>
+                    ${payment.notes ? `
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Notes</h4>
+                        <p class="text-gray-700">${payment.notes}</p>
+                    </div>
+                    ` : ''}
+                    ${payment.status === 'COMPLETED' ? `
+                    <div class="pt-4 border-t">
+                        <div class="flex space-x-2">
+                            <button onclick="downloadReceipt(${payment.id})" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                                <i class="fas fa-file-alt mr-2"></i>Receipt
+                            </button>
+                            <button onclick="downloadInvoice(${payment.id})" class="flex-1 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                                <i class="fas fa-file-invoice mr-2"></i>Invoice
+                            </button>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        // Close payment modal
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        // Download receipt
+        async function downloadReceipt(paymentId) {
+            try {
+                showLoading('Generating receipt...');
+                const response = await fetch(`/api/customer/payments/${paymentId}/receipt`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to download receipt');
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `receipt_${paymentId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showSuccess('Receipt downloaded successfully');
+            } catch (error) {
+                await handleApiError(error, 'Error downloading receipt');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Download invoice
+        async function downloadInvoice(paymentId) {
+            try {
+                showLoading('Generating invoice...');
+                const response = await fetch(`/api/customer/payments/${paymentId}/invoice`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to download invoice');
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Get filename from Content-Disposition header if available
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `invoice_${paymentId}.pdf`;
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showSuccess('Invoice downloaded successfully');
+            } catch (error) {
+                await handleApiError(error, 'Error downloading invoice');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Export payments
+        function exportPayments() {
+            // Simple CSV export
+            const params = new URLSearchParams();
+            if (currentFilters.status) params.append('status', currentFilters.status);
+            if (currentFilters.startDate) params.append('startDate', currentFilters.startDate + 'T00:00:00');
+            if (currentFilters.endDate) params.append('endDate', currentFilters.endDate + 'T23:59:59');
+            
+            window.location.href = `/api/customer/payments/history?${params}&export=csv`;
+        }
+
+        // Helper functions
+        function getStatusClass(status) {
+            const classes = {
+                'COMPLETED': 'bg-green-100 text-green-800',
+                'PENDING': 'bg-yellow-100 text-yellow-800',
+                'FAILED': 'bg-red-100 text-red-800',
+                'REFUNDED': 'bg-purple-100 text-purple-800',
+                'CANCELLED': 'bg-gray-100 text-gray-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'COMPLETED': 'fas fa-check-circle',
+                'PENDING': 'fas fa-clock',
+                'FAILED': 'fas fa-times-circle',
+                'REFUNDED': 'fas fa-undo',
+                'CANCELLED': 'fas fa-ban'
+            };
+            return icons[status] || 'fas fa-circle';
+        }
+
+        function formatPaymentMethod(method) {
+            if (!method) return 'N/A';
+            return method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function getToken() {
+            return localStorage.getItem('token') || 
+                   sessionStorage.getItem('token') || 
+                   localStorage.getItem('jwtToken') || 
+                   sessionStorage.getItem('jwtToken') || '';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('paymentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePaymentModal();
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -3,8 +3,11 @@ package com.reliablecarriers.Reliable.Carriers.controller;
 import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageResponse;
 import com.reliablecarriers.Reliable.Carriers.dto.QuoteResponse;
+import com.reliablecarriers.Reliable.Carriers.dto.UnifiedPackageDTO;
 import com.reliablecarriers.Reliable.Carriers.model.Shipment;
 import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
+import com.reliablecarriers.Reliable.Carriers.service.UnifiedPackageService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +16,7 @@ import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -20,6 +24,9 @@ import java.util.Map;
 public class CustomerPackageController {
 
     private final CustomerPackageService customerPackageService;
+
+    @Autowired
+    private UnifiedPackageService unifiedPackageService;
 
     public CustomerPackageController(CustomerPackageService customerPackageService) {
         this.customerPackageService = customerPackageService;
@@ -59,7 +66,7 @@ public class CustomerPackageController {
         }
     }
 
-    // Package Tracking (No Account Required)
+    // Package Tracking (No Account Required) - Uses UnifiedPackageService
     @GetMapping("/track/{trackingNumber}")
     public ResponseEntity<CustomerPackageResponse> trackPackage(@PathVariable String trackingNumber) {
         try {
@@ -67,14 +74,22 @@ public class CustomerPackageController {
                 return ResponseEntity.badRequest().build();
             }
             
-            CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
+            // Use unified service for seamless integration
+            UnifiedPackageDTO unifiedPackage = unifiedPackageService.getPackageByTrackingNumber(trackingNumber);
+            CustomerPackageResponse packageInfo = convertToCustomerPackageResponse(unifiedPackage);
             return ResponseEntity.ok(packageInfo);
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            // Fallback to original service
+            try {
+                CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
+                return ResponseEntity.ok(packageInfo);
+            } catch (Exception ex) {
+                return ResponseEntity.notFound().build();
+            }
         }
     }
 
-    // Public tracking endpoint for guests (no authentication required)
+    // Public tracking endpoint for guests (no authentication required) - Uses UnifiedPackageService
     @GetMapping("/public/track/{trackingNumber}")
     public ResponseEntity<CustomerPackageResponse> trackPackagePublic(@PathVariable String trackingNumber) {
         try {
@@ -82,10 +97,18 @@ public class CustomerPackageController {
                 return ResponseEntity.badRequest().build();
             }
             
-            CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
+            // Use unified service for seamless integration
+            UnifiedPackageDTO unifiedPackage = unifiedPackageService.getPackageByTrackingNumber(trackingNumber);
+            CustomerPackageResponse packageInfo = convertToCustomerPackageResponse(unifiedPackage);
             return ResponseEntity.ok(packageInfo);
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            // Fallback to original service
+            try {
+                CustomerPackageResponse packageInfo = customerPackageService.getPackageByTrackingNumber(trackingNumber);
+                return ResponseEntity.ok(packageInfo);
+            } catch (Exception ex) {
+                return ResponseEntity.notFound().build();
+            }
         }
     }
 
@@ -103,20 +126,40 @@ public class CustomerPackageController {
     @GetMapping("/packages/email/{email}")
     public ResponseEntity<List<CustomerPackageResponse>> getPackagesByEmail(@PathVariable String email) {
         try {
-            List<CustomerPackageResponse> packages = customerPackageService.getPackagesByEmail(email);
+            // Use unified service for seamless integration
+            List<UnifiedPackageDTO> unifiedPackages = unifiedPackageService.getPackagesByCustomerEmail(email);
+            List<CustomerPackageResponse> packages = unifiedPackages.stream()
+                .map(this::convertToCustomerPackageResponse)
+                .collect(Collectors.toList());
             return ResponseEntity.ok(packages);
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of()); // Return empty list if no packages found
+            // Fallback to original service
+            try {
+                List<CustomerPackageResponse> packages = customerPackageService.getPackagesByEmail(email);
+                return ResponseEntity.ok(packages);
+            } catch (Exception ex) {
+                return ResponseEntity.ok(List.of());
+            }
         }
     }
 
     @GetMapping("/packages/phone/{phone}")
     public ResponseEntity<List<CustomerPackageResponse>> getPackagesByPhone(@PathVariable String phone) {
         try {
-            List<CustomerPackageResponse> packages = customerPackageService.getPackagesByPhone(phone);
+            // Use unified service for seamless integration
+            List<UnifiedPackageDTO> unifiedPackages = unifiedPackageService.getPackagesByCustomerPhone(phone);
+            List<CustomerPackageResponse> packages = unifiedPackages.stream()
+                .map(this::convertToCustomerPackageResponse)
+                .collect(Collectors.toList());
             return ResponseEntity.ok(packages);
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of()); // Return empty list if no packages found
+            // Fallback to original service
+            try {
+                List<CustomerPackageResponse> packages = customerPackageService.getPackagesByPhone(phone);
+                return ResponseEntity.ok(packages);
+            } catch (Exception ex) {
+                return ResponseEntity.ok(List.of());
+            }
         }
     }
 
@@ -126,40 +169,84 @@ public class CustomerPackageController {
             @PathVariable String email,
             @PathVariable String status) {
         try {
-            List<CustomerPackageResponse> packages = customerPackageService.getPackagesByStatus(email, status);
+            // Use unified service
+            List<UnifiedPackageDTO> unifiedPackages = unifiedPackageService.getPackagesByCustomerEmail(email);
+            List<CustomerPackageResponse> packages = unifiedPackages.stream()
+                .filter(p -> p.getUnifiedStatus() != null && p.getUnifiedStatus().equalsIgnoreCase(status))
+                .map(this::convertToCustomerPackageResponse)
+                .collect(Collectors.toList());
             return ResponseEntity.ok(packages);
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of());
+            // Fallback to original service
+            try {
+                List<CustomerPackageResponse> packages = customerPackageService.getPackagesByStatus(email, status);
+                return ResponseEntity.ok(packages);
+            } catch (Exception ex) {
+                return ResponseEntity.ok(List.of());
+            }
         }
     }
 
     @GetMapping("/packages/email/{email}/delivered")
     public ResponseEntity<List<CustomerPackageResponse>> getDeliveredPackages(@PathVariable String email) {
         try {
-            List<CustomerPackageResponse> packages = customerPackageService.getDeliveredPackages(email);
+            // Use unified service
+            List<UnifiedPackageDTO> unifiedPackages = unifiedPackageService.getDeliveredPackages();
+            List<CustomerPackageResponse> packages = unifiedPackages.stream()
+                .filter(p -> email.equalsIgnoreCase(p.getCustomerEmail()) || email.equalsIgnoreCase(p.getRecipientEmail()))
+                .map(this::convertToCustomerPackageResponse)
+                .collect(Collectors.toList());
             return ResponseEntity.ok(packages);
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of());
+            // Fallback to original service
+            try {
+                List<CustomerPackageResponse> packages = customerPackageService.getDeliveredPackages(email);
+                return ResponseEntity.ok(packages);
+            } catch (Exception ex) {
+                return ResponseEntity.ok(List.of());
+            }
         }
     }
 
     @GetMapping("/packages/email/{email}/current")
     public ResponseEntity<List<CustomerPackageResponse>> getCurrentPackages(@PathVariable String email) {
         try {
-            List<CustomerPackageResponse> packages = customerPackageService.getCurrentPackages(email);
+            // Use unified service
+            List<UnifiedPackageDTO> unifiedPackages = unifiedPackageService.getInTransitPackages();
+            List<CustomerPackageResponse> packages = unifiedPackages.stream()
+                .filter(p -> email.equalsIgnoreCase(p.getCustomerEmail()) || email.equalsIgnoreCase(p.getRecipientEmail()))
+                .map(this::convertToCustomerPackageResponse)
+                .collect(Collectors.toList());
             return ResponseEntity.ok(packages);
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of());
+            // Fallback to original service
+            try {
+                List<CustomerPackageResponse> packages = customerPackageService.getCurrentPackages(email);
+                return ResponseEntity.ok(packages);
+            } catch (Exception ex) {
+                return ResponseEntity.ok(List.of());
+            }
         }
     }
 
     @GetMapping("/packages/email/{email}/pending")
     public ResponseEntity<List<CustomerPackageResponse>> getPendingPackages(@PathVariable String email) {
         try {
-            List<CustomerPackageResponse> packages = customerPackageService.getPendingPackages(email);
+            // Use unified service
+            List<UnifiedPackageDTO> unifiedPackages = unifiedPackageService.getPendingPackages();
+            List<CustomerPackageResponse> packages = unifiedPackages.stream()
+                .filter(p -> email.equalsIgnoreCase(p.getCustomerEmail()) || email.equalsIgnoreCase(p.getRecipientEmail()))
+                .map(this::convertToCustomerPackageResponse)
+                .collect(Collectors.toList());
             return ResponseEntity.ok(packages);
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of());
+            // Fallback to original service
+            try {
+                List<CustomerPackageResponse> packages = customerPackageService.getPendingPackages(email);
+                return ResponseEntity.ok(packages);
+            } catch (Exception ex) {
+                return ResponseEntity.ok(List.of());
+            }
         }
     }
 
@@ -181,10 +268,21 @@ public class CustomerPackageController {
             @PathVariable String email,
             @RequestParam String searchTerm) {
         try {
-            List<CustomerPackageResponse> packages = customerPackageService.searchPackages(email, searchTerm);
+            // Use unified service for search
+            List<UnifiedPackageDTO> unifiedPackages = unifiedPackageService.searchPackages(searchTerm);
+            List<CustomerPackageResponse> packages = unifiedPackages.stream()
+                .filter(p -> email.equalsIgnoreCase(p.getCustomerEmail()) || email.equalsIgnoreCase(p.getRecipientEmail()))
+                .map(this::convertToCustomerPackageResponse)
+                .collect(Collectors.toList());
             return ResponseEntity.ok(packages);
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of());
+            // Fallback to original service
+            try {
+                List<CustomerPackageResponse> packages = customerPackageService.searchPackages(email, searchTerm);
+                return ResponseEntity.ok(packages);
+            } catch (Exception ex) {
+                return ResponseEntity.ok(List.of());
+            }
         }
     }
 
@@ -213,6 +311,50 @@ public class CustomerPackageController {
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Update package details (only for PENDING packages)
+     */
+    @PutMapping("/packages/{trackingNumber}/modify")
+    public ResponseEntity<Map<String, Object>> modifyPackage(
+            @PathVariable String trackingNumber,
+            @RequestParam String email,
+            @RequestBody Map<String, Object> updates) {
+        try {
+            UnifiedPackageDTO packageDTO = unifiedPackageService.getPackageByTrackingNumber(trackingNumber);
+            
+            if (packageDTO == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Verify ownership
+            if (!packageDTO.getCustomerEmail().equalsIgnoreCase(email) && 
+                !packageDTO.getRecipientEmail().equalsIgnoreCase(email)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "You don't have permission to modify this package"));
+            }
+            
+            // Check if package can be modified (must be PENDING)
+            if (!"PENDING".equalsIgnoreCase(packageDTO.getUnifiedStatus())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Only PENDING packages can be modified"));
+            }
+            
+            // Use unified service to update package
+            UnifiedPackageDTO updatedPackage = unifiedPackageService.updatePackageDetails(trackingNumber, updates);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Package updated successfully",
+                "package", updatedPackage
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
         }
     }
 
@@ -376,5 +518,99 @@ public class CustomerPackageController {
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> healthCheck() {
         return ResponseEntity.ok(Map.of("status", "Customer Package Service is running"));
+    }
+
+    /**
+     * Convert UnifiedPackageDTO to CustomerPackageResponse for backward compatibility
+     */
+    private CustomerPackageResponse convertToCustomerPackageResponse(UnifiedPackageDTO unified) {
+        CustomerPackageResponse response = new CustomerPackageResponse();
+        
+        response.setId(unified.getId() != null ? unified.getId() : 
+            (unified.getShipmentId() != null ? unified.getShipmentId() : unified.getBookingId()));
+        response.setTrackingNumber(unified.getTrackingNumber());
+        
+        // Sender information
+        response.setSenderName(unified.getSenderName() != null ? unified.getSenderName() : unified.getCustomerName());
+        response.setSenderEmail(unified.getSenderEmail() != null ? unified.getSenderEmail() : unified.getCustomerEmail());
+        response.setSenderPhone(unified.getSenderPhone() != null ? unified.getSenderPhone() : unified.getCustomerPhone());
+        
+        // Recipient information
+        response.setRecipientName(unified.getRecipientName());
+        response.setRecipientEmail(unified.getRecipientEmail());
+        response.setRecipientPhone(unified.getRecipientPhone());
+        
+        // Pickup details
+        response.setPickupAddress(unified.getPickupAddress());
+        response.setPickupCity(unified.getPickupCity());
+        response.setPickupState(unified.getPickupState());
+        response.setPickupZipCode(unified.getPickupZipCode());
+        response.setPickupCountry(unified.getPickupCountry());
+        
+        // Delivery details
+        response.setDeliveryAddress(unified.getDeliveryAddress());
+        response.setDeliveryCity(unified.getDeliveryCity());
+        response.setDeliveryState(unified.getDeliveryState());
+        response.setDeliveryZipCode(unified.getDeliveryZipCode());
+        response.setDeliveryCountry(unified.getDeliveryCountry());
+        
+        // Package details
+        response.setWeight(unified.getWeight());
+        response.setDimensions(unified.getDimensions());
+        response.setDescription(unified.getDescription());
+        response.setShippingCost(unified.getShippingCost());
+        response.setServiceType(unified.getServiceType());
+        
+        // Status - convert unified status to ShipmentStatus
+        if (unified.getShipmentStatus() != null) {
+            response.setStatus(unified.getShipmentStatus());
+        } else if (unified.getUnifiedStatus() != null) {
+            try {
+                response.setStatus(com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus.valueOf(unified.getUnifiedStatus()));
+            } catch (IllegalArgumentException e) {
+                response.setStatus(com.reliablecarriers.Reliable.Carriers.model.ShipmentStatus.PENDING);
+            }
+        }
+        response.setFormattedStatus(unified.getFormattedStatus());
+        
+        // Dates
+        response.setCreatedAt(unified.getCreatedAt());
+        response.setEstimatedDeliveryDate(unified.getEstimatedDeliveryDate());
+        response.setActualDeliveryDate(unified.getActualDeliveryDate());
+        response.setFormattedEstimatedDelivery(unified.getFormattedEstimatedDelivery());
+        response.setFormattedActualDelivery(unified.getFormattedActualDelivery());
+        response.setFormattedCreatedAt(unified.getFormattedCreatedAt());
+        
+        // Driver information
+        response.setDriverName(unified.getDriverName());
+        response.setDriverPhone(unified.getDriverPhone());
+        response.setDriverVehicleMake(unified.getDriverVehicleMake());
+        response.setDriverVehicleModel(unified.getDriverVehicleModel());
+        response.setDriverVehiclePlate(unified.getDriverVehiclePlate());
+        
+        // Tracking events
+        if (unified.getTrackingEvents() != null) {
+            response.setTrackingEvents(unified.getTrackingEvents().stream()
+                .map(te -> new CustomerPackageResponse.TrackingEvent(
+                    te.getStatus(),
+                    te.getLocation(),
+                    te.getNotes(),
+                    te.getTimestamp()
+                ))
+                .collect(Collectors.toList()));
+        }
+        
+        // Status flags
+        response.setDelivered(unified.isDelivered());
+        response.setInTransit(unified.isInTransit());
+        response.setPending(unified.isPending());
+        
+        // Additional fields
+        response.setCurrentLocation(unified.getCurrentLocation());
+        response.setLastUpdate(unified.getLastUpdate());
+        response.setBusinessName(unified.getBusinessName());
+        response.setBusinessId(unified.getBusinessId());
+        
+        return response;
     }
 }

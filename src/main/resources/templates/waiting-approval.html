@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waiting for Approval - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-2xl w-full">
+        <div class="glass-effect rounded-3xl p-8 md:p-12 text-center shadow-xl">
+            <div class="mb-8">
+                <div class="inline-block p-6 bg-yellow-100 rounded-full mb-6">
+                    <i class="fas fa-clock text-yellow-600 text-6xl pulse-animation"></i>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                    <span class="gradient-text">Waiting for Approval</span>
+                </h1>
+                <p class="text-xl text-gray-700 mb-2" id="userName">Hello!</p>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8 text-left rounded">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">Your Account is Under Review</h3>
+                        <p class="text-blue-800 mb-4" id="approvalMessage">
+                            Your account has been successfully created and is currently pending admin approval. 
+                            Our team is reviewing your information and will notify you via email once your account is approved.
+                        </p>
+                        <div id="driverMessage" class="hidden">
+                            <p class="text-blue-800 mb-2"><strong>For Drivers:</strong></p>
+                            <ul class="list-disc list-inside text-blue-800 space-y-1">
+                                <li>Please ensure all required documents are uploaded</li>
+                                <li>Your driver's license and vehicle documents will be verified</li>
+                                <li>You'll receive an email notification once approved</li>
+                            </ul>
+                        </div>
+                        <div id="businessMessage" class="hidden">
+                            <p class="text-blue-800 mb-2"><strong>For Business Accounts:</strong></p>
+                            <ul class="list-disc list-inside text-blue-800 space-y-1">
+                                <li>Please ensure all business documents are uploaded</li>
+                                <li>Your business registration and tax documents will be verified</li>
+                                <li>You'll receive an email notification once approved</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-2">
+                        <i class="fas fa-envelope mr-2"></i>
+                        <strong>Check your email:</strong> <span id="userEmail"></span>
+                    </p>
+                    <p class="text-sm text-gray-600">
+                        You'll receive an email notification as soon as your account is approved.
+                    </p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                    <button onclick="checkApprovalStatus()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>Check Status
+                    </button>
+                    <a href="/login" class="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors text-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Back to Login
+                    </a>
+                </div>
+            </div>
+
+            <div id="statusMessage" class="hidden mt-6 p-4 rounded-lg"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get user info from session/localStorage if available
+        document.addEventListener('DOMContentLoaded', function() {
+            const userName = sessionStorage.getItem('userFirstName') || localStorage.getItem('userFirstName') || 'User';
+            const userEmail = sessionStorage.getItem('userEmail') || localStorage.getItem('userEmail') || '';
+            const userRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole') || '';
+
+            if (userName && userName !== 'User') {
+                document.getElementById('userName').textContent = `Hello, ${userName}!`;
+            }
+            if (userEmail) {
+                document.getElementById('userEmail').textContent = userEmail;
+            }
+
+            // Show role-specific messages
+            if (userRole === 'DRIVER') {
+                document.getElementById('driverMessage').classList.remove('hidden');
+            } else if (userRole === 'CUSTOMER' || userRole === 'BUSINESS') {
+                document.getElementById('businessMessage').classList.remove('hidden');
+            }
+
+            // Auto-check status every 30 seconds
+            setInterval(checkApprovalStatus, 30000);
+        });
+
+        async function checkApprovalStatus() {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.classList.remove('hidden');
+            statusMessage.className = 'mt-6 p-4 rounded-lg bg-blue-50 text-blue-800';
+            statusMessage.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Checking approval status...';
+
+            try {
+                const response = await fetch('/api/auth/verification-status', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.approved) {
+                        statusMessage.className = 'mt-6 p-4 rounded-lg bg-green-50 text-green-800';
+                        statusMessage.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Your account has been approved! Redirecting to dashboard...';
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 2000);
+                    } else {
+                        statusMessage.className = 'mt-6 p-4 rounded-lg bg-yellow-50 text-yellow-800';
+                        statusMessage.innerHTML = '<i class="fas fa-clock mr-2"></i>Your account is still pending approval. Please check your email for updates.';
+                    }
+                } else {
+                    throw new Error('Failed to check status');
+                }
+            } catch (error) {
+                statusMessage.className = 'mt-6 p-4 rounded-lg bg-red-50 text-red-800';
+                statusMessage.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>Unable to check status. Please try again later.';
+            }
+        }
+    </script>
+</body>
+</html>
+

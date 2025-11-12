@@ -92,4 +92,12 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
     List<Shipment> findBySenderEmailAndCreatedAtBetween(@Param("email") String email, 
                                                        @Param("startDate") java.time.LocalDateTime startDate, 
                                                        @Param("endDate") java.time.LocalDateTime endDate);
+    
+    // Geocoding methods - find shipments missing coordinates
+    List<Shipment> findByPickupLatitudeIsNull();
+    
+    List<Shipment> findByDeliveryLatitudeIsNull();
+    
+    @Query("SELECT s FROM Shipment s WHERE s.pickupLatitude IS NULL OR s.deliveryLatitude IS NULL")
+    List<Shipment> findByPickupLatitudeIsNullOrDeliveryLatitudeIsNull();
 }

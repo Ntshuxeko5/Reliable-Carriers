@@ -666,6 +666,9 @@ public class BookingServiceImpl implements BookingService {
         shipment.setPickupState(booking.getPickupState());
         shipment.setPickupZipCode(booking.getPickupPostalCode());
         shipment.setPickupCountry("South Africa");
+        // Copy coordinates from booking if available
+        shipment.setPickupLatitude(booking.getPickupLatitude());
+        shipment.setPickupLongitude(booking.getPickupLongitude());
         
         // Set delivery details
         shipment.setDeliveryAddress(booking.getDeliveryAddress());
@@ -673,6 +676,9 @@ public class BookingServiceImpl implements BookingService {
         shipment.setDeliveryState(booking.getDeliveryState());
         shipment.setDeliveryZipCode(booking.getDeliveryPostalCode());
         shipment.setDeliveryCountry("South Africa");
+        // Copy coordinates from booking if available
+        shipment.setDeliveryLatitude(booking.getDeliveryLatitude());
+        shipment.setDeliveryLongitude(booking.getDeliveryLongitude());
         
         // Set package details
         shipment.setWeight(booking.getWeight());

@@ -66,6 +66,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     List<AuditLog> findByUserEmailAndStatusAndCreatedAtBetweenOrderByCreatedAtDesc(String userEmail, String status, LocalDateTime startDate, LocalDateTime endDate);
     Long countByUserEmailAndStatusAndCreatedAtBetween(String userEmail, String status, LocalDateTime startDate, LocalDateTime endDate);
     List<AuditLog> findByUserIdAndActionOrderByCreatedAtDesc(Long userId, String action);
+    List<AuditLog> findByUserIdAndActionAndCreatedAtBetweenOrderByCreatedAtDesc(Long userId, String action, LocalDateTime startDate, LocalDateTime endDate);
     List<AuditLog> findByEntityTypeAndEntityIdAndCreatedAtBetweenOrderByCreatedAtDesc(String entityType, Long entityId, LocalDateTime startDate, LocalDateTime endDate);
     List<AuditLog> findByCreatedAtBefore(LocalDateTime beforeDate);
     

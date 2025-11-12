@@ -2,7 +2,10 @@ package com.reliablecarriers.Reliable.Carriers.service;
 
 import com.reliablecarriers.Reliable.Carriers.dto.AddressCoordinates;
 import com.reliablecarriers.Reliable.Carriers.dto.GeocodingResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
@@ -14,6 +17,8 @@ import java.util.Map;
 @Service
 public class GoogleMapsGeocodingService {
     
+    private static final Logger logger = LoggerFactory.getLogger(GoogleMapsGeocodingService.class);
+    
     @Value("${google.maps.api.key:}")
     private String apiKey;
     
@@ -22,11 +27,15 @@ public class GoogleMapsGeocodingService {
     
     /**
      * Geocode an address to get coordinates
+     * Results are cached to reduce API calls
      */
+    @Cacheable(value = "geocoding", key = "#address")
     public GeocodingResult geocodeAddress(String address) {
         if (address == null || address.trim().isEmpty()) {
             return null;
         }
+        
+        logger.debug("Geocoding address (not cached): {}", address);
         
         try {
             Map<String, String> params = new HashMap<>();
@@ -43,20 +52,25 @@ public class GoogleMapsGeocodingService {
                 return parseGeocodingResponse(response);
             }
             
+            logger.warn("Geocoding failed for address: {}", address);
             return null;
         } catch (RestClientException e) {
-            System.err.println("Geocoding API call failed: " + e.getMessage());
+            logger.error("Geocoding API call failed for address {}: {}", address, e.getMessage());
             return null;
         }
     }
     
     /**
      * Reverse geocode coordinates to get address
+     * Results are cached to reduce API calls
      */
+    @Cacheable(value = "geocoding", key = "#latitude + ',' + #longitude")
     public GeocodingResult reverseGeocode(BigDecimal latitude, BigDecimal longitude) {
         if (latitude == null || longitude == null) {
             return null;
         }
+        
+        logger.debug("Reverse geocoding coordinates (not cached): {}, {}", latitude, longitude);
         
         try {
             String latlng = latitude + "," + longitude;
@@ -74,16 +88,19 @@ public class GoogleMapsGeocodingService {
                 return parseGeocodingResponse(response);
             }
             
+            logger.warn("Reverse geocoding failed for coordinates: {}, {}", latitude, longitude);
             return null;
         } catch (RestClientException e) {
-            System.err.println("Reverse geocoding API call failed: " + e.getMessage());
+            logger.error("Reverse geocoding API call failed: {}", e.getMessage());
             return null;
         }
     }
     
     /**
      * Validate and normalize an address
+     * Results are cached
      */
+    @Cacheable(value = "geocoding", key = "'validate:' + #address")
     public AddressCoordinates validateAndNormalizeAddress(String address) {
         GeocodingResult result = geocodeAddress(address);
         

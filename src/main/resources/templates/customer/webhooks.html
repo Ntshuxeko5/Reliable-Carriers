@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhook Management - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/error-handling.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#dbb714',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Navigation -->
+    <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="glass-effect rounded-3xl p-8 mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-plug mr-3 gradient-text"></i>Webhook Management
+                    </h1>
+                    <p class="text-xl text-gray-700" th:if="${userName}">
+                        Welcome back, <span th:text="${userName}"></span>!
+                    </p>
+                </div>
+                <button onclick="showCreateWebhookModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Create Webhook
+                </button>
+            </div>
+        </div>
+
+        <!-- Webhooks List -->
+        <div class="glass-effect rounded-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Your Webhooks</h3>
+            </div>
+            <div id="webhooksList" class="p-6">
+                <div class="text-center text-gray-500">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Loading webhooks...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Webhook Modal -->
+    <div id="webhookModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900" id="modalTitle">Create Webhook</h3>
+                        <button onclick="closeWebhookModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="px-6 py-4">
+                    <form id="webhookForm" onsubmit="saveWebhook(event)">
+                        <input type="hidden" id="webhookId">
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Webhook URL *</label>
+                            <input type="url" id="webhookUrl" required 
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="https://your-domain.com/webhook">
+                            <p class="text-xs text-gray-500 mt-1">The URL where webhook events will be sent</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <input type="text" id="webhookDescription" 
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Optional description for this webhook">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Events to Subscribe *</label>
+                            <div class="border border-gray-300 rounded-md p-3 max-h-48 overflow-y-auto">
+                                <label class="flex items-center mb-2">
+                                    <input type="checkbox" value="*" class="mr-2" onchange="toggleAllEvents(this)">
+                                    <span class="font-semibold">All Events</span>
+                                </label>
+                                <div class="ml-4 space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="events" value="shipment.created" class="mr-2">
+                                        <span>shipment.created - When a new shipment is created</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="events" value="shipment.updated" class="mr-2">
+                                        <span>shipment.updated - When shipment status changes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="events" value="shipment.delivered" class="mr-2">
+                                        <span>shipment.delivered - When shipment is delivered</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="events" value="shipment.picked_up" class="mr-2">
+                                        <span>shipment.picked_up - When shipment is picked up</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="events" value="payment.completed" class="mr-2">
+                                        <span>payment.completed - When payment is completed</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="events" value="payment.failed" class="mr-2">
+                                        <span>payment.failed - When payment fails</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Secret Key (Optional)</label>
+                            <input type="text" id="webhookSecret" 
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Leave empty to auto-generate">
+                            <p class="text-xs text-gray-500 mt-1">Used for HMAC signature verification</p>
+                        </div>
+
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" onclick="closeWebhookModal()" 
+                                    class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                <i class="fas fa-save mr-2"></i>Save Webhook
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Available webhook events
+        const WEBHOOK_EVENTS = [
+            { value: 'shipment.created', label: 'Shipment Created' },
+            { value: 'shipment.updated', label: 'Shipment Updated' },
+            { value: 'shipment.delivered', label: 'Shipment Delivered' },
+            { value: 'shipment.failed', label: 'Shipment Failed' },
+            { value: 'payment.completed', label: 'Payment Completed' }
+        ];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadWebhooks();
+        });
+
+        // Load webhooks
+        async function loadWebhooks() {
+            showLoading('Loading webhooks...');
+            try {
+                const response = await fetch('/api/business/webhooks', {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to load webhooks');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayWebhooks(data.data || []);
+                } else {
+                    showError(data.message || 'Failed to load webhooks');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error loading webhooks');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display webhooks
+        function displayWebhooks(webhooks) {
+            const container = document.getElementById('webhooksList');
+            
+            if (webhooks.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-plug text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">No webhooks configured</h3>
+                        <p class="text-gray-500 mb-4">Create your first webhook to receive real-time notifications</p>
+                        <button onclick="showCreateWebhookModal()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-plus mr-2"></i>Create Webhook
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = webhooks.map(webhook => {
+                const statusClass = webhook.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                const lastTriggered = webhook.lastTriggeredAt ? new Date(webhook.lastTriggeredAt).toLocaleString('en-ZA') : 'Never';
+                
+                return `
+                    <div class="border border-gray-200 rounded-lg p-6 mb-4 hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center mb-2">
+                                    <h4 class="text-lg font-semibold text-gray-900 mr-3">${webhook.url}</h4>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">
+                                        ${webhook.status}
+                                    </span>
+                                </div>
+                                ${webhook.description ? `<p class="text-gray-600 mb-3">${webhook.description}</p>` : ''}
+                                
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Events</p>
+                                        <p class="text-sm font-medium">${Array.isArray(webhook.events) ? webhook.events.length : 0}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Success</p>
+                                        <p class="text-sm font-medium text-green-600">${webhook.successCount || 0}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Failures</p>
+                                        <p class="text-sm font-medium text-red-600">${webhook.failureCount || 0}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Last Triggered</p>
+                                        <p class="text-sm font-medium">${lastTriggered}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <p class="text-xs text-gray-500 mb-1">Subscribed Events:</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${Array.isArray(webhook.events) ? webhook.events.map(e => 
+                                            `<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">${e}</span>`
+                                        ).join('') : '<span class="text-gray-500 text-xs">All events</span>'}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <button onclick="testWebhook(${webhook.id})" 
+                                        class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 text-sm">
+                                    <i class="fas fa-vial mr-1"></i>Test
+                                </button>
+                                <button onclick="editWebhook(${webhook.id})" 
+                                        class="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm">
+                                    <i class="fas fa-edit mr-1"></i>Edit
+                                </button>
+                                <button onclick="deleteWebhook(${webhook.id})" 
+                                        class="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-sm">
+                                    <i class="fas fa-trash mr-1"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show create webhook modal
+        function showCreateWebhookModal() {
+            document.getElementById('modalTitle').textContent = 'Create Webhook';
+            document.getElementById('webhookForm').reset();
+            document.getElementById('webhookId').value = '';
+            document.getElementById('webhookModal').classList.remove('hidden');
+        }
+
+        // Edit webhook
+        async function editWebhook(webhookId) {
+            showLoading('Loading webhook...');
+            try {
+                const response = await fetch(`/api/business/webhooks`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to load webhook');
+                    return;
+                }
+
+                const data = await response.json();
+                const webhook = data.data.find(w => w.id === webhookId);
+                
+                if (webhook) {
+                    document.getElementById('modalTitle').textContent = 'Edit Webhook';
+                    document.getElementById('webhookId').value = webhook.id;
+                    document.getElementById('webhookUrl').value = webhook.url;
+                    document.getElementById('webhookDescription').value = webhook.description || '';
+                    
+                    // Clear all checkboxes
+                    document.querySelectorAll('input[name="events"]').forEach(cb => cb.checked = false);
+                    
+                    // Check selected events
+                    if (Array.isArray(webhook.events)) {
+                        webhook.events.forEach(event => {
+                            const checkbox = document.querySelector(`input[name="events"][value="${event}"]`);
+                            if (checkbox) checkbox.checked = true;
+                        });
+                    } else if (webhook.events === '*' || webhook.events.includes('*')) {
+                        document.querySelector('input[value="*"]').checked = true;
+                    }
+                    
+                    document.getElementById('webhookModal').classList.remove('hidden');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error loading webhook');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Close modal
+        function closeWebhookModal() {
+            document.getElementById('webhookModal').classList.add('hidden');
+        }
+
+        // Toggle all events
+        function toggleAllEvents(checkbox) {
+            document.querySelectorAll('input[name="events"]').forEach(cb => {
+                if (cb.value !== '*') {
+                    cb.checked = checkbox.checked;
+                }
+            });
+        }
+
+        // Save webhook
+        async function saveWebhook(event) {
+            event.preventDefault();
+            
+            const webhookId = document.getElementById('webhookId').value;
+            const url = document.getElementById('webhookUrl').value;
+            const description = document.getElementById('webhookDescription').value;
+            const secret = document.getElementById('webhookSecret').value;
+            
+            const selectedEvents = Array.from(document.querySelectorAll('input[name="events"]:checked'))
+                .map(cb => cb.value)
+                .filter(v => v !== '*');
+            
+            if (selectedEvents.length === 0) {
+                showError('Please select at least one event');
+                return;
+            }
+
+            showLoading(webhookId ? 'Updating webhook...' : 'Creating webhook...');
+            
+            try {
+                const payload = {
+                    url: url,
+                    description: description,
+                    events: selectedEvents.length > 0 ? selectedEvents : ['*']
+                };
+                
+                if (secret) {
+                    payload.secret = secret;
+                }
+
+                const endpoint = webhookId 
+                    ? `/api/business/webhooks/${webhookId}`
+                    : '/api/business/webhooks';
+                
+                const method = webhookId ? 'PUT' : 'POST';
+
+                const response = await fetch(endpoint, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + getToken()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, webhookId ? 'Failed to update webhook' : 'Failed to create webhook');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(webhookId ? 'Webhook updated successfully' : 'Webhook created successfully');
+                    closeWebhookModal();
+                    loadWebhooks();
+                } else {
+                    showError(data.error || 'Operation failed');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error saving webhook');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Test webhook
+        async function testWebhook(webhookId) {
+            if (!confirm('Send a test webhook event?')) return;
+            
+            showLoading('Testing webhook...');
+            try {
+                const response = await fetch(`/api/business/webhooks/${webhookId}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Webhook test failed');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Webhook test sent successfully');
+                    loadWebhooks();
+                } else {
+                    showError('Webhook test failed');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error testing webhook');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Delete webhook
+        async function deleteWebhook(webhookId) {
+            if (!confirm('Are you sure you want to delete this webhook?')) return;
+            
+            showLoading('Deleting webhook...');
+            try {
+                const response = await fetch(`/api/business/webhooks/${webhookId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to delete webhook');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Webhook deleted successfully');
+                    loadWebhooks();
+                } else {
+                    showError(data.error || 'Failed to delete webhook');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error deleting webhook');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function getToken() {
+            return localStorage.getItem('token') || 
+                   sessionStorage.getItem('token') || 
+                   localStorage.getItem('jwtToken') || 
+                   sessionStorage.getItem('jwtToken') || '';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('webhookModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeWebhookModal();
+            }
+        });
+    </script>
+</body>
+</html>
+

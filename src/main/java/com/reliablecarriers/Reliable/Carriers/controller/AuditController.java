@@ -81,8 +81,14 @@ public class AuditController {
     // Get audit analytics
     @GetMapping("/analytics/counts")
     public ResponseEntity<Map<String, Object>> getAuditAnalytics(
-            @RequestParam LocalDateTime startDate,
-            @RequestParam LocalDateTime endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        
+        // Default to last 7 days if dates not provided
+        if (startDate == null || endDate == null) {
+            endDate = LocalDateTime.now();
+            startDate = endDate.minusDays(7);
+        }
         
         Map<String, Object> analytics = new HashMap<>();
         

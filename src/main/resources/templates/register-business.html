@@ -450,13 +450,21 @@
                     }
                     
                     showAlert(data.message || 'Business account registered successfully! Welcome to Reliable Carriers.', 'success');
+                    
+                    // Store user info in session
+                    if (data.user) {
+                        sessionStorage.setItem('userFirstName', data.user.firstName || '');
+                        sessionStorage.setItem('userEmail', data.user.email || '');
+                        sessionStorage.setItem('userRole', data.user.role || 'CUSTOMER');
+                    }
+                    
                     setTimeout(() => {
-                        // Redirect to appropriate dashboard based on role
-                        const role = data.user?.role || sessionStorage.getItem('pending2faRole') || 'CUSTOMER';
-                        if (role === 'CUSTOMER') {
-                            window.location.href = '/customer/dashboard';
+                        // Check if approval is needed
+                        if (data.needsApproval) {
+                            window.location.href = '/waiting-approval';
                         } else {
-                            window.location.href = '/customer/dashboard';
+                            // Redirect to customer dashboard
+                            window.location.href = '/customer';
                         }
                     }, 2000);
                 } else {

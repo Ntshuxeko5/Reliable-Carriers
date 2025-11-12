@@ -61,8 +61,10 @@
     </script>
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Leaflet CSS for maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Google Maps API -->
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places,geometry&callback=initMap'" async defer></script>
+    <!-- Unified Google Maps Utility -->
+    <script th:src="@{/js/unified-google-maps.js}"></script>
 </head>
 <body class="bg-gradient-to-br from-reliable-yellow-400 to-reliable-yellow-600 min-h-screen">
     <div class="flex h-screen">
@@ -178,24 +180,26 @@
         </div>
     </div>
 
-    <!-- Leaflet JS for maps -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Custom JS -->
-    <script th:src="@{/js/tracking.js}"></script>
-    
     <script>
         let map;
+        let unifiedMap;
         let markers = {};
+        let infoWindows = {};
+        let polylines = [];
         let realTimeInterval;
         let isRealTimeActive = false;
         
-        // Initialize map
+        // Initialize Google Maps
         function initMap() {
-            map = L.map('map').setView([40.7128, -74.0060], 10); // Default to NYC
+            unifiedMap = new UnifiedGoogleMaps('map', {
+                center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
+                zoom: 10,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            });
+            map = unifiedMap.init();
             
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            // Load tracking data after map is initialized
+            loadTrackingData();
         }
         
         // Load tracking data
@@ -250,11 +254,15 @@
                         headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
                     });
                     const history = await res3.json();
-                    // Draw polyline on map
-                    const latlngs = history.map(p => [p.latitude, p.longitude]);
-                    if (latlngs.length) {
-                        const poly = L.polyline(latlngs, { color: 'blue' }).addTo(map);
-                        map.fitBounds(latlngs);
+                    // Draw polyline on map using Google Maps
+                    if (history && history.length > 0) {
+                        const path = history.map(p => ({ lat: p.latitude, lng: p.longitude }));
+                        unifiedMap.addPolyline(path, { strokeColor: '#4285F4', strokeWeight: 3 });
+                        
+                        // Fit bounds to show the route
+                        const bounds = new google.maps.LatLngBounds();
+                        path.forEach(point => bounds.extend(point));
+                        map.fitBounds(bounds);
                     }
                 }
 
@@ -350,37 +358,67 @@
         
         // Update map markers
         function updateMapMarkers(drivers) {
+            if (!unifiedMap || !map) return;
+            
             // Clear existing markers
-            Object.values(markers).forEach(marker => map.removeLayer(marker));
+            unifiedMap.clearMarkers();
             markers = {};
+            infoWindows = {};
             
             drivers.forEach(driver => {
                 if (driver.latitude && driver.longitude) {
-                    // Package information for popup
+                    // Package information for info window
                     const packageInfo = driver.activeShipments && driver.activeShipments.length > 0 ? 
                         `<p><strong>Packages:</strong> ${driver.totalPackages || 0} (${driver.totalWeight || 0} kg)</p>
                          <p><strong>Next Delivery:</strong> ${driver.nextDeliveryLocation || 'N/A'}</p>
                          <p><strong>Delivery Time:</strong> ${driver.nextDeliveryTime || 'N/A'}</p>` : 
                         '<p><strong>Packages:</strong> No active packages</p>';
                     
-                    const marker = L.marker([driver.latitude, driver.longitude])
-                        .bindPopup(`
-                            <div>
-                                <h6>${driver.driverName}</h6>
-                                <p><strong>Vehicle:</strong> ${driver.vehicleModel || 'N/A'} (${driver.vehiclePlate || 'N/A'})</p>
-                                <p><strong>Status:</strong> ${driver.status}</p>
-                                <p><strong>Last Update:</strong> ${driver.formattedTimestamp}</p>
-                                ${packageInfo}
-                                <button class="btn btn-sm btn-primary mt-2" onclick="showDriverDetails(${driver.driverId})">
-                                    View Details
-                                </button>
-                            </div>
-                        `)
-                        .addTo(map);
+                    // Determine marker icon color based on status
+                    let iconColor = '#4285F4'; // Default blue
+                    if (driver.status === 'ONLINE' || driver.status === 'IN_TRANSIT') {
+                        iconColor = '#34A853'; // Green
+                    } else if (driver.status === 'OFFLINE') {
+                        iconColor = '#EA4335'; // Red
+                    }
+                    
+                    const markerIcon = {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 10,
+                        fillColor: iconColor,
+                        fillOpacity: 1,
+                        strokeColor: '#FFFFFF',
+                        strokeWeight: 2
+                    };
+                    
+                    const infoContent = `
+                        <div style="min-width: 200px;">
+                            <h6 style="font-weight: bold; margin-bottom: 8px;">${driver.driverName || 'Driver'}</h6>
+                            <p style="margin: 4px 0;"><strong>Vehicle:</strong> ${driver.vehicleModel || 'N/A'} (${driver.vehiclePlate || 'N/A'})</p>
+                            <p style="margin: 4px 0;"><strong>Status:</strong> ${driver.status || 'Unknown'}</p>
+                            <p style="margin: 4px 0;"><strong>Last Update:</strong> ${driver.formattedTimestamp || 'N/A'}</p>
+                            ${packageInfo}
+                            <button onclick="showDriverDetails(${driver.driverId})" style="margin-top: 8px; padding: 6px 12px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                View Details
+                            </button>
+                        </div>
+                    `;
+                    
+                    const marker = unifiedMap.addMarker(driver.driverId, {
+                        lat: driver.latitude,
+                        lng: driver.longitude
+                    }, {
+                        title: driver.driverName || 'Driver',
+                        icon: markerIcon,
+                        content: infoContent
+                    });
                     
                     markers[driver.driverId] = marker;
                 }
             });
+            
+            // Fit map to show all markers
+            unifiedMap.fitBounds();
         }
         
         // Refresh data
@@ -409,9 +447,18 @@
         }
         
         // Initialize on page load
+        // Note: initMap is called by Google Maps API callback
+        // If map is not initialized, wait for it
+        function checkMapInitialized() {
+            if (typeof google !== 'undefined' && google.maps && map) {
+                // Map already initialized by callback
+            } else {
+                setTimeout(checkMapInitialized, 100);
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
-            initMap();
-            loadTrackingData();
+            checkMapInitialized();
         });
     </script>
 </body>

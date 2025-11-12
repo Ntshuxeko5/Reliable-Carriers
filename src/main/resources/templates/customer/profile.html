@@ -321,6 +321,86 @@
                         </button>
                     </div>
                     
+                    <!-- 2FA Setup Modal -->
+                    <div id="2faModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-semibold text-gray-900">Enable Two-Factor Authentication</h3>
+                                <button onclick="close2FAModal()" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div id="2faModalContent">
+                                <div id="2faSetupStep1">
+                                    <p class="text-gray-700 mb-4">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):</p>
+                                    <div class="text-center mb-4">
+                                        <img id="2faQRCode" src="" alt="QR Code" class="mx-auto border-2 border-gray-300 rounded-lg">
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                                        <p class="text-sm font-semibold text-gray-700 mb-2">Or enter this code manually:</p>
+                                        <p id="2faSecretKey" class="text-xs font-mono text-gray-900 break-all"></p>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Enter verification code from your app:</label>
+                                        <input type="text" id="2faVerificationCode" maxlength="6" pattern="[0-9]{6}"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg font-mono"
+                                            placeholder="000000">
+                                    </div>
+                                    <div id="2faError" class="hidden text-red-600 text-sm mb-4"></div>
+                                    <div class="flex space-x-3">
+                                        <button onclick="verify2FASetup()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                                            Verify & Enable
+                                        </button>
+                                        <button onclick="close2FAModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Password Change Modal -->
+                    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-2xl font-bold text-gray-900">Change Password</h3>
+                                <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <form id="passwordChangeForm" onsubmit="changePassword(event)">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                                        <input type="password" id="currentPassword" required
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                                        <input type="password" id="newPassword" required minlength="6"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <p class="text-xs text-gray-500 mt-1">Must be at least 6 characters long</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                                        <input type="password" id="confirmPassword" required minlength="6"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div id="passwordError" class="hidden text-red-600 text-sm"></div>
+                                    <div class="flex space-x-3">
+                                        <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                                            Change Password
+                                        </button>
+                                        <button type="button" onclick="closePasswordModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-400 transition-colors">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
                     <!-- Add/Edit Address Modal -->
                     <div id="addressModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
                         <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -409,7 +489,7 @@
                                     <p class="text-sm text-gray-600">Receive updates about your packages via email</p>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" checked class="sr-only peer">
+                                    <input type="checkbox" id="emailNotifications" class="sr-only peer" onchange="updateNotificationPreferences()">
                                     <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
@@ -419,7 +499,7 @@
                                     <p class="text-sm text-gray-600">Receive updates about your packages via SMS</p>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" checked class="sr-only peer">
+                                    <input type="checkbox" id="smsNotifications" class="sr-only peer" onchange="updateNotificationPreferences()">
                                     <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
@@ -447,7 +527,7 @@
                                     <h4 class="font-semibold text-gray-900">Change Password</h4>
                                     <p class="text-sm text-gray-600">Update your account password</p>
                                 </div>
-                                <button class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                                <button onclick="showPasswordChangeModal()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
                                     Change
                                 </button>
                             </div>
@@ -455,9 +535,10 @@
                                 <div>
                                     <h4 class="font-semibold text-gray-900">Two-Factor Authentication</h4>
                                     <p class="text-sm text-gray-600">Add an extra layer of security to your account</p>
+                                    <p id="2faStatus" class="text-xs text-gray-500 mt-1"></p>
                                 </div>
-                                <button class="bg-brand-blue-600 text-white px-4 py-2 rounded-lg hover:bg-brand-blue-700 transition-colors">
-                                    Enable
+                                <button id="2faToggleBtn" onclick="toggle2FA()" class="bg-brand-blue-600 text-white px-4 py-2 rounded-lg hover:bg-brand-blue-700 transition-colors">
+                                    <span id="2faButtonText">Enable</span>
                                 </button>
                             </div>
                         </div>
@@ -514,6 +595,373 @@
             const mobileMenu = document.getElementById('mobileMenu');
             mobileMenu.classList.toggle('hidden');
         });
+        
+        // Load notification preferences and 2FA status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNotificationPreferences();
+            load2FAStatus();
+        });
+
+        // Load notification preferences
+        async function loadNotificationPreferences() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+
+                // Get current user ID from profile data
+                const response = await fetch('/api/customer/profile', {
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData && userData.id) {
+                        const prefResponse = await fetch(`/api/notifications/preferences/${userData.id}`, {
+                            headers: headers,
+                            credentials: 'include'
+                        });
+
+                        if (prefResponse.ok) {
+                            const preferences = await prefResponse.json();
+                            const emailCheckbox = document.getElementById('emailNotifications');
+                            const smsCheckbox = document.getElementById('smsNotifications');
+                            if (emailCheckbox) emailCheckbox.checked = preferences.emailEnabled !== false;
+                            if (smsCheckbox) smsCheckbox.checked = preferences.smsEnabled !== false;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading notification preferences:', error);
+            }
+        }
+
+        // Update notification preferences
+        async function updateNotificationPreferences() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+
+                // Get current user ID
+                const userResponse = await fetch('/api/customer/profile', {
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                if (!userResponse.ok) {
+                    throw new Error('Failed to get user data');
+                }
+
+                const userData = await userResponse.json();
+                if (!userData || !userData.id) {
+                    throw new Error('User ID not found');
+                }
+
+                const emailEnabled = document.getElementById('emailNotifications').checked;
+                const smsEnabled = document.getElementById('smsNotifications').checked;
+
+                const updateResponse = await fetch(`/api/notifications/preferences/${userData.id}`, {
+                    method: 'PUT',
+                    headers: headers,
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        emailEnabled: emailEnabled,
+                        smsEnabled: smsEnabled
+                    })
+                });
+
+                if (updateResponse.ok) {
+                    alert('Notification preferences updated successfully');
+                } else {
+                    const errorData = await updateResponse.json();
+                    throw new Error(errorData.error || 'Failed to update preferences');
+                }
+            } catch (error) {
+                console.error('Error updating notification preferences:', error);
+                alert('Failed to update notification preferences: ' + error.message);
+                // Revert checkboxes
+                loadNotificationPreferences();
+            }
+        }
+
+        // Password change functions
+        function showPasswordChangeModal() {
+            const modal = document.getElementById('passwordModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                const form = document.getElementById('passwordChangeForm');
+                if (form) form.reset();
+                const errorDiv = document.getElementById('passwordError');
+                if (errorDiv) errorDiv.classList.add('hidden');
+            }
+        }
+
+        function closePasswordModal() {
+            const modal = document.getElementById('passwordModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                const form = document.getElementById('passwordChangeForm');
+                if (form) form.reset();
+                const errorDiv = document.getElementById('passwordError');
+                if (errorDiv) errorDiv.classList.add('hidden');
+            }
+        }
+
+        // 2FA Management Functions
+        async function load2FAStatus() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = {
+                    'Authorization': 'Bearer ' + token
+                };
+
+                const response = await fetch('/api/auth/2fa/status', {
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const statusText = document.getElementById('2faStatus');
+                        const buttonText = document.getElementById('2faButtonText');
+                        const toggleBtn = document.getElementById('2faToggleBtn');
+                        
+                        if (data.totpEnabled) {
+                            statusText.textContent = '✓ TOTP Authenticator enabled';
+                            statusText.className = 'text-xs text-green-600 mt-1';
+                            buttonText.textContent = 'Disable';
+                            toggleBtn.className = 'bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors';
+                        } else if (data.hasPhone) {
+                            statusText.textContent = 'SMS 2FA available (via phone)';
+                            statusText.className = 'text-xs text-blue-600 mt-1';
+                            buttonText.textContent = 'Enable TOTP';
+                            toggleBtn.className = 'bg-brand-blue-600 text-white px-4 py-2 rounded-lg hover:bg-brand-blue-700 transition-colors';
+                        } else {
+                            statusText.textContent = 'Not enabled';
+                            statusText.className = 'text-xs text-gray-500 mt-1';
+                            buttonText.textContent = 'Enable';
+                            toggleBtn.className = 'bg-brand-blue-600 text-white px-4 py-2 rounded-lg hover:bg-brand-blue-700 transition-colors';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading 2FA status:', error);
+            }
+        }
+
+        async function toggle2FA() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = {
+                    'Authorization': 'Bearer ' + token
+                };
+
+                // Check current status
+                const statusResponse = await fetch('/api/auth/2fa/status', {
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                if (!statusResponse.ok) {
+                    throw new Error('Failed to get 2FA status');
+                }
+
+                const statusData = await statusResponse.json();
+                
+                if (statusData.success && statusData.totpEnabled) {
+                    // Disable 2FA
+                    if (confirm('Are you sure you want to disable Two-Factor Authentication? This will reduce your account security.')) {
+                        const disableResponse = await fetch('/api/auth/2fa/disable', {
+                            method: 'POST',
+                            headers: headers,
+                            credentials: 'include'
+                        });
+
+                        const disableData = await disableResponse.json();
+                        if (disableData.success) {
+                            alert('2FA has been disabled successfully');
+                            load2FAStatus();
+                        } else {
+                            alert('Failed to disable 2FA: ' + (disableData.error || 'Unknown error'));
+                        }
+                    }
+                } else {
+                    // Enable 2FA - show setup modal
+                    await setup2FA();
+                }
+            } catch (error) {
+                console.error('Error toggling 2FA:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function setup2FA() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = {
+                    'Authorization': 'Bearer ' + token
+                };
+
+                // Get user email
+                const profileResponse = await fetch('/api/customer/profile', {
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                if (!profileResponse.ok) {
+                    throw new Error('Failed to get user profile');
+                }
+
+                const userData = await profileResponse.json();
+                const email = userData.email;
+
+                // Setup 2FA
+                const setupResponse = await fetch(`/api/auth/2fa/setup?identifier=${encodeURIComponent(email)}`, {
+                    method: 'POST',
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                const setupData = await setupResponse.json();
+                
+                if (setupData.success && setupData.secret) {
+                    // Show QR code and secret
+                    document.getElementById('2faQRCode').src = setupData.qrCodeUrl;
+                    document.getElementById('2faSecretKey').textContent = setupData.manualEntryKey;
+                    document.getElementById('2faModal').classList.remove('hidden');
+                    window.current2FASecret = setupData.secret;
+                } else {
+                    throw new Error(setupData.error || 'Failed to setup 2FA');
+                }
+            } catch (error) {
+                console.error('Error setting up 2FA:', error);
+                alert('Error setting up 2FA: ' + error.message);
+            }
+        }
+
+        function close2FAModal() {
+            document.getElementById('2faModal').classList.add('hidden');
+            document.getElementById('2faVerificationCode').value = '';
+            document.getElementById('2faError').classList.add('hidden');
+            window.current2FASecret = null;
+        }
+
+        async function verify2FASetup() {
+            const code = document.getElementById('2faVerificationCode').value;
+            const errorDiv = document.getElementById('2faError');
+
+            if (!code || code.length !== 6) {
+                errorDiv.textContent = 'Please enter a 6-digit code';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = {
+                    'Authorization': 'Bearer ' + token
+                };
+
+                // Get user email
+                const profileResponse = await fetch('/api/customer/profile', {
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                if (!profileResponse.ok) {
+                    throw new Error('Failed to get user profile');
+                }
+
+                const userData = await profileResponse.json();
+                const email = userData.email;
+
+                // Verify code
+                const verifyResponse = await fetch(`/api/auth/2fa/verify?identifier=${encodeURIComponent(email)}&code=${code}`, {
+                    method: 'POST',
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                if (verifyResponse.ok) {
+                    alert('2FA has been enabled successfully!');
+                    close2FAModal();
+                    load2FAStatus();
+                } else {
+                    const errorData = await verifyResponse.json();
+                    errorDiv.textContent = errorData.error || 'Invalid verification code';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error verifying 2FA:', error);
+                errorDiv.textContent = 'Error verifying code: ' + error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function changePassword(event) {
+            event.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorDiv = document.getElementById('passwordError');
+
+            // Validation
+            if (newPassword.length < 6) {
+                errorDiv.textContent = 'New password must be at least 6 characters long';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                errorDiv.textContent = 'New passwords do not match';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+
+                const response = await fetch('/api/customer/profile/change-password', {
+                    method: 'POST',
+                    headers: headers,
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        currentPassword: currentPassword,
+                        newPassword: newPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Password changed successfully');
+                    closePasswordModal();
+                } else {
+                    errorDiv.textContent = data.error || 'Failed to change password';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error changing password:', error);
+                errorDiv.textContent = 'An error occurred while changing password';
+                errorDiv.classList.remove('hidden');
+            }
+        }
         
         // Address management functions
         let editingAddressId = null;

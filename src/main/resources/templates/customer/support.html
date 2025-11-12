@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Tickets - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/error-handling.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#dbb714',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                        'brand-blue': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#071c91',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Navigation -->
+    <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="glass-effect rounded-3xl p-8 mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-headset mr-3 gradient-text"></i>Support Tickets
+                    </h1>
+                    <p class="text-xl text-gray-700" th:if="${userName}">
+                        Welcome back, <span th:text="${userName}"></span>!
+                    </p>
+                </div>
+                <button onclick="showCreateTicketModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>New Ticket
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Tickets</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalTickets">0</p>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-full">
+                        <i class="fas fa-ticket-alt text-blue-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Open</p>
+                        <p class="text-2xl font-bold text-yellow-600" id="openTickets">0</p>
+                    </div>
+                    <div class="p-3 bg-yellow-100 rounded-full">
+                        <i class="fas fa-clock text-yellow-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">In Progress</p>
+                        <p class="text-2xl font-bold text-blue-600" id="inProgressTickets">0</p>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-full">
+                        <i class="fas fa-spinner text-blue-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 hover-lift">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Resolved</p>
+                        <p class="text-2xl font-bold text-green-600" id="resolvedTickets">0</p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-full">
+                        <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="glass-effect rounded-xl p-6 mb-8">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+                    <select id="statusFilter" onchange="loadTickets()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Statuses</option>
+                        <option value="OPEN">Open</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="RESOLVED">Resolved</option>
+                        <option value="CLOSED">Closed</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Category</label>
+                    <select id="categoryFilter" onchange="loadTickets()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Categories</option>
+                        <option value="GENERAL">General</option>
+                        <option value="PACKAGE_TRACKING">Package Tracking</option>
+                        <option value="PAYMENT">Payment</option>
+                        <option value="DELIVERY_ISSUE">Delivery Issue</option>
+                        <option value="DAMAGE_CLAIM">Damage Claim</option>
+                        <option value="REFUND">Refund</option>
+                        <option value="TECHNICAL">Technical</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="flex-1"></div>
+                <button onclick="loadTickets()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-sync mr-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Tickets Table -->
+        <div class="glass-effect rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticket #</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsTableBody" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>Loading tickets...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Ticket Modal -->
+    <div id="createTicketModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 my-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Create Support Ticket</h3>
+                <button onclick="closeCreateTicketModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="createTicketForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+                    <input type="text" id="ticketSubject" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                        <select id="ticketCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="GENERAL">General</option>
+                            <option value="PACKAGE_TRACKING">Package Tracking</option>
+                            <option value="PAYMENT">Payment</option>
+                            <option value="DELIVERY_ISSUE">Delivery Issue</option>
+                            <option value="DAMAGE_CLAIM">Damage Claim</option>
+                            <option value="REFUND">Refund</option>
+                            <option value="TECHNICAL">Technical</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
+                        <select id="ticketPriority" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM" selected>Medium</option>
+                            <option value="HIGH">High</option>
+                            <option value="URGENT">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                    <textarea id="ticketDescription" required rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+                </div>
+                <div id="createTicketError" class="hidden text-red-600 text-sm"></div>
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-paper-plane mr-2"></i>Submit Ticket
+                    </button>
+                    <button type="button" onclick="closeCreateTicketModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ticket Details Modal -->
+    <div id="ticketDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full p-6 my-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Ticket Details</h3>
+                <button onclick="closeTicketDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="ticketDetailsContent">
+                <!-- Ticket details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTickets();
+            loadTicketStatistics();
+        });
+
+        // Load tickets
+        async function loadTickets() {
+            showLoading('Loading tickets...');
+            try {
+                const status = document.getElementById('statusFilter').value;
+                const params = status ? `?status=${status}` : '';
+                
+                const response = await fetch(`/api/customer/support/tickets${params}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to load tickets');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayTickets(data.tickets || []);
+                } else {
+                    showError(data.message || 'Failed to load tickets');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error loading tickets');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load ticket statistics
+        async function loadTicketStatistics() {
+            try {
+                const response = await fetch('/api/customer/support/tickets/statistics', {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.statistics) {
+                        updateStatistics(data.statistics);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading ticket statistics:', error);
+            }
+        }
+
+        // Display tickets
+        function displayTickets(tickets) {
+            const tbody = document.getElementById('ticketsTableBody');
+            
+            if (tickets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2"></i>
+                            <p>No tickets found</p>
+                            <button onclick="showCreateTicketModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                Create Your First Ticket
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = tickets.map(ticket => {
+                const date = new Date(ticket.createdAt);
+                const statusClass = getStatusClass(ticket.status);
+                const priorityClass = getPriorityClass(ticket.priority);
+                const categoryClass = getCategoryClass(ticket.category);
+                
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                            ${ticket.ticketNumber}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            <div class="font-medium">${ticket.subject}</div>
+                            <div class="text-xs text-gray-500 mt-1">${ticket.description.substring(0, 100)}${ticket.description.length > 100 ? '...' : ''}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${categoryClass}">
+                                ${formatCategory(ticket.category)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${priorityClass}">
+                                ${ticket.priority}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                                ${formatStatus(ticket.status)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${date.toLocaleDateString('en-ZA')}<br>
+                            <span class="text-xs">${date.toLocaleTimeString('en-ZA')}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <button onclick="viewTicketDetails(${ticket.id})" class="text-blue-600 hover:text-blue-900 mr-3">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update statistics
+        function updateStatistics(stats) {
+            document.getElementById('totalTickets').textContent = stats.totalTickets || 0;
+            document.getElementById('openTickets').textContent = stats.openTickets || 0;
+            document.getElementById('inProgressTickets').textContent = stats.inProgressTickets || 0;
+            document.getElementById('resolvedTickets').textContent = stats.resolvedTickets || 0;
+        }
+
+        // Create ticket
+        function showCreateTicketModal() {
+            document.getElementById('createTicketModal').classList.remove('hidden');
+        }
+
+        function closeCreateTicketModal() {
+            document.getElementById('createTicketModal').classList.add('hidden');
+            document.getElementById('createTicketForm').reset();
+            document.getElementById('createTicketError').classList.add('hidden');
+        }
+
+        document.getElementById('createTicketForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const subject = document.getElementById('ticketSubject').value;
+            const description = document.getElementById('ticketDescription').value;
+            const category = document.getElementById('ticketCategory').value;
+            const priority = document.getElementById('ticketPriority').value;
+
+            showLoading('Creating ticket...');
+            try {
+                const response = await fetch('/api/customer/support/tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        subject: subject,
+                        description: description,
+                        category: category,
+                        priority: priority
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showSuccess('Ticket created successfully');
+                    closeCreateTicketModal();
+                    loadTickets();
+                    loadTicketStatistics();
+                } else {
+                    const errorDiv = document.getElementById('createTicketError');
+                    errorDiv.textContent = data.message || 'Failed to create ticket';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error creating ticket');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // View ticket details
+        async function viewTicketDetails(ticketId) {
+            showLoading('Loading ticket details...');
+            try {
+                const response = await fetch(`/api/customer/support/tickets/${ticketId}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    await handleApiError(response, 'Failed to load ticket details');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayTicketDetails(data.ticket);
+                    document.getElementById('ticketDetailsModal').classList.remove('hidden');
+                } else {
+                    showError(data.message || 'Failed to load ticket details');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error loading ticket details');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayTicketDetails(ticket) {
+            const content = document.getElementById('ticketDetailsContent');
+            const date = new Date(ticket.createdAt);
+            const updatedDate = ticket.updatedAt ? new Date(ticket.updatedAt) : null;
+            const resolvedDate = ticket.resolvedAt ? new Date(ticket.resolvedAt) : null;
+            
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Ticket Number</label>
+                            <p class="text-lg font-mono text-gray-900">${ticket.ticketNumber}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Status</label>
+                            <p><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(ticket.status)}">${formatStatus(ticket.status)}</span></p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Category</label>
+                            <p><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getCategoryClass(ticket.category)}">${formatCategory(ticket.category)}</span></p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Priority</label>
+                            <p><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(ticket.priority)}">${ticket.priority}</span></p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Subject</label>
+                        <p class="text-lg text-gray-900">${ticket.subject}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Description</label>
+                        <div class="mt-2 p-4 bg-gray-50 rounded-lg">
+                            <p class="text-gray-900 whitespace-pre-wrap">${ticket.description}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Created</label>
+                            <p class="text-gray-900">${date.toLocaleString('en-ZA')}</p>
+                        </div>
+                        ${updatedDate ? `
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Last Updated</label>
+                            <p class="text-gray-900">${updatedDate.toLocaleString('en-ZA')}</p>
+                        </div>
+                        ` : ''}
+                        ${resolvedDate ? `
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Resolved</label>
+                            <p class="text-gray-900">${resolvedDate.toLocaleString('en-ZA')}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${ticket.resolution ? `
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Resolution</label>
+                        <div class="mt-2 p-4 bg-green-50 rounded-lg">
+                            <p class="text-green-900 whitespace-pre-wrap">${ticket.resolution}</p>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${ticket.assignedTo ? `
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Assigned To</label>
+                        <p class="text-gray-900">${ticket.assignedTo.name} (${ticket.assignedTo.email})</p>
+                    </div>
+                    ` : ''}
+                    
+                    ${ticket.relatedBooking ? `
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Related Booking</label>
+                        <p class="text-gray-900">${ticket.relatedBooking.bookingNumber}</p>
+                    </div>
+                    ` : ''}
+                    
+                    ${ticket.relatedShipment ? `
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Related Shipment</label>
+                        <p class="text-gray-900">${ticket.relatedShipment.trackingNumber}</p>
+                    </div>
+                    ` : ''}
+                    
+                    ${ticket.status !== 'RESOLVED' && ticket.status !== 'CLOSED' ? `
+                    <div class="pt-4 border-t">
+                        <h4 class="font-semibold text-gray-900 mb-3">Add Comment</h4>
+                        <textarea id="ticketComment" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md mb-3" placeholder="Add a comment or update..."></textarea>
+                        <button onclick="addTicketComment(${ticket.id})" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            <i class="fas fa-comment mr-2"></i>Add Comment
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function closeTicketDetailsModal() {
+            document.getElementById('ticketDetailsModal').classList.add('hidden');
+        }
+
+        async function addTicketComment(ticketId) {
+            const comment = document.getElementById('ticketComment').value;
+            if (!comment || comment.trim().length === 0) {
+                showError('Please enter a comment');
+                return;
+            }
+
+            showLoading('Adding comment...');
+            try {
+                const response = await fetch(`/api/customer/support/tickets/${ticketId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ comment: comment })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showSuccess('Comment added successfully');
+                    document.getElementById('ticketComment').value = '';
+                    viewTicketDetails(ticketId); // Reload ticket details
+                    loadTickets(); // Refresh list
+                } else {
+                    showError(data.message || 'Failed to add comment');
+                }
+            } catch (error) {
+                await handleApiError(error, 'Error adding comment');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Helper functions
+        function getStatusClass(status) {
+            const classes = {
+                'OPEN': 'bg-yellow-100 text-yellow-800',
+                'IN_PROGRESS': 'bg-blue-100 text-blue-800',
+                'RESOLVED': 'bg-green-100 text-green-800',
+                'CLOSED': 'bg-gray-100 text-gray-800',
+                'CANCELLED': 'bg-red-100 text-red-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getPriorityClass(priority) {
+            const classes = {
+                'LOW': 'bg-gray-100 text-gray-800',
+                'MEDIUM': 'bg-blue-100 text-blue-800',
+                'HIGH': 'bg-orange-100 text-orange-800',
+                'URGENT': 'bg-red-100 text-red-800'
+            };
+            return classes[priority] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getCategoryClass(category) {
+            const classes = {
+                'GENERAL': 'bg-gray-100 text-gray-800',
+                'PACKAGE_TRACKING': 'bg-blue-100 text-blue-800',
+                'PAYMENT': 'bg-green-100 text-green-800',
+                'DELIVERY_ISSUE': 'bg-orange-100 text-orange-800',
+                'DAMAGE_CLAIM': 'bg-red-100 text-red-800',
+                'REFUND': 'bg-purple-100 text-purple-800',
+                'TECHNICAL': 'bg-indigo-100 text-indigo-800',
+                'OTHER': 'bg-gray-100 text-gray-800'
+            };
+            return classes[category] || 'bg-gray-100 text-gray-800';
+        }
+
+        function formatStatus(status) {
+            return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function formatCategory(category) {
+            return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function getToken() {
+            return localStorage.getItem('token') || 
+                   sessionStorage.getItem('token') || 
+                   localStorage.getItem('jwtToken') || 
+                   sessionStorage.getItem('jwtToken') || '';
+        }
+
+        // Close modals when clicking outside
+        document.getElementById('createTicketModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCreateTicketModal();
+            }
+        });
+
+        document.getElementById('ticketDetailsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTicketDetailsModal();
+            }
+        });
+    </script>
+</body>
+</html>
+
