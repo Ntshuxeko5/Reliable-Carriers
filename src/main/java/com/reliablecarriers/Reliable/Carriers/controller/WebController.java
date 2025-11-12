@@ -146,16 +146,16 @@ public class WebController {
     public String login(Model model) {
         try {
             List<Map<String, Object>> navLinks = createPublicNavLinks();
-            if (navLinks != null && !navLinks.isEmpty()) {
-                model.addAttribute("navLinks", navLinks);
-            }
+            // Always add navLinks to model (even if null) to avoid Thymeleaf template errors
+            model.addAttribute("navLinks", navLinks != null && !navLinks.isEmpty() ? navLinks : null);
             // Simple login page - no authentication check needed
             return "login";
         } catch (Exception e) {
             // If there's an error creating nav links, still show the page with default navigation
             // The navbar fragment will use default links if navLinks is null
             logger.error("Error loading login page: {}", e.getMessage(), e);
-            // Don't add navLinks to model - let template use default navigation
+            // Explicitly set navLinks to null to avoid template errors
+            model.addAttribute("navLinks", null);
             return "login";
         }
     }
@@ -170,16 +170,16 @@ public class WebController {
     public String register(Model model) {
         try {
             List<Map<String, Object>> navLinks = createPublicNavLinks();
-            if (navLinks != null && !navLinks.isEmpty()) {
-                model.addAttribute("navLinks", navLinks);
-            }
+            // Always add navLinks to model (even if null) to avoid Thymeleaf template errors
+            model.addAttribute("navLinks", navLinks != null && !navLinks.isEmpty() ? navLinks : null);
             // Simple register page - no authentication check needed
             return "register";
         } catch (Exception e) {
             // If there's an error creating nav links, still show the page with default navigation
             // The navbar fragment will use default links if navLinks is null
             logger.error("Error loading register page: {}", e.getMessage(), e);
-            // Don't add navLinks to model - let template use default navigation
+            // Explicitly set navLinks to null to avoid template errors
+            model.addAttribute("navLinks", null);
             return "register";
         }
     }
