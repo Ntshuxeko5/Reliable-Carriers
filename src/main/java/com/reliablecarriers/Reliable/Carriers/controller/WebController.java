@@ -110,6 +110,18 @@ public class WebController {
         apiKeys.put("active", "api-keys".equals(activePage));
         links.add(apiKeys);
         
+        Map<String, Object> support = new HashMap<>();
+        support.put("label", "Support");
+        support.put("url", "/customer/support");
+        support.put("active", "support".equals(activePage));
+        links.add(support);
+        
+        Map<String, Object> loginHistory = new HashMap<>();
+        loginHistory.put("label", "Login History");
+        loginHistory.put("url", "/customer/login-history");
+        loginHistory.put("active", "login-history".equals(activePage));
+        links.add(loginHistory);
+        
         Map<String, Object> logout = new HashMap<>();
         logout.put("label", "Logout");
         logout.put("url", "/logout");

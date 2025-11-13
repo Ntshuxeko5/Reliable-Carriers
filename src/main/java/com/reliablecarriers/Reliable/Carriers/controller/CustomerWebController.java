@@ -34,6 +34,62 @@ public class CustomerWebController {
         this.authService = authService;
     }
 
+    // Helper method to create navbar links for business pages
+    private List<Map<String, Object>> createBusinessNavLinks(String activePage) {
+        List<Map<String, Object>> links = new ArrayList<>();
+        
+        Map<String, Object> dashboard = new HashMap<>();
+        dashboard.put("label", "Dashboard");
+        dashboard.put("url", "/business/dashboard");
+        dashboard.put("active", "dashboard".equals(activePage));
+        links.add(dashboard);
+        
+        Map<String, Object> analytics = new HashMap<>();
+        analytics.put("label", "Analytics");
+        analytics.put("url", "/business/analytics");
+        analytics.put("active", "analytics".equals(activePage));
+        links.add(analytics);
+        
+        Map<String, Object> invoices = new HashMap<>();
+        invoices.put("label", "Invoices");
+        invoices.put("url", "/customer/invoices");
+        invoices.put("active", "invoices".equals(activePage));
+        links.add(invoices);
+        
+        Map<String, Object> webhooks = new HashMap<>();
+        webhooks.put("label", "Webhooks");
+        webhooks.put("url", "/customer/webhooks");
+        webhooks.put("active", "webhooks".equals(activePage));
+        links.add(webhooks);
+        
+        Map<String, Object> apiKeys = new HashMap<>();
+        apiKeys.put("label", "API Keys");
+        apiKeys.put("url", "/customer/api-keys");
+        apiKeys.put("active", "api-keys".equals(activePage));
+        links.add(apiKeys);
+        
+        Map<String, Object> support = new HashMap<>();
+        support.put("label", "Support");
+        support.put("url", "/customer/support");
+        support.put("active", "support".equals(activePage));
+        links.add(support);
+        
+        Map<String, Object> loginHistory = new HashMap<>();
+        loginHistory.put("label", "Login History");
+        loginHistory.put("url", "/customer/login-history");
+        loginHistory.put("active", "login-history".equals(activePage));
+        links.add(loginHistory);
+        
+        Map<String, Object> logout = new HashMap<>();
+        logout.put("label", "Logout");
+        logout.put("url", "/logout");
+        logout.put("active", false);
+        logout.put("id", "logoutBtn");
+        links.add(logout);
+        
+        return links;
+    }
+
     // Helper method to create navbar links for customer pages
     private List<Map<String, Object>> createCustomerNavLinks(String activePage) {
         List<Map<String, Object>> links = new ArrayList<>();
@@ -857,61 +913,98 @@ public class CustomerWebController {
         return "customer/contact";
     }
 
-    // Analytics page
+    // Analytics page - BUSINESS ONLY (redirects to business analytics)
     @GetMapping("/analytics")
     public String analytics(Model model) {
-        model.addAttribute("navLinks", createCustomerNavLinks("analytics"));
         try {
-            // Get current user information
             User currentUser = authService.getCurrentUser();
             if (currentUser != null) {
-                model.addAttribute("isAuthenticated", true);
-                model.addAttribute("userName", currentUser.getFirstName());
-                model.addAttribute("userEmail", currentUser.getEmail());
-                model.addAttribute("user", currentUser);
-                model.addAttribute("customerTier", currentUser.getCustomerTier());
-                return "customer/analytics";
+                // Check if user is a business - redirect to business analytics
+                if (currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
+                    return "redirect:/business/analytics";
+                }
             }
         } catch (Exception e) {
-            // If authentication fails, redirect to login
+            // If error, redirect to dashboard
         }
-        
-        // Redirect to login if not authenticated
-        return "redirect:/login";
+        // Regular customers don't have analytics - redirect to dashboard
+        return "redirect:/customer/dashboard";
     }
 
-    // Support tickets page
+    // Support tickets page - BUSINESS ONLY
     @GetMapping("/support")
     public String supportTickets(Model model) {
-        model.addAttribute("navLinks", createCustomerNavLinks("support"));
         try {
             User currentUser = authService.getCurrentUser();
-            if (currentUser != null) {
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Check if user is a business
+            if (currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
+                model.addAttribute("navLinks", createBusinessNavLinks("support"));
                 model.addAttribute("user", currentUser);
                 model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
                 model.addAttribute("userEmail", currentUser.getEmail());
+                return "business/support";
+            } else {
+                // Regular customers don't have access to support page
+                return "redirect:/customer/dashboard";
             }
         } catch (Exception e) {
-            // User not authenticated or error getting user
+            return "redirect:/login";
         }
-        return "customer/support";
     }
 
-    // Login history page
+    // Login history page - BUSINESS ONLY
     @GetMapping("/login-history")
     public String loginHistory(Model model) {
-        model.addAttribute("navLinks", createCustomerNavLinks("login-history"));
         try {
             User currentUser = authService.getCurrentUser();
-            if (currentUser != null) {
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Check if user is a business
+            if (currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
+                model.addAttribute("navLinks", createBusinessNavLinks("login-history"));
                 model.addAttribute("user", currentUser);
                 model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
                 model.addAttribute("userEmail", currentUser.getEmail());
+                return "business/login-history";
+            } else {
+                // Regular customers don't have access to login history page
+                return "redirect:/customer/dashboard";
             }
         } catch (Exception e) {
-            // User not authenticated or error getting user
+            return "redirect:/login";
         }
-        return "customer/login-history";
+    }
+
+    // Tier-aware tracking page - BUSINESS ONLY
+    @GetMapping("/tier-aware-track")
+    public String tierAwareTrack(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Check if user is a business
+            if (currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
+                model.addAttribute("navLinks", createBusinessNavLinks("tier-aware-track"));
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("customerTier", currentUser.getCustomerTier());
+                return "business/tier-aware-track";
+            } else {
+                // Regular customers don't have access to tier-aware tracking
+                return "redirect:/customer/track";
+            }
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
     }
 
     // Profile page

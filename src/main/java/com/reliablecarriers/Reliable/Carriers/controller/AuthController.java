@@ -1046,6 +1046,10 @@ public class AuthController {
                                    (authenticatedUser.getPhone() != null && !authenticatedUser.getPhone().isEmpty());
             
             if (has2faEnabled) {
+                // Clear authentication from SecurityContext - user must complete 2FA first
+                // This prevents users from accessing protected resources before completing 2FA
+                SecurityContextHolder.clearContext();
+                
                 // Present 2FA stage
                 return ResponseEntity.ok(Map.of(
                         "requires2fa", true,
@@ -1188,6 +1192,10 @@ public class AuthController {
             }
 
             // For staff logins, require two-factor authentication as well.
+            // Clear authentication from SecurityContext - user must complete 2FA first
+            // This prevents users from accessing protected resources before completing 2FA
+            SecurityContextHolder.clearContext();
+            
             // Return a requires2fa payload so the client can initiate method-based token sending
             // or prompt for TOTP if enabled. After verifying via /api/auth/2fa/verify-method or /2fa/verify,
             // the server will issue the JWT/session.
