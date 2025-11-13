@@ -490,7 +490,7 @@ public class CustomerPackageController {
         try {
             // Debug logging to help diagnose client/server auth issues
             try {
-                javax.servlet.http.HttpServletRequest req = ((org.springframework.web.context.request.ServletRequestAttributes)
+                jakarta.servlet.http.HttpServletRequest req = ((org.springframework.web.context.request.ServletRequestAttributes)
                         org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getRequest();
                 String authHeader = req.getHeader("Authorization");
                 System.out.println("[DEBUG] /api/customer/quote/save called. Authorization header=" + authHeader);

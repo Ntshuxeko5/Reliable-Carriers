@@ -7,6 +7,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Map;
@@ -30,7 +31,7 @@ public class GoogleMapsService {
         System.out.println("Google Maps API key configured, making API call...");
         
         try {
-            String url = UriComponentsBuilder.fromHttpUrl(DISTANCE_MATRIX_URL)
+            String url = UriComponentsBuilder.fromUriString(DISTANCE_MATRIX_URL)
                     .queryParam("origins", origin)
                     .queryParam("destinations", destination)
                     .queryParam("units", "metric")
@@ -41,9 +42,12 @@ public class GoogleMapsService {
             HttpHeaders headers = new HttpHeaders();
             HttpEntity<String> entity = new HttpEntity<>(headers);
             
-            @SuppressWarnings("unchecked")
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.GET, entity, 
-                (Class<Map<String, Object>>) (Class<?>) Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url, 
+                HttpMethod.GET, 
+                entity, 
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
             Map<String, Object> responseBody = response.getBody();
             
             if (responseBody != null && "OK".equals(responseBody.get("status"))) {
@@ -67,7 +71,7 @@ public class GoogleMapsService {
         }
         
         try {
-            String url = UriComponentsBuilder.fromHttpUrl(DIRECTIONS_URL)
+            String url = UriComponentsBuilder.fromUriString(DIRECTIONS_URL)
                     .queryParam("origin", origin)
                     .queryParam("destination", destination)
                     .queryParam("units", "metric")
@@ -78,9 +82,12 @@ public class GoogleMapsService {
             HttpHeaders headers = new HttpHeaders();
             HttpEntity<String> entity = new HttpEntity<>(headers);
             
-            @SuppressWarnings("unchecked")
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.GET, entity, 
-                (Class<Map<String, Object>>) (Class<?>) Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url, 
+                HttpMethod.GET, 
+                entity, 
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
             Map<String, Object> responseBody = response.getBody();
             
             if (responseBody != null && "OK".equals(responseBody.get("status"))) {
