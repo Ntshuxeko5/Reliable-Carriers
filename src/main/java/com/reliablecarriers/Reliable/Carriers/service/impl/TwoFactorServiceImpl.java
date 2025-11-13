@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Optional;
 
 @Service
 public class TwoFactorServiceImpl implements TwoFactorService {
@@ -128,20 +129,21 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         }
         
         // Normalize the token: trim whitespace and ensure it's a 6-digit string
-        String normalizedToken = token.trim();
+        String cleanedToken = token.trim();
         
         // Remove any non-numeric characters (spaces, dashes, etc.)
-        normalizedToken = normalizedToken.replaceAll("[^0-9]", "");
+        cleanedToken = cleanedToken.replaceAll("[^0-9]", "");
         
         // If token is numeric, ensure it's exactly 6 digits with leading zeros
+        String normalizedToken;
         try {
-            if (normalizedToken.isEmpty()) {
+            if (cleanedToken.isEmpty()) {
                 logger.warn("Token is empty after normalization");
                 return false;
             }
             
             // Parse as integer to remove any leading zeros that might cause issues
-            int tokenInt = Integer.parseInt(normalizedToken);
+            int tokenInt = Integer.parseInt(cleanedToken);
             
             // Ensure it's a valid 6-digit code (0-999999)
             if (tokenInt < 0 || tokenInt > 999999) {
@@ -153,49 +155,60 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             normalizedToken = String.format("%06d", tokenInt);
         } catch (NumberFormatException e) {
             // Token is not numeric, use as-is (shouldn't happen but handle gracefully)
-            logger.warn("Token is not numeric: {}", normalizedToken);
+            logger.warn("Token is not numeric: {}", cleanedToken);
             // If it's already 6 characters, use it as-is
-            if (normalizedToken.length() != 6) {
+            if (cleanedToken.length() != 6) {
                 return false;
             }
+            normalizedToken = cleanedToken;
         }
         
-        logger.debug("Verifying token for user: {}, normalized token: {}", user.getEmail(), normalizedToken);
+        // Make final for use in lambda
+        final String finalNormalizedToken = normalizedToken;
         
-        // Try to find the token with normalized value
-        var found = tokenRepository.findByUserAndTokenAndUsedFalse(user, normalizedToken);
+        logger.debug("Verifying token for user: {}, normalized token: {}", user.getEmail(), finalNormalizedToken);
         
-        if (found.isEmpty()) {
-            logger.warn("2FA TOKEN NOT FOUND - User: {}, Entered Token: {}", user.getEmail(), normalizedToken);
+        Date now = new Date();
+        
+        // Try to find a valid (unused and not expired) token in a single query
+        var found = tokenRepository.findValidTokenForUser(user, finalNormalizedToken, now);
+        
+        if (found.isPresent()) {
+            // Token is valid - mark as used
+            TwoFactorToken t = found.get();
+            t.setUsed(true);
+            tokenRepository.save(t);
+            logger.info("2FA TOKEN VERIFIED SUCCESSFULLY - User: {}, Token: {}", user.getEmail(), finalNormalizedToken);
+            return true;
+        }
+        
+        // Token not found or expired - check what happened for better error messages
+        var allTokens = tokenRepository.findByUserAndUsedFalseOrderByExpiresAtDesc(user);
+        
+        if (!allTokens.isEmpty()) {
+            // Check if token exists but is expired
+            Optional<TwoFactorToken> expiredToken = allTokens.stream()
+                .filter(t -> t.getToken().equals(finalNormalizedToken))
+                .findFirst();
             
-            // Also check if there are any unused tokens for this user (for debugging)
-            var allTokens = tokenRepository.findByUserAndUsedFalseOrderByExpiresAtDesc(user);
-            if (!allTokens.isEmpty()) {
-                logger.info("2FA VERIFICATION FAILED - User: {}, Entered: {}, Available tokens:", user.getEmail(), normalizedToken);
-                for (TwoFactorToken t : allTokens) {
-                    logger.info("  Expected Token: {}, Expires: {}, Used: {}", 
-                        t.getToken(), t.getExpiresAt(), t.isUsed());
-                }
-            } else {
-                logger.warn("2FA VERIFICATION FAILED - User: {}, Entered: {}, No unused tokens found", 
-                    user.getEmail(), normalizedToken);
+            if (expiredToken.isPresent()) {
+                TwoFactorToken t = expiredToken.get();
+                logger.warn("2FA TOKEN EXPIRED - User: {}, Token: {}, Expires: {}, Current: {}", 
+                    user.getEmail(), finalNormalizedToken, t.getExpiresAt(), now);
+                return false;
             }
-            return false;
+            
+            // Token doesn't match any existing token
+            logger.warn("2FA TOKEN NOT FOUND - User: {}, Entered Token: {}, Available tokens:", user.getEmail(), finalNormalizedToken);
+            for (TwoFactorToken t : allTokens) {
+                logger.info("  Expected Token: {}, Expires: {}, Used: {}", 
+                    t.getToken(), t.getExpiresAt(), t.isUsed());
+            }
+        } else {
+            logger.warn("2FA VERIFICATION FAILED - User: {}, Entered: {}, No unused tokens found. User may need to request a new code.", 
+                user.getEmail(), finalNormalizedToken);
         }
         
-        TwoFactorToken t = found.get();
-        
-        // Check expiration
-        if (t.getExpiresAt() != null && t.getExpiresAt().before(new Date())) {
-            logger.warn("2FA TOKEN EXPIRED - User: {}, Token: {}, Expires: {}, Current: {}", 
-                user.getEmail(), normalizedToken, t.getExpiresAt(), new Date());
-            return false;
-        }
-        
-        // Mark token as used
-        t.setUsed(true);
-        tokenRepository.save(t);
-        logger.info("2FA TOKEN VERIFIED SUCCESSFULLY - User: {}, Token: {}", user.getEmail(), normalizedToken);
-        return true;
+        return false;
     }
 }

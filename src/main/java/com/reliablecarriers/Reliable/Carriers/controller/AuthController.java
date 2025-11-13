@@ -1027,15 +1027,18 @@ public class AuthController {
             }
 
             // Check if user has verified their email - block login if not verified
-            if (authenticatedUser.getEmailVerified() == null || !authenticatedUser.getEmailVerified()) {
-                logger.warn("Login attempt by unverified user: {}", authenticatedUser.getEmail());
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of(
-                        "success", false,
-                        "message", "Please verify your email address before logging in. Check your inbox for the verification code.",
-                        "requiresVerification", true,
-                        "email", authenticatedUser.getEmail()
-                    ));
+            // EXCEPT for admins (they're trusted accounts created manually)
+            if (authenticatedUser.getRole() != UserRole.ADMIN) {
+                if (authenticatedUser.getEmailVerified() == null || !authenticatedUser.getEmailVerified()) {
+                    logger.warn("Login attempt by unverified user: {}", authenticatedUser.getEmail());
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                            "success", false,
+                            "message", "Please verify your email address before logging in. Check your inbox for the verification code.",
+                            "requiresVerification", true,
+                            "email", authenticatedUser.getEmail()
+                        ));
+                }
             }
 
             // For customers, check if 2FA is enabled
@@ -1170,15 +1173,18 @@ public class AuthController {
             }
 
             // Check if user has verified their email - block login if not verified
-            if (authenticatedUser.getEmailVerified() == null || !authenticatedUser.getEmailVerified()) {
-                logger.warn("Staff login attempt by unverified user: {}", authenticatedUser.getEmail());
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of(
-                        "success", false,
-                        "message", "Please verify your email address before logging in. Check your inbox for the verification code.",
-                        "requiresVerification", true,
-                        "email", authenticatedUser.getEmail()
-                    ));
+            // EXCEPT for admins (they're trusted accounts created manually)
+            if (authenticatedUser.getRole() != UserRole.ADMIN) {
+                if (authenticatedUser.getEmailVerified() == null || !authenticatedUser.getEmailVerified()) {
+                    logger.warn("Staff login attempt by unverified user: {}", authenticatedUser.getEmail());
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                            "success", false,
+                            "message", "Please verify your email address before logging in. Check your inbox for the verification code.",
+                            "requiresVerification", true,
+                            "email", authenticatedUser.getEmail()
+                        ));
+                }
             }
 
             // For staff logins, require two-factor authentication as well.
