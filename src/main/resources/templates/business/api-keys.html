@@ -19,25 +19,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <a href="/customer/dashboard" class="text-xl font-bold text-blue-600">
-                        <i class="fas fa-truck mr-2"></i>Reliable Carriers
-                    </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="/customer/dashboard" class="text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-home mr-1"></i>Dashboard
-                    </a>
-                    <a href="/logout" class="text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
@@ -312,8 +294,4 @@
     </script>
 </body>
 </html>
-
-
-
-
 
