@@ -52,10 +52,8 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         // generate numeric 6-digit token
         String token = String.format("%06d", new SecureRandom().nextInt(1_000_000));
         logger.debug("Generated 2FA token for user: {}", user.getEmail());
-        // Log token at INFO level if debug mode is enabled (so it shows in production logs)
-        if (debugMode) {
-            logger.info("2FA TOKEN GENERATED - User: {}, Token: {}, Method: {}", user.getEmail(), token, method);
-        }
+        // Always log token at INFO level so it's visible in production logs (for debugging email/SMS issues)
+        logger.info("2FA TOKEN GENERATED - User: {}, Token: {}, Method: {}", user.getEmail(), token, method);
 
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.MINUTE, ttlMinutes);
@@ -73,11 +71,7 @@ public class TwoFactorServiceImpl implements TwoFactorService {
                 try {
                     smsService.sendSms(user.getPhone(), message);
                     logger.info("2FA SMS sent successfully to phone: {}", user.getPhone());
-                    // Log token at INFO level if debug mode is enabled
-                    if (debugMode) {
-                        logger.info("2FA TOKEN (DEBUG MODE) - User: {}, Token: {} - SMS sent successfully", 
-                                   user.getEmail(), token);
-                    }
+                    // Token already logged above, no need to log again
                 } catch (Exception e) {
                     logger.warn("Failed to send 2FA SMS to {}: {}, falling back to email", 
                                 user.getPhone(), e.getMessage());
@@ -88,9 +82,11 @@ public class TwoFactorServiceImpl implements TwoFactorService {
                         // Fallback to email if SMS fails
                         emailService.sendSimpleEmail(user.getEmail(), "Your verification code", message);
                         logger.info("2FA email sent successfully as fallback for user: {}", user.getEmail());
+                        // Token already logged above
                     } catch (Exception emailException) {
                         logger.error("Both SMS and email failed for user {}: {}", 
                                    user.getEmail(), emailException.getMessage(), emailException);
+                        // Token already logged above, but log again for visibility when both fail
                         logger.info("2FA TOKEN (BOTH FAILED) - User: {}, Token: {}", user.getEmail(), token);
                     }
                 }
@@ -99,15 +95,12 @@ public class TwoFactorServiceImpl implements TwoFactorService {
                 try {
                     emailService.sendSimpleEmail(user.getEmail(), "Your verification code", message);
                     logger.info("2FA email sent successfully to user: {}", user.getEmail());
-                    // Log token at INFO level if debug mode is enabled
-                    if (debugMode) {
-                        logger.info("2FA TOKEN (DEBUG MODE) - User: {}, Token: {} - Email sent successfully", 
-                                   user.getEmail(), token);
-                    }
+                    // Token already logged above
                 } catch (Exception emailException) {
                     logger.error("Email failed for user {}: {}", user.getEmail(), emailException.getMessage(), emailException);
-                    // Always log token when email fails
-                    logger.info("2FA TOKEN (EMAIL FAILED) - User: {}, Token: {}", user.getEmail(), token);
+                    // Token already logged above, but log again for visibility when email fails
+                    logger.info("2FA TOKEN (EMAIL FAILED) - User: {}, Token: {}, Error: {}", 
+                               user.getEmail(), token, emailException.getMessage());
                 }
             }
         } else {
@@ -116,14 +109,10 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             try {
                 emailService.sendSimpleEmail(user.getEmail(), "Your verification code", message);
                 logger.info("2FA email sent successfully to user: {}", user.getEmail());
-                // Log token at INFO level if debug mode is enabled (even when email succeeds)
-                if (debugMode) {
-                    logger.info("2FA TOKEN (DEBUG MODE) - User: {}, Token: {} - Email sent successfully", 
-                               user.getEmail(), token);
-                }
+                // Token already logged above
             } catch (Exception e) {
                 logger.error("Failed to send 2FA email to {}: {}", user.getEmail(), e.getMessage(), e);
-                // Always log token when email fails (so user can see it in logs)
+                // Token already logged above, but log again for visibility when email fails
                 logger.info("2FA TOKEN (EMAIL FAILED) - User: {}, Token: {}, Error: {}", 
                            user.getEmail(), token, e.getMessage());
                 // Note: Token is still saved in database, user can use resend functionality
