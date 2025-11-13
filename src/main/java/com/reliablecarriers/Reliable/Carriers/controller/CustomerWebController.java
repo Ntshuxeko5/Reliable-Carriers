@@ -4,7 +4,6 @@ import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageResponse;
 import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.service.AuthService;
 import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -28,7 +27,6 @@ public class CustomerWebController {
     private final CustomerPackageService customerPackageService;
     private final AuthService authService;
 
-    @Autowired
     public CustomerWebController(CustomerPackageService customerPackageService, AuthService authService) {
         this.customerPackageService = customerPackageService;
         this.authService = authService;
@@ -590,6 +588,28 @@ public class CustomerWebController {
         return "customer/store";
     }
 
+    //Track Package
+   @GetMapping("/tier-aware-track")
+public String showTierAwareTrackPage(Model model) {
+    model.addAttribute("navLinks", createCustomerNavLinks());
+    
+    try {
+        User currentUser = authService.getCurrentUser();
+        if (currentUser != null) {
+            model.addAttribute("isAuthenticated", true);
+            model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+        } else {
+            model.addAttribute("isAuthenticated", false);
+        }
+    } catch (Exception e) {
+        model.addAttribute("isAuthenticated", false);
+    }
+
+    // 👇 this must match your file structure
+    return "customer/tier-aware-track";
+}
+
+
     // Package cancellation
     @GetMapping("/cancel")
     public String cancelPackage(Model model) {
@@ -926,4 +946,28 @@ public class CustomerWebController {
         // Redirect to login if not authenticated
         return "redirect:/login";
     }
+    private List<Map<String, String>> createCustomerNavLinks() {
+    List<Map<String, String>> navLinks = new ArrayList<>();
+
+    navLinks.add(Map.of("label", "Dashboard", "url", "/customer/dashboard"));
+    navLinks.add(Map.of("label", "Packages", "url", "/customer/packages"));
+    navLinks.add(Map.of("label", "Track", "url", "/customer/track"));
+    navLinks.add(Map.of("label", "Statistics", "url", "/customer/statistics"));
+    navLinks.add(Map.of("label", "Store", "url", "/customer/store"));
+    navLinks.add(Map.of("label", "Cancel", "url", "/customer/cancel"));
+
+    // Optional: show business-only links if the current user is a business account
+    try {
+        User currentUser = authService.getCurrentUser();
+        if (currentUser != null && Boolean.TRUE.equals(currentUser.getIsBusiness())) {
+            navLinks.add(Map.of("label", "Invoices", "url", "/business/invoices"));
+            navLinks.add(Map.of("label", "Webhooks", "url", "/business/webhooks"));
+        }
+    } catch (Exception e) {
+        // ignore authentication errors for nav bar
+    }
+
+    return navLinks;
+}
+
 }
