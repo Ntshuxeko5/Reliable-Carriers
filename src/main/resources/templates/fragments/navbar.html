@@ -2,163 +2,278 @@
 <!-- Usage: th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}" -->
 <!-- navLinks should be a List<Map<String, String>> where each map has 'label' and 'url' keys -->
 <!-- If navLinks is not provided, uses default public navigation links -->
-<header th:fragment="navbar(navLinks)" class="text-white shadow-lg nav-header" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;">
-    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-4">
-            <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
-                <!-- Company Logo -->
-                <img src="/images/Reliable 1.png" alt="Reliable Carriers Logo - Professional Courier Services" style="height:50px; width:auto;" loading="lazy">
+<header
+  th:fragment="navbar(navLinks)"
+  class="text-white shadow-lg nav-header"
+  style="
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;
+  "
+>
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center py-4">
+      <a
+        href="/"
+        class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300"
+      >
+        <!-- Company Logo -->
+        <img
+          src="/images/Reliable 1.png"
+          alt="Reliable Carriers Logo - Professional Courier Services"
+          style="height: 50px; width: auto"
+          loading="lazy"
+        />
+      </a>
+      <ul class="hidden md:flex space-x-8">
+        <!-- Custom Navigation Links -->
+        <th:block th:if="${navLinks != null and !navLinks.isEmpty()}">
+          <li th:each="link : ${navLinks}" th:if="${link != null}">
+            <a
+              th:href="${link.get('url')}"
+              th:text="${link.get('label')}"
+              th:attr="id=${link.get('id') != null ? link.get('id') : null}"
+              class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              th:classappend="${link.get('active') != null and link.get('active')} ? 'text-reliable-yellow-300 font-bold' : ''"
+            >
             </a>
-            <ul class="hidden md:flex space-x-8">
-                <!-- Custom Navigation Links -->
-                <th:block th:if="${navLinks != null and !navLinks.isEmpty()}">
-                    <li th:each="link : ${navLinks}" th:if="${link != null}">
-                        <a th:href="${link.get('url')}" 
-                           th:text="${link.get('label')}" 
-                           th:attr="id=${link.get('id') != null ? link.get('id') : null}"
-                           class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
-                           th:classappend="${link.get('active') != null and link.get('active')} ? 'text-reliable-yellow-300 font-bold' : ''">
-                        </a>
-                    </li>
-                </th:block>
-                <!-- Default navigation links if navLinks is not provided or empty -->
-                <th:block th:if="${navLinks == null or navLinks.isEmpty()}">
-                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                    <li><a href="/register/business" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Business Solutions</a></li>
-                    <li><a href="/register/driver" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Become a Driver</a></li>
-                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                </th:block>
-                <!-- Dark Mode Toggle -->
-                <li class="flex items-center">
-                    <label class="flex items-center cursor-pointer">
-                        <input type="checkbox" id="darkModeToggle" class="sr-only">
-                        <div class="relative">
-                            <div class="w-12 h-6 bg-gray-600 rounded-full shadow-inner"></div>
-                            <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300 ease-in-out"></div>
-                        </div>
-                        <span class="ml-2 text-white">
-                            <i class="fas fa-moon"></i>
-                        </span>
-                    </label>
-                </li>
-            </ul>
-            <!-- Mobile menu button -->
-            <button class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300" id="mobileMenuBtn">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-        </div>
-        <!-- Mobile menu -->
-        <div class="md:hidden hidden" id="mobileMenu">
-            <ul class="py-4 space-y-4">
-                <!-- Custom Navigation Links for Mobile -->
-                <th:block th:if="${navLinks != null and !navLinks.isEmpty()}">
-                    <li th:each="link : ${navLinks}" th:if="${link != null}">
-                        <a th:href="${link.get('url')}" 
-                           th:text="${link.get('label')}" 
-                           th:attr="id=${link.get('id') != null ? link.get('id') + 'Mobile' : null}"
-                           class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
-                           th:classappend="${link.get('active') != null and link.get('active')} ? 'text-reliable-yellow-300 font-bold' : ''">
-                        </a>
-                    </li>
-                </th:block>
-                <!-- Default navigation links for mobile if navLinks is not provided or empty -->
-                <th:block th:if="${navLinks == null or navLinks.isEmpty()}">
-                    <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
-                    <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                    <li><a href="/register/business" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Business Solutions</a></li>
-                    <li><a href="/register/driver" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Become a Driver</a></li>
-                    <li><a href="/about" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                    <li><a href="/contact" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                    <li class="guest-only"><a href="/login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                    <li class="guest-only"><a href="/register" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                </th:block>
-            </ul>
-        </div>
-    </nav>
+          </li>
+        </th:block>
+        <!-- Default navigation links if navLinks is not provided or empty -->
+        <th:block th:if="${navLinks == null or navLinks.isEmpty()}">
+          <li>
+            <a
+              href="/tracking"
+              class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Track Package</a
+            >
+          </li>
+          <li>
+            <a
+              href="/register/business"
+              class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Business Solutions</a
+            >
+          </li>
+          <li>
+            <a
+              href="/register/driver"
+              class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Become a Driver</a
+            >
+          </li>
+          <li>
+            <a
+              href="/about"
+              class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >About</a
+            >
+          </li>
+          <li>
+            <a
+              href="/contact"
+              class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Contact</a
+            >
+          </li>
+          <li class="guest-only">
+            <a
+              href="/login"
+              class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Login</a
+            >
+          </li>
+          <li class="guest-only">
+            <a
+              href="/register"
+              class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Register</a
+            >
+          </li>
+        </th:block>
+        <!-- Dark Mode Toggle -->
+        <li class="flex items-center">
+          <label class="flex items-center cursor-pointer">
+            <input type="checkbox" id="darkModeToggle" class="sr-only" />
+            <div class="relative">
+              <div class="w-12 h-6 bg-gray-600 rounded-full shadow-inner"></div>
+              <div
+                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300 ease-in-out"
+              ></div>
+            </div>
+            <span class="ml-2 text-white">
+              <i class="fas fa-moon"></i>
+            </span>
+          </label>
+        </li>
+      </ul>
+      <!-- Mobile menu button -->
+      <button
+        class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300"
+        id="mobileMenuBtn"
+      >
+        <i class="fas fa-bars text-xl"></i>
+      </button>
+    </div>
+    <!-- Mobile menu -->
+    <div class="md:hidden hidden" id="mobileMenu">
+      <ul class="py-4 space-y-4">
+        <!-- Custom Navigation Links for Mobile -->
+        <th:block th:if="${navLinks != null and !navLinks.isEmpty()}">
+          <li th:each="link : ${navLinks}" th:if="${link != null}">
+            <a
+              th:href="${link.get('url')}"
+              th:text="${link.get('label')}"
+              th:attr="id=${link.get('id') != null ? link.get('id') + 'Mobile' : null}"
+              class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              th:classappend="${link.get('active') != null and link.get('active')} ? 'text-reliable-yellow-300 font-bold' : ''"
+            >
+            </a>
+          </li>
+        </th:block>
+        <!-- Default navigation links for mobile if navLinks is not provided or empty -->
+        <th:block th:if="${navLinks == null or navLinks.isEmpty()}">
+          <li>
+            <a
+              href="/"
+              class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Home</a
+            >
+          </li>
+          <li>
+            <a
+              href="/tracking"
+              class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Track Package</a
+            >
+          </li>
+          <li>
+            <a
+              href="/register/business"
+              class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Business Solutions</a
+            >
+          </li>
+          <li>
+            <a
+              href="/register/driver"
+              class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Become a Driver</a
+            >
+          </li>
+          <li>
+            <a
+              href="/about"
+              class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >About</a
+            >
+          </li>
+          <li>
+            <a
+              href="/contact"
+              class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Contact</a
+            >
+          </li>
+          <li class="guest-only">
+            <a
+              href="/login"
+              class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Login</a
+            >
+          </li>
+          <li class="guest-only">
+            <a
+              href="/register"
+              class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+              >Register</a
+            >
+          </li>
+        </th:block>
+      </ul>
+    </div>
+  </nav>
 </header>
 
 <script>
-    // Mobile menu toggle
-    document.addEventListener('DOMContentLoaded', function() {
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        if (mobileMenuBtn && mobileMenu) {
-            mobileMenuBtn.addEventListener('click', function() {
-                mobileMenu.classList.toggle('hidden');
-            });
-        }
-        
-        // Dark mode toggle
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        if (darkModeToggle) {
-            darkModeToggle.addEventListener('change', function() {
-                document.documentElement.classList.toggle('dark');
-                localStorage.setItem('darkMode', this.checked);
-            });
-            
-            // Load saved dark mode preference
-            if (localStorage.getItem('darkMode') === 'true') {
-                darkModeToggle.checked = true;
-                document.documentElement.classList.add('dark');
-            }
-        }
-        
-        // Logout button handlers
-        const logoutBtn = document.getElementById('logoutBtn');
-        const logoutBtnMobile = document.getElementById('logoutBtnMobile');
-        
-        function handleLogout(e) {
-            e.preventDefault();
-            // You can customize this logout logic
-            if (confirm('Are you sure you want to logout?')) {
-                window.location.href = '/logout';
-            }
-        }
-        
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', handleLogout);
-        }
-        
-        if (logoutBtnMobile) {
-            logoutBtnMobile.addEventListener('click', handleLogout);
-        }
-        
-        // Session timeout handler - logout after 20 minutes of inactivity
-        let sessionTimeout;
-        let sessionWarningTimeout;
-        const SESSION_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
-        const WARNING_TIME_MS = 18 * 60 * 1000; // Show warning at 18 minutes (2 minutes before timeout)
-        
-        function resetSessionTimer() {
-            // Clear existing timers
-            if (sessionTimeout) clearTimeout(sessionTimeout);
-            if (sessionWarningTimeout) clearTimeout(sessionWarningTimeout);
-            
-            // Set warning timer (at 18 minutes)
-            sessionWarningTimeout = setTimeout(() => {
-                showSessionWarning();
-            }, WARNING_TIME_MS);
-            
-            // Set logout timer (at 20 minutes)
-            sessionTimeout = setTimeout(() => {
-                handleSessionTimeout();
-            }, SESSION_TIMEOUT_MS);
-        }
-        
-        function showSessionWarning() {
-            // Check if user is authenticated
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-            if (!token) return; // Not logged in, no need to warn
-            
-            // Show warning modal
-            const warningModal = document.createElement('div');
-            warningModal.id = 'sessionWarningModal';
-            warningModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
-            warningModal.innerHTML = `
+  // Mobile menu toggle
+  document.addEventListener("DOMContentLoaded", function () {
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const mobileMenu = document.getElementById("mobileMenu");
+
+    if (mobileMenuBtn && mobileMenu) {
+      mobileMenuBtn.addEventListener("click", function () {
+        mobileMenu.classList.toggle("hidden");
+      });
+    }
+
+    // Dark mode toggle
+    const darkModeToggle = document.getElementById("darkModeToggle");
+    if (darkModeToggle) {
+      darkModeToggle.addEventListener("change", function () {
+        document.documentElement.classList.toggle("dark");
+        localStorage.setItem("darkMode", this.checked);
+      });
+
+      // Load saved dark mode preference
+      if (localStorage.getItem("darkMode") === "true") {
+        darkModeToggle.checked = true;
+        document.documentElement.classList.add("dark");
+      }
+    }
+
+    // Logout button handlers
+    const logoutBtn = document.getElementById("logoutBtn");
+    const logoutBtnMobile = document.getElementById("logoutBtnMobile");
+
+    function handleLogout(e) {
+      e.preventDefault();
+      // You can customize this logout logic
+      if (confirm("Are you sure you want to logout?")) {
+        window.location.href = "/index";
+      }
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", handleLogout);
+    }
+
+    if (logoutBtnMobile) {
+      logoutBtnMobile.addEventListener("click", handleLogout);
+    }
+
+    // Session timeout handler - logout after 20 minutes of inactivity
+    let sessionTimeout;
+    let sessionWarningTimeout;
+    const SESSION_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+    const WARNING_TIME_MS = 18 * 60 * 1000; // Show warning at 18 minutes (2 minutes before timeout)
+
+    function resetSessionTimer() {
+      // Clear existing timers
+      if (sessionTimeout) clearTimeout(sessionTimeout);
+      if (sessionWarningTimeout) clearTimeout(sessionWarningTimeout);
+
+      // Set warning timer (at 18 minutes)
+      sessionWarningTimeout = setTimeout(() => {
+        showSessionWarning();
+      }, WARNING_TIME_MS);
+
+      // Set logout timer (at 20 minutes)
+      sessionTimeout = setTimeout(() => {
+        handleSessionTimeout();
+      }, SESSION_TIMEOUT_MS);
+    }
+
+    function showSessionWarning() {
+      // Check if user is authenticated
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return; // Not logged in, no need to warn
+
+      // Show warning modal
+      const warningModal = document.createElement("div");
+      warningModal.id = "sessionWarningModal";
+      warningModal.className =
+        "fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center";
+      warningModal.innerHTML = `
                 <div class="bg-white rounded-lg p-8 max-w-md mx-4 shadow-xl">
                     <div class="text-center">
                         <i class="fas fa-exclamation-triangle text-yellow-500 text-5xl mb-4"></i>
@@ -178,48 +293,57 @@
                     </div>
                 </div>
             `;
-            document.body.appendChild(warningModal);
-            
-            // Handle stay logged in button
-            document.getElementById('stayLoggedInBtn').addEventListener('click', () => {
-                resetSessionTimer();
-                document.body.removeChild(warningModal);
-            });
-            
-            // Handle logout now button
-            document.getElementById('logoutNowBtn').addEventListener('click', () => {
-                handleLogout(new Event('click'));
-            });
-        }
-        
-        function handleSessionTimeout() {
-            // Check if user is authenticated
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-            if (!token) return; // Not logged in
-            
-            // Remove warning modal if it exists
-            const warningModal = document.getElementById('sessionWarningModal');
-            if (warningModal) {
-                document.body.removeChild(warningModal);
-            }
-            
-            // Clear tokens
-            localStorage.removeItem('token');
-            sessionStorage.removeItem('token');
-            localStorage.removeItem('user');
-            
-            // Redirect to login with timeout message
-            window.location.href = '/login?timeout=true';
-        }
-        
-        // Track user activity to reset session timer
-        const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-        activityEvents.forEach(event => {
-            document.addEventListener(event, resetSessionTimer, true);
-        });
-        
-        // Initialize session timer on page load
-        resetSessionTimer();
-    });
-</script>
+      document.body.appendChild(warningModal);
 
+      // Handle stay logged in button
+      document
+        .getElementById("stayLoggedInBtn")
+        .addEventListener("click", () => {
+          resetSessionTimer();
+          document.body.removeChild(warningModal);
+        });
+
+      // Handle logout now button
+      document.getElementById("logoutNowBtn").addEventListener("click", () => {
+        handleLogout(new Event("click"));
+      });
+    }
+
+    function handleSessionTimeout() {
+      // Check if user is authenticated
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) return; // Not logged in
+
+      // Remove warning modal if it exists
+      const warningModal = document.getElementById("sessionWarningModal");
+      if (warningModal) {
+        document.body.removeChild(warningModal);
+      }
+
+      // Clear tokens
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      // Redirect to login with timeout message
+      window.location.href = "/login?timeout=true";
+    }
+
+    // Track user activity to reset session timer
+    const activityEvents = [
+      "mousedown",
+      "mousemove",
+      "keypress",
+      "scroll",
+      "touchstart",
+      "click",
+    ];
+    activityEvents.forEach((event) => {
+      document.addEventListener(event, resetSessionTimer, true);
+    });
+
+    // Initialize session timer on page load
+    resetSessionTimer();
+  });
+</script>
