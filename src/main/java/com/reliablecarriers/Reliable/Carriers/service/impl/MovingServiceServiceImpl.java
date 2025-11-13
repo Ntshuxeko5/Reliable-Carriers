@@ -45,8 +45,15 @@ public class MovingServiceServiceImpl implements MovingServiceService {
         movingService.setPickupAddress(request.getPickupAddress());
         movingService.setDeliveryAddress(request.getDeliveryAddress());
         movingService.setDescription(request.getDescription());
-        movingService.setWeightKg(request.getWeightKg());
+        // Weight is optional - only set if provided
+        if (request.getWeightKg() != null) {
+            movingService.setWeightKg(request.getWeightKg());
+        }
         movingService.setNumberOfItems(request.getNumberOfItems());
+        // New fields for moving services
+        movingService.setNumberOfLoads(request.getNumberOfLoads());
+        movingService.setTruckSize(request.getTruckSize());
+        movingService.setFullMoving(request.getFullMoving());
         movingService.setRequestedDate(request.getRequestedDate());
         movingService.setScheduledDate(request.getScheduledDate());
         movingService.setSpecialInstructions(request.getSpecialInstructions());
@@ -171,8 +178,21 @@ public class MovingServiceServiceImpl implements MovingServiceService {
         movingService.setPickupAddress(request.getPickupAddress());
         movingService.setDeliveryAddress(request.getDeliveryAddress());
         movingService.setDescription(request.getDescription());
-        movingService.setWeightKg(request.getWeightKg());
+        // Weight is optional - only update if provided
+        if (request.getWeightKg() != null) {
+            movingService.setWeightKg(request.getWeightKg());
+        }
         movingService.setNumberOfItems(request.getNumberOfItems());
+        // New fields for moving services
+        if (request.getNumberOfLoads() != null) {
+            movingService.setNumberOfLoads(request.getNumberOfLoads());
+        }
+        if (request.getTruckSize() != null) {
+            movingService.setTruckSize(request.getTruckSize());
+        }
+        if (request.getFullMoving() != null) {
+            movingService.setFullMoving(request.getFullMoving());
+        }
         movingService.setScheduledDate(request.getScheduledDate());
         movingService.setSpecialInstructions(request.getSpecialInstructions());
 

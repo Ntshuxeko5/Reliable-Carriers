@@ -5,78 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moving Services - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'reliable': {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
+                        'reliable-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
+                            800: '#1e3a8a', 900: '#1e40af',
                         },
                         'reliable-yellow': {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            200: '#fed7aa',
-                            300: '#fdba74',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                            800: '#9a3412',
-                            900: '#7c2d12',
-                        }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.5s ease-out',
-                        'bounce-gentle': 'bounceGentle 2s infinite',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(20px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        },
-                        bounceGentle: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-5px)' },
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
                         }
                     }
                 }
             }
         }
     </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
 </head>
-<body class="bg-gray-50 font-sans">
-<!-- Navigation -->
-<div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
+
     <!-- Hero Section -->
-    <section class="relative bg-gradient-to-r from-reliable-700 to-reliable-800 text-white py-20">
-        <div class="absolute inset-0 bg-black opacity-50"></div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">Moving Services</h1>
-            <p class="text-xl md:text-2xl mb-8 opacity-90 animate-slide-up">Professional moving and load transport services with transparent pricing</p>
+    <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                <span class="gradient-text bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">Moving Services</span>
+            </h1>
+            <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+                Professional moving and load transport services with transparent pricing. Book your move today.
+            </p>
         </div>
     </section>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Pricing Information -->
-        <div class="bg-blue-50 border-l-4 border-blue-400 p-6 mb-8 rounded-lg animate-fade-in">
-            <h5 class="text-lg font-bold text-blue-800 mb-3"><i class="fas fa-info-circle mr-2"></i>Our Pricing Structure</h5>
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8 rounded-lg">
+            <h5 class="text-lg font-bold text-blue-800 mb-3">
+                <i class="fas fa-info-circle mr-2"></i>Our Pricing Structure
+            </h5>
             <ul class="text-blue-700 space-y-1">
                 <li><strong>Base Price:</strong> R550 for distances up to 20km</li>
                 <li><strong>Additional Cost:</strong> R25 per kilometer beyond 20km</li>
@@ -87,125 +66,231 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Service Booking Form -->
             <div class="lg:col-span-2">
-                <div class="bg-white rounded-2xl shadow-lg p-8 animate-slide-up">
-                    <h4 class="text-2xl font-bold text-gray-800 mb-6"><i class="fas fa-edit mr-2"></i>Book Moving Service</h4>
+                <div class="glass-effect rounded-2xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                        <i class="fas fa-truck-moving mr-3 gradient-text"></i>Book Moving Service
+                    </h2>
+                    
                     <form id="movingServiceForm" class="space-y-6">
+                        <!-- Service Type -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-list mr-2 text-blue-600"></i>Service Type
+                            </label>
+                            <select id="serviceType" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300">
+                                <option value="">Select Service Type</option>
+                                <option value="MOVING">Moving Service</option>
+                                <option value="LOAD_TRANSPORT">Load Transport</option>
+                                <option value="EXPRESS_DELIVERY">Express Delivery</option>
+                                <option value="SAME_DAY_DELIVERY">Same Day Delivery</option>
+                            </select>
+                        </div>
+
+                        <!-- Pickup and Delivery Addresses -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="serviceType" class="block text-sm font-medium text-gray-700 mb-2">Service Type</label>
-                                <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300" id="serviceType" required>
-                                    <option value="">Select Service Type</option>
-                                    <option value="MOVING">Moving Service</option>
-                                    <option value="LOAD_TRANSPORT">Load Transport</option>
-                                    <option value="EXPRESS_DELIVERY">Express Delivery</option>
-                                    <option value="SAME_DAY_DELIVERY">Same Day Delivery</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>Pickup Address
+                                </label>
+                                <textarea id="pickupAddress" rows="3" required
+                                          placeholder="Enter pickup address"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
                             </div>
                             <div>
-                                <label for="distanceKm" class="block text-sm font-medium text-gray-700 mb-2">Distance (km)</label>
-                                <input type="number" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent transition-all duration-300" id="distanceKm" step="0.1" min="0" required>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Delivery Address
+                                </label>
+                                <textarea id="deliveryAddress" rows="3" required
+                                          placeholder="Enter delivery address"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="pickupAddress" class="form-label">Pickup Address</label>
-                                    <textarea class="form-control" id="pickupAddress" rows="3" required></textarea>
+                        <!-- Distance -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-route mr-2 text-purple-600"></i>Distance (km)
+                            </label>
+                            <input type="number" id="distanceKm" step="0.1" min="0" required
+                                   placeholder="Enter distance in kilometers"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+
+                        <!-- Moving Details -->
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-boxes mr-2 text-orange-600"></i>Moving Details
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Number of Items
+                                    </label>
+                                    <input type="number" id="numberOfItems" min="1" required
+                                           placeholder="How many items?"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Number of Loads
+                                    </label>
+                                    <input type="number" id="numberOfLoads" min="1" required
+                                           placeholder="How many loads?"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="deliveryAddress" class="form-label">Delivery Address</label>
-                                    <textarea class="form-control" id="deliveryAddress" rows="3" required></textarea>
+
+                            <div class="mt-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-4">
+                                    Truck Size
+                                </label>
+                                <select id="truckSize" required
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select Truck Size</option>
+                                    <option value="SMALL">Small Truck (1-2 rooms)</option>
+                                    <option value="MEDIUM">Medium Truck (2-3 rooms)</option>
+                                    <option value="LARGE">Large Truck (3-4 rooms)</option>
+                                    <option value="EXTRA_LARGE">Extra Large Truck (4+ rooms)</option>
+                                </select>
+                            </div>
+
+                            <div class="mt-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-4">
+                                    Moving Type
+                                </label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <label class="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition-all">
+                                        <input type="radio" name="fullMoving" value="true" class="mr-3" required>
+                                        <div>
+                                            <div class="font-medium text-gray-900">Full Moving</div>
+                                            <div class="text-sm text-gray-500">Complete relocation service</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition-all">
+                                        <input type="radio" name="fullMoving" value="false" class="mr-3" required>
+                                        <div>
+                                            <div class="font-medium text-gray-900">Partial Moving</div>
+                                            <div class="text-sm text-gray-500">Selected items only</div>
+                                        </div>
+                                    </label>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="weightKg" class="form-label">Weight (kg)</label>
-                                    <input type="number" class="form-control" id="weightKg" step="0.1" min="0" required>
-                                </div>
+                        <!-- Instructions -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-clipboard-list mr-2 text-indigo-600"></i>Special Instructions
+                            </label>
+                            <textarea id="specialInstructions" rows="4"
+                                      placeholder="Please provide any special instructions, such as:&#10;- Which floor is the pickup/delivery on?&#10;- Are there stairs or elevators?&#10;- Any fragile items?&#10;- Access restrictions?&#10;- Any other important details..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            <p class="mt-2 text-sm text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Include details like floor number, stairs, elevators, fragile items, etc.
+                            </p>
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-align-left mr-2 text-gray-600"></i>Description
+                            </label>
+                            <textarea id="description" rows="3" required
+                                      placeholder="Describe what needs to be moved..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+
+                        <!-- Date Selection -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-calendar mr-2 text-green-600"></i>Requested Date
+                                </label>
+                                <input type="date" id="requestedDate" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="numberOfItems" class="form-label">Number of Items</label>
-                                    <input type="number" class="form-control" id="numberOfItems" min="1" required>
-                                </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-clock mr-2 text-yellow-600"></i>Scheduled Date (Optional)
+                                </label>
+                                <input type="datetime-local" id="scheduledDate"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" rows="3" placeholder="Describe what needs to be moved..." required></textarea>
+                        <!-- Submit Button -->
+                        <div class="pt-6">
+                            <button type="submit" 
+                                    class="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center">
+                                <i class="fas fa-calculator mr-2"></i>
+                                Calculate Price & Book Service
+                            </button>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="requestedDate" class="form-label">Requested Date</label>
-                                    <input type="date" class="form-control" id="requestedDate" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="scheduledDate" class="form-label">Scheduled Date (Optional)</label>
-                                    <input type="datetime-local" class="form-control" id="scheduledDate">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="specialInstructions" class="form-label">Special Instructions</label>
-                            <textarea class="form-control" id="specialInstructions" rows="2" placeholder="Any special requirements or instructions..."></textarea>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-calculator"></i> Calculate Price & Book Service
-                        </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Pricing Calculator -->
-            <div class="col-md-4">
-                <div class="form-section">
-                    <h4><i class="fas fa-calculator"></i> Price Calculator</h4>
-                    <div class="mb-3">
-                        <label for="calcDistance" class="form-label">Distance (km)</label>
-                        <input type="number" class="form-control" id="calcDistance" step="0.1" min="0" placeholder="Enter distance">
-                    </div>
-                    <button type="button" class="btn btn-outline-primary mb-3" onclick="calculatePrice()">
-                        <i class="fas fa-calculator"></i> Calculate Price
-                    </button>
+            <!-- Pricing Calculator & Info -->
+            <div class="lg:col-span-1">
+                <div class="glass-effect rounded-2xl shadow-lg p-8 sticky top-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                        <i class="fas fa-calculator mr-3 gradient-text"></i>Price Calculator
+                    </h2>
                     
-                    <div id="pricingResult" class="pricing-breakdown" style="display: none;">
-                        <h6><i class="fas fa-receipt"></i> Price Breakdown</h6>
-                        <div id="pricingDetails"></div>
+                    <div class="space-y-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Distance (km)</label>
+                            <input type="number" id="calcDistance" step="0.1" min="0" placeholder="Enter distance"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <button type="button" onclick="calculatePrice()"
+                                class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                            <i class="fas fa-calculator mr-2"></i>Calculate Price
+                        </button>
                     </div>
-                </div>
+                    
+                    <div id="pricingResult" class="hidden">
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                            <h6 class="font-semibold text-gray-900 mb-3">
+                                <i class="fas fa-receipt mr-2 text-blue-600"></i>Price Breakdown
+                            </h6>
+                            <div id="pricingDetails" class="space-y-2 text-sm"></div>
+                        </div>
+                    </div>
 
-                <!-- Service Types -->
-                <div class="form-section mt-4">
-                    <h4><i class="fas fa-list"></i> Service Types</h4>
-                    <div class="list-group">
-                        <div class="list-group-item">
-                            <h6 class="mb-1"><i class="fas fa-home"></i> Moving Service</h6>
-                            <small class="text-muted">Complete home/office relocation services</small>
-                        </div>
-                        <div class="list-group-item">
-                            <h6 class="mb-1"><i class="fas fa-boxes"></i> Load Transport</h6>
-                            <small class="text-muted">Heavy load and equipment transportation</small>
-                        </div>
-                        <div class="list-group-item">
-                            <h6 class="mb-1"><i class="fas fa-shipping-fast"></i> Express Delivery</h6>
-                            <small class="text-muted">Fast delivery within 24 hours</small>
-                        </div>
-                        <div class="list-group-item">
-                            <h6 class="mb-1"><i class="fas fa-clock"></i> Same Day Delivery</h6>
-                            <small class="text-muted">Delivery on the same day</small>
+                    <!-- Service Types Info -->
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-info-circle mr-2 text-blue-600"></i>Service Types
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                <div class="font-medium text-gray-900 flex items-center">
+                                    <i class="fas fa-home mr-2 text-blue-600"></i>Moving Service
+                                </div>
+                                <div class="text-sm text-gray-600 mt-1">Complete home/office relocation</div>
+                            </div>
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                <div class="font-medium text-gray-900 flex items-center">
+                                    <i class="fas fa-boxes mr-2 text-green-600"></i>Load Transport
+                                </div>
+                                <div class="text-sm text-gray-600 mt-1">Heavy load transportation</div>
+                            </div>
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                <div class="font-medium text-gray-900 flex items-center">
+                                    <i class="fas fa-shipping-fast mr-2 text-orange-600"></i>Express Delivery
+                                </div>
+                                <div class="text-sm text-gray-600 mt-1">Fast delivery within 24 hours</div>
+                            </div>
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                <div class="font-medium text-gray-900 flex items-center">
+                                    <i class="fas fa-clock mr-2 text-purple-600"></i>Same Day Delivery
+                                </div>
+                                <div class="text-sm text-gray-600 mt-1">Delivery on the same day</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -213,25 +298,25 @@
         </div>
 
         <!-- My Services -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="form-section">
-                    <h4><i class="fas fa-history"></i> My Moving Services</h4>
-                    <div id="myServices">
-                        <div class="text-center text-muted">
-                            <i class="fas fa-spinner fa-spin"></i> Loading your services...
-                        </div>
+        <div class="mt-12">
+            <div class="glass-effect rounded-2xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-history mr-3 gradient-text"></i>My Moving Services
+                </h2>
+                <div id="myServices">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
+                        <p>Loading your services...</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Get JWT token from localStorage
         function getAuthToken() {
-            return localStorage.getItem('jwtToken');
+            return localStorage.getItem('jwtToken') || localStorage.getItem('token');
         }
 
         // Calculate price
@@ -268,34 +353,35 @@
             const detailsDiv = document.getElementById('pricingDetails');
             
             detailsDiv.innerHTML = `
-                <div class="row">
-                    <div class="col-6">Distance:</div>
-                    <div class="col-6">${breakdown.distanceKm} km</div>
+                <div class="flex justify-between py-2 border-b border-blue-200">
+                    <span class="text-gray-700">Distance:</span>
+                    <span class="font-semibold">${breakdown.distanceKm} km</span>
                 </div>
-                <div class="row">
-                    <div class="col-6">Base Price:</div>
-                    <div class="col-6">R${breakdown.basePrice}</div>
+                <div class="flex justify-between py-2 border-b border-blue-200">
+                    <span class="text-gray-700">Base Price:</span>
+                    <span class="font-semibold">R${breakdown.basePrice}</span>
                 </div>
                 ${breakdown.extraDistanceCharge > 0 ? `
-                <div class="row">
-                    <div class="col-6">Extra Distance:</div>
-                    <div class="col-6">R${breakdown.extraDistanceCharge}</div>
+                <div class="flex justify-between py-2 border-b border-blue-200">
+                    <span class="text-gray-700">Extra Distance:</span>
+                    <span class="font-semibold">R${breakdown.extraDistanceCharge}</span>
                 </div>
                 ` : ''}
-                <hr>
-                <div class="row fw-bold">
-                    <div class="col-6">Total Price:</div>
-                    <div class="col-6">R${breakdown.totalPrice}</div>
+                <div class="flex justify-between py-2 pt-2">
+                    <span class="text-lg font-bold text-gray-900">Total Price:</span>
+                    <span class="text-lg font-bold text-blue-600">R${breakdown.totalPrice}</span>
                 </div>
-                <small class="text-muted">${breakdown.breakdown}</small>
+                <p class="text-xs text-gray-500 mt-2">${breakdown.breakdown || ''}</p>
             `;
             
-            resultDiv.style.display = 'block';
+            resultDiv.classList.remove('hidden');
         }
 
         // Handle form submission
         document.getElementById('movingServiceForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            const fullMovingValue = document.querySelector('input[name="fullMoving"]:checked');
             
             const formData = {
                 serviceType: document.getElementById('serviceType').value,
@@ -303,8 +389,10 @@
                 deliveryAddress: document.getElementById('deliveryAddress').value,
                 distanceKm: parseFloat(document.getElementById('distanceKm').value),
                 description: document.getElementById('description').value,
-                weightKg: parseFloat(document.getElementById('weightKg').value),
                 numberOfItems: parseInt(document.getElementById('numberOfItems').value),
+                numberOfLoads: parseInt(document.getElementById('numberOfLoads').value),
+                truckSize: document.getElementById('truckSize').value,
+                fullMoving: fullMovingValue ? fullMovingValue.value === 'true' : false,
                 requestedDate: document.getElementById('requestedDate').value,
                 scheduledDate: document.getElementById('scheduledDate').value || null,
                 specialInstructions: document.getElementById('specialInstructions').value
@@ -322,8 +410,9 @@
 
                 if (response.ok) {
                     const result = await response.json();
-                    alert('Moving service booked successfully! Service ID: ' + result.id + '\nTotal Price: R' + result.totalPrice);
+                    alert('Moving service booked successfully!\nService ID: ' + result.id + '\nTotal Price: R' + result.totalPrice);
                     document.getElementById('movingServiceForm').reset();
+                    document.getElementById('pricingResult').classList.add('hidden');
                     loadMyServices();
                 } else {
                     const error = await response.json();
@@ -348,11 +437,11 @@
                     const services = await response.json();
                     displayMyServices(services);
                 } else {
-                    document.getElementById('myServices').innerHTML = '<div class="text-center text-muted">No services found</div>';
+                    document.getElementById('myServices').innerHTML = '<div class="text-center text-gray-500 py-8">No services found</div>';
                 }
             } catch (error) {
                 console.error('Error loading services:', error);
-                document.getElementById('myServices').innerHTML = '<div class="text-center text-danger">Error loading services</div>';
+                document.getElementById('myServices').innerHTML = '<div class="text-center text-red-500 py-8">Error loading services</div>';
             }
         }
 
@@ -361,26 +450,43 @@
             const container = document.getElementById('myServices');
             
             if (services.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted">No services found</div>';
+                container.innerHTML = '<div class="text-center text-gray-500 py-8">No services found</div>';
                 return;
             }
 
             container.innerHTML = services.map(service => `
-                <div class="card service-card mb-3">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <h6 class="card-title">${service.serviceType.displayName}</h6>
-                                <p class="card-text"><strong>Status:</strong> ${service.status}</p>
-                                <p class="card-text"><strong>Distance:</strong> ${service.distanceKm} km</p>
-                                <p class="card-text"><strong>Total Price:</strong> R${service.totalPrice}</p>
-                                <p class="card-text"><strong>Pickup:</strong> ${service.pickupAddress}</p>
-                                <p class="card-text"><strong>Delivery:</strong> ${service.deliveryAddress}</p>
+                <div class="bg-white rounded-lg border border-gray-200 p-6 mb-4 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                                ${service.serviceType?.displayName || service.serviceType || 'Moving Service'}
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="text-gray-600">Status:</span>
+                                    <span class="ml-2 font-medium">${service.status || 'Pending'}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Distance:</span>
+                                    <span class="ml-2 font-medium">${service.distanceKm} km</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Total Price:</span>
+                                    <span class="ml-2 font-semibold text-blue-600">R${service.totalPrice || '0.00'}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Items:</span>
+                                    <span class="ml-2 font-medium">${service.numberOfItems || 'N/A'}</span>
+                                </div>
                             </div>
-                            <div class="col-md-4 text-end">
-                                <small class="text-muted">Service ID: ${service.id}</small><br>
-                                <small class="text-muted">Created: ${service.createdAt}</small>
+                            <div class="mt-4 text-sm text-gray-600">
+                                <div><strong>Pickup:</strong> ${service.pickupAddress}</div>
+                                <div class="mt-1"><strong>Delivery:</strong> ${service.deliveryAddress}</div>
                             </div>
+                        </div>
+                        <div class="text-right text-sm text-gray-500">
+                            <div>ID: ${service.id}</div>
+                            <div class="mt-1">${service.createdAt ? new Date(service.createdAt).toLocaleDateString() : ''}</div>
                         </div>
                     </div>
                 </div>
@@ -416,7 +522,7 @@
                     <ul class="space-y-2 text-gray-300">
                         <li><a href="/contact" class="hover:text-reliable-yellow-400 transition-colors">Contact Us</a></li>
                         <li><a href="/tracking" class="hover:text-reliable-yellow-400 transition-colors">Track Package</a></li>
-                        <li><a href="/price-list" class="hover:text-reliable-yellow-400 transition-colors">Price List</a></li>
+                        <li><a href="/quote" class="hover:text-reliable-yellow-400 transition-colors">Get Quote</a></li>
                         <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">FAQ</a></li>
                     </ul>
                 </div>
