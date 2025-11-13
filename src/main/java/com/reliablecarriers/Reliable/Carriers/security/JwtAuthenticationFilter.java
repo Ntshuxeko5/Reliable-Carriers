@@ -40,18 +40,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         try {
             final String authHeader = request.getHeader("Authorization");
-            
+
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                // No Authorization header or not Bearer — continue filter chain
+                System.out.println("[JWT DEBUG] No Bearer Authorization header present");
                 filterChain.doFilter(request, response);
                 return;
             }
 
             final String jwt = authHeader.substring(7);
+            // Mask token in logs to avoid leaking secrets
+            String masked = jwt.length() > 10 ? jwt.substring(0, 6) + "..." + jwt.substring(jwt.length()-4) : "[short]";
+            System.out.println("[JWT DEBUG] Bearer token received (masked): " + masked);
+
             final String userEmail = extractEmailFromToken(jwt);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
                 
+                try {
+                    if (validateToken(jwt, userDetails)) {
+                        System.out.println("[JWT DEBUG] Token validated for user: " + userEmail);
+                    } else {
+                        System.out.println("[JWT DEBUG] Token validation failed for user: " + userEmail);
+                    }
+                } catch (Exception ex) {
+                    System.out.println("[JWT DEBUG] Token validation threw exception: " + ex.getMessage());
+                }
+
                 if (validateToken(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
@@ -65,6 +81,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             // Log any authentication error (invalid token, parsing error, etc.)
+            System.out.println("[JWT DEBUG] Exception in JwtAuthenticationFilter: " + e.getMessage());
+            e.printStackTrace();
             auditService.logAction("API_ACCESS", "AUTH", null, "FAILED", "JWT authentication error: " + e.getMessage());
         }
 
