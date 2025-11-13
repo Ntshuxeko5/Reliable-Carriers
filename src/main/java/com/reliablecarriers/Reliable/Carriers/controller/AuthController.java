@@ -254,11 +254,11 @@ public class AuthController {
                     .body(Map.of("success", false, "error", "Verification code is required"));
             }
             
-            logger.debug("Verifying 2FA token for user: {}, token: {}", identifier, normalizedToken);
+            logger.info("Verifying 2FA token for user: {}, token: {}", identifier, normalizedToken);
             
             boolean ok = twoFactorService.verifyToken(user, normalizedToken);
             if (!ok) {
-                logger.warn("2FA verification failed for user: {}, token: {}", identifier, normalizedToken);
+                logger.warn("2FA verification failed for user: {}, entered token: {}", identifier, normalizedToken);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("success", false, "error", "Invalid or expired token. Please check the code and try again, or request a new code."));
             }
@@ -663,12 +663,12 @@ public class AuthController {
                     .body(Map.of("success", false, "message", "Verification code is required"));
             }
             
-            logger.debug("Verifying registration code for user: {}, code: {}", email, normalizedCode);
+            logger.info("Verifying registration code for user: {}, code: {}", email, normalizedCode);
             
             // Verify the 2FA token
             boolean verified = twoFactorService.verifyToken(user, normalizedCode);
             if (!verified) {
-                logger.warn("Registration verification failed for user: {}, code: {}", email, normalizedCode);
+                logger.warn("Registration verification failed for user: {}, entered code: {}", email, normalizedCode);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("success", false, "message", "Invalid or expired verification code. Please check the code and try again, or request a new code."));
             }

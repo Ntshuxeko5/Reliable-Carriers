@@ -52,6 +52,10 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         // generate numeric 6-digit token
         String token = String.format("%06d", new SecureRandom().nextInt(1_000_000));
         logger.debug("Generated 2FA token for user: {}", user.getEmail());
+        // Log token at INFO level if debug mode is enabled (so it shows in production logs)
+        if (debugMode) {
+            logger.info("2FA TOKEN GENERATED - User: {}, Token: {}, Method: {}", user.getEmail(), token, method);
+        }
 
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.MINUTE, ttlMinutes);
@@ -69,9 +73,17 @@ public class TwoFactorServiceImpl implements TwoFactorService {
                 try {
                     smsService.sendSms(user.getPhone(), message);
                     logger.info("2FA SMS sent successfully to phone: {}", user.getPhone());
+                    // Log token at INFO level if debug mode is enabled
+                    if (debugMode) {
+                        logger.info("2FA TOKEN (DEBUG MODE) - User: {}, Token: {} - SMS sent successfully", 
+                                   user.getEmail(), token);
+                    }
                 } catch (Exception e) {
                     logger.warn("Failed to send 2FA SMS to {}: {}, falling back to email", 
                                 user.getPhone(), e.getMessage());
+                    // Log token when SMS fails
+                    logger.info("2FA TOKEN (SMS FAILED) - User: {}, Token: {}, Error: {}", 
+                               user.getEmail(), token, e.getMessage());
                     try {
                         // Fallback to email if SMS fails
                         emailService.sendSimpleEmail(user.getEmail(), "Your verification code", message);
@@ -79,9 +91,7 @@ public class TwoFactorServiceImpl implements TwoFactorService {
                     } catch (Exception emailException) {
                         logger.error("Both SMS and email failed for user {}: {}", 
                                    user.getEmail(), emailException.getMessage(), emailException);
-                        if (debugMode) {
-                            logger.debug("2FA Token (DEBUG MODE) - User: {}, Token: {}", user.getEmail(), token);
-                        }
+                        logger.info("2FA TOKEN (BOTH FAILED) - User: {}, Token: {}", user.getEmail(), token);
                     }
                 }
             } else {
@@ -89,11 +99,15 @@ public class TwoFactorServiceImpl implements TwoFactorService {
                 try {
                     emailService.sendSimpleEmail(user.getEmail(), "Your verification code", message);
                     logger.info("2FA email sent successfully to user: {}", user.getEmail());
+                    // Log token at INFO level if debug mode is enabled
+                    if (debugMode) {
+                        logger.info("2FA TOKEN (DEBUG MODE) - User: {}, Token: {} - Email sent successfully", 
+                                   user.getEmail(), token);
+                    }
                 } catch (Exception emailException) {
                     logger.error("Email failed for user {}: {}", user.getEmail(), emailException.getMessage(), emailException);
-                    if (debugMode) {
-                        logger.debug("2FA Token (DEBUG MODE) - User: {}, Token: {}", user.getEmail(), token);
-                    }
+                    // Always log token when email fails
+                    logger.info("2FA TOKEN (EMAIL FAILED) - User: {}, Token: {}", user.getEmail(), token);
                 }
             }
         } else {
@@ -102,13 +116,16 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             try {
                 emailService.sendSimpleEmail(user.getEmail(), "Your verification code", message);
                 logger.info("2FA email sent successfully to user: {}", user.getEmail());
+                // Log token at INFO level if debug mode is enabled (even when email succeeds)
+                if (debugMode) {
+                    logger.info("2FA TOKEN (DEBUG MODE) - User: {}, Token: {} - Email sent successfully", 
+                               user.getEmail(), token);
+                }
             } catch (Exception e) {
                 logger.error("Failed to send 2FA email to {}: {}", user.getEmail(), e.getMessage(), e);
-                // Don't throw exception - token is saved, user can use resend or check logs
-                if (debugMode) {
-                    logger.debug("2FA Token (DEBUG MODE - EMAIL FAILED) - User: {}, Token: {}, Error: {}", 
-                               user.getEmail(), token, e.getMessage());
-                }
+                // Always log token when email fails (so user can see it in logs)
+                logger.info("2FA TOKEN (EMAIL FAILED) - User: {}, Token: {}, Error: {}", 
+                           user.getEmail(), token, e.getMessage());
                 // Note: Token is still saved in database, user can use resend functionality
             }
         }
@@ -160,16 +177,19 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         var found = tokenRepository.findByUserAndTokenAndUsedFalse(user, normalizedToken);
         
         if (found.isEmpty()) {
-            logger.debug("Token not found for user: {}, token: {}", user.getEmail(), normalizedToken);
+            logger.warn("2FA TOKEN NOT FOUND - User: {}, Entered Token: {}", user.getEmail(), normalizedToken);
             
             // Also check if there are any unused tokens for this user (for debugging)
             var allTokens = tokenRepository.findByUserAndUsedFalseOrderByExpiresAtDesc(user);
             if (!allTokens.isEmpty()) {
-                logger.debug("Found {} unused tokens for user: {}", allTokens.size(), user.getEmail());
+                logger.info("2FA VERIFICATION FAILED - User: {}, Entered: {}, Available tokens:", user.getEmail(), normalizedToken);
                 for (TwoFactorToken t : allTokens) {
-                    logger.debug("  Token: {}, Expires: {}, Used: {}", 
+                    logger.info("  Expected Token: {}, Expires: {}, Used: {}", 
                         t.getToken(), t.getExpiresAt(), t.isUsed());
                 }
+            } else {
+                logger.warn("2FA VERIFICATION FAILED - User: {}, Entered: {}, No unused tokens found", 
+                    user.getEmail(), normalizedToken);
             }
             return false;
         }
@@ -178,15 +198,15 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         
         // Check expiration
         if (t.getExpiresAt() != null && t.getExpiresAt().before(new Date())) {
-            logger.debug("Token expired for user: {}, token: {}, expires: {}", 
-                user.getEmail(), normalizedToken, t.getExpiresAt());
+            logger.warn("2FA TOKEN EXPIRED - User: {}, Token: {}, Expires: {}, Current: {}", 
+                user.getEmail(), normalizedToken, t.getExpiresAt(), new Date());
             return false;
         }
         
         // Mark token as used
         t.setUsed(true);
         tokenRepository.save(t);
-        logger.info("Token verified successfully for user: {}", user.getEmail());
+        logger.info("2FA TOKEN VERIFIED SUCCESSFULLY - User: {}, Token: {}", user.getEmail(), normalizedToken);
         return true;
     }
 }
