@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -202,8 +203,26 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "https://localhost:*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        
+        // Get allowed origins from environment or use defaults
+        String allowedOriginsEnv = System.getenv("CORS_ALLOWED_ORIGINS");
+        List<String> allowedOrigins = new ArrayList<>();
+        
+        if (allowedOriginsEnv != null && !allowedOriginsEnv.isEmpty()) {
+            // Split comma-separated origins from environment variable
+            allowedOrigins.addAll(Arrays.asList(allowedOriginsEnv.split(",")));
+        } else {
+            // Default: localhost for development and Railway domains for production
+            allowedOrigins.add("http://localhost:*");
+            allowedOrigins.add("https://localhost:*");
+            // Allow all Railway subdomains
+            allowedOrigins.add("https://*.up.railway.app");
+            // Allow specific Railway production domain
+            allowedOrigins.add("https://reliable-carriers-production.up.railway.app");
+        }
+        
+        configuration.setAllowedOriginPatterns(allowedOrigins);
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
