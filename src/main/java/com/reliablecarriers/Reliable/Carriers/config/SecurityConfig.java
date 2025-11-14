@@ -117,7 +117,9 @@ public class SecurityConfig {
                 // Shipment assignment allowed for admins and tracking managers only
                 .requestMatchers("/api/shipments/*/assign-driver/*").hasAnyRole("ADMIN", "TRACKING_MANAGER")
 
-                // Actuator endpoints - authenticated access only (restricted in production)
+                // Actuator health endpoint - public access for Railway/cloud platform healthchecks
+                .requestMatchers("/actuator/health").permitAll()
+                // Other actuator endpoints - authenticated access only (restricted in production)
                 .requestMatchers("/actuator/**").hasRole("ADMIN")
                 
                 // Swagger/OpenAPI - restrict to ADMIN in production, allow all in development

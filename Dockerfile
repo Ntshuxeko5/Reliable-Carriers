@@ -40,12 +40,14 @@ RUN chown spring:spring app.jar
 
 USER spring:spring
 
-# Expose port 8080
+# Expose port (default 8080, but Railway will provide PORT env var)
+# The application will bind to the PORT environment variable if provided (Railway standard)
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+# Health check - commented out because Railway handles healthchecks externally
+# Railway will use the /actuator/health endpoint configured in the application
+# HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+#   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
