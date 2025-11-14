@@ -673,6 +673,51 @@
                    sessionStorage.getItem('jwtToken') || '';
         }
 
+        // Ensure global helper functions are available
+        if (typeof showLoading === 'undefined') {
+            window.showLoading = function(message) {
+                if (typeof errorHandler !== 'undefined') {
+                    errorHandler.showLoading(message);
+                } else {
+                    console.log('Loading:', message);
+                }
+            };
+        }
+        if (typeof hideLoading === 'undefined') {
+            window.hideLoading = function() {
+                if (typeof errorHandler !== 'undefined') {
+                    errorHandler.hideLoading();
+                }
+            };
+        }
+        if (typeof showError === 'undefined') {
+            window.showError = function(message) {
+                if (typeof errorHandler !== 'undefined') {
+                    errorHandler.showError(message);
+                } else {
+                    alert('Error: ' + message);
+                }
+            };
+        }
+        if (typeof showSuccess === 'undefined') {
+            window.showSuccess = function(message) {
+                if (typeof errorHandler !== 'undefined') {
+                    errorHandler.showSuccess(message);
+                } else {
+                    console.log('Success:', message);
+                }
+            };
+        }
+        if (typeof handleApiError === 'undefined') {
+            window.handleApiError = async function(error, message) {
+                if (typeof errorHandler !== 'undefined') {
+                    await errorHandler.handleApiError(error, message);
+                } else {
+                    alert('Error: ' + message);
+                }
+            };
+        }
+
         // Close modals when clicking outside
         document.getElementById('createTicketModal').addEventListener('click', function(e) {
             if (e.target === this) {

@@ -51,11 +51,21 @@ public class MovingService {
     @Column(nullable = false)
     private String description;
     
-    @Column(nullable = false)
+    // Weight is optional for moving services
+    @Column
     private Double weightKg;
     
     @Column(nullable = false)
     private Integer numberOfItems;
+    
+    @Column
+    private Integer numberOfLoads;
+    
+    @Column
+    private String truckSize; // SMALL, MEDIUM, LARGE, EXTRA_LARGE
+    
+    @Column
+    private Boolean fullMoving; // true for full moving, false for partial
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -220,6 +230,30 @@ public class MovingService {
     
     public void setNumberOfItems(Integer numberOfItems) {
         this.numberOfItems = numberOfItems;
+    }
+    
+    public Integer getNumberOfLoads() {
+        return numberOfLoads;
+    }
+    
+    public void setNumberOfLoads(Integer numberOfLoads) {
+        this.numberOfLoads = numberOfLoads;
+    }
+    
+    public String getTruckSize() {
+        return truckSize;
+    }
+    
+    public void setTruckSize(String truckSize) {
+        this.truckSize = truckSize;
+    }
+    
+    public Boolean getFullMoving() {
+        return fullMoving;
+    }
+    
+    public void setFullMoving(Boolean fullMoving) {
+        this.fullMoving = fullMoving;
     }
     
     public ShipmentStatus getStatus() {

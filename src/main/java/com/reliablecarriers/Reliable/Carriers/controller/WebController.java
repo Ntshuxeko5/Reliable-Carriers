@@ -85,47 +85,42 @@ public class WebController {
         dashboard.put("active", "dashboard".equals(activePage));
         links.add(dashboard);
         
-        Map<String, Object> customerDashboard = new HashMap<>();
-        customerDashboard.put("label", "Customer Portal");
-        customerDashboard.put("url", "/customer/dashboard");
-        customerDashboard.put("active", false);
-        links.add(customerDashboard);
-        
         Map<String, Object> analytics = new HashMap<>();
         analytics.put("label", "Analytics");
         analytics.put("url", "/business/analytics");
         analytics.put("active", "analytics".equals(activePage));
         links.add(analytics);
         
-        Map<String, Object> packages = new HashMap<>();
-        packages.put("label", "My Packages");
-        packages.put("url", "/customer/packages");
-        packages.put("active", false);
-        links.add(packages);
-        
+        // Business-specific pages (invoices, webhooks, API keys)
         Map<String, Object> invoices = new HashMap<>();
         invoices.put("label", "Invoices");
         invoices.put("url", "/customer/invoices");
-        invoices.put("active", false);
+        invoices.put("active", "invoices".equals(activePage));
         links.add(invoices);
-        
-        Map<String, Object> payments = new HashMap<>();
-        payments.put("label", "Payments");
-        payments.put("url", "/customer/payments");
-        payments.put("active", false);
-        links.add(payments);
         
         Map<String, Object> webhooks = new HashMap<>();
         webhooks.put("label", "Webhooks");
         webhooks.put("url", "/customer/webhooks");
-        webhooks.put("active", false);
+        webhooks.put("active", "webhooks".equals(activePage));
         links.add(webhooks);
         
         Map<String, Object> apiKeys = new HashMap<>();
         apiKeys.put("label", "API Keys");
         apiKeys.put("url", "/customer/api-keys");
-        apiKeys.put("active", false);
+        apiKeys.put("active", "api-keys".equals(activePage));
         links.add(apiKeys);
+        
+        Map<String, Object> support = new HashMap<>();
+        support.put("label", "Support");
+        support.put("url", "/customer/support");
+        support.put("active", "support".equals(activePage));
+        links.add(support);
+        
+        Map<String, Object> loginHistory = new HashMap<>();
+        loginHistory.put("label", "Login History");
+        loginHistory.put("url", "/customer/login-history");
+        loginHistory.put("active", "login-history".equals(activePage));
+        links.add(loginHistory);
         
         Map<String, Object> logout = new HashMap<>();
         logout.put("label", "Logout");
@@ -284,9 +279,18 @@ public class WebController {
     }
 
     @GetMapping("/moving-services")
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     public String movingServices(Model model) {
         model.addAttribute("navLinks", createPublicNavLinks());
+        // Check if user is authenticated - route to logged-in version if so
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                // Redirect to customer version which handles logged-in state
+                return "redirect:/customer/moving-services";
+            }
+        } catch (Exception e) {
+            // User not authenticated, continue to public version
+        }
         return "moving-services";
     }
 

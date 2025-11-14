@@ -25,11 +25,18 @@ public class MovingServiceRequest {
     @NotBlank(message = "Description is required")
     private String description;
     
-    @Positive(message = "Weight must be positive")
+    // Weight is now optional for moving services
     private Double weightKg;
     
     @Positive(message = "Number of items must be positive")
     private Integer numberOfItems;
+    
+    @Positive(message = "Number of loads must be positive")
+    private Integer numberOfLoads;
+    
+    private String truckSize; // SMALL, MEDIUM, LARGE, EXTRA_LARGE
+    
+    private Boolean fullMoving; // true for full moving, false for partial
     
     private Date requestedDate;
     
@@ -202,5 +209,29 @@ public class MovingServiceRequest {
     
     public void setDeliveryLongitude(Double deliveryLongitude) {
         this.deliveryLongitude = deliveryLongitude;
+    }
+    
+    public Integer getNumberOfLoads() {
+        return numberOfLoads;
+    }
+    
+    public void setNumberOfLoads(Integer numberOfLoads) {
+        this.numberOfLoads = numberOfLoads;
+    }
+    
+    public String getTruckSize() {
+        return truckSize;
+    }
+    
+    public void setTruckSize(String truckSize) {
+        this.truckSize = truckSize;
+    }
+    
+    public Boolean getFullMoving() {
+        return fullMoving;
+    }
+    
+    public void setFullMoving(Boolean fullMoving) {
+        this.fullMoving = fullMoving;
     }
 }

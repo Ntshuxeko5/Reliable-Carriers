@@ -8,7 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#3b82f6">
-    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
+    <script id="gmap-script" th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places'" async defer></script>
     <script>
         tailwind.config = {
             theme: {
@@ -405,7 +405,7 @@
                 <p class="text-xl text-gray-700 mb-6 max-w-2xl mx-auto">
                     Moving furniture or relocating? Get a specialized quote for our professional moving services including packing, loading, and delivery.
                 </p>
-                <a href="/moving-services" class="inline-block bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <a href="/moving-services" class="inline-block bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:from-reliable-yellow-600 hover:to-reliable-yellow-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <i class="fas fa-truck-moving mr-2"></i>Get Moving Services Quote
                 </a>
             </div>
@@ -804,6 +804,10 @@
                     distance: parseFloat(currentQuote.distance) || 0
                 };
                 
+                // Debug: show token and quote data before calling API
+                console.log('[DEBUG] Saving quote, token:', token);
+                console.log('[DEBUG] Quote data:', quoteData);
+
                 // Call API to save quote
                 const response = await fetch('/api/customer/quote/save', {
                     method: 'POST',
@@ -814,8 +818,10 @@
                     credentials: 'include',
                     body: JSON.stringify(quoteData)
                 });
-                
+
+                console.log('[DEBUG] HTTP response status:', response.status);
                 const result = await response.json();
+                console.log('[DEBUG] API result:', result);
                 
                 if (response.ok && result.success) {
                     showAlert(result.message || 'Quote saved successfully! A confirmation email has been sent.', 'success');
@@ -1070,7 +1076,33 @@
             }, 3000);
         }
 
+        // Simple alert wrapper used across the page; maps to showTemporaryMessage
+        function showAlert(message, type = 'info') {
+            const t = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            showTemporaryMessage(message, t);
+        }
+
         // Event listeners
+        // Call initMap after Google Maps script loads to avoid "initMap is not a function" race
+        (function attachMapsLoader() {
+            const mapsScript = document.getElementById('gmap-script');
+            if (!mapsScript) return;
+            mapsScript.addEventListener('load', function() {
+                try {
+                    if (typeof initMap === 'function') {
+                        initMap();
+                    } else {
+                        // If initMap not yet defined, call it once DOM is ready
+                        document.addEventListener('DOMContentLoaded', function() {
+                            if (typeof initMap === 'function') initMap();
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error invoking initMap after Google script load:', e);
+                }
+            });
+        })();
+
         document.addEventListener('DOMContentLoaded', function() {
             initializeServiceOptions();
             

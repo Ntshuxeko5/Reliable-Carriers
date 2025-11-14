@@ -135,6 +135,10 @@ public class DriverRegistrationController {
             driver.setTotalEarnings(java.math.BigDecimal.ZERO);
             driver.setDriverRating(null);
             
+            // Set emailVerified to false - driver must verify email before login
+            driver.setEmailVerified(false);
+            driver.setIsActive(true); // Account is active but not verified
+            
             // Register the driver
             User registeredDriver = authService.registerUser(driver);
             

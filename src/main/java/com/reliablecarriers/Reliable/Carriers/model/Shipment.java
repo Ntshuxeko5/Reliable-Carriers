@@ -9,7 +9,7 @@ import java.util.Date;
 @Table(name = "shipments", indexes = {
     @Index(name = "idx_shipments_tracking_number", columnList = "trackingNumber"),
     @Index(name = "idx_shipments_status", columnList = "status"),
-    @Index(name = "idx_shipments_assigned_driver", columnList = "assigned_driver_id"),
+    // Note: assigned_driver_id index removed - column may not exist in all database schemas
     @Index(name = "idx_shipments_sender", columnList = "sender_id"),
     @Index(name = "idx_shipments_status_created", columnList = "status,created_at"),
     @Index(name = "idx_shipments_pickup_coords", columnList = "pickup_latitude,pickup_longitude"),
@@ -149,7 +149,7 @@ public class Shipment {
     private Date actualDeliveryDate;
     
     @ManyToOne
-    @JoinColumn(name = "assigned_driver_id")
+    @JoinColumn(name = "assigned_driver_id", nullable = true)
     private User assignedDriver;
     
     @Temporal(TemporalType.TIMESTAMP)

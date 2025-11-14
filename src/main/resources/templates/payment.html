@@ -8,9 +8,28 @@
     <script src="https://js.paystack.co/v1/inline.js"></script>
     <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'reliable-blue': {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
+                            800: '#1e3a8a', 900: '#1e40af',
+                        },
+                        'reliable-yellow': {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); }
         .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
         .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
@@ -19,27 +38,22 @@
         @keyframes successPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
     </style>
 </head>
-<body class="gradient-bg min-h-screen">
-    <!-- Header -->
-    <header class="bg-white/10 backdrop-blur-md border-b border-white/20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center">
-                    <a href="/" class="flex items-center">
-                        <i class="fas fa-shipping-fast text-3xl text-yellow-400 mr-3"></i>
-                        <span class="text-2xl font-bold text-white">Reliable Carriers</span>
-                    </a>
-                </div>
-                <div class="text-white">
-                    <i class="fas fa-lock mr-2"></i>
-                    <span class="font-medium">Secure Payment</span>
-                </div>
-            </div>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-white mb-4">
+                <i class="fas fa-credit-card mr-3"></i>Complete Your Payment
+            </h1>
+            <p class="text-xl text-blue-100">Secure payment powered by Paystack</p>
         </div>
-    </header>
+    </section>
 
     <!-- Main Content -->
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Progress Indicator -->
         <div class="mb-8">
             <div class="flex items-center justify-center space-x-4">
@@ -47,21 +61,21 @@
                     <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                         <i class="fas fa-check text-white text-sm"></i>
                     </div>
-                    <span class="ml-2 text-white font-medium">Quote</span>
+                    <span class="ml-2 text-gray-700 font-medium">Quote</span>
                 </div>
-                <div class="w-16 h-1 bg-white/30"></div>
+                <div class="w-16 h-1 bg-gray-300"></div>
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <div class="w-8 h-8 bg-reliable-yellow-400 rounded-full flex items-center justify-center">
                         <i class="fas fa-credit-card text-white text-sm"></i>
                     </div>
-                    <span class="ml-2 text-white font-medium">Payment</span>
+                    <span class="ml-2 text-gray-700 font-medium">Payment</span>
                 </div>
-                <div class="w-16 h-1 bg-white/30"></div>
+                <div class="w-16 h-1 bg-gray-300"></div>
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-white/30 rounded-full flex items-center justify-center">
-                        <i class="fas fa-check-circle text-white text-sm"></i>
+                    <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-gray-500 text-sm"></i>
                     </div>
-                    <span class="ml-2 text-white font-medium">Confirmation</span>
+                    <span class="ml-2 text-gray-500 font-medium">Confirmation</span>
                 </div>
             </div>
         </div>
@@ -126,7 +140,7 @@
                     <!-- Customer Info -->
                     <div class="bg-gray-50 rounded-xl p-6">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-user mr-2 text-purple-600"></i>Customer Information
+                            <i class="fas fa-user mr-2 text-blue-600"></i>Customer Information
                         </h3>
                         <div class="space-y-2">
                             <div class="flex justify-between">
@@ -140,6 +154,20 @@
                                 <span class="text-gray-600">Email:</span>
                                 <span class="font-semibold text-gray-800" id="customerEmail" th:text="${userEmail ?: 'Not provided'}">Not provided</span>
                             </div>
+                            <div class="flex justify-between" id="customerPhoneRow" style="display: none;">
+                                <span class="text-gray-600">Phone:</span>
+                                <span class="font-semibold text-gray-800" id="customerPhone">Not provided</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Booking Details -->
+                    <div class="bg-gray-50 rounded-xl p-6" id="additionalDetails" style="display: none;">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-info-circle mr-2 text-blue-600"></i>Additional Details
+                        </h3>
+                        <div class="space-y-2" id="additionalDetailsContent">
+                            <!-- Will be populated by JavaScript -->
                         </div>
                     </div>
                 </div>
@@ -147,7 +175,7 @@
                 <!-- Payment Section -->
                 <div class="space-y-6">
                     <!-- Total Amount -->
-                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white">
+                    <div class="bg-gradient-to-r from-reliable-blue-600 to-reliable-blue-800 rounded-xl p-6 text-white">
                         <div class="text-center">
                             <h3 class="text-lg font-semibold mb-2">Total Amount</h3>
                             <div class="text-4xl font-bold" id="totalAmount">R0.00</div>
@@ -324,11 +352,18 @@
                         if (booking.serviceType) {
                             document.getElementById('serviceType').textContent = booking.serviceType;
                         }
-                        if (booking.weight) {
-                            document.getElementById('weight').textContent = booking.weight + ' kg';
+                        if (booking.distanceKm || booking.distance) {
+                            const distance = booking.distanceKm || booking.distance;
+                            document.getElementById('distance').textContent = distance + ' km';
                         }
-                        if (booking.totalAmount) {
-                            const amount = parseFloat(booking.totalAmount);
+                        if (booking.weight || booking.weightKg) {
+                            const weight = booking.weight || booking.weightKg;
+                            document.getElementById('weight').textContent = weight + ' kg';
+                        } else {
+                            document.getElementById('weight').parentElement.style.display = 'none';
+                        }
+                        if (booking.totalAmount || booking.totalPrice) {
+                            const amount = parseFloat(booking.totalAmount || booking.totalPrice);
                             document.getElementById('totalAmount').textContent = 'R' + amount.toFixed(2);
                             document.getElementById('payButtonText').textContent = 'Pay R' + amount.toFixed(2) + ' Securely';
                         }
@@ -337,6 +372,54 @@
                         }
                         if (booking.deliveryAddress) {
                             document.getElementById('deliveryAddressDisplay').textContent = booking.deliveryAddress;
+                        }
+                        if (booking.customerPhone || booking.phone) {
+                            document.getElementById('customerPhone').textContent = booking.customerPhone || booking.phone;
+                            document.getElementById('customerPhoneRow').style.display = 'flex';
+                        }
+                        
+                        // Show additional details if available
+                        const additionalDetails = [];
+                        if (booking.description) {
+                            additionalDetails.push({ label: 'Description', value: booking.description });
+                        }
+                        if (booking.packageType) {
+                            additionalDetails.push({ label: 'Package Type', value: booking.packageType });
+                        }
+                        if (booking.dimensions) {
+                            additionalDetails.push({ label: 'Dimensions', value: booking.dimensions });
+                        }
+                        if (booking.numberOfItems) {
+                            additionalDetails.push({ label: 'Number of Items', value: booking.numberOfItems });
+                        }
+                        if (booking.numberOfLoads) {
+                            additionalDetails.push({ label: 'Number of Loads', value: booking.numberOfLoads });
+                        }
+                        if (booking.truckSize) {
+                            additionalDetails.push({ label: 'Truck Size', value: booking.truckSize });
+                        }
+                        if (booking.fullMoving !== undefined) {
+                            additionalDetails.push({ label: 'Full Moving', value: booking.fullMoving ? 'Yes' : 'No' });
+                        }
+                        if (booking.specialInstructions) {
+                            additionalDetails.push({ label: 'Special Instructions', value: booking.specialInstructions });
+                        }
+                        if (booking.requestedDate) {
+                            additionalDetails.push({ label: 'Requested Date', value: new Date(booking.requestedDate).toLocaleDateString() });
+                        }
+                        if (booking.scheduledDate) {
+                            additionalDetails.push({ label: 'Scheduled Date', value: new Date(booking.scheduledDate).toLocaleDateString() });
+                        }
+                        
+                        if (additionalDetails.length > 0) {
+                            const additionalContent = document.getElementById('additionalDetailsContent');
+                            additionalContent.innerHTML = additionalDetails.map(detail => `
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">${detail.label}:</span>
+                                    <span class="font-semibold text-gray-800">${detail.value}</span>
+                                </div>
+                            `).join('');
+                            document.getElementById('additionalDetails').style.display = 'block';
                         }
                         
                         // Initialize payment if not already done

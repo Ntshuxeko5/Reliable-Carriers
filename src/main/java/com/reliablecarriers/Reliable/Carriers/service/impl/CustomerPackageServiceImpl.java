@@ -224,7 +224,12 @@ public class CustomerPackageServiceImpl implements CustomerPackageService {
             shipment.setDeliveryLongitude(java.math.BigDecimal.valueOf(request.getDeliveryLongitude()));
         }
         shipment.setWeight(request.getWeight());
-        shipment.setDimensions(request.getDimensions());
+        // If the request didn't include dimensions, fall back to the quote's dimensions
+        String dimensions = request.getDimensions();
+        if (dimensions == null || dimensions.trim().isEmpty()) {
+            dimensions = quoteEntity != null ? quoteEntity.getDimensions() : null;
+        }
+        shipment.setDimensions(dimensions);
         shipment.setDescription(request.getDescription());
         shipment.setShippingCost(quoteEntity.getTotalCost());
         shipment.setServiceType(quoteEntity.getServiceType());
