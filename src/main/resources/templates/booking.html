@@ -491,9 +491,9 @@
                                 class="w-full px-4 py-3 form-input focus:outline-none transition-all duration-300">
                             <option value="">Select service type</option>
                             <optgroup label="Courier Services">
-                                <option value="SAME_DAY">Same Day Delivery - R250</option>
-                                <option value="OVERNIGHT">Overnight Delivery - R200</option>
-                                <option value="ECONOMY">Economy (2-3 days) - R150</option>
+                                <option value="SAME_DAY">Same Day Delivery - R160</option>
+                                <option value="OVERNIGHT">Overnight Delivery - R120</option>
+                                <option value="ECONOMY">Economy (2-3 days) - R90</option>
                                 <option value="URGENT">Urgent Delivery - R600</option>
                             </optgroup>
                             <optgroup label="Moving Services">
@@ -887,9 +887,9 @@
             if (service === 'courier') {
                 serviceTypeSelect.innerHTML += `
                     <optgroup label="Courier Services">
-                        <option value="SAME_DAY">Same Day Delivery - R250</option>
-                        <option value="OVERNIGHT">Overnight Delivery - R200</option>
-                        <option value="ECONOMY">Economy (2-3 days) - R150</option>
+                        <option value="SAME_DAY">Same Day Delivery - R160</option>
+                        <option value="OVERNIGHT">Overnight Delivery - R120</option>
+                        <option value="ECONOMY">Economy (2-3 days) - R90</option>
                         <option value="URGENT">Urgent Delivery - R600</option>
                     </optgroup>
                 `;
@@ -1103,13 +1103,13 @@
                 const serviceType = serviceTypeSelect.value;
                 switch(serviceType) {
                     case 'SAME_DAY':
-                        basePrice = 250;
+                        basePrice = 160;
                         break;
                     case 'OVERNIGHT':
-                        basePrice = 200;
+                        basePrice = 120;
                         break;
                     case 'ECONOMY':
-                        basePrice = 150;
+                        basePrice = 90;
                         break;
                     case 'URGENT':
                         basePrice = 600;
@@ -1513,7 +1513,7 @@
                 if (descriptionField) descriptionField.value = quote.description;
             }
             
-            // Set service type if available - pre-select and make read-only
+            // Set service type if available - pre-select but keep it submittable
             if (quote.serviceType || (quote.selectedService && quote.selectedService.type)) {
                 const serviceType = quote.serviceType || quote.selectedService.type;
                 const serviceSelect = document.getElementById('serviceType');
@@ -1521,9 +1521,21 @@
                 
                 if (serviceSelect) {
                     serviceSelect.value = serviceType;
-                    // Make it read-only since it's from quote
-                    serviceSelect.setAttribute('readonly', 'readonly');
+                    // Make it visually disabled but still submittable via hidden input
+                    serviceSelect.setAttribute('disabled', 'disabled');
                     serviceSelect.classList.add('bg-gray-50', 'cursor-not-allowed');
+                    
+                    // Create a hidden input to preserve the value when disabled
+                    // Remove any existing hidden input first
+                    const existingHidden = document.querySelector('input[name="serviceType"][type="hidden"]');
+                    if (existingHidden) {
+                        existingHidden.remove();
+                    }
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'serviceType';
+                    hiddenInput.value = serviceType;
+                    serviceSelect.parentElement.appendChild(hiddenInput);
                     
                     // Add visual indicator
                     if (serviceTypeContainer) {
@@ -1643,8 +1655,22 @@
                 customerEmail = 'customer@example.com'; // Fallback only if no user data
             }
             
+            // Get service type - check form, hidden input, or sessionStorage
+            let serviceType = formData.get('serviceType');
+            if (!serviceType) {
+                // Check for hidden input (created when field is disabled)
+                const hiddenServiceType = document.querySelector('input[name="serviceType"][type="hidden"]');
+                if (hiddenServiceType) {
+                    serviceType = hiddenServiceType.value;
+                }
+            }
+            if (!serviceType) {
+                // Fallback to sessionStorage
+                serviceType = sessionStorage.getItem('quoteServiceType') || 'SAME_DAY';
+            }
+            
             return {
-                serviceType: formData.get('serviceType'),
+                serviceType: serviceType,
                 customerName: formData.get('pickupName') || (loggedInUser ? loggedInUser.name : ''),
                 customerEmail: customerEmail,
                 customerPhone: formData.get('pickupPhone') || (loggedInUser ? loggedInUser.phone : ''),

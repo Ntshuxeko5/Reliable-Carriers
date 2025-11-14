@@ -477,8 +477,8 @@
                 description: 'Same-day & Next-day',
                 icon: 'fas fa-bolt',
                 color: 'red',
-                basePrice: 89,
-                memberPrice: 76, // 15% discount
+                basePrice: 160,
+                memberPrice: 136, // 15% discount
                 multiplier: 1.2
             },
             {
@@ -487,8 +487,8 @@
                 description: '2-3 Business Days',
                 icon: 'fas fa-truck',
                 color: 'blue',
-                basePrice: 45,
-                memberPrice: 38, // 15% discount
+                basePrice: 120,
+                memberPrice: 102, // 15% discount
                 multiplier: 1.0
             },
             {
@@ -497,8 +497,8 @@
                 description: '4-7 Business Days',
                 icon: 'fas fa-shipping-fast',
                 color: 'green',
-                basePrice: 25,
-                memberPrice: 21, // 15% discount
+                basePrice: 90,
+                memberPrice: 77, // 15% discount
                 multiplier: 0.8
             }
         ];
@@ -574,22 +574,34 @@
             // Calculate pricing with member discount
             let basePrice = selectedService.memberPrice; // Use member price as base
             
-            // Weight multiplier (reduced for members)
-            if (actualWeight > 5) basePrice += (actualWeight - 5) * 4; // Reduced from 5
-            if (actualWeight > 10) basePrice += (actualWeight - 10) * 2.5; // Reduced from 3
+            // Weight surcharge (reasonable limits to prevent excessive pricing)
+            if (actualWeight > 5) {
+                const extraWeight = Math.min(actualWeight - 5, 20); // Cap at 20kg extra
+                basePrice += extraWeight * 2; // R2 per kg over 5kg, max R40
+            }
+            if (actualWeight > 25) {
+                const extraWeight = actualWeight - 25; // Additional weight over 25kg
+                basePrice += extraWeight * 1.5; // R1.50 per kg over 25kg
+            }
             
-            // Distance multiplier (reduced for members)
-            if (distance > 100) basePrice += (distance - 100) * 0.4; // Reduced from 0.5
-            if (distance > 500) basePrice += (distance - 500) * 0.25; // Reduced from 0.3
+            // Distance surcharge (reasonable limits)
+            if (distance > 50) {
+                const extraDistance = Math.min(distance - 50, 200); // Cap at 200km extra
+                basePrice += extraDistance * 0.3; // R0.30 per km over 50km, max R60
+            }
+            if (distance > 250) {
+                const extraDistance = distance - 250; // Additional distance over 250km
+                basePrice += extraDistance * 0.2; // R0.20 per km over 250km
+            }
             
             // Package type multiplier (reduced for members)
             const typeMultipliers = {
-                'document': 0.7, // Reduced from 0.8
-                'parcel': 0.9, // Reduced from 1.0
-                'fragile': 1.2, // Reduced from 1.3
-                'valuable': 1.3 // Reduced from 1.5
+                'document': 0.9,
+                'parcel': 1.0,
+                'fragile': 1.15,
+                'valuable': 1.2
             };
-            basePrice *= typeMultipliers[packageType] || 0.9;
+            basePrice *= typeMultipliers[packageType] || 1.0;
             
             // Service multiplier
             basePrice *= selectedService.multiplier;
@@ -892,9 +904,9 @@
                 
                 // Map service IDs to booking page service types
                 const serviceTypeMap = {
-                    'standard': 'SAME_DAY',
-                    'express': 'OVERNIGHT',
-                    'economy': 'ECONOMY',
+                    'express': 'SAME_DAY',  // Express Delivery -> Same Day
+                    'standard': 'OVERNIGHT', // Standard Delivery -> Overnight
+                    'economy': 'ECONOMY',    // Economy Delivery -> Economy
                     'urgent': 'URGENT'
                 };
                 
