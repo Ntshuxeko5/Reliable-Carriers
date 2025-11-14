@@ -79,6 +79,14 @@ public class User {
     @Column(name = "totp_enabled")
     private Boolean totpEnabled = false;
 
+    // Email verification field - tracks if user has verified their email during registration
+    @Column(name = "email_verified")
+    private Boolean emailVerified = false;
+
+    // Account active status - used for account management
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
     // Customer tier for business logic
     @Enumerated(EnumType.STRING)
     @Column(name = "customer_tier")
@@ -557,4 +565,10 @@ public class User {
     
     public Date getAccountLockedUntil() { return accountLockedUntil; }
     public void setAccountLockedUntil(Date accountLockedUntil) { this.accountLockedUntil = accountLockedUntil; }
+
+    public Boolean getEmailVerified() { return emailVerified; }
+    public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
+
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

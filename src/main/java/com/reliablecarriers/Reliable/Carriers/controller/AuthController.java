@@ -254,11 +254,11 @@ public class AuthController {
                     .body(Map.of("success", false, "error", "Verification code is required"));
             }
             
-            logger.debug("Verifying 2FA token for user: {}, token: {}", identifier, normalizedToken);
+            logger.info("Verifying 2FA token for user: {}, token: {}", identifier, normalizedToken);
             
             boolean ok = twoFactorService.verifyToken(user, normalizedToken);
             if (!ok) {
-                logger.warn("2FA verification failed for user: {}, token: {}", identifier, normalizedToken);
+                logger.warn("2FA verification failed for user: {}, entered token: {}", identifier, normalizedToken);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("success", false, "error", "Invalid or expired token. Please check the code and try again, or request a new code."));
             }
@@ -456,6 +456,9 @@ public class AuthController {
             // Register the user and implement 2FA
             User registeredUser;
             try {
+                // Set emailVerified to false - user must verify email before login
+                user.setEmailVerified(false);
+                user.setIsActive(true); // Account is active but not verified
                 registeredUser = authService.registerUser(user);
                 logger.info("User registered successfully: " + registeredUser.getEmail());
             } catch (Exception dbError) {
@@ -663,16 +666,19 @@ public class AuthController {
                     .body(Map.of("success", false, "message", "Verification code is required"));
             }
             
-            logger.debug("Verifying registration code for user: {}, code: {}", email, normalizedCode);
+            logger.info("Verifying registration code for user: {}, code: {}", email, normalizedCode);
             
             // Verify the 2FA token
             boolean verified = twoFactorService.verifyToken(user, normalizedCode);
             if (!verified) {
-                logger.warn("Registration verification failed for user: {}, code: {}", email, normalizedCode);
+                logger.warn("Registration verification failed for user: {}, entered code: {}", email, normalizedCode);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("success", false, "message", "Invalid or expired verification code. Please check the code and try again, or request a new code."));
             }
 
+            // Mark email as verified
+            user.setEmailVerified(true);
+            userRepository.save(user);
             logger.debug("Registration verification successful for: " + email);
 
             // Generate JWT token for the verified user
@@ -1020,11 +1026,30 @@ public class AuthController {
                         .body(Map.of("success", false, "message", "Access denied. Use the staff portal to sign in for staff accounts."));
             }
 
+            // Check if user has verified their email - block login if not verified
+            // EXCEPT for admins (they're trusted accounts created manually)
+            if (authenticatedUser.getRole() != UserRole.ADMIN) {
+                if (authenticatedUser.getEmailVerified() == null || !authenticatedUser.getEmailVerified()) {
+                    logger.warn("Login attempt by unverified user: {}", authenticatedUser.getEmail());
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                            "success", false,
+                            "message", "Please verify your email address before logging in. Check your inbox for the verification code.",
+                            "requiresVerification", true,
+                            "email", authenticatedUser.getEmail()
+                        ));
+                }
+            }
+
             // For customers, check if 2FA is enabled
             boolean has2faEnabled = Boolean.TRUE.equals(authenticatedUser.getTotpEnabled()) || 
                                    (authenticatedUser.getPhone() != null && !authenticatedUser.getPhone().isEmpty());
             
             if (has2faEnabled) {
+                // Clear authentication from SecurityContext - user must complete 2FA first
+                // This prevents users from accessing protected resources before completing 2FA
+                SecurityContextHolder.clearContext();
+                
                 // Present 2FA stage
                 return ResponseEntity.ok(Map.of(
                         "requires2fa", true,
@@ -1151,7 +1176,26 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied. Staff portal is for authorized personnel only.");
             }
 
+            // Check if user has verified their email - block login if not verified
+            // EXCEPT for admins (they're trusted accounts created manually)
+            if (authenticatedUser.getRole() != UserRole.ADMIN) {
+                if (authenticatedUser.getEmailVerified() == null || !authenticatedUser.getEmailVerified()) {
+                    logger.warn("Staff login attempt by unverified user: {}", authenticatedUser.getEmail());
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                            "success", false,
+                            "message", "Please verify your email address before logging in. Check your inbox for the verification code.",
+                            "requiresVerification", true,
+                            "email", authenticatedUser.getEmail()
+                        ));
+                }
+            }
+
             // For staff logins, require two-factor authentication as well.
+            // Clear authentication from SecurityContext - user must complete 2FA first
+            // This prevents users from accessing protected resources before completing 2FA
+            SecurityContextHolder.clearContext();
+            
             // Return a requires2fa payload so the client can initiate method-based token sending
             // or prompt for TOTP if enabled. After verifying via /api/auth/2fa/verify-method or /2fa/verify,
             // the server will issue the JWT/session.

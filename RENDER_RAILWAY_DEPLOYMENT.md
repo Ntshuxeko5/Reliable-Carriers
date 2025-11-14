@@ -54,7 +54,12 @@ APP_BASE_URL=https://your-app-name.up.railway.app
 # JWT (generate a secure secret)
 JWT_SECRET=your-very-long-random-secret-key
 
-# Email
+# Email (Gmail SMTP for Railway - works fine)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_SSL=false
+MAIL_USE_STARTTLS=true
+MAIL_PROTOCOL=smtp
 GMAIL_USERNAME=your-email@gmail.com
 GMAIL_APP_PASSWORD=your-app-password
 
@@ -131,8 +136,15 @@ DB_USERNAME=your_db_user
 DB_PASSWORD=your_db_password
 DB_DDL_AUTO=validate
 JWT_SECRET=your-secret-key
-GMAIL_USERNAME=your-email@gmail.com
-GMAIL_APP_PASSWORD=your-app-password
+
+# Email (TurboSMTP for Render - Gmail is blocked)
+MAIL_HOST=smtp.turbosmtp.com
+MAIL_PORT=587
+MAIL_USE_SSL=false
+MAIL_USE_STARTTLS=true
+MAIL_PROTOCOL=smtp
+TURBOSMTP_USERNAME=your-turbosmtp-username
+TURBOSMTP_PASSWORD=your-turbosmtp-password
 SMSPORTAL_API_KEY=your-key
 SMSPORTAL_API_SECRET=your-secret
 GOOGLE_MAPS_API_KEY=your-key
@@ -163,6 +175,76 @@ DB_URL=${{reliable-carriers-db.DATABASE_URL}}
 2. Add your domain
 3. Update DNS records
 4. Update `APP_BASE_URL` environment variable
+
+---
+
+## 📧 Email Configuration
+
+### Email Provider Selection
+
+The application supports multiple email providers via environment variables:
+
+- **Railway (Production)**: Use **Gmail SMTP** (works, free)
+- **Render (Staging)**: Use **TurboSMTP** (works on Render, free tier: 6,000 emails/month)
+
+**Why different providers?**
+- Render blocks outbound SMTP connections to Gmail
+- Railway allows Gmail SMTP connections
+- TurboSMTP works on both platforms and has a free tier
+
+### Railway Email Configuration (Production)
+
+Set these environment variables in Railway:
+
+```bash
+# Gmail SMTP Configuration
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_SSL=false
+MAIL_USE_STARTTLS=true
+MAIL_PROTOCOL=smtp
+GMAIL_USERNAME=your-email@gmail.com
+GMAIL_APP_PASSWORD=your-gmail-app-password
+```
+
+**Getting Gmail App Password:**
+1. Go to https://myaccount.google.com/security
+2. Enable 2-Step Verification
+3. Go to App Passwords
+4. Generate a new app password for "Mail"
+5. Use the 16-character password as `GMAIL_APP_PASSWORD`
+
+### Render Email Configuration (Staging)
+
+Set these environment variables in Render:
+
+```bash
+# TurboSMTP Configuration
+MAIL_HOST=smtp.turbosmtp.com
+MAIL_PORT=587
+MAIL_USE_SSL=false
+MAIL_USE_STARTTLS=true
+MAIL_PROTOCOL=smtp
+TURBOSMTP_USERNAME=your-turbosmtp-username
+TURBOSMTP_PASSWORD=your-turbosmtp-password
+```
+
+**Getting TurboSMTP Credentials:**
+1. Sign up at [TurboSMTP](https://serversmtp.com/) (free account)
+2. Verify your email address
+3. Go to SMTP Settings in dashboard
+4. Copy your SMTP username and password
+5. Verify the sender email you want to use
+
+**For detailed TurboSMTP setup instructions, see:** [`EMAIL_SETUP_GUIDE.md`](EMAIL_SETUP_GUIDE.md)
+
+### Testing Email
+
+After setting environment variables:
+1. Redeploy your service
+2. Trigger an email (e.g., user registration)
+3. Check application logs for email status
+4. Verify email was received
 
 ---
 
@@ -350,7 +432,9 @@ See `.env.example` for complete list of environment variables.
 - `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
 - `JWT_SECRET`
 - `APP_BASE_URL`
-- `GMAIL_USERNAME`, `GMAIL_APP_PASSWORD`
+- Email configuration (see Email Configuration section above)
+  - Railway: `GMAIL_USERNAME`, `GMAIL_APP_PASSWORD`
+  - Render: `TURBOSMTP_USERNAME`, `TURBOSMTP_PASSWORD`
 - `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY`
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 - `FACEBOOK_CLIENT_ID`, `FACEBOOK_CLIENT_SECRET`

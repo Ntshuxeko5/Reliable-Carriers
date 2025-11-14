@@ -185,9 +185,8 @@ public class SecurityConfig {
             .referrerPolicy(referrer -> referrer
                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
             )
-            .permissionsPolicy(permissions -> permissions
-                .policy("geolocation=(self), microphone=(), camera=()")
-            )
+            // Note: permissionsPolicy() is deprecated in Spring Security 6.x
+            // If needed, use a custom header writer instead
         );
 
         return http.build();

@@ -4,7 +4,6 @@ import com.reliablecarriers.Reliable.Carriers.dto.CustomerPackageResponse;
 import com.reliablecarriers.Reliable.Carriers.model.User;
 import com.reliablecarriers.Reliable.Carriers.service.AuthService;
 import com.reliablecarriers.Reliable.Carriers.service.CustomerPackageService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -28,10 +27,65 @@ public class CustomerWebController {
     private final CustomerPackageService customerPackageService;
     private final AuthService authService;
 
-    @Autowired
     public CustomerWebController(CustomerPackageService customerPackageService, AuthService authService) {
         this.customerPackageService = customerPackageService;
         this.authService = authService;
+    }
+
+    // Helper method to create navbar links for business pages
+    private List<Map<String, Object>> createBusinessNavLinks(String activePage) {
+        List<Map<String, Object>> links = new ArrayList<>();
+        
+        Map<String, Object> dashboard = new HashMap<>();
+        dashboard.put("label", "Dashboard");
+        dashboard.put("url", "/business/dashboard");
+        dashboard.put("active", "dashboard".equals(activePage));
+        links.add(dashboard);
+        
+        Map<String, Object> analytics = new HashMap<>();
+        analytics.put("label", "Analytics");
+        analytics.put("url", "/business/analytics");
+        analytics.put("active", "analytics".equals(activePage));
+        links.add(analytics);
+        
+        Map<String, Object> invoices = new HashMap<>();
+        invoices.put("label", "Invoices");
+        invoices.put("url", "/customer/invoices");
+        invoices.put("active", "invoices".equals(activePage));
+        links.add(invoices);
+        
+        Map<String, Object> webhooks = new HashMap<>();
+        webhooks.put("label", "Webhooks");
+        webhooks.put("url", "/customer/webhooks");
+        webhooks.put("active", "webhooks".equals(activePage));
+        links.add(webhooks);
+        
+        Map<String, Object> apiKeys = new HashMap<>();
+        apiKeys.put("label", "API Keys");
+        apiKeys.put("url", "/customer/api-keys");
+        apiKeys.put("active", "api-keys".equals(activePage));
+        links.add(apiKeys);
+        
+        Map<String, Object> support = new HashMap<>();
+        support.put("label", "Support");
+        support.put("url", "/customer/support");
+        support.put("active", "support".equals(activePage));
+        links.add(support);
+        
+        Map<String, Object> loginHistory = new HashMap<>();
+        loginHistory.put("label", "Login History");
+        loginHistory.put("url", "/customer/login-history");
+        loginHistory.put("active", "login-history".equals(activePage));
+        links.add(loginHistory);
+        
+        Map<String, Object> logout = new HashMap<>();
+        logout.put("label", "Logout");
+        logout.put("url", "/logout");
+        logout.put("active", false);
+        logout.put("id", "logoutBtn");
+        links.add(logout);
+        
+        return links;
     }
 
     // Helper method to create navbar links for customer pages
@@ -44,11 +98,11 @@ public class CustomerWebController {
         dashboard.put("active", "dashboard".equals(activePage));
         links.add(dashboard);
         
-        Map<String, Object> track = new HashMap<>();
-        track.put("label", "Track Package");
-        track.put("url", "/customer/track");
-        track.put("active", "track".equals(activePage));
-        links.add(track);
+        Map<String, Object> packages = new HashMap<>();
+        packages.put("label", "My Packages");
+        packages.put("url", "/customer/packages");
+        packages.put("active", "packages".equals(activePage));
+        links.add(packages);
         
         Map<String, Object> quote = new HashMap<>();
         quote.put("label", "Get Quote");
@@ -69,59 +123,35 @@ public class CustomerWebController {
         
         Map<String, Object> movingServices = new HashMap<>();
         movingServices.put("label", "Moving Services");
-        movingServices.put("url", "/moving-services");
+        // Check if user is authenticated - if so, link to customer version
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser != null) {
+                movingServices.put("url", "/customer/moving-services");
+            } else {
+                movingServices.put("url", "/moving-services");
+            }
+        } catch (Exception e) {
+            // If error, default to public moving services page
+            movingServices.put("url", "/moving-services");
+        }
         movingServices.put("active", "moving-services".equals(activePage));
         links.add(movingServices);
         
-        Map<String, Object> packages = new HashMap<>();
-        packages.put("label", "My Packages");
-        packages.put("url", "/customer/packages");
-        packages.put("active", "packages".equals(activePage));
-        links.add(packages);
-        
-        Map<String, Object> analytics = new HashMap<>();
-        analytics.put("label", "Analytics");
-        analytics.put("url", "/customer/analytics");
-        analytics.put("active", "analytics".equals(activePage));
-        links.add(analytics);
-        
-        Map<String, Object> payments = new HashMap<>();
-        payments.put("label", "Payments");
-        payments.put("url", "/customer/payments");
-        payments.put("active", "payments".equals(activePage));
-        links.add(payments);
-        
-        // Add invoices and webhooks links for business users
+        // Add business-specific links only for business users
         try {
             User currentUser = authService.getCurrentUser();
             if (currentUser != null && currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
-                Map<String, Object> invoices = new HashMap<>();
-                invoices.put("label", "Invoices");
-                invoices.put("url", "/customer/invoices");
-                invoices.put("active", "invoices".equals(activePage));
-                links.add(invoices);
-                
-                Map<String, Object> webhooks = new HashMap<>();
-                webhooks.put("label", "Webhooks");
-                webhooks.put("url", "/customer/webhooks");
-                webhooks.put("active", "webhooks".equals(activePage));
-                links.add(webhooks);
+                // Business users see business dashboard link
+                Map<String, Object> businessDashboard = new HashMap<>();
+                businessDashboard.put("label", "Business");
+                businessDashboard.put("url", "/business/dashboard");
+                businessDashboard.put("active", false);
+                links.add(businessDashboard);
             }
         } catch (Exception e) {
             // Ignore errors
         }
-        
-        Map<String, Object> support = new HashMap<>();
-        support.put("label", "Support");
-        support.put("url", "/customer/support");
-        support.put("active", "support".equals(activePage));
-        links.add(support);
-        
-        Map<String, Object> loginHistory = new HashMap<>();
-        loginHistory.put("label", "Login History");
-        loginHistory.put("url", "/customer/login-history");
-        loginHistory.put("active", "login-history".equals(activePage));
-        links.add(loginHistory);
         
         Map<String, Object> profile = new HashMap<>();
         profile.put("label", "Profile");
@@ -328,7 +358,7 @@ public class CustomerWebController {
             model.addAttribute("isBusiness", false);
             model.addAttribute("isVerified", false);
         }
-        return "customer/api-keys";
+        return "business/api-keys";
     }
 
     // Quote creation page
@@ -394,6 +424,39 @@ public class CustomerWebController {
         model.addAttribute("navLinks", createCustomerNavLinks("quote"));
         // Redirect to /quote which will show logged-in version if authenticated
         return createQuote(model);
+    }
+
+    // Moving services page - routes to logged-in version if authenticated
+    @GetMapping("/moving-services")
+    public String movingServices(Model model) {
+        model.addAttribute("navLinks", createCustomerNavLinks("moving-services"));
+        try {
+            // Check if user is authenticated
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() && 
+                !(authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
+                
+                try {
+                    User currentUser = authService.getCurrentUser();
+                    if (currentUser != null) {
+                        model.addAttribute("isAuthenticated", true);
+                        model.addAttribute("userName", currentUser.getFirstName());
+                        model.addAttribute("userEmail", currentUser.getEmail());
+                        model.addAttribute("userPhone", currentUser.getPhone());
+                        model.addAttribute("userId", currentUser.getId());
+                        return "customer/moving-services-logged-in";
+                    }
+                } catch (Exception e) {
+                    // User might not exist, continue to public page
+                }
+            }
+        } catch (Exception e) {
+            // If authentication fails, continue with default behavior
+        }
+        
+        // Default to public moving services page
+        model.addAttribute("isAuthenticated", false);
+        return "redirect:/moving-services";
     }
 
     // Package management by email
@@ -590,6 +653,9 @@ public class CustomerWebController {
         return "customer/store";
     }
 
+    // Track Package - removed duplicate mapping (business version exists below)
+
+
     // Package cancellation
     @GetMapping("/cancel")
     public String cancelPackage(Model model) {
@@ -682,7 +748,7 @@ public class CustomerWebController {
         } catch (Exception e) {
             return "redirect:/login";
         }
-        return "customer/invoices";
+        return "business/invoices";
     }
 
     // Webhook management page
@@ -705,7 +771,7 @@ public class CustomerWebController {
         } catch (Exception e) {
             return "redirect:/login";
         }
-        return "customer/webhooks";
+        return "business/webhooks";
     }
 
     // Pickup request
@@ -848,61 +914,98 @@ public class CustomerWebController {
         return "customer/contact";
     }
 
-    // Analytics page
+    // Analytics page - BUSINESS ONLY (redirects to business analytics)
     @GetMapping("/analytics")
     public String analytics(Model model) {
-        model.addAttribute("navLinks", createCustomerNavLinks("analytics"));
         try {
-            // Get current user information
             User currentUser = authService.getCurrentUser();
             if (currentUser != null) {
-                model.addAttribute("isAuthenticated", true);
-                model.addAttribute("userName", currentUser.getFirstName());
-                model.addAttribute("userEmail", currentUser.getEmail());
-                model.addAttribute("user", currentUser);
-                model.addAttribute("customerTier", currentUser.getCustomerTier());
-                return "customer/analytics";
+                // Check if user is a business - redirect to business analytics
+                if (currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
+                    return "redirect:/business/analytics";
+                }
             }
         } catch (Exception e) {
-            // If authentication fails, redirect to login
+            // If error, redirect to dashboard
         }
-        
-        // Redirect to login if not authenticated
-        return "redirect:/login";
+        // Regular customers don't have analytics - redirect to dashboard
+        return "redirect:/customer/dashboard";
     }
 
-    // Support tickets page
+    // Support tickets page - BUSINESS ONLY
     @GetMapping("/support")
     public String supportTickets(Model model) {
-        model.addAttribute("navLinks", createCustomerNavLinks("support"));
         try {
             User currentUser = authService.getCurrentUser();
-            if (currentUser != null) {
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Check if user is a business
+            if (currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
+                model.addAttribute("navLinks", createBusinessNavLinks("support"));
                 model.addAttribute("user", currentUser);
                 model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
                 model.addAttribute("userEmail", currentUser.getEmail());
+                return "business/support";
+            } else {
+                // Regular customers don't have access to support page
+                return "redirect:/customer/dashboard";
             }
         } catch (Exception e) {
-            // User not authenticated or error getting user
+            return "redirect:/login";
         }
-        return "customer/support";
     }
 
-    // Login history page
+    // Login history page - BUSINESS ONLY
     @GetMapping("/login-history")
     public String loginHistory(Model model) {
-        model.addAttribute("navLinks", createCustomerNavLinks("login-history"));
         try {
             User currentUser = authService.getCurrentUser();
-            if (currentUser != null) {
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Check if user is a business
+            if (currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
+                model.addAttribute("navLinks", createBusinessNavLinks("login-history"));
                 model.addAttribute("user", currentUser);
                 model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
                 model.addAttribute("userEmail", currentUser.getEmail());
+                return "business/login-history";
+            } else {
+                // Regular customers don't have access to login history page
+                return "redirect:/customer/dashboard";
             }
         } catch (Exception e) {
-            // User not authenticated or error getting user
+            return "redirect:/login";
         }
-        return "customer/login-history";
+    }
+
+    // Tier-aware tracking page - BUSINESS ONLY
+    @GetMapping("/tier-aware-track")
+    public String tierAwareTrack(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Check if user is a business
+            if (currentUser.getIsBusiness() != null && currentUser.getIsBusiness()) {
+                model.addAttribute("navLinks", createBusinessNavLinks("tier-aware-track"));
+                model.addAttribute("user", currentUser);
+                model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("userEmail", currentUser.getEmail());
+                model.addAttribute("customerTier", currentUser.getCustomerTier());
+                return "business/tier-aware-track";
+            } else {
+                // Regular customers don't have access to tier-aware tracking
+                return "redirect:/customer/track";
+            }
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
     }
 
     // Profile page
@@ -926,4 +1029,28 @@ public class CustomerWebController {
         // Redirect to login if not authenticated
         return "redirect:/login";
     }
+    private List<Map<String, String>> createCustomerNavLinks() {
+    List<Map<String, String>> navLinks = new ArrayList<>();
+
+    navLinks.add(Map.of("label", "Dashboard", "url", "/customer/dashboard"));
+    navLinks.add(Map.of("label", "Packages", "url", "/customer/packages"));
+    navLinks.add(Map.of("label", "Track", "url", "/customer/track"));
+    navLinks.add(Map.of("label", "Statistics", "url", "/customer/statistics"));
+    navLinks.add(Map.of("label", "Store", "url", "/customer/store"));
+    navLinks.add(Map.of("label", "Cancel", "url", "/customer/cancel"));
+
+    // Optional: show business-only links if the current user is a business account
+    try {
+        User currentUser = authService.getCurrentUser();
+        if (currentUser != null && Boolean.TRUE.equals(currentUser.getIsBusiness())) {
+            navLinks.add(Map.of("label", "Invoices", "url", "/business/invoices"));
+            navLinks.add(Map.of("label", "Webhooks", "url", "/business/webhooks"));
+        }
+    } catch (Exception e) {
+        // ignore authentication errors for nav bar
+    }
+
+    return navLinks;
+}
+
 }

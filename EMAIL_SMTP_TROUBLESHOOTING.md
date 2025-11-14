@@ -33,7 +33,7 @@ Couldn't connect to host, port: smtp.gmail.com, 587; timeout 15000
 
 ### 2. Check Network/Firewall Settings
 
-Some hosting providers (like Render, Railway) may block outbound SMTP connections on port 587.
+Some hosting providers (like Render) may block outbound SMTP connections to Gmail. Railway typically allows Gmail SMTP connections.
 
 #### Try Alternative Ports:
 
@@ -64,9 +64,33 @@ MAIL_PORT=587
 
 ### 4. Alternative Email Providers
 
-If Gmail SMTP continues to fail, consider using:
+If Gmail SMTP continues to fail (especially on Render), use an alternative provider:
 
-#### A. SendGrid (Recommended for Production)
+#### A. TurboSMTP (Recommended for Render - Free Tier Available)
+
+**Best for Render (Staging)**: TurboSMTP works reliably on Render and offers a free tier (6,000 emails/month).
+
+```bash
+# Environment Variables for Render
+MAIL_HOST=smtp.turbosmtp.com
+MAIL_PORT=587
+MAIL_USE_SSL=false
+MAIL_USE_STARTTLS=true
+MAIL_PROTOCOL=smtp
+TURBOSMTP_USERNAME=your-turbosmtp-username
+TURBOSMTP_PASSWORD=your-turbosmtp-password
+```
+
+**Setup Steps:**
+1. Sign up at [TurboSMTP](https://serversmtp.com/) (free account)
+2. Verify your email address
+3. Get SMTP credentials from dashboard
+4. Set environment variables in Render
+5. Redeploy your service
+
+**For detailed setup instructions, see:** [`EMAIL_SETUP_GUIDE.md`](EMAIL_SETUP_GUIDE.md)
+
+#### B. SendGrid (Recommended for Production)
 ```properties
 spring.mail.host=smtp.sendgrid.net
 spring.mail.port=587
@@ -74,7 +98,7 @@ spring.mail.username=apikey
 spring.mail.password=your-sendgrid-api-key
 ```
 
-#### B. Mailgun
+#### C. Mailgun
 ```properties
 spring.mail.host=smtp.mailgun.org
 spring.mail.port=587
@@ -82,13 +106,24 @@ spring.mail.username=your-mailgun-username
 spring.mail.password=your-mailgun-password
 ```
 
-#### C. Amazon SES
+#### D. Amazon SES
 ```properties
 spring.mail.host=email-smtp.us-east-1.amazonaws.com
 spring.mail.port=587
 spring.mail.username=your-ses-access-key
 spring.mail.password=your-ses-secret-key
 ```
+
+### 4.1. Platform-Specific Recommendations
+
+**For Railway (Production):**
+- ✅ Use **Gmail SMTP** (works fine, free)
+- Gmail SMTP connections are not blocked on Railway
+
+**For Render (Staging):**
+- ❌ **Gmail SMTP is blocked** - will not work
+- ✅ Use **TurboSMTP** (free tier, works on Render)
+- Alternative: Use SendGrid, Mailgun, or AWS SES
 
 ### 5. Test SMTP Connection
 
@@ -127,9 +162,27 @@ The application is configured with:
 
 ## Next Steps
 
-1. Verify Gmail App Password is correct
-2. Check if your hosting provider allows outbound SMTP connections
-3. Try alternative port 465 with SSL
-4. Consider switching to a production email service (SendGrid, Mailgun, AWS SES)
-5. Check application logs for detailed error messages
+1. **For Railway**: Verify Gmail App Password is correct
+2. **For Render**: Switch to TurboSMTP (Gmail is blocked) - see [`EMAIL_SETUP_GUIDE.md`](EMAIL_SETUP_GUIDE.md)
+3. Check if your hosting provider allows outbound SMTP connections
+4. Try alternative port 465 with SSL (if using Gmail)
+5. Consider switching to a production email service (SendGrid, Mailgun, AWS SES) for production
+6. Check application logs for detailed error messages
+
+## Quick Solution for Render
+
+If you're deploying to Render and experiencing email connection timeouts:
+
+1. **Sign up for TurboSMTP** (free): https://serversmtp.com/
+2. **Get your SMTP credentials** from TurboSMTP dashboard
+3. **Set environment variables in Render**:
+   ```bash
+   MAIL_HOST=smtp.turbosmtp.com
+   MAIL_PORT=587
+   TURBOSMTP_USERNAME=your-username
+   TURBOSMTP_PASSWORD=your-password
+   ```
+4. **Redeploy** your service
+
+See [`EMAIL_SETUP_GUIDE.md`](EMAIL_SETUP_GUIDE.md) for complete setup instructions.
 

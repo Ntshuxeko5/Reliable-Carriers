@@ -32,11 +32,24 @@
         .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
         .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .customer-badge { background: linear-gradient(135deg, #10b981, #059669); }
+        .premium-feature { background: linear-gradient(135deg, #f59e0b, #d97706); }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
     <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
+
+    <!-- Customer Benefits Banner -->
+    <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="flex items-center justify-center space-x-4">
+                <i class="fas fa-crown text-2xl"></i>
+                <span class="text-lg font-semibold">Welcome back, <span th:text="${userName}">Customer</span>!</span>
+                <span class="text-sm">• Member discounts • Priority support • Save quotes</span>
+            </div>
+        </div>
+    </div>
 
     <!-- Hero Section -->
     <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-16">
@@ -45,8 +58,22 @@
                 <span class="gradient-text bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">Moving Services</span>
             </h1>
             <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-                Professional moving and load transport services with transparent pricing. Book your move today.
+                Professional moving and load transport services with your exclusive member benefits. Get instant quotes and save for later.
             </p>
+            <div class="flex justify-center space-x-4 text-sm text-blue-200">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>Member Discounts</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>Saved Quotes</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>Priority Support</span>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -61,6 +88,7 @@
                 <li><strong>Base Price:</strong> R550 for distances up to 20km</li>
                 <li><strong>Additional Cost:</strong> R25 per kilometer beyond 20km</li>
                 <li><strong>Free Distance:</strong> First 20km included in base price</li>
+                <li class="mt-2 text-green-700"><strong>Member Benefit:</strong> Additional discounts may apply for logged-in customers</li>
             </ul>
         </div>
 
@@ -85,7 +113,7 @@
             <div class="lg:col-span-2">
                 <div class="glass-effect rounded-2xl shadow-lg p-8">
                     <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                        <i class="fas fa-truck-moving mr-3 gradient-text"></i>Book Moving Service
+                        <i class="fas fa-truck-moving mr-3 gradient-text"></i>Get Moving Service Quote
                     </h2>
                     
                     <form id="movingServiceForm" class="space-y-6">
@@ -102,6 +130,27 @@
                                 <option value="EXPRESS_DELIVERY">Express Delivery</option>
                                 <option value="SAME_DAY_DELIVERY">Same Day Delivery</option>
                             </select>
+                        </div>
+
+                        <!-- Saved Addresses (for logged-in users) -->
+                        <div class="bg-green-50 rounded-xl p-6 mb-6" id="savedAddressesSection" style="display: none;">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-bookmark mr-2 text-green-600"></i>Saved Addresses
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Pickup Address</label>
+                                    <select id="pickupAddressSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Select saved address or enter new</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Address</label>
+                                    <select id="deliveryAddressSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Select saved address or enter new</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Pickup and Delivery Addresses with Google Maps -->
@@ -258,45 +307,31 @@
 
                         <!-- Submit Button -->
                         <div class="pt-6">
-                            <button type="submit" 
+                            <button type="submit" id="submitBtn"
                                     class="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center">
                                 <i class="fas fa-calculator mr-2"></i>
-                                Calculate Price & Book Service
+                                <span id="submitBtnText">Get Quote</span>
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Pricing Calculator & Info -->
+            <!-- Quote Results Sidebar -->
             <div class="lg:col-span-1">
                 <div class="glass-effect rounded-2xl shadow-lg p-8 sticky top-8">
                     <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                        <i class="fas fa-calculator mr-3 gradient-text"></i>Price Calculator
+                        <i class="fas fa-receipt mr-3 gradient-text"></i>Quote Results
                     </h2>
                     
-                    <div class="space-y-4 mb-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Distance (km)</label>
-                            <input type="number" id="calcDistance" step="0.1" min="0" placeholder="Enter distance"
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        <button type="button" onclick="calculatePrice()"
-                                class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
-                            <i class="fas fa-calculator mr-2"></i>Calculate Price
-                        </button>
-                    </div>
-                    
-                    <div id="pricingResult" class="hidden">
-                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                            <h6 class="font-semibold text-gray-900 mb-3">
-                                <i class="fas fa-receipt mr-2 text-blue-600"></i>Price Breakdown
-                            </h6>
-                            <div id="pricingDetails" class="space-y-2 text-sm"></div>
+                    <div id="quoteResults" class="space-y-4">
+                        <div class="text-center text-gray-500 py-8">
+                            <i class="fas fa-calculator text-4xl mb-4"></i>
+                            <p>Fill out the form to get an instant quote</p>
                         </div>
                     </div>
 
-                    <!-- Service Types Info -->
+                    <!-- Quick Info -->
                     <div class="mt-8 pt-6 border-t border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">
                             <i class="fas fa-info-circle mr-2 text-blue-600"></i>Service Types
@@ -313,18 +348,6 @@
                                     <i class="fas fa-boxes mr-2 text-green-600"></i>Load Transport
                                 </div>
                                 <div class="text-sm text-gray-600 mt-1">Heavy load transportation</div>
-                            </div>
-                            <div class="p-3 bg-gray-50 rounded-lg">
-                                <div class="font-medium text-gray-900 flex items-center">
-                                    <i class="fas fa-shipping-fast mr-2 text-orange-600"></i>Express Delivery
-                                </div>
-                                <div class="text-sm text-gray-600 mt-1">Fast delivery within 24 hours</div>
-                            </div>
-                            <div class="p-3 bg-gray-50 rounded-lg">
-                                <div class="font-medium text-gray-900 flex items-center">
-                                    <i class="fas fa-clock mr-2 text-purple-600"></i>Same Day Delivery
-                                </div>
-                                <div class="text-sm text-gray-600 mt-1">Delivery on the same day</div>
                             </div>
                         </div>
                     </div>
@@ -349,12 +372,15 @@
     </div>
 
     <script>
+        // Store current quote data
+        let currentQuote = null;
+        let currentUserId = /*[[${userId}]]*/ null;
+
         // Google Maps integration
         let pickupAutocomplete, deliveryAutocomplete;
         let pickupCoordinates = null;
         let deliveryCoordinates = null;
         let directionsService = null;
-        let directionsRenderer = null;
 
         function initMap() {
             // Initialize autocomplete for pickup address
@@ -427,7 +453,6 @@
         // Calculate distance between pickup and delivery
         function calculateDistance() {
             if (!pickupCoordinates || !deliveryCoordinates) {
-                alert('Please select both pickup and delivery addresses first');
                 return;
             }
 
@@ -443,17 +468,14 @@
                     const route = result.routes[0];
                     let totalDistance = 0;
                     
-                    // Sum up all legs of the route
                     route.legs.forEach(function(leg) {
-                        totalDistance += leg.distance.value; // distance in meters
+                        totalDistance += leg.distance.value;
                     });
                     
-                    // Convert to kilometers and round to 1 decimal place
                     const distanceKm = (totalDistance / 1000).toFixed(1);
                     document.getElementById('distanceKm').value = distanceKm;
                 } else {
                     console.error('Directions request failed: ' + status);
-                    alert('Could not calculate distance. Please check your addresses.');
                 }
             });
         }
@@ -469,77 +491,38 @@
             if (calcBtn) {
                 calcBtn.addEventListener('click', calculateDistance);
             }
+            
+            // Set default date to today
+            const requestedDateInput = document.getElementById('requestedDate');
+            if (requestedDateInput) {
+                requestedDateInput.value = new Date().toISOString().split('T')[0];
+            }
+            
+            // Load user's services
+            loadMyServices();
         });
 
-        // Calculate price
-        async function calculatePrice() {
-            const distance = document.getElementById('calcDistance').value;
+        // Create quote (not booking directly)
+        async function createQuote() {
+            const fullMovingValue = document.querySelector('input[name="fullMoving"]:checked');
+            const distance = document.getElementById('distanceKm').value;
+            
             if (!distance || distance <= 0) {
-                alert('Please enter a valid distance');
+                alert('Please calculate the distance first by selecting both addresses');
                 return;
             }
-
-            try {
-                const response = await fetch(`/api/moving-services/calculate-price?distanceKm=${distance}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + getAuthToken()
-                    }
-                });
-
-                if (response.ok) {
-                    const breakdown = await response.json();
-                    displayPricingBreakdown(breakdown);
-                } else {
-                    alert('Failed to calculate price');
-                }
-            } catch (error) {
-                console.error('Error calculating price:', error);
-                alert('Error calculating price');
-            }
-        }
-
-        // Display pricing breakdown
-        function displayPricingBreakdown(breakdown) {
-            const resultDiv = document.getElementById('pricingResult');
-            const detailsDiv = document.getElementById('pricingDetails');
             
-            detailsDiv.innerHTML = `
-                <div class="flex justify-between py-2 border-b border-blue-200">
-                    <span class="text-gray-700">Distance:</span>
-                    <span class="font-semibold">${breakdown.distanceKm} km</span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-blue-200">
-                    <span class="text-gray-700">Base Price:</span>
-                    <span class="font-semibold">R${breakdown.basePrice}</span>
-                </div>
-                ${breakdown.extraDistanceCharge > 0 ? `
-                <div class="flex justify-between py-2 border-b border-blue-200">
-                    <span class="text-gray-700">Extra Distance:</span>
-                    <span class="font-semibold">R${breakdown.extraDistanceCharge}</span>
-                </div>
-                ` : ''}
-                <div class="flex justify-between py-2 pt-2">
-                    <span class="text-lg font-bold text-gray-900">Total Price:</span>
-                    <span class="text-lg font-bold text-blue-600">R${breakdown.totalPrice}</span>
-                </div>
-                <p class="text-xs text-gray-500 mt-2">${breakdown.breakdown || ''}</p>
-            `;
-            
-            resultDiv.classList.remove('hidden');
-        }
-
-        // Handle form submission
-        document.getElementById('movingServiceForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const fullMovingValue = document.querySelector('input[name="fullMoving"]:checked');
-            
-            const formData = {
+            const quoteData = {
                 serviceType: document.getElementById('serviceType').value,
                 pickupAddress: document.getElementById('pickupAddress').value,
                 deliveryAddress: document.getElementById('deliveryAddress').value,
-                distanceKm: parseFloat(document.getElementById('distanceKm').value),
+                pickupLatitude: document.getElementById('pickupLatitude').value,
+                pickupLongitude: document.getElementById('pickupLongitude').value,
+                pickupPlaceId: document.getElementById('pickupPlaceId').value,
+                deliveryLatitude: document.getElementById('deliveryLatitude').value,
+                deliveryLongitude: document.getElementById('deliveryLongitude').value,
+                deliveryPlaceId: document.getElementById('deliveryPlaceId').value,
+                distanceKm: parseFloat(distance),
                 description: document.getElementById('description').value,
                 numberOfItems: parseInt(document.getElementById('numberOfItems').value),
                 numberOfLoads: parseInt(document.getElementById('numberOfLoads').value),
@@ -551,37 +534,151 @@
             };
 
             try {
-                const response = await fetch('/api/moving-services?customerId=1', {
+                // First, calculate price
+                const priceResponse = await fetch(`/api/moving-services/calculate-price?distanceKm=${distance}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + getAuthToken()
-                    },
-                    body: JSON.stringify(formData)
+                        'Authorization': 'Bearer ' + getAuthToken(),
+                        'Content-Type': 'application/json'
+                    }
                 });
 
-                if (response.ok) {
-                    const result = await response.json();
-                    alert('Moving service booked successfully!\nService ID: ' + result.id + '\nTotal Price: R' + result.totalPrice);
-                    document.getElementById('movingServiceForm').reset();
-                    document.getElementById('pricingResult').classList.add('hidden');
-                    loadMyServices();
-                } else {
-                    const error = await response.json();
-                    alert('Failed to book service: ' + (error.message || 'Unknown error'));
+                if (!priceResponse.ok) {
+                    throw new Error('Failed to calculate price');
                 }
+
+                const priceBreakdown = await priceResponse.json();
+                
+                // Store quote data
+                currentQuote = {
+                    ...quoteData,
+                    ...priceBreakdown,
+                    totalPrice: priceBreakdown.totalPrice
+                };
+                
+                // Display quote results
+                displayQuoteResults(currentQuote);
+                
             } catch (error) {
-                console.error('Error booking service:', error);
-                alert('Error booking service');
+                console.error('Error creating quote:', error);
+                alert('Error creating quote: ' + error.message);
+            }
+        }
+
+        // Display quote results
+        function displayQuoteResults(quote) {
+            const quoteResultsDiv = document.getElementById('quoteResults');
+            quoteResultsDiv.innerHTML = `
+                <div class="bg-white rounded-xl border-2 border-blue-200 p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-receipt mr-2 text-blue-600"></i>Your Quote
+                    </h3>
+                    
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Service Type:</span>
+                            <span class="font-semibold">${quote.serviceType}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Distance:</span>
+                            <span class="font-semibold">${quote.distanceKm} km</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Base Price:</span>
+                            <span class="font-semibold">R${quote.basePrice}</span>
+                        </div>
+                        ${quote.extraDistanceCharge > 0 ? `
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Extra Distance:</span>
+                            <span class="font-semibold">R${quote.extraDistanceCharge}</span>
+                        </div>
+                        ` : ''}
+                        <div class="border-t pt-3 mt-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-bold text-gray-900">Total Price:</span>
+                                <span class="text-2xl font-bold text-blue-600">R${quote.totalPrice}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <button onclick="proceedToBooking()" 
+                                class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                            <i class="fas fa-check-circle mr-2"></i>Book This Service
+                        </button>
+                        <button onclick="saveQuote()" 
+                                class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-bookmark mr-2"></i>Save Quote for Later
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Proceed to booking
+        function proceedToBooking() {
+            if (!currentQuote) {
+                alert('Please generate a quote first');
+                return;
+            }
+            
+            // Store quote data for booking page
+            sessionStorage.setItem('movingServiceQuote', JSON.stringify(currentQuote));
+            
+            // Redirect to booking page
+            window.location.href = '/booking?serviceType=moving';
+        }
+
+        // Save quote (store in sessionStorage for now - can be enhanced with backend later)
+        function saveQuote() {
+            if (!currentQuote) {
+                alert('Please generate a quote first');
+                return;
+            }
+            
+            // Store quote in sessionStorage
+            const savedQuotes = JSON.parse(sessionStorage.getItem('savedMovingQuotes') || '[]');
+            savedQuotes.push({
+                ...currentQuote,
+                savedAt: new Date().toISOString()
+            });
+            sessionStorage.setItem('savedMovingQuotes', JSON.stringify(savedQuotes));
+            
+            alert('Quote saved successfully! You can access it later from your saved quotes.');
+        }
+
+        // Handle form submission
+        document.getElementById('movingServiceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Calculating...';
+            submitBtn.disabled = true;
+            
+            try {
+                await createQuote();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error creating quote: ' + error.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         });
 
         // Load user's services
         async function loadMyServices() {
+            const token = getAuthToken();
+            if (!token || !currentUserId) {
+                document.getElementById('myServices').innerHTML = '<div class="text-center text-gray-500 py-8">Please login to view your services</div>';
+                return;
+            }
+            
             try {
-                const response = await fetch('/api/moving-services/customer/1', {
+                const response = await fetch(`/api/moving-services/customer/${currentUserId}`, {
                     headers: {
-                        'Authorization': 'Bearer ' + getAuthToken()
+                        'Authorization': 'Bearer ' + token
                     }
                 });
 
@@ -645,11 +742,44 @@
             `).join('');
         }
 
-        // Set default date to today
-        document.getElementById('requestedDate').value = new Date().toISOString().split('T')[0];
+        // Check authentication and redirect if needed
+        async function checkAuthAndLoadUser() {
+            const token = getAuthToken();
+            if (!token) {
+                // If no token, redirect to public moving services page
+                window.location.href = '/moving-services';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/customer/profile', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    // If auth fails, redirect to public page
+                    window.location.href = '/moving-services';
+                    return;
+                }
+                
+                const userData = await response.json();
+                if (userData.id) {
+                    currentUserId = userData.id;
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+                // Continue anyway - user might still be able to use the page
+            }
+        }
 
-        // Load user's services on page load
-        loadMyServices();
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthAndLoadUser();
+        });
     </script>
 
     <!-- Footer -->
@@ -674,7 +804,7 @@
                     <ul class="space-y-2 text-gray-300">
                         <li><a href="/contact" class="hover:text-reliable-yellow-400 transition-colors">Contact Us</a></li>
                         <li><a href="/tracking" class="hover:text-reliable-yellow-400 transition-colors">Track Package</a></li>
-                        <li><a href="/quote" class="hover:text-reliable-yellow-400 transition-colors">Get Quote</a></li>
+                        <li><a href="/customer/quote" class="hover:text-reliable-yellow-400 transition-colors">Get Quote</a></li>
                         <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">FAQ</a></li>
                     </ul>
                 </div>
@@ -694,3 +824,4 @@
     </footer>
 </body>
 </html>
+

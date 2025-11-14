@@ -27,6 +27,9 @@ public class MovingServiceResponse {
     private String description;
     private Double weightKg;
     private Integer numberOfItems;
+    private Integer numberOfLoads;
+    private String truckSize;
+    private Boolean fullMoving;
     private ShipmentStatus status;
     private String requestedDate;
     private String scheduledDate;
@@ -62,6 +65,9 @@ public class MovingServiceResponse {
         this.description = movingService.getDescription();
         this.weightKg = movingService.getWeightKg();
         this.numberOfItems = movingService.getNumberOfItems();
+        this.numberOfLoads = movingService.getNumberOfLoads();
+        this.truckSize = movingService.getTruckSize();
+        this.fullMoving = movingService.getFullMoving();
         this.status = movingService.getStatus();
         this.specialInstructions = movingService.getSpecialInstructions();
         
@@ -241,6 +247,30 @@ public class MovingServiceResponse {
     
     public void setNumberOfItems(Integer numberOfItems) {
         this.numberOfItems = numberOfItems;
+    }
+    
+    public Integer getNumberOfLoads() {
+        return numberOfLoads;
+    }
+    
+    public void setNumberOfLoads(Integer numberOfLoads) {
+        this.numberOfLoads = numberOfLoads;
+    }
+    
+    public String getTruckSize() {
+        return truckSize;
+    }
+    
+    public void setTruckSize(String truckSize) {
+        this.truckSize = truckSize;
+    }
+    
+    public Boolean getFullMoving() {
+        return fullMoving;
+    }
+    
+    public void setFullMoving(Boolean fullMoving) {
+        this.fullMoving = fullMoving;
     }
     
     public ShipmentStatus getStatus() {

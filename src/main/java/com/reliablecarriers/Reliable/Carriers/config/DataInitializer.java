@@ -33,6 +33,8 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setZipCode("12345");
             adminUser.setCountry("USA");
             adminUser.setRole(UserRole.ADMIN);
+            adminUser.setEmailVerified(true); // Admins are trusted, no need for email verification
+            adminUser.setIsActive(true);
             userRepository.save(adminUser);
             System.out.println("Admin user created successfully!");
         }
@@ -87,6 +89,8 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setZipCode("0000");
             adminUser.setCountry("South Africa");
             adminUser.setRole(UserRole.ADMIN);
+            adminUser.setEmailVerified(true); // Admins are trusted, no need for email verification
+            adminUser.setIsActive(true);
             userRepository.save(adminUser);
             System.out.println("Admin user created successfully: ntshuxekochabalala80@gmail.com");
         }

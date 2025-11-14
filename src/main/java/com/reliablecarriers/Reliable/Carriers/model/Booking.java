@@ -10,7 +10,7 @@ import java.util.Date;
     @Index(name = "idx_bookings_booking_number", columnList = "bookingNumber"),
     @Index(name = "idx_bookings_status", columnList = "status"),
     @Index(name = "idx_bookings_customer_email", columnList = "customerEmail"),
-    @Index(name = "idx_bookings_assigned_driver", columnList = "assigned_driver_id"),
+    // Note: assigned_driver_id index removed - Booking uses driver_id, not assigned_driver_id
     @Index(name = "idx_bookings_status_created", columnList = "status,created_at"),
     @Index(name = "idx_bookings_payment_status", columnList = "payment_status"),
     @Index(name = "idx_bookings_pickup_coords", columnList = "pickup_latitude,pickup_longitude"),
