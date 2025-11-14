@@ -334,6 +334,17 @@
                             </div>
                         </div>
 
+                        <!-- Insurance Option -->
+                        <div class="mt-4">
+                            <label class="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg bg-white">
+                                <input type="checkbox" id="insuranceCheckbox" name="insurance" class="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <div>
+                                    <div class="font-medium text-gray-900">Add Insurance (R30)</div>
+                                    <div class="text-sm text-gray-600">Covers up to R20 000 in declared value. Recommended for high-value items.</div>
+                                </div>
+                            </label>
+                        </div>
+
                         <!-- Calculate Button -->
                         <div class="pt-6">
                             <button type="submit" id="calculateBtn" 
@@ -583,12 +594,17 @@
             // Service multiplier
             basePrice *= selectedService.multiplier;
             
+            // Insurance option (R30) - add before rounding
+            const insuranceSelected = document.getElementById('insuranceCheckbox')?.checked || false;
+            const insuranceFee = insuranceSelected ? 30 : 0;
+            basePrice += insuranceFee;
+            
             const finalPrice = Math.round(basePrice);
             const originalPrice = Math.round(finalPrice / 0.85); // Calculate original price
             const savings = originalPrice - finalPrice;
             
             // Display results
-            displayQuoteResults(selectedService, finalPrice, originalPrice, savings, actualWeight, distance);
+            displayQuoteResults(selectedService, finalPrice, originalPrice, savings, actualWeight, distance, insuranceSelected, insuranceFee);
         }
 
         // Google Maps API integration
@@ -693,7 +709,7 @@
         let currentQuote = null;
 
         // Display quote results with member benefits
-        function displayQuoteResults(service, price, originalPrice, savings, weight, distance) {
+        function displayQuoteResults(service, price, originalPrice, savings, weight, distance, insuranceSelected, insuranceFee) {
             const container = document.getElementById('quoteResults');
             
             // Store quote data for later use
@@ -702,7 +718,6 @@
                 price: price,
                 originalPrice: originalPrice,
                 savings: savings,
-                weight: weight,
                 distance: distance,
                 pickupAddress: document.getElementById('pickupAddress').value,
                 deliveryAddress: document.getElementById('deliveryAddress').value,
@@ -717,6 +732,8 @@
                 height: document.getElementById('height').value,
                 weight: document.getElementById('weight').value,
                 packageType: document.querySelector('input[name="packageType"]:checked')?.value || 'parcel'
+                ,insurance: insuranceSelected || false,
+                insuranceFee: insuranceFee || 0
             };
             
             container.innerHTML = `
@@ -755,6 +772,12 @@
                             <span>Member Discount:</span>
                             <span>15%</span>
                         </div>
+                        ${insuranceSelected ? `
+                        <div class="flex justify-between">
+                            <span>Insurance:</span>
+                            <span>R${insuranceFee}</span>
+                        </div>
+                        ` : ''}
                     </div>
                     
                     <div class="mt-4 pt-4 border-t border-gray-200 space-y-2">
@@ -801,7 +824,9 @@
                     dimensions: currentQuote.dimensions || '',
                     serviceType: currentQuote.service?.type || 'SAME_DAY',
                     price: parseFloat(currentQuote.price) || 0,
-                    distance: parseFloat(currentQuote.distance) || 0
+                    distance: parseFloat(currentQuote.distance) || 0,
+                    insurance: currentQuote.insurance || false,
+                    insuranceFee: parseFloat(currentQuote.insuranceFee) || 0
                 };
                 
                 // Debug: show token and quote data before calling API
