@@ -193,6 +193,8 @@
 			<artifactId>poi-ooxml</artifactId>
 			<version>5.2.5</version>
 		</dependency>
+		
+		<!-- Mailgun uses REST API via WebClient (already included in spring-boot-starter-webflux) -->
 	</dependencies>
 
 
