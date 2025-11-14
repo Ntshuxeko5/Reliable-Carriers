@@ -653,26 +653,7 @@ public class CustomerWebController {
         return "customer/store";
     }
 
-    //Track Package
-   @GetMapping("/tier-aware-track")
-public String showTierAwareTrackPage(Model model) {
-    model.addAttribute("navLinks", createCustomerNavLinks());
-    
-    try {
-        User currentUser = authService.getCurrentUser();
-        if (currentUser != null) {
-            model.addAttribute("isAuthenticated", true);
-            model.addAttribute("userName", currentUser.getFirstName() + " " + currentUser.getLastName());
-        } else {
-            model.addAttribute("isAuthenticated", false);
-        }
-    } catch (Exception e) {
-        model.addAttribute("isAuthenticated", false);
-    }
-
-    // 👇 this must match your file structure
-    return "customer/tier-aware-track";
-}
+    // Track Package - removed duplicate mapping (business version exists below)
 
 
     // Package cancellation

@@ -488,6 +488,23 @@ public class CustomerPackageController {
             @RequestBody Map<String, Object> quoteData,
             org.springframework.security.core.Authentication authentication) {
         try {
+<<<<<<< HEAD
+=======
+            // Debug logging to help diagnose client/server auth issues
+            try {
+                jakarta.servlet.http.HttpServletRequest req = ((org.springframework.web.context.request.ServletRequestAttributes)
+                        org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getRequest();
+                String authHeader = req.getHeader("Authorization");
+                System.out.println("[DEBUG] /api/customer/quote/save called. Authorization header=" + authHeader);
+            } catch (Exception e) {
+                System.out.println("[DEBUG] Could not read Authorization header: " + e.getMessage());
+            }
+
+            System.out.println("[DEBUG] Authentication object: " + authentication);
+            if (authentication != null) {
+                System.out.println("[DEBUG] Authenticated principal: " + authentication.getName());
+            }
+>>>>>>> c78033868ece5d08483a56612986824fc224bf1c
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(401).body(Map.of(
                     "success", false,
