@@ -42,7 +42,7 @@ public class Vehicle {
     private VehicleStatus status;
     
     @ManyToOne
-    @JoinColumn(name = "assigned_driver_id")
+    @JoinColumn(name = "assigned_driver_id", nullable = true)
     private User assignedDriver;
     
     @Column(length = 500)
