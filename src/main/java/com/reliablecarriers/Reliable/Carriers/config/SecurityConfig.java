@@ -100,6 +100,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/customer/packages/email/**").permitAll()  // Allow guests to lookup packages by email
                 .requestMatchers("/api/customer/packages/phone/**").permitAll()  // Allow guests to lookup packages by phone
 
+                // Payment endpoints - allow public access for guest checkout
+                .requestMatchers("/api/booking/**").permitAll()  // Allow guests to create bookings and initialize payments
+                .requestMatchers("/api/paystack/**").permitAll()  // Allow guests to initialize and verify payments
+                .requestMatchers("/api/payment/**").permitAll()  // Allow guests to access payment endpoints
+
                 // Business API endpoints (authenticated via API key)
                 .requestMatchers("/api/business/**").permitAll() // API key filter will handle authentication
                 
@@ -112,7 +117,9 @@ public class SecurityConfig {
                 // Shipment assignment allowed for admins and tracking managers only
                 .requestMatchers("/api/shipments/*/assign-driver/*").hasAnyRole("ADMIN", "TRACKING_MANAGER")
 
-                // Actuator endpoints - authenticated access only (restricted in production)
+                // Actuator health endpoint - public access for Railway/cloud platform healthchecks
+                .requestMatchers("/actuator/health").permitAll()
+                // Other actuator endpoints - authenticated access only (restricted in production)
                 .requestMatchers("/actuator/**").hasRole("ADMIN")
                 
                 // Swagger/OpenAPI - restrict to ADMIN in production, allow all in development
@@ -185,9 +192,8 @@ public class SecurityConfig {
             .referrerPolicy(referrer -> referrer
                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
             )
-            .permissionsPolicy(permissions -> permissions
-                .policy("geolocation=(self), microphone=(), camera=()")
-            )
+            // Note: permissionsPolicy() is deprecated in Spring Security 6.x
+            // If needed, use a custom header writer instead
         );
 
         return http.build();
