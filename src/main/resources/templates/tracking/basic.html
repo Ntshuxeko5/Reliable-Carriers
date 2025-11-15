@@ -1,292 +1,531 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Track Your Package - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'reliable-blue': {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1e40af',
-                            800: '#1e3a8a',
-                            900: '#1e40af',
-                        },
-                        'reliable-yellow': {
-                            50: '#fefce8',
-                            100: '#fef9c3',
-                            200: '#fef08a',
-                            300: '#fde047',
-                            400: '#facc15',
-                            500: '#eab308',
-                            600: '#ca8a04',
-                            700: '#a16207',
-                            800: '#854d0e',
-                            900: '#713f12',
-                        },
-                        'reliable': {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1e40af',
-                            800: '#1e3a8a',
-                            900: '#1e40af',
-                        },
-                        'reliable-yellow': {
-                            50: '#fff8e6',
-                            100: '#ffeed1',
-                            200: '#ffe3aa',
-                            300: '#ffd780',        // lighter yellow
-                            400: '#ffcc55',
-                            500: '#ffbf2b',        // medium-light yellow
-                            600: '#e6aa00',
-                            700: '#b38600',
-                            800: '#805f00',
-                            900: '#4d3900',
-                        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "reliable-blue": {
+                50: "#eff6ff",
+                100: "#dbeafe",
+                200: "#bfdbfe",
+                300: "#93c5fd",
+                400: "#60a5fa",
+                500: "#3b82f6",
+                600: "#2563eb",
+                700: "#1e40af",
+                800: "#1e3a8a",
+                900: "#1e40af",
+              },
+              "reliable-yellow": {
+                50: "#fefce8",
+                100: "#fef9c3",
+                200: "#fef08a",
+                300: "#fde047",
+                400: "#facc15",
+                500: "#eab308",
+                600: "#ca8a04",
+                700: "#a16207",
+                800: "#854d0e",
+                900: "#713f12",
+              },
+              reliable: {
+                50: "#eff6ff",
+                100: "#dbeafe",
+                200: "#bfdbfe",
+                300: "#93c5fd",
+                400: "#60a5fa",
+                500: "#3b82f6",
+                600: "#2563eb",
+                700: "#1e40af",
+                800: "#1e3a8a",
+                900: "#1e40af",
+              },
+              "reliable-yellow": {
+                50: "#fff8e6",
+                100: "#ffeed1",
+                200: "#ffe3aa",
+                300: "#ffd780", // lighter yellow
+                400: "#ffcc55",
+                500: "#ffbf2b", // medium-light yellow
+                600: "#e6aa00",
+                700: "#b38600",
+                800: "#805f00",
+                900: "#4d3900",
+              },
+            },
 
-                    },
-
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.5s ease-out',
-                        'bounce-gentle': 'bounceGentle 2s infinite',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(20px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        },
-                        bounceGentle: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-5px)' },
-                        }
-                    }
-                }
-            }
-        }
+            animation: {
+              "fade-in": "fadeIn 0.5s ease-in-out",
+              "slide-up": "slideUp 0.5s ease-out",
+              "bounce-gentle": "bounceGentle 2s infinite",
+            },
+            keyframes: {
+              fadeIn: {
+                "0%": { opacity: "0" },
+                "100%": { opacity: "1" },
+              },
+              slideUp: {
+                "0%": { transform: "translateY(20px)", opacity: "0" },
+                "100%": { transform: "translateY(0)", opacity: "1" },
+              },
+              bounceGentle: {
+                "0%, 100%": { transform: "translateY(0)" },
+                "50%": { transform: "translateY(-5px)" },
+              },
+            },
+          },
+        },
+      };
     </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-50 font-sans">
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-50 font-sans">
     <!-- Header -->
-    <header class="bg-gradient-to-r from-reliable-blue-800 to-reliable-blue-900 text-white shadow-lg nav-header">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300">
-                    <!-- Company Logo -->
-                    <img src="/images/Reliable 1.png" alt="Reliable Carriers" style="height:50px; width:auto; ">
-
-                </a>
-                <ul class="hidden md:flex space-x-8">
-                    <li><a href="/tracking" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                    <li><a href="/about" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                    <li><a href="/contact" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                    <li class="guest-only"><a href="/login" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                    <li class="guest-only"><a href="/register" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                    <li class="auth-required hidden"><a href="/dashboard" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                    <li class="auth-required hidden"><a href="/customer/quote" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Quote</a></li>
-                    <li class="auth-required hidden"><a href="#" id="logoutBtn" class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
-                </ul>
-                <!-- Mobile menu button -->
-                <button class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300" id="mobileMenuBtn">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
-            </div>
-            <!-- Mobile menu -->
-            <div class="md:hidden hidden" id="mobileMenu">
-                <ul class="py-4 space-y-4">
-                    <li><a href="/" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Home</a></li>
-                    <li><a href="/tracking" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Track Package</a></li>
-                    <li><a href="/about" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">About</a></li>
-                    <li><a href="/contact" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Contact</a></li>
-                    <li class="guest-only"><a href="/login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Login</a></li>
-                    <li class="guest-only"><a href="/register" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Register</a></li>
-                    <li><a href="/staff-login" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Staff Portal</a></li>
-                    <li class="auth-required hidden"><a href="/dashboard" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Dashboard</a></li>
-                    <li class="auth-required hidden"><a href="/customer/quote" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Get Quote</a></li>
-                    <li class="auth-required hidden"><a href="#" id="logoutBtnMobile" class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium">Logout</a></li>
-                </ul>
-            </div>
-        </nav>
+    <header
+      class="bg-gradient-to-r from-reliable-blue-800 to-reliable-blue-900 text-white shadow-lg nav-header"
+    >
+      <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+          <a
+            href="/"
+            class="flex items-center space-x-3 text-2xl font-bold text-white hover:text-reliable-yellow-300 transition-colors duration-300"
+          >
+            <!-- Company Logo -->
+            <img
+              src="/images/Reliable 1.png"
+              alt="Reliable Carriers"
+              style="height: 50px; width: auto"
+            />
+          </a>
+          <ul class="hidden md:flex space-x-8">
+            <li>
+              <a
+                href="/tracking"
+                class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Track Package</a
+              >
+            </li>
+            <li>
+              <a
+                href="/about"
+                class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >About</a
+              >
+            </li>
+            <li>
+              <a
+                href="/contact"
+                class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Contact</a
+              >
+            </li>
+            <li class="guest-only">
+              <a
+                href="/login"
+                class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Login</a
+              >
+            </li>
+            <li class="guest-only">
+              <a
+                href="/register"
+                class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Register</a
+              >
+            </li>
+            <li class="auth-required hidden">
+              <a
+                href="/dashboard"
+                class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Dashboard</a
+              >
+            </li>
+            <li class="auth-required hidden">
+              <a
+                href="/customer/quote"
+                class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Quote</a
+              >
+            </li>
+            <li class="auth-required hidden">
+              <a
+                href="#"
+                id="logoutBtn"
+                class="text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Logout</a
+              >
+            </li>
+          </ul>
+          <!-- Mobile menu button -->
+          <button
+            class="md:hidden text-white hover:text-reliable-yellow-300 transition-colors duration-300"
+            id="mobileMenuBtn"
+          >
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+        <!-- Mobile menu -->
+        <div class="md:hidden hidden" id="mobileMenu">
+          <ul class="py-4 space-y-4">
+            <li>
+              <a
+                href="/"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Home</a
+              >
+            </li>
+            <li>
+              <a
+                href="/tracking"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Track Package</a
+              >
+            </li>
+            <li>
+              <a
+                href="/about"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >About</a
+              >
+            </li>
+            <li>
+              <a
+                href="/contact"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Contact</a
+              >
+            </li>
+            <li class="guest-only">
+              <a
+                href="/login"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Login</a
+              >
+            </li>
+            <li class="guest-only">
+              <a
+                href="/register"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Register</a
+              >
+            </li>
+            <li>
+              <a
+                href="/staff-login"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Staff Portal</a
+              >
+            </li>
+            <li class="auth-required hidden">
+              <a
+                href="/dashboard"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Dashboard</a
+              >
+            </li>
+            <li class="auth-required hidden">
+              <a
+                href="/customer/quote"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Get Quote</a
+              >
+            </li>
+            <li class="auth-required hidden">
+              <a
+                href="#"
+                id="logoutBtnMobile"
+                class="block text-white hover:text-reliable-yellow-300 transition-colors duration-300 font-medium"
+                >Logout</a
+              >
+            </li>
+          </ul>
+        </div>
+      </nav>
     </header>
     <!-- Hero Section -->
-    <section class="relative bg-gradient-to-r from-reliable-700 to-reliable-800 text-white py-20">
-        <div class="absolute inset-0 bg-black opacity-50"></div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">Track Your Package</h1>
-            <p class="text-xl md:text-2xl mb-8 opacity-90 animate-slide-up">Enter your tracking number to get real-time updates</p>
-        </div>
+    <section
+      class="relative bg-gradient-to-r from-reliable-700 to-reliable-800 text-white py-20"
+    >
+      <div class="absolute inset-0 bg-black opacity-50"></div>
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
+          Track Your Package
+        </h1>
+        <p class="text-xl md:text-2xl mb-8 opacity-90 animate-slide-up">
+          Enter your tracking number to get real-time updates
+        </p>
+      </div>
     </section>
 
     <!-- Main Content -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <!-- Tracking Form -->
-        <div class="bg-white rounded-xl shadow-lg p-8 mb-8 animate-slide-up">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Enter Tracking Number</h2>
-            <form id="trackingForm" class="space-y-4">
-                <div>
-                    <label for="trackingNumber" class="block text-sm font-medium text-gray-700 mb-2">Tracking Number</label>
-                    <input type="text" id="trackingNumber" name="trackingNumber" 
-                           th:value="${trackingNumber}" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
-                           placeholder="Enter your tracking number (e.g., RC123456789)">
-                </div>
-                <button type="submit" class="w-full bg-brand-blue-600 hover:bg-brand-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">
-                    <i class="fas fa-search mr-2"></i>Track Package
-                </button>
-            </form>
-        </div>
+      <!-- Tracking Form -->
+      <div class="bg-white rounded-xl shadow-lg p-8 mb-8 animate-slide-up">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">
+          Enter Tracking Number
+        </h2>
+        <form id="trackingForm" class="space-y-4">
+          <div>
+            <label
+              for="trackingNumber"
+              class="block text-sm font-medium text-gray-700 mb-2"
+              >Tracking Number</label
+            >
+            <input
+              type="text"
+              id="trackingNumber"
+              name="trackingNumber"
+              th:value="${trackingNumber}"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+              placeholder="Enter your tracking number (e.g., RC123456789)"
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300"
+          >
+            <i class="fas fa-search mr-2"></i>Track Package
+          </button>
+        </form>
+      </div>
 
-    <!-- Tracking Results (delegated to shared app.js) -->
-    <div id="trackingSection" class="hidden">
+      <!-- Tracking Results (delegated to shared app.js) -->
+      <div id="trackingSection" class="hidden">
         <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Package Status</h2>
-                <span id="trackingNumberDisplay" class="text-lg font-semibold text-brand-600"></span>
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Package Status</h2>
+            <span
+              id="trackingNumberDisplay"
+              class="text-lg font-semibold text-brand-600"
+            ></span>
+          </div>
+
+          <!-- Status Overview -->
+          <div
+            class="bg-gradient-to-r from-brand-blue-50 to-brand-blue-100 rounded-lg p-6 mb-6"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <h3
+                  id="packageStatus"
+                  class="text-xl font-bold text-gray-800 mb-2"
+                >
+                  In Transit
+                </h3>
+                <p id="packageLocation" class="text-gray-600">
+                  Last updated: <span id="lastUpdate"></span>
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-gray-600">Estimated Delivery</p>
+                <p
+                  id="estimatedDelivery"
+                  class="text-lg font-bold text-brand-600"
+                >
+                  Dec 15, 2024
+                </p>
+              </div>
             </div>
-            
-            <!-- Status Overview -->
-            <div class="bg-gradient-to-r from-brand-blue-50 to-brand-blue-100 rounded-lg p-6 mb-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 id="packageStatus" class="text-xl font-bold text-gray-800 mb-2">In Transit</h3>
-                        <p id="packageLocation" class="text-gray-600">Last updated: <span id="lastUpdate"></span></p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-gray-600">Estimated Delivery</p>
-                        <p id="estimatedDelivery" class="text-lg font-bold text-brand-600">Dec 15, 2024</p>
-                    </div>
+          </div>
+
+          <!-- Tracking Timeline -->
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+              Tracking History
+            </h3>
+            <div id="trackingTimeline" class="space-y-4">
+              <!-- Timeline items will be populated by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Package Details -->
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+              <h4 class="font-semibold text-gray-800 mb-3">Package Details</h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Weight:</span>
+                  <span id="packageWeight" class="font-medium">2.5 kg</span>
                 </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Dimensions:</span>
+                  <span id="packageDimensions" class="font-medium"
+                    >30 x 20 x 15 cm</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Service Type:</span>
+                  <span id="serviceType" class="font-medium"
+                    >Standard Delivery</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Shipping Cost:</span>
+                  <span id="shippingCost" class="font-medium">R 120.00</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Tracking Timeline -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Tracking History</h3>
-                <div id="trackingTimeline" class="space-y-4">
-                    <!-- Timeline items will be populated by JavaScript -->
+            <div class="bg-gray-50 rounded-lg p-4">
+              <h4 class="font-semibold text-gray-800 mb-3">
+                Delivery Information
+              </h4>
+              <div class="space-y-2 text-sm">
+                <div>
+                  <span class="text-gray-600">From:</span>
+                  <p id="senderAddress" class="font-medium">New York, NY</p>
                 </div>
+                <div>
+                  <span class="text-gray-600">To:</span>
+                  <p id="recipientAddress" class="font-medium">
+                    Los Angeles, CA
+                  </p>
+                </div>
+                <div>
+                  <span class="text-gray-600">Recipient:</span>
+                  <p id="recipientName" class="font-medium">John Doe</p>
+                </div>
+              </div>
             </div>
-
-            <!-- Package Details -->
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <h4 class="font-semibold text-gray-800 mb-3">Package Details</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Weight:</span>
-                            <span id="packageWeight" class="font-medium">2.5 kg</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Dimensions:</span>
-                            <span id="packageDimensions" class="font-medium">30 x 20 x 15 cm</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Service Type:</span>
-                            <span id="serviceType" class="font-medium">Standard Delivery</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Shipping Cost:</span>
-                            <span id="shippingCost" class="font-medium">R 120.00</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <h4 class="font-semibold text-gray-800 mb-3">Delivery Information</h4>
-                    <div class="space-y-2 text-sm">
-                        <div>
-                            <span class="text-gray-600">From:</span>
-                            <p id="senderAddress" class="font-medium">New York, NY</p>
-                        </div>
-                        <div>
-                            <span class="text-gray-600">To:</span>
-                            <p id="recipientAddress" class="font-medium">Los Angeles, CA</p>
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Recipient:</span>
-                            <p id="recipientName" class="font-medium">John Doe</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-        <!-- No Results Message -->
-            <div id="noResults" class="hidden bg-brand-50 border border-brand-100 rounded-lg p-6 text-center">
-            <i class="fas fa-exclamation-triangle text-brand-400 text-3xl mb-4"></i>
-            <h3 class="text-lg font-semibold text-brand-800 mb-2">No Package Found</h3>
-            <p class="text-brand-700">Please check your tracking number and try again, or contact our customer service for assistance.</p>
-        </div>
+      <!-- No Results Message -->
+      <div
+        id="noResults"
+        class="hidden bg-brand-50 border border-brand-100 rounded-lg p-6 text-center"
+      >
+        <i class="fas fa-exclamation-triangle text-brand-400 text-3xl mb-4"></i>
+        <h3 class="text-lg font-semibold text-brand-800 mb-2">
+          No Package Found
+        </h3>
+        <p class="text-brand-700">
+          Please check your tracking number and try again, or contact our
+          customer service for assistance.
+        </p>
+      </div>
 
-        <!-- Loading Spinner -->
-        <div id="loadingSpinner" class="hidden text-center py-8">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-            <p class="mt-2 text-gray-600">Tracking your package...</p>
-        </div>
+      <!-- Loading Spinner -->
+      <div id="loadingSpinner" class="hidden text-center py-8">
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"
+        ></div>
+        <p class="mt-2 text-gray-600">Tracking your package...</p>
+      </div>
     </div>
 
     <!-- Footer -->
     <footer class="bg-gray-900 text-white mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <h3 class="text-xl font-bold mb-4 text-reliable-yellow-400">Reliable Carriers</h3>
-                    <p class="text-gray-300">Professional courier services you can trust for all your delivery needs.</p>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Services</h4>
-                    <ul class="space-y-2 text-gray-300">
-                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Express Delivery</a></li>
-                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Moving Services</a></li>
-                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">Load Transport</a></li>
-                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">International Shipping</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Support</h4>
-                    <ul class="space-y-2 text-gray-300">
-                        <li><a href="/contact" class="hover:text-reliable-yellow-400 transition-colors">Contact Us</a></li>
-                        <li><a href="/tracking" class="hover:text-reliable-yellow-400 transition-colors">Track Package</a></li>
-                        <li><a href="/price-list" class="hover:text-reliable-yellow-400 transition-colors">Price List</a></li>
-                        <li><a href="#" class="hover:text-reliable-yellow-400 transition-colors">FAQ</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Contact Info</h4>
-                    <div class="space-y-2 text-gray-300">
-                        <p><i class="fas fa-phone mr-2"></i> +27 11 123 4567</p>
-                        <p><i class="fas fa-envelope mr-2"></i> info@reliablecarriers.co.za</p>
-                        <p><i class="fas fa-map-marker-alt mr-2"></i> Johannesburg, South Africa</p>
-                    </div>
-                </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <h3 class="text-xl font-bold mb-4 text-reliable-yellow-400">
+              Reliable Carriers
+            </h3>
+            <p class="text-gray-300">
+              Professional courier services you can trust for all your delivery
+              needs.
+            </p>
+          </div>
+          <div>
+            <h4 class="font-bold mb-4">Services</h4>
+            <ul class="space-y-2 text-gray-300">
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-reliable-yellow-400 transition-colors"
+                  >Express Delivery</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-reliable-yellow-400 transition-colors"
+                  >Moving Services</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-reliable-yellow-400 transition-colors"
+                  >Load Transport</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-reliable-yellow-400 transition-colors"
+                  >International Shipping</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-bold mb-4">Support</h4>
+            <ul class="space-y-2 text-gray-300">
+              <li>
+                <a
+                  href="/contact"
+                  class="hover:text-reliable-yellow-400 transition-colors"
+                  >Contact Us</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/tracking"
+                  class="hover:text-reliable-yellow-400 transition-colors"
+                  >Track Package</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/price-list"
+                  class="hover:text-reliable-yellow-400 transition-colors"
+                  >Price List</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-reliable-yellow-400 transition-colors"
+                  >FAQ</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-bold mb-4">Contact Info</h4>
+            <div class="space-y-2 text-gray-300">
+              <p><i class="fas fa-phone mr-2"></i> +27 11 123 4567</p>
+              <p>
+                <i class="fas fa-envelope mr-2"></i> info@reliablecarriers.co.za
+              </p>
+              <p>
+                <i class="fas fa-map-marker-alt mr-2"></i> Johannesburg, South
+                Africa
+              </p>
             </div>
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
-            </div>
+          </div>
         </div>
+        <div
+          class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300"
+        >
+          <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+        </div>
+      </div>
     </footer>
 
     <!-- Rely on shared app.js to bind the tracking form and render tracking info -->
     <script th:src="@{/js/app.js}"></script>
-</body>
+  </body>
 </html>
