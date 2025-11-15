@@ -240,7 +240,9 @@
                     });
                     
                     if (response.ok) {
-                        const booking = await response.json();
+                        const result = await response.json();
+                        // Handle both direct booking object and wrapped response
+                        const booking = result.booking || result;
                         updateBookingDisplay(booking);
                     } else {
                         // Try payment endpoint as fallback
@@ -303,11 +305,31 @@
             if (document.getElementById('totalAmount')) {
                 document.getElementById('totalAmount').textContent = 'R' + (urlParams.get('totalAmount') || urlParams.get('amount') || '250.00');
             }
+            // Construct full address from URL params if available
+            const pickupAddrFromUrl = urlParams.get('pickupAddress');
+            const deliveryAddrFromUrl = urlParams.get('deliveryAddress');
+            
             if (document.getElementById('pickupAddress')) {
-                document.getElementById('pickupAddress').textContent = urlParams.get('pickupAddress') || '123 Main Street, Johannesburg';
+                if (pickupAddrFromUrl) {
+                    const parts = [pickupAddrFromUrl];
+                    if (urlParams.get('pickupCity')) parts.push(urlParams.get('pickupCity'));
+                    if (urlParams.get('pickupState')) parts.push(urlParams.get('pickupState'));
+                    if (urlParams.get('pickupPostalCode')) parts.push(urlParams.get('pickupPostalCode'));
+                    document.getElementById('pickupAddress').textContent = parts.join(', ');
+                } else {
+                    document.getElementById('pickupAddress').textContent = 'Address not available';
+                }
             }
             if (document.getElementById('deliveryAddress')) {
-                document.getElementById('deliveryAddress').textContent = urlParams.get('deliveryAddress') || '456 Oak Avenue, Pretoria';
+                if (deliveryAddrFromUrl) {
+                    const parts = [deliveryAddrFromUrl];
+                    if (urlParams.get('deliveryCity')) parts.push(urlParams.get('deliveryCity'));
+                    if (urlParams.get('deliveryState')) parts.push(urlParams.get('deliveryState'));
+                    if (urlParams.get('deliveryPostalCode')) parts.push(urlParams.get('deliveryPostalCode'));
+                    document.getElementById('deliveryAddress').textContent = parts.join(', ');
+                } else {
+                    document.getElementById('deliveryAddress').textContent = 'Address not available';
+                }
             }
             if (document.getElementById('pickupCode')) {
                 document.getElementById('pickupCode').textContent = urlParams.get('pickupCode') || 'P123456';
@@ -317,15 +339,36 @@
             }
             
             // Initialize maps with URL params if available
-            const pickupAddr = urlParams.get('pickupAddress') || '123 Main Street, Johannesburg';
-            const deliveryAddr = urlParams.get('deliveryAddress') || '456 Oak Avenue, Pretoria';
+            const pickupAddrFromUrl = urlParams.get('pickupAddress');
+            const deliveryAddrFromUrl = urlParams.get('deliveryAddress');
+            
+            // Construct full addresses for maps
+            let pickupAddrForMap = '';
+            if (pickupAddrFromUrl) {
+                const parts = [pickupAddrFromUrl];
+                if (urlParams.get('pickupCity')) parts.push(urlParams.get('pickupCity'));
+                if (urlParams.get('pickupState')) parts.push(urlParams.get('pickupState'));
+                if (urlParams.get('pickupPostalCode')) parts.push(urlParams.get('pickupPostalCode'));
+                pickupAddrForMap = parts.join(', ');
+            }
+            
+            let deliveryAddrForMap = '';
+            if (deliveryAddrFromUrl) {
+                const parts = [deliveryAddrFromUrl];
+                if (urlParams.get('deliveryCity')) parts.push(urlParams.get('deliveryCity'));
+                if (urlParams.get('deliveryState')) parts.push(urlParams.get('deliveryState'));
+                if (urlParams.get('deliveryPostalCode')) parts.push(urlParams.get('deliveryPostalCode'));
+                deliveryAddrForMap = parts.join(', ');
+            }
+            
             const pickupLat = urlParams.get('pickupLatitude');
             const pickupLng = urlParams.get('pickupLongitude');
             const deliveryLat = urlParams.get('deliveryLatitude');
             const deliveryLng = urlParams.get('deliveryLongitude');
             
-            if (typeof google !== 'undefined' && google.maps) {
-                initializeMaps(pickupAddr, deliveryAddr, pickupLat, pickupLng, deliveryLat, deliveryLng);
+            // Only initialize maps if we have actual addresses
+            if (typeof google !== 'undefined' && google.maps && (pickupAddrForMap || deliveryAddrForMap)) {
+                initializeMaps(pickupAddrForMap, deliveryAddrForMap, pickupLat, pickupLng, deliveryLat, deliveryLng);
             }
         }
 
@@ -356,15 +399,40 @@
                 document.getElementById('totalAmount').textContent = 'R' + parseFloat(amount).toFixed(2);
             }
             
-            // Update addresses
-            const pickupAddr = data.pickupAddress || data.pickupLocation || '123 Main Street, Johannesburg';
-            const deliveryAddr = data.deliveryAddress || data.deliveryLocation || '456 Oak Avenue, Pretoria';
+            // Update addresses - construct full address from components
+            let pickupAddr = '';
+            if (data.pickupAddress) {
+                const parts = [data.pickupAddress];
+                if (data.pickupCity) parts.push(data.pickupCity);
+                if (data.pickupState) parts.push(data.pickupState);
+                if (data.pickupPostalCode) parts.push(data.pickupPostalCode);
+                pickupAddr = parts.join(', ');
+            } else if (data.pickupLocation) {
+                pickupAddr = data.pickupLocation;
+            }
+            
+            let deliveryAddr = '';
+            if (data.deliveryAddress) {
+                const parts = [data.deliveryAddress];
+                if (data.deliveryCity) parts.push(data.deliveryCity);
+                if (data.deliveryState) parts.push(data.deliveryState);
+                if (data.deliveryPostalCode) parts.push(data.deliveryPostalCode);
+                deliveryAddr = parts.join(', ');
+            } else if (data.deliveryLocation) {
+                deliveryAddr = data.deliveryLocation;
+            }
+            
+            // Only use placeholder if no address data at all
+            if (!pickupAddr && !deliveryAddr) {
+                pickupAddr = pickupAddr || 'Address not available';
+                deliveryAddr = deliveryAddr || 'Address not available';
+            }
             
             if (document.getElementById('pickupAddress')) {
-                document.getElementById('pickupAddress').textContent = pickupAddr;
+                document.getElementById('pickupAddress').textContent = pickupAddr || 'Address not available';
             }
             if (document.getElementById('deliveryAddress')) {
-                document.getElementById('deliveryAddress').textContent = deliveryAddr;
+                document.getElementById('deliveryAddress').textContent = deliveryAddr || 'Address not available';
             }
             
             // Update codes
@@ -390,19 +458,21 @@
                 deliveryDirectionsLink.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(deliveryAddr)}`;
             }
             
-            // Initialize Google Maps with coordinates
-            const pickupLat = data.pickupLatitude || data.pickupLat;
-            const pickupLng = data.pickupLongitude || data.pickupLng;
-            const deliveryLat = data.deliveryLatitude || data.deliveryLat;
-            const deliveryLng = data.deliveryLongitude || data.deliveryLng;
-            
-            if (typeof google !== 'undefined' && google.maps) {
-                initializeMaps(pickupAddr, deliveryAddr, pickupLat, pickupLng, deliveryLat, deliveryLng);
-            } else {
-                // Wait for Google Maps to load
-                window.initMapsCallback = function() {
+            // Initialize Google Maps with coordinates (only if we have addresses)
+            if (pickupAddr || deliveryAddr) {
+                const pickupLat = data.pickupLatitude || data.pickupLat;
+                const pickupLng = data.pickupLongitude || data.pickupLng;
+                const deliveryLat = data.deliveryLatitude || data.deliveryLat;
+                const deliveryLng = data.deliveryLongitude || data.deliveryLng;
+                
+                if (typeof google !== 'undefined' && google.maps) {
                     initializeMaps(pickupAddr, deliveryAddr, pickupLat, pickupLng, deliveryLat, deliveryLng);
-                };
+                } else {
+                    // Wait for Google Maps to load
+                    window.initMapsCallback = function() {
+                        initializeMaps(pickupAddr, deliveryAddr, pickupLat, pickupLng, deliveryLat, deliveryLng);
+                    };
+                }
             }
         }
 

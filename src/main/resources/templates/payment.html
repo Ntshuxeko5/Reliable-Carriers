@@ -123,14 +123,14 @@
                                     <i class="fas fa-hand-holding-box text-blue-500 mt-1 mr-2"></i>
                                     <div>
                                         <div class="text-sm text-gray-600">Pickup from:</div>
-                                        <div class="font-medium text-gray-800" id="pickupAddressDisplay">123 Main Street, Johannesburg</div>
+                                        <div class="font-medium text-gray-800" id="pickupAddressDisplay">Loading address...</div>
                                     </div>
                                 </div>
                                 <div class="flex items-start">
                                     <i class="fas fa-truck text-green-500 mt-1 mr-2"></i>
                                     <div>
                                         <div class="text-sm text-gray-600">Deliver to:</div>
-                                        <div class="font-medium text-gray-800" id="deliveryAddressDisplay">456 Oak Avenue, Pretoria</div>
+                                        <div class="font-medium text-gray-800" id="deliveryAddressDisplay">Loading address...</div>
                                     </div>
                                 </div>
                             </div>
@@ -345,7 +345,9 @@
                     });
                     
                     if (response.ok) {
-                        const booking = await response.json();
+                        const result = await response.json();
+                        // Handle both wrapped response (result.booking) and direct booking object
+                        const booking = result.booking || result;
                         currentBooking = booking;
                         
                         // Update display with booking data
@@ -362,16 +364,59 @@
                         } else {
                             document.getElementById('weight').parentElement.style.display = 'none';
                         }
-                        if (booking.totalAmount || booking.totalPrice) {
-                            const amount = parseFloat(booking.totalAmount || booking.totalPrice);
+                        // Get total amount - try multiple fields
+                        let amount = 0;
+                        if (booking.totalAmount) {
+                            amount = parseFloat(booking.totalAmount);
+                        } else if (booking.totalPrice) {
+                            amount = parseFloat(booking.totalPrice);
+                        } else if (booking.basePrice) {
+                            amount = parseFloat(booking.basePrice);
+                            if (booking.insuranceFee) amount += parseFloat(booking.insuranceFee);
+                            if (booking.serviceFee) amount += parseFloat(booking.serviceFee);
+                            if (booking.fuelSurcharge) amount += parseFloat(booking.fuelSurcharge);
+                        }
+                        
+                        if (amount > 0) {
                             document.getElementById('totalAmount').textContent = 'R' + amount.toFixed(2);
                             document.getElementById('payButtonText').textContent = 'Pay R' + amount.toFixed(2) + ' Securely';
+                            // Store in sessionStorage for fallback
+                            sessionStorage.setItem('bookingTotalAmount', amount.toString());
+                        } else {
+                            // Fallback to sessionStorage
+                            const storedAmount = sessionStorage.getItem('quoteTotalAmount') || sessionStorage.getItem('bookingTotalAmount');
+                            if (storedAmount) {
+                                amount = parseFloat(storedAmount);
+                                document.getElementById('totalAmount').textContent = 'R' + amount.toFixed(2);
+                                document.getElementById('payButtonText').textContent = 'Pay R' + amount.toFixed(2) + ' Securely';
+                            } else {
+                                console.error('No amount found in booking or sessionStorage');
+                            }
                         }
+                        // Construct full addresses from components
+                        let pickupAddr = '';
                         if (booking.pickupAddress) {
-                            document.getElementById('pickupAddressDisplay').textContent = booking.pickupAddress;
+                            const parts = [booking.pickupAddress];
+                            if (booking.pickupCity) parts.push(booking.pickupCity);
+                            if (booking.pickupState) parts.push(booking.pickupState);
+                            if (booking.pickupPostalCode) parts.push(booking.pickupPostalCode);
+                            pickupAddr = parts.join(', ');
                         }
+                        
+                        let deliveryAddr = '';
                         if (booking.deliveryAddress) {
-                            document.getElementById('deliveryAddressDisplay').textContent = booking.deliveryAddress;
+                            const parts = [booking.deliveryAddress];
+                            if (booking.deliveryCity) parts.push(booking.deliveryCity);
+                            if (booking.deliveryState) parts.push(booking.deliveryState);
+                            if (booking.deliveryPostalCode) parts.push(booking.deliveryPostalCode);
+                            deliveryAddr = parts.join(', ');
+                        }
+                        
+                        if (pickupAddr) {
+                            document.getElementById('pickupAddressDisplay').textContent = pickupAddr;
+                        }
+                        if (deliveryAddr) {
+                            document.getElementById('deliveryAddressDisplay').textContent = deliveryAddr;
                         }
                         // Update customer name from booking
                         if (booking.customerName) {
@@ -473,14 +518,24 @@
             document.getElementById('payButtonText').textContent = 'Pay R' + parseFloat(totalAmount).toFixed(2) + ' Securely';
             
             // Load addresses if provided
-            const pickupAddress = urlParams.get('pickupAddress');
-            const deliveryAddress = urlParams.get('deliveryAddress');
+            // Construct full addresses from URL params if available
+            const pickupAddrFromUrl = urlParams.get('pickupAddress');
+            const deliveryAddrFromUrl = urlParams.get('deliveryAddress');
             
-            if (pickupAddress) {
-                document.getElementById('pickupAddressDisplay').textContent = pickupAddress;
+            if (pickupAddrFromUrl) {
+                const parts = [pickupAddrFromUrl];
+                if (urlParams.get('pickupCity')) parts.push(urlParams.get('pickupCity'));
+                if (urlParams.get('pickupState')) parts.push(urlParams.get('pickupState'));
+                if (urlParams.get('pickupPostalCode')) parts.push(urlParams.get('pickupPostalCode'));
+                document.getElementById('pickupAddressDisplay').textContent = parts.join(', ');
             }
-            if (deliveryAddress) {
-                document.getElementById('deliveryAddressDisplay').textContent = deliveryAddress;
+            
+            if (deliveryAddrFromUrl) {
+                const parts = [deliveryAddrFromUrl];
+                if (urlParams.get('deliveryCity')) parts.push(urlParams.get('deliveryCity'));
+                if (urlParams.get('deliveryState')) parts.push(urlParams.get('deliveryState'));
+                if (urlParams.get('deliveryPostalCode')) parts.push(urlParams.get('deliveryPostalCode'));
+                document.getElementById('deliveryAddressDisplay').textContent = parts.join(', ');
             }
         }
 
@@ -578,8 +633,31 @@
                     }
                 }
                 
-                const totalAmount = document.getElementById('totalAmount').textContent.replace('R', '').replace(',', '').trim();
-                const amountInKobo = Math.round(parseFloat(totalAmount) * 100);
+                const totalAmountText = document.getElementById('totalAmount').textContent.replace('R', '').replace(',', '').trim();
+                let totalAmount = parseFloat(totalAmountText);
+                
+                // If amount is 0 or invalid, try to get from sessionStorage
+                if (!totalAmount || totalAmount <= 0 || isNaN(totalAmount)) {
+                    const storedAmount = sessionStorage.getItem('quoteTotalAmount') || sessionStorage.getItem('bookingTotalAmount');
+                    if (storedAmount) {
+                        totalAmount = parseFloat(storedAmount);
+                    }
+                }
+                
+                // Validate amount
+                if (!totalAmount || totalAmount <= 0 || isNaN(totalAmount)) {
+                    showAlert('Invalid payment amount. Please contact support.', 'error');
+                    console.error('Invalid payment amount:', totalAmountText, 'Parsed:', totalAmount);
+                    return;
+                }
+                
+                const amountInKobo = Math.round(totalAmount * 100);
+                
+                // Validate kobo amount (minimum 100 kobo = R1.00)
+                if (amountInKobo < 100) {
+                    showAlert('Payment amount must be at least R1.00. Please contact support.', 'error');
+                    return;
+                }
                 
                 // If we have a booking, use the payment reference from booking initialization
                 let paymentRef = paymentReference;

@@ -803,7 +803,7 @@
     </footer>
 
     <script>
-      // Service options data with member pricing
+      // Service options data with member pricing (single definition)
       const serviceOptions = [
         {
           id: "express",
@@ -811,8 +811,8 @@
           description: "Same-day & Next-day",
           icon: "fas fa-bolt",
           color: "red",
-          basePrice: 89,
-          memberPrice: 76, // 15% discount
+          basePrice: 160,
+          memberPrice: 136, // 15% discount
           multiplier: 1.2,
         },
         {
@@ -821,8 +821,8 @@
           description: "2-3 Business Days",
           icon: "fas fa-truck",
           color: "blue",
-          basePrice: 45,
-          memberPrice: 38, // 15% discount
+          basePrice: 120,
+          memberPrice: 102, // 15% discount
           multiplier: 1.0,
         },
         {
@@ -831,13 +831,27 @@
           description: "4-7 Business Days",
           icon: "fas fa-shipping-fast",
           color: "green",
-          basePrice: 25,
-          memberPrice: 21, // 15% discount
+          basePrice: 90,
+          memberPrice: 77, // 15% discount
           multiplier: 0.8,
         },
       ];
 
-      // Initialize service options
+      // Global state
+      let map,
+        pickupAutocomplete,
+        deliveryAutocomplete,
+        distanceService,
+        directionsService,
+        directionsRenderer;
+      let pickupCoordinates = null;
+      let deliveryCoordinates = null;
+      let currentQuote = null;
+      // Safe defaults for insurance variables referenced in displayQuoteResults
+      let insuranceSelected = false;
+      let insuranceFee = 30;
+
+      // Initialize service options into DOM
       function initializeServiceOptions() {
         const container = document.getElementById("serviceOptions");
         container.innerHTML = serviceOptions
@@ -913,28 +927,31 @@
         const selectedService = serviceOptions.find(
           (s) => s.id === serviceType
         );
-        if (!selectedService) return;
+        if (!selectedService) {
+          alert("Please select a service type");
+          return;
+        }
 
-        // Calculate distance using Google Maps API
+        // Calculate distance using Google Maps API (fallback handled inside)
         const distance = await calculateDistance();
 
         // Calculate pricing with member discount
         let basePrice = selectedService.memberPrice; // Use member price as base
 
         // Weight multiplier (reduced for members)
-        if (actualWeight > 5) basePrice += (actualWeight - 5) * 4; // Reduced from 5
-        if (actualWeight > 10) basePrice += (actualWeight - 10) * 2.5; // Reduced from 3
+        if (actualWeight > 5) basePrice += (actualWeight - 5) * 4;
+        if (actualWeight > 10) basePrice += (actualWeight - 10) * 2.5;
 
         // Distance multiplier (reduced for members)
-        if (distance > 100) basePrice += (distance - 100) * 0.4; // Reduced from 0.5
-        if (distance > 500) basePrice += (distance - 500) * 0.25; // Reduced from 0.3
+        if (distance > 100) basePrice += (distance - 100) * 0.4;
+        if (distance > 500) basePrice += (distance - 500) * 0.25;
 
         // Package type multiplier (reduced for members)
         const typeMultipliers = {
-          document: 0.7, // Reduced from 0.8
-          parcel: 0.9, // Reduced from 1.0
-          fragile: 1.2, // Reduced from 1.3
-          valuable: 1.3, // Reduced from 1.5
+          document: 0.7,
+          parcel: 0.9,
+          fragile: 1.2,
+          valuable: 1.3,
         };
         basePrice *= typeMultipliers[packageType] || 0.9;
 
@@ -956,78 +973,85 @@
         );
       }
 
-      // Google Maps API integration
-      let map, pickupAutocomplete, deliveryAutocomplete;
-      let distanceService, directionsService, directionsRenderer;
-      let pickupCoordinates = null;
-      let deliveryCoordinates = null;
-
+      // Google Maps API integration: single initMap definition
       function initMap() {
-        // Initialize services
-        distanceService = new google.maps.DistanceMatrixService();
-        directionsService = new google.maps.DirectionsService();
-        directionsRenderer = new google.maps.DirectionsRenderer();
+        // Guard if Google Maps not loaded
+        if (
+          typeof google === "undefined" ||
+          !google.maps ||
+          !google.maps.places
+        ) {
+          console.error("Google Maps API not loaded");
+          return;
+        }
 
-        // Initialize autocomplete for pickup address
-        pickupAutocomplete = new google.maps.places.Autocomplete(
-          document.getElementById("pickupAddress"),
-          {
-            types: ["address"],
-            componentRestrictions: { country: "za" }, // Restrict to South Africa
+        try {
+          distanceService = new google.maps.DistanceMatrixService();
+          directionsService = new google.maps.DirectionsService();
+          directionsRenderer = new google.maps.DirectionsRenderer();
+
+          const pickupInput = document.getElementById("pickupAddress");
+          const deliveryInput = document.getElementById("deliveryAddress");
+
+          if (!pickupInput || !deliveryInput) {
+            console.error("Address input fields not found");
+            return;
           }
-        );
 
-        // Initialize autocomplete for delivery address
-        deliveryAutocomplete = new google.maps.places.Autocomplete(
-          document.getElementById("deliveryAddress"),
-          {
-            types: ["address"],
-            componentRestrictions: { country: "za" }, // Restrict to South Africa
-          }
-        );
+          pickupAutocomplete = new google.maps.places.Autocomplete(
+            pickupInput,
+            {
+              types: ["address"],
+              componentRestrictions: { country: "za" },
+            }
+          );
 
-        // Add place changed listeners to capture coordinates
-        pickupAutocomplete.addListener("place_changed", function () {
-          const place = pickupAutocomplete.getPlace();
-          if (place.geometry && place.geometry.location) {
-            pickupCoordinates = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-              formattedAddress: place.formatted_address,
-              placeId: place.place_id,
-            };
-            console.log("Pickup coordinates captured:", pickupCoordinates);
+          deliveryAutocomplete = new google.maps.places.Autocomplete(
+            deliveryInput,
+            {
+              types: ["address"],
+              componentRestrictions: { country: "za" },
+            }
+          );
 
-            // Store coordinates in hidden fields for form submission
-            document.getElementById("pickupLatitude").value =
-              pickupCoordinates.lat;
-            document.getElementById("pickupLongitude").value =
-              pickupCoordinates.lng;
-            document.getElementById("pickupPlaceId").value =
-              pickupCoordinates.placeId;
-          }
-        });
+          pickupAutocomplete.addListener("place_changed", function () {
+            const place = pickupAutocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+              pickupCoordinates = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                formattedAddress: place.formatted_address,
+                placeId: place.place_id,
+              };
+              document.getElementById("pickupLatitude").value =
+                pickupCoordinates.lat;
+              document.getElementById("pickupLongitude").value =
+                pickupCoordinates.lng;
+              document.getElementById("pickupPlaceId").value =
+                pickupCoordinates.placeId;
+            }
+          });
 
-        deliveryAutocomplete.addListener("place_changed", function () {
-          const place = deliveryAutocomplete.getPlace();
-          if (place.geometry && place.geometry.location) {
-            deliveryCoordinates = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-              formattedAddress: place.formatted_address,
-              placeId: place.place_id,
-            };
-            console.log("Delivery coordinates captured:", deliveryCoordinates);
-
-            // Store coordinates in hidden fields for form submission
-            document.getElementById("deliveryLatitude").value =
-              deliveryCoordinates.lat;
-            document.getElementById("deliveryLongitude").value =
-              deliveryCoordinates.lng;
-            document.getElementById("deliveryPlaceId").value =
-              deliveryCoordinates.placeId;
-          }
-        });
+          deliveryAutocomplete.addListener("place_changed", function () {
+            const place = deliveryAutocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+              deliveryCoordinates = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                formattedAddress: place.formatted_address,
+                placeId: place.place_id,
+              };
+              document.getElementById("deliveryLatitude").value =
+                deliveryCoordinates.lat;
+              document.getElementById("deliveryLongitude").value =
+                deliveryCoordinates.lng;
+              document.getElementById("deliveryPlaceId").value =
+                deliveryCoordinates.placeId;
+            }
+          });
+        } catch (err) {
+          console.error("Error initializing Google Maps services:", err);
+        }
       }
 
       // Real distance calculation using Google Maps API
@@ -1035,11 +1059,10 @@
         const pickup = document.getElementById("pickupAddress").value;
         const delivery = document.getElementById("deliveryAddress").value;
 
-        // Always return a Promise
         if (!pickup || !delivery) {
           return Promise.resolve(100); // Default distance
         }
-        // If Google Maps or distanceService is not available, fallback
+
         if (
           typeof google === "undefined" ||
           !distanceService ||
@@ -1072,15 +1095,14 @@
                     response.rows[0].elements[0].status === "OK"
                   ) {
                     const distance =
-                      response.rows[0].elements[0].distance.value / 1000; // Convert to km
-                    console.log("Google Maps distance:", distance, "km");
+                      response.rows[0].elements[0].distance.value / 1000; // km
                     resolve(distance);
                   } else {
-                    console.log(
+                    console.warn(
                       "Google Maps API error or no route found:",
                       status
                     );
-                    resolve(100); // Fallback distance
+                    resolve(100);
                   }
                 } catch (err) {
                   console.error("Error parsing DistanceMatrix response:", err);
@@ -1095,10 +1117,7 @@
         });
       }
 
-      // Store current quote globally
-      let currentQuote = null;
-
-      // Display quote results with member benefits
+      // Display quote results
       function displayQuoteResults(
         service,
         price,
@@ -1109,7 +1128,6 @@
       ) {
         const container = document.getElementById("quoteResults");
 
-        // Store quote data for later use
         currentQuote = {
           service: service,
           price: price,
@@ -1162,7 +1180,7 @@
                             <div class="text-xs text-green-600 font-medium">You save R${savings}</div>
                         </div>
                     </div>
-                    
+
                     <div class="space-y-2 text-sm text-gray-600">
                         <div class="flex justify-between">
                             <span>Weight:</span>
@@ -1191,7 +1209,7 @@
                             : ""
                         }
                     </div>
-                    
+
                     <div class="mt-4 pt-4 border-t border-gray-200">
                         <div class="bg-blue-50 rounded-lg p-4 mb-4">
                             <div class="flex items-center justify-between mb-2">
@@ -1204,7 +1222,7 @@
                             <p class="text-sm text-gray-600">Up to R20,000 coverage included</p>
                         </div>
                     </div>
-                    
+
                     <div class="mt-4 pt-4 border-t border-gray-200 space-y-2">
                         <button onclick="proceedToBooking('${
                           service.id
@@ -1236,7 +1254,6 @@
         }
 
         try {
-          // Get authentication token
           const token =
             localStorage.getItem("token") || sessionStorage.getItem("token");
 
@@ -1256,7 +1273,6 @@
             return;
           }
 
-          // Prepare quote data for API
           const quoteData = {
             pickupAddress: currentQuote.pickupAddress || "",
             deliveryAddress: currentQuote.deliveryAddress || "",
@@ -1270,11 +1286,6 @@
             distance: parseFloat(currentQuote.distance) || 0,
           };
 
-          // Debug: show token and quote data before calling API
-          console.log("[DEBUG] Saving quote, token:", token);
-          console.log("[DEBUG] Quote data:", quoteData);
-
-          // Call API to save quote
           const response = await fetch("/api/customer/quote/save", {
             method: "POST",
             headers: {
@@ -1285,9 +1296,7 @@
             body: JSON.stringify(quoteData),
           });
 
-          console.log("[DEBUG] HTTP response status:", response.status);
           const result = await response.json();
-          console.log("[DEBUG] API result:", result);
 
           if (response.ok && result.success) {
             showAlert(
@@ -1299,8 +1308,6 @@
             const errorMsg =
               result.error || "Failed to save quote. Please try again.";
             showAlert(errorMsg, "error");
-
-            // If authentication failed, redirect to login
             if (response.status === 401) {
               sessionStorage.setItem(
                 "pendingQuoteData",
@@ -1329,7 +1336,6 @@
             return;
           }
 
-          // Map service IDs to booking page service types
           const serviceTypeMap = {
             standard: "SAME_DAY",
             express: "OVERNIGHT",
@@ -1337,22 +1343,17 @@
             urgent: "URGENT",
           };
 
-          // Get the service type - use the passed parameter or fall back to current quote service
           const serviceId =
             selectedServiceType || currentQuote.service?.id || "standard";
           const mappedServiceType = serviceTypeMap[serviceId] || "SAME_DAY";
 
-          // Use currentQuote data
           const quoteData = {
             ...currentQuote,
             serviceType: mappedServiceType,
             serviceId: serviceId,
           };
 
-          // Store quote data in sessionStorage for the booking page
           sessionStorage.setItem("quoteData", JSON.stringify(quoteData));
-
-          // Redirect to booking page
           window.location.href = "/booking";
         } catch (error) {
           console.error("Error proceeding to booking:", error);
@@ -1360,12 +1361,11 @@
         }
       }
 
-      // Check authentication and load user data
+      // Authentication check and profile/address loaders
       async function checkAuthAndLoadUser() {
         const token =
           localStorage.getItem("token") || sessionStorage.getItem("token");
         if (!token) {
-          // If no token, redirect to public quote page
           window.location.href = "/customer/quote";
           return;
         }
@@ -1380,25 +1380,20 @@
           });
 
           if (!response.ok) {
-            // If auth fails, redirect to public quote page
             window.location.href = "/customer/quote";
             return;
           }
 
           const userData = await response.json();
-          // Update page with user data if needed
           if (userData) {
-            // User is authenticated, page should already show logged-in version
             console.log("User authenticated:", userData.email);
           }
         } catch (error) {
           console.error("Error loading user data:", error);
-          // On error, redirect to public quote page
           window.location.href = "/customer/quote";
         }
       }
 
-      // Load saved addresses and populate dropdowns
       function loadSavedAddresses() {
         const token =
           localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -1419,7 +1414,6 @@
               "deliveryAddressSelect"
             );
 
-            // Clear existing options except the first one
             while (pickupSelect.children.length > 1) {
               pickupSelect.removeChild(pickupSelect.lastChild);
             }
@@ -1427,7 +1421,6 @@
               deliverySelect.removeChild(deliverySelect.lastChild);
             }
 
-            // Add saved addresses to dropdowns
             addresses.forEach((addr) => {
               const option = document.createElement("option");
               option.value = addr.id;
@@ -1449,182 +1442,75 @@
       }
 
       // Address selection handlers
-      document
-        .getElementById("pickupAddressSelect")
-        .addEventListener("change", function () {
-          if (this.value) {
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption.dataset.address) {
-              document.getElementById("pickupAddress").value =
-                selectedOption.dataset.address;
-              if (selectedOption.dataset.latitude) {
-                document.getElementById("pickupLatitude").value =
-                  selectedOption.dataset.latitude;
-              }
-              if (selectedOption.dataset.longitude) {
-                document.getElementById("pickupLongitude").value =
-                  selectedOption.dataset.longitude;
-              }
-              if (selectedOption.dataset.placeId) {
-                document.getElementById("pickupPlaceId").value =
-                  selectedOption.dataset.placeId;
-              }
-            }
-          }
-        });
-
-      document
-        .getElementById("deliveryAddressSelect")
-        .addEventListener("change", function () {
-          if (this.value) {
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption.dataset.address) {
-              document.getElementById("deliveryAddress").value =
-                selectedOption.dataset.address;
-              if (selectedOption.dataset.latitude) {
-                document.getElementById("deliveryLatitude").value =
-                  selectedOption.dataset.latitude;
-              }
-              if (selectedOption.dataset.longitude) {
-                document.getElementById("deliveryLongitude").value =
-                  selectedOption.dataset.longitude;
-              }
-              if (selectedOption.dataset.placeId) {
-                document.getElementById("deliveryPlaceId").value =
-                  selectedOption.dataset.placeId;
-              }
-            }
-          }
-        });
-
-      // Load saved addresses on page load
-      document.addEventListener("DOMContentLoaded", async function () {
-        checkAuthAndLoadUser();
-        loadSavedAddresses();
-
-        // Check for pending quote save action after login
-        const pendingQuote = sessionStorage.getItem("pendingQuoteData");
-        const pendingAction = sessionStorage.getItem("pendingBookingAction");
-        const token =
-          localStorage.getItem("token") || sessionStorage.getItem("token");
-
-        if (pendingQuote && pendingAction === "save" && token) {
-          try {
-            const quoteData = JSON.parse(pendingQuote);
-            currentQuote = quoteData;
-
-            // Automatically save the quote
-            await saveQuoteForLater();
-
-            // Clear pending data
-            sessionStorage.removeItem("pendingQuoteData");
-            sessionStorage.removeItem("pendingBookingAction");
-          } catch (error) {
-            console.error("Error auto-saving quote after login:", error);
-            sessionStorage.removeItem("pendingQuoteData");
-            sessionStorage.removeItem("pendingBookingAction");
-          }
-        }
-      });
-
-      // Sample box click handler
-      function handleSampleBoxClick(boxElement) {
-        const length = boxElement.dataset.length;
-        const width = boxElement.dataset.width;
-        const height = boxElement.dataset.height;
-        const weight = boxElement.dataset.weight;
-        const name = boxElement.dataset.name;
-
-        // Fill in the form fields
-        document.getElementById("length").value = length;
-        document.getElementById("width").value = width;
-        document.getElementById("height").value = height;
-        document.getElementById("weight").value = weight;
-
-        // Calculate volume weight
-        calculateVolumeWeight();
-
-        // Add visual feedback
-        document.querySelectorAll(".sample-box").forEach((box) => {
-          box.classList.remove("ring-2", "ring-blue-400", "bg-blue-50");
-        });
-        boxElement.classList.add("ring-2", "ring-blue-400", "bg-blue-50");
-
-        // Show success message
-        showTemporaryMessage(`✓ ${name} dimensions filled!`, "success");
-      }
-
-      // Show temporary message
-      function showTemporaryMessage(message, type = "info") {
-        const messageDiv = document.createElement("div");
-        messageDiv.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white font-medium z-50 transition-all duration-300 ${
-          type === "success" ? "bg-green-500" : "bg-blue-500"
-        }`;
-        messageDiv.textContent = message;
-        document.body.appendChild(messageDiv);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-          messageDiv.style.opacity = "0";
-          messageDiv.style.transform = "translateX(100%)";
-          setTimeout(() => {
-            document.body.removeChild(messageDiv);
-          }, 300);
-        }, 3000);
-      }
-
-      // Simple alert wrapper used across the page; maps to showTemporaryMessage
-      function showAlert(message, type = "info") {
-        const t =
-          type === "success" ? "success" : type === "error" ? "error" : "info";
-        showTemporaryMessage(message, t);
-      }
-
-      // Event listeners
-      // Call initMap after Google Maps script loads to avoid "initMap is not a function" race
-      (function attachMapsLoader() {
-        const mapsScript = document.getElementById("gmap-script");
-        if (!mapsScript) return;
-        mapsScript.addEventListener("load", function () {
-          try {
-            if (typeof initMap === "function") {
-              initMap();
-            } else {
-              // If initMap not yet defined, call it once DOM is ready
-              document.addEventListener("DOMContentLoaded", function () {
-                if (typeof initMap === "function") initMap();
-              });
-            }
-          } catch (e) {
-            console.error(
-              "Error invoking initMap after Google script load:",
-              e
-            );
-          }
-        });
-      })();
-
       document.addEventListener("DOMContentLoaded", function () {
+        // Hook up selection handlers after DOM ready
+        const pickupSelect = document.getElementById("pickupAddressSelect");
+        const deliverySelect = document.getElementById("deliveryAddressSelect");
+        if (pickupSelect) {
+          pickupSelect.addEventListener("change", function () {
+            if (this.value) {
+              const selectedOption = this.options[this.selectedIndex];
+              if (selectedOption.dataset.address) {
+                document.getElementById("pickupAddress").value =
+                  selectedOption.dataset.address;
+                if (selectedOption.dataset.latitude) {
+                  document.getElementById("pickupLatitude").value =
+                    selectedOption.dataset.latitude;
+                }
+                if (selectedOption.dataset.longitude) {
+                  document.getElementById("pickupLongitude").value =
+                    selectedOption.dataset.longitude;
+                }
+                if (selectedOption.dataset.placeId) {
+                  document.getElementById("pickupPlaceId").value =
+                    selectedOption.dataset.placeId;
+                }
+              }
+            }
+          });
+        }
+
+        if (deliverySelect) {
+          deliverySelect.addEventListener("change", function () {
+            if (this.value) {
+              const selectedOption = this.options[this.selectedIndex];
+              if (selectedOption.dataset.address) {
+                document.getElementById("deliveryAddress").value =
+                  selectedOption.dataset.address;
+                if (selectedOption.dataset.latitude) {
+                  document.getElementById("deliveryLatitude").value =
+                    selectedOption.dataset.latitude;
+                }
+                if (selectedOption.dataset.longitude) {
+                  document.getElementById("deliveryLongitude").value =
+                    selectedOption.dataset.longitude;
+                }
+                if (selectedOption.dataset.placeId) {
+                  document.getElementById("deliveryPlaceId").value =
+                    selectedOption.dataset.placeId;
+                }
+              }
+            }
+          });
+        }
+
+        // Initialize UI pieces
         initializeServiceOptions();
 
-        // Add click handlers for sample boxes
         document.querySelectorAll(".sample-box").forEach((box) => {
           box.addEventListener("click", function () {
             handleSampleBoxClick(this);
           });
         });
 
-        // Calculate volume weight on dimension change
         ["length", "width", "height"].forEach((id) => {
-          document
-            .getElementById(id)
-            .addEventListener("input", calculateVolumeWeight);
+          const el = document.getElementById(id);
+          if (el) el.addEventListener("input", calculateVolumeWeight);
         });
 
-        // Form submission
-        document
-          .getElementById("quoteForm")
-          .addEventListener("submit", function (e) {
+        const form = document.getElementById("quoteForm");
+        if (form) {
+          form.addEventListener("submit", function (e) {
             e.preventDefault();
             (async function () {
               try {
@@ -1638,7 +1524,100 @@
               }
             })();
           });
+        }
+
+        // Run auth/address load after DOM ready
+        checkAuthAndLoadUser();
+        loadSavedAddresses();
+
+        // Pending quote save handling
+        const pendingQuote = sessionStorage.getItem("pendingQuoteData");
+        const pendingAction = sessionStorage.getItem("pendingBookingAction");
+        const token =
+          localStorage.getItem("token") || sessionStorage.getItem("token");
+
+        if (pendingQuote && pendingAction === "save" && token) {
+          try {
+            const quoteData = JSON.parse(pendingQuote);
+            currentQuote = quoteData;
+            saveQuoteForLater();
+            sessionStorage.removeItem("pendingQuoteData");
+            sessionStorage.removeItem("pendingBookingAction");
+          } catch (error) {
+            console.error("Error auto-saving quote after login:", error);
+            sessionStorage.removeItem("pendingQuoteData");
+            sessionStorage.removeItem("pendingBookingAction");
+          }
+        }
       });
+
+      // Sample box handler and small UI helpers
+      function handleSampleBoxClick(boxElement) {
+        const length = boxElement.dataset.length;
+        const width = boxElement.dataset.width;
+        const height = boxElement.dataset.height;
+        const weight = boxElement.dataset.weight;
+        const name = boxElement.dataset.name;
+
+        document.getElementById("length").value = length;
+        document.getElementById("width").value = width;
+        document.getElementById("height").value = height;
+        document.getElementById("weight").value = weight;
+
+        calculateVolumeWeight();
+
+        document.querySelectorAll(".sample-box").forEach((box) => {
+          box.classList.remove("ring-2", "ring-blue-400", "bg-blue-50");
+        });
+        boxElement.classList.add("ring-2", "ring-blue-400", "bg-blue-50");
+
+        showTemporaryMessage(`✓ ${name} dimensions filled!`, "success");
+      }
+
+      function showTemporaryMessage(message, type = "info") {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white font-medium z-50 transition-all duration-300 ${
+          type === "success" ? "bg-green-500" : "bg-blue-500"
+        }`;
+        messageDiv.textContent = message;
+        document.body.appendChild(messageDiv);
+
+        setTimeout(() => {
+          messageDiv.style.opacity = "0";
+          messageDiv.style.transform = "translateX(100%)";
+          setTimeout(() => {
+            if (messageDiv.parentNode) document.body.removeChild(messageDiv);
+          }, 300);
+        }, 3000);
+      }
+
+      function showAlert(message, type = "info") {
+        const t =
+          type === "success" ? "success" : type === "error" ? "error" : "info";
+        showTemporaryMessage(message, t);
+      }
+
+      // Ensure initMap is invoked after Google Maps script loads
+      (function attachMapsLoader() {
+        const mapsScript = document.getElementById("gmap-script");
+        if (!mapsScript) return;
+        mapsScript.addEventListener("load", function () {
+          try {
+            if (typeof initMap === "function") {
+              initMap();
+            } else {
+              document.addEventListener("DOMContentLoaded", function () {
+                if (typeof initMap === "function") initMap();
+              });
+            }
+          } catch (e) {
+            console.error(
+              "Error invoking initMap after Google script load:",
+              e
+            );
+          }
+        });
+      })();
     </script>
   </body>
 </html>

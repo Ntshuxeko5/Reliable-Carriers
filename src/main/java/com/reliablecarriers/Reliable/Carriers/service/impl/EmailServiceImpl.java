@@ -9,11 +9,17 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.annotation.PostConstruct;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,9 +45,69 @@ public class EmailServiceImpl implements EmailService {
 
     @Value("${app.debug.mode:false}")
     private boolean debugMode;
+    
+    // Mailgun configuration (optional - falls back to SMTP if not configured)
+    @Value("${mailgun.api.key:}")
+    private String mailgunApiKey;
+    
+    @Value("${mailgun.domain:}")
+    private String mailgunDomain;
+    
+    @Value("${mailgun.from.email:}")
+    private String mailgunFromEmail;
+    
+    @Value("${mailgun.enabled:false}")
+    private boolean mailgunEnabled;
+    
+    private WebClient mailgunWebClient;
+    private String mailgunFromAddress;
+    
+    /**
+     * Initialize Mailgun configuration if enabled and credentials are provided
+     */
+    @PostConstruct
+    public void initMailgun() {
+        if (mailgunEnabled && mailgunApiKey != null && !mailgunApiKey.isEmpty() 
+            && mailgunDomain != null && !mailgunDomain.isEmpty()) {
+            try {
+                // Create WebClient for Mailgun API
+                mailgunWebClient = WebClient.builder()
+                    .baseUrl("https://api.mailgun.net/v3/" + mailgunDomain)
+                    .defaultHeader("Authorization", "Basic " + java.util.Base64.getEncoder()
+                        .encodeToString(("api:" + mailgunApiKey).getBytes()))
+                    .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
+                    .build();
+                
+                // Set from address
+                mailgunFromAddress = (mailgunFromEmail != null && !mailgunFromEmail.isEmpty()) 
+                    ? mailgunFromEmail 
+                    : "noreply@" + mailgunDomain;
+                
+                logger.info("Mailgun email service initialized successfully for domain: {}", mailgunDomain);
+            } catch (Exception e) {
+                logger.error("Failed to initialize Mailgun: {}", e.getMessage(), e);
+                mailgunEnabled = false;
+            }
+        } else {
+            logger.info("Mailgun not configured, using SMTP fallback");
+        }
+    }
 
     @Override
     public void sendSimpleEmail(String to, String subject, String text) {
+        // Try Mailgun first if enabled
+        if (mailgunEnabled && mailgunWebClient != null) {
+            try {
+                sendViaMailgun(to, subject, text, null);
+                logger.info("Email sent successfully via Mailgun to {} with subject: {}", to, subject);
+                return;
+            } catch (Exception e) {
+                logger.warn("Mailgun email failed, falling back to SMTP: {}", e.getMessage());
+                // Fall through to SMTP fallback
+            }
+        }
+        
+        // Fallback to SMTP
         int maxRetries = 3;
         int retryDelay = 2000; // 2 seconds
         
@@ -62,7 +128,7 @@ public class EmailServiceImpl implements EmailService {
                 message.setSubject(subject);
                 message.setText(text);
                 mailSender.send(message);
-                logger.info("Email sent successfully to {} with subject: {}", to, subject);
+                logger.info("Email sent successfully via SMTP to {} with subject: {}", to, subject);
                 return; // Success, exit retry loop
             } catch (Exception e) {
                 logger.warn("Failed to send email to {} (Attempt {}/{}): {}", to, attempt, maxRetries, e.getMessage());
@@ -104,13 +170,50 @@ public class EmailServiceImpl implements EmailService {
             }
         }
     }
+    
+    /**
+     * Send email via Mailgun REST API
+     */
+    private void sendViaMailgun(String to, String subject, String text, String html) {
+        if (mailgunWebClient == null) {
+            throw new IllegalStateException("Mailgun is not configured");
+        }
+        
+        // Build form data for Mailgun API
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("from", mailgunFromAddress);
+        formData.add("to", to);
+        formData.add("subject", subject);
+        
+        if (html != null && !html.isEmpty()) {
+            formData.add("html", html);
+            if (text != null && !text.isEmpty()) {
+                formData.add("text", text);
+            }
+        } else {
+            formData.add("text", text != null ? text : "");
+        }
+        
+        // Send request to Mailgun API
+        try {
+            String response = mailgunWebClient.post()
+                .uri("/messages")
+                .body(BodyInserters.fromFormData(formData))
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(30))
+                .block(); // Block for synchronous operation
+            
+            logger.debug("Mailgun API response: {}", response);
+        } catch (Exception e) {
+            logger.error("Mailgun API error: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to send email via Mailgun: " + e.getMessage(), e);
+        }
+    }
 
     @Override
     public void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
             Context context = new Context();
             if (variables != null) {
                 variables.forEach(context::setVariable);
@@ -118,6 +221,22 @@ public class EmailServiceImpl implements EmailService {
             context.setVariable("appName", appName);
 
             String htmlContent = templateEngine.process(templateName, context);
+            
+            // Try Mailgun first if enabled
+            if (mailgunEnabled && mailgunWebClient != null) {
+                try {
+                    sendViaMailgun(to, subject, null, htmlContent);
+                    logger.info("HTML email sent successfully via Mailgun to {} with subject: {}", to, subject);
+                    return;
+                } catch (Exception e) {
+                    logger.warn("Mailgun HTML email failed, falling back to SMTP: {}", e.getMessage());
+                    // Fall through to SMTP fallback
+                }
+            }
+            
+            // Fallback to SMTP
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail);
             helper.setTo(to);
@@ -125,6 +244,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
+            logger.info("HTML email sent successfully via SMTP to {} with subject: {}", to, subject);
         } catch (MessagingException e) {
             throw new RuntimeException("Failed to send HTML email", e);
         }
