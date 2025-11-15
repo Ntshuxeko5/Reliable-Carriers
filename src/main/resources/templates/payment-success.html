@@ -8,7 +8,7 @@
     <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places'" async defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .gradient-bg { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
         .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
         .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
@@ -48,7 +48,7 @@
                 <i class="fas fa-check-circle text-6xl text-white"></i>
             </div>
             <h1 class="text-4xl font-bold text-white mb-2">Payment Successful!</h1>
-            <p class="text-xl text-green-100">Your package is ready for pickup</p>
+            <p class="text-xl text-blue-100">Your package is ready for pickup</p>
         </div>
 
         <!-- Booking Details Card -->
@@ -82,7 +82,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Total Amount:</span>
-                                <span class="font-bold text-green-600" id="totalAmount">R250.00</span>
+                                <span class="font-bold text-blue-600" id="totalAmount">R250.00</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Status:</span>
@@ -94,14 +94,14 @@
                     <!-- Delivery Addresses with Google Maps -->
                     <div class="bg-gray-50 rounded-xl p-6">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Delivery Addresses
+                            <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>Delivery Addresses
                         </h3>
                         <div class="space-y-4">
                             <div class="flex items-start">
                                 <i class="fas fa-hand-holding-box text-blue-500 mt-1 mr-3"></i>
                                 <div class="flex-1">
                                     <div class="text-sm text-gray-600 font-medium mb-1">Pickup Address:</div>
-                                    <div class="text-gray-800 mb-2" id="pickupAddress">123 Main Street, Johannesburg</div>
+                                    <div class="text-gray-800 mb-2" id="pickupAddress">Loading address...</div>
                                     <div id="pickupMap" class="w-full h-32 rounded-lg border border-gray-300 mb-2"></div>
                                     <a id="pickupDirections" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
                                         <i class="fas fa-directions mr-1"></i>Get Directions
@@ -109,10 +109,10 @@
                                 </div>
                             </div>
                             <div class="flex items-start mt-4">
-                                <i class="fas fa-truck text-green-500 mt-1 mr-3"></i>
+                                <i class="fas fa-truck text-blue-500 mt-1 mr-3"></i>
                                 <div class="flex-1">
                                     <div class="text-sm text-gray-600 font-medium mb-1">Delivery Address:</div>
-                                    <div class="text-gray-800 mb-2" id="deliveryAddress">456 Oak Avenue, Pretoria</div>
+                                    <div class="text-gray-800 mb-2" id="deliveryAddress">Loading address...</div>
                                     <div id="deliveryMap" class="w-full h-32 rounded-lg border border-gray-300 mb-2"></div>
                                     <a id="deliveryDirections" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
                                         <i class="fas fa-directions mr-1"></i>Get Directions
@@ -223,11 +223,41 @@
     </div>
 
     <script>
+        // Store payment ID globally for receipt download
+        let currentPaymentId = null;
+        
+        // Load customer profile
+        async function loadCustomerProfile() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) return null;
+            
+            try {
+                const response = await fetch('/api/customer/profile', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const profile = await response.json();
+                    return profile;
+                }
+            } catch (error) {
+                console.error('Error loading customer profile:', error);
+            }
+            return null;
+        }
+
         // Load booking details from URL parameters
         async function loadBookingDetails() {
             const urlParams = new URLSearchParams(window.location.search);
             const bookingId = urlParams.get('bookingId');
             const reference = urlParams.get('reference');
+            
+            // Load customer profile first
+            const customerProfile = await loadCustomerProfile();
             
             if (bookingId) {
                 try {
@@ -243,7 +273,7 @@
                         const result = await response.json();
                         // Handle both direct booking object and wrapped response
                         const booking = result.booking || result;
-                        updateBookingDisplay(booking);
+                        updateBookingDisplay(booking, customerProfile);
                     } else {
                         // Try payment endpoint as fallback
                         const paymentResponse = await fetch(`/api/payment/booking/${bookingId}`, {
@@ -254,14 +284,18 @@
                         });
                         if (paymentResponse.ok) {
                             const data = await paymentResponse.json();
-                            updateBookingDisplay(data);
+                            // Store payment ID if available
+                            if (data.id || data.paymentId) {
+                                currentPaymentId = data.id || data.paymentId;
+                            }
+                            updateBookingDisplay(data, customerProfile);
                         } else {
-                            loadFromUrlParams();
+                            loadFromUrlParams(customerProfile);
                         }
                     }
                 } catch (error) {
                     console.error('Error loading booking details:', error);
-                    loadFromUrlParams();
+                    loadFromUrlParams(customerProfile);
                 }
             } else if (reference) {
                 // Try to get booking from payment reference
@@ -283,13 +317,13 @@
                 } catch (error) {
                     console.error('Error verifying payment:', error);
                 }
-                loadFromUrlParams();
+                loadFromUrlParams(customerProfile);
             } else {
-                loadFromUrlParams();
+                loadFromUrlParams(customerProfile);
             }
         }
 
-        function loadFromUrlParams() {
+        function loadFromUrlParams(customerProfile) {
             const urlParams = new URLSearchParams(window.location.search);
             
             // Update display with URL parameters
@@ -297,7 +331,12 @@
                 document.getElementById('bookingNumber').textContent = urlParams.get('bookingNumber') || urlParams.get('tracking') || 'RC1234567890';
             }
             if (document.getElementById('customerName')) {
-                document.getElementById('customerName').textContent = urlParams.get('customerName') || 'Guest User';
+                // Use customer profile name if available, otherwise URL param, otherwise default
+                if (customerProfile && customerProfile.firstName && customerProfile.lastName) {
+                    document.getElementById('customerName').textContent = `${customerProfile.firstName} ${customerProfile.lastName}`;
+                } else {
+                    document.getElementById('customerName').textContent = urlParams.get('customerName') || 'Guest User';
+                }
             }
             if (document.getElementById('serviceType')) {
                 document.getElementById('serviceType').textContent = urlParams.get('serviceType') || urlParams.get('service') || 'Express Delivery';
@@ -366,6 +405,22 @@
             const deliveryLat = urlParams.get('deliveryLatitude');
             const deliveryLng = urlParams.get('deliveryLongitude');
             
+            // Update directions links from URL params
+            const pickupDirectionsLink = document.getElementById('pickupDirections');
+            const deliveryDirectionsLink = document.getElementById('deliveryDirections');
+            if (pickupDirectionsLink && pickupAddrForMap) {
+                pickupDirectionsLink.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pickupAddrForMap)}`;
+                pickupDirectionsLink.style.display = 'inline';
+            } else if (pickupDirectionsLink) {
+                pickupDirectionsLink.style.display = 'none';
+            }
+            if (deliveryDirectionsLink && deliveryAddrForMap) {
+                deliveryDirectionsLink.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(deliveryAddrForMap)}`;
+                deliveryDirectionsLink.style.display = 'inline';
+            } else if (deliveryDirectionsLink) {
+                deliveryDirectionsLink.style.display = 'none';
+            }
+            
             // Only initialize maps if we have actual addresses
             if (typeof google !== 'undefined' && google.maps && (pickupAddrForMap || deliveryAddrForMap)) {
                 initializeMaps(pickupAddrForMap, deliveryAddrForMap, pickupLat, pickupLng, deliveryLat, deliveryLng);
@@ -377,15 +432,19 @@
         let pickupMarker = null;
         let deliveryMarker = null;
 
-        function updateBookingDisplay(data) {
+        function updateBookingDisplay(data, customerProfile) {
             // Update booking number
             if (document.getElementById('bookingNumber')) {
                 document.getElementById('bookingNumber').textContent = data.bookingNumber || data.trackingNumber || data.id || 'RC1234567890';
             }
             
-            // Update customer name
+            // Update customer name - prioritize logged-in customer profile
             if (document.getElementById('customerName')) {
-                document.getElementById('customerName').textContent = data.customerName || (data.customerFirstName && data.customerLastName ? data.customerFirstName + ' ' + data.customerLastName : 'Guest User');
+                if (customerProfile && customerProfile.firstName && customerProfile.lastName) {
+                    document.getElementById('customerName').textContent = `${customerProfile.firstName} ${customerProfile.lastName}`;
+                } else {
+                    document.getElementById('customerName').textContent = data.customerName || (data.customerFirstName && data.customerLastName ? data.customerFirstName + ' ' + data.customerLastName : 'Guest User');
+                }
             }
             
             // Update service type
@@ -451,11 +510,17 @@
             // Update Google Maps directions links
             const pickupDirectionsLink = document.getElementById('pickupDirections');
             const deliveryDirectionsLink = document.getElementById('deliveryDirections');
-            if (pickupDirectionsLink) {
+            if (pickupDirectionsLink && pickupAddr) {
                 pickupDirectionsLink.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pickupAddr)}`;
+                pickupDirectionsLink.style.display = 'inline';
+            } else if (pickupDirectionsLink) {
+                pickupDirectionsLink.style.display = 'none';
             }
-            if (deliveryDirectionsLink) {
+            if (deliveryDirectionsLink && deliveryAddr) {
                 deliveryDirectionsLink.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(deliveryAddr)}`;
+                deliveryDirectionsLink.style.display = 'inline';
+            } else if (deliveryDirectionsLink) {
+                deliveryDirectionsLink.style.display = 'none';
             }
             
             // Initialize Google Maps with coordinates (only if we have addresses)
@@ -565,16 +630,97 @@
         // Action functions
         function trackPackage() {
             const bookingNumber = document.getElementById('bookingNumber').textContent;
-            window.location.href = `/track?bookingNumber=${bookingNumber}`;
+            if (bookingNumber && bookingNumber !== 'RC1234567890') {
+                // Check if user is logged in
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                if (token) {
+                    window.location.href = `/customer/track/${bookingNumber}`;
+                } else {
+                    window.location.href = `/customer/track?trackingNumber=${bookingNumber}`;
+                }
+            } else {
+                alert('Booking number not available');
+            }
         }
 
-        function downloadReceipt() {
+        async function downloadReceipt() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingId = urlParams.get('bookingId');
+            const reference = urlParams.get('reference');
             const bookingNumber = document.getElementById('bookingNumber').textContent;
-            window.open(`/api/receipt/${bookingNumber}`, '_blank');
+            
+            if (!bookingId && !reference) {
+                alert('Booking information not available for receipt download');
+                return;
+            }
+            
+            try {
+                // Try to get payment ID from booking
+                let paymentId = null;
+                
+                if (bookingId) {
+                    // Try to get payment from booking
+                    const response = await fetch(`/api/payment/booking/${bookingId}`, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        paymentId = data.id || data.paymentId;
+                    }
+                }
+                
+                // Use stored payment ID if available, otherwise use fetched one
+                const finalPaymentId = currentPaymentId || paymentId;
+                
+                // If we have payment ID, download receipt
+                if (finalPaymentId) {
+                    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    if (token) {
+                        headers['Authorization'] = 'Bearer ' + token;
+                    }
+                    
+                    const receiptResponse = await fetch(`/api/customer/payments/${finalPaymentId}/receipt`, {
+                        headers: headers,
+                        credentials: 'include'
+                    });
+                    
+                    if (receiptResponse.ok) {
+                        const blob = await receiptResponse.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `receipt_${bookingNumber || finalPaymentId}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    } else {
+                        alert('Receipt not available yet. Please try again later.');
+                    }
+                } else {
+                    alert('Payment information not found. Receipt will be available after payment is processed.');
+                }
+            } catch (error) {
+                console.error('Error downloading receipt:', error);
+                alert('Error downloading receipt. Please try again later.');
+            }
         }
 
         function goHome() {
-            window.location.href = '/';
+            // Check if user is logged in
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (token) {
+                window.location.href = '/customer/dashboard';
+            } else {
+                window.location.href = '/';
+            }
         }
 
         // Create confetti animation
