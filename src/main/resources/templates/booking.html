@@ -485,22 +485,22 @@
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Service Details</h2>
                 <form id="serviceForm" class="space-y-6">
                     <!-- Service Type Selection -->
-                    <div>
+                    <div id="serviceTypeContainer">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Service Type *</label>
                         <select id="serviceType" name="serviceType" required 
                                 class="w-full px-4 py-3 form-input focus:outline-none transition-all duration-300">
                             <option value="">Select service type</option>
                             <optgroup label="Courier Services">
-                                <option value="SAME_DAY">Same Day Delivery - R140</option>
-                                <option value="OVERNIGHT">Overnight Delivery - R120</option>
-                                <option value="ECONOMY">Economy (2-3 days) - R100</option>
-                                <option value="URGENT">Urgent Delivery - R425</option>
+                                <option value="SAME_DAY">Same Day Delivery - R250</option>
+                                <option value="OVERNIGHT">Overnight Delivery - R200</option>
+                                <option value="ECONOMY">Economy (2-3 days) - R150</option>
+                                <option value="URGENT">Urgent Delivery - R600</option>
                             </optgroup>
                             <optgroup label="Moving Services">
-                                <option value="FURNITURE">Furniture Moving</option>
-                                <option value="MOVING">Complete Moving</option>
-                                <option value="LOAD_TRANSPORT">Load Transport</option>
-                                <option value="EXPRESS_DELIVERY">Express Delivery</option>
+                                <option value="FURNITURE">Furniture Moving - R800</option>
+                                <option value="MOVING">Complete Moving - R1200</option>
+                                <option value="LOAD_TRANSPORT">Load Transport - R500</option>
+                                <option value="EXPRESS_DELIVERY">Express Delivery - R350</option>
                             </optgroup>
                         </select>
                     </div>
@@ -647,36 +647,18 @@
                                 <div class="text-lg font-bold text-gray-800">R0.00</div>
                             </label>
                             
-                            <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option bg-white" data-cost="15">
-                                <input type="radio" name="insurance" value="basic" class="mr-3 text-blue-500">
-                                <div class="flex-1">
-                                    <div class="font-semibold text-gray-800">Basic Coverage</div>
-                                    <div class="text-sm text-gray-600">Up to R2,000 coverage</div>
-                                </div>
-                                <div class="text-lg font-bold text-gray-800">R15.00</div>
-                            </label>
-                            
-                            <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option bg-white" data-cost="35">
+                            <label class="flex items-center p-4 border-2 border-blue-400 rounded-xl cursor-pointer hover:border-blue-500 transition-all duration-300 insurance-option bg-blue-50" data-cost="30">
                                 <input type="radio" name="insurance" value="standard" class="mr-3 text-blue-500">
                                 <div class="flex-1">
-                                    <div class="font-semibold text-gray-800">Standard Coverage</div>
-                                    <div class="text-sm text-gray-600">Up to R5,000 coverage</div>
+                                    <div class="font-semibold text-gray-800">Standard Insurance</div>
+                                    <div class="text-sm text-gray-600">Up to R20,000 coverage</div>
                                 </div>
-                                <div class="text-lg font-bold text-gray-800">R35.00</div>
-                            </label>
-                            
-                            <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all duration-300 insurance-option bg-white" data-cost="65">
-                                <input type="radio" name="insurance" value="premium" class="mr-3 text-blue-500">
-                                <div class="flex-1">
-                                    <div class="font-semibold text-gray-800">Premium Coverage</div>
-                                    <div class="text-sm text-gray-600">Up to R10,000 coverage</div>
-                                </div>
-                                <div class="text-lg font-bold text-gray-800">R65.00</div>
+                                <div class="text-lg font-bold text-blue-600">R30.00</div>
                             </label>
                         </div>
                         
                         <!-- Live Price Update Display -->
-                        <div id="insurancePriceUpdate" class="mt-4 p-4 bg-white rounded-lg border border-blue-300" style="display: none;">
+                        <div id="insurancePriceUpdate" class="mt-4 p-4 bg-white rounded-lg border-2 border-blue-400 shadow-md">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <div class="text-sm text-blue-600 font-medium">Selected Insurance:</div>
@@ -685,6 +667,12 @@
                                 <div class="text-right">
                                     <div class="text-sm text-blue-600">Insurance Cost:</div>
                                     <div class="text-xl font-bold text-blue-800" id="selectedInsuranceCost">R0.00</div>
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-3 border-t border-blue-200">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700 font-semibold">Updated Total:</span>
+                                    <span id="updatedTotalPrice" class="text-2xl font-bold text-green-600">R0.00</span>
                                 </div>
                             </div>
                         </div>
@@ -899,27 +887,27 @@
             if (service === 'courier') {
                 serviceTypeSelect.innerHTML += `
                     <optgroup label="Courier Services">
-                        <option value="SAME_DAY">Same Day Delivery - R140</option>
-                        <option value="OVERNIGHT">Overnight Delivery - R120</option>
-                        <option value="ECONOMY">Economy (2-3 days) - R100</option>
-                        <option value="URGENT">Urgent Delivery - R425</option>
+                        <option value="SAME_DAY">Same Day Delivery - R250</option>
+                        <option value="OVERNIGHT">Overnight Delivery - R200</option>
+                        <option value="ECONOMY">Economy (2-3 days) - R150</option>
+                        <option value="URGENT">Urgent Delivery - R600</option>
                     </optgroup>
                 `;
             } else if (service === 'moving') {
                 serviceTypeSelect.innerHTML += `
                     <optgroup label="Moving Services">
-                        <option value="FURNITURE">Furniture Moving</option>
-                        <option value="MOVING">Complete Moving</option>
-                        <option value="LOAD_TRANSPORT">Load Transport</option>
-                        <option value="EXPRESS_DELIVERY">Express Delivery</option>
+                        <option value="FURNITURE">Furniture Moving - R800</option>
+                        <option value="MOVING">Complete Moving - R1200</option>
+                        <option value="LOAD_TRANSPORT">Load Transport - R500</option>
+                        <option value="EXPRESS_DELIVERY">Express Delivery - R350</option>
                     </optgroup>
                 `;
             } else if (service === 'express') {
                 serviceTypeSelect.innerHTML += `
                     <optgroup label="Express Services">
-                        <option value="SAME_DAY">Same Day Delivery - R140</option>
-                        <option value="EXPRESS_DELIVERY">Express Delivery</option>
-                        <option value="URGENT">Urgent Delivery - R425</option>
+                        <option value="SAME_DAY">Same Day Delivery - R250</option>
+                        <option value="EXPRESS_DELIVERY">Express Delivery - R350</option>
+                        <option value="URGENT">Urgent Delivery - R600</option>
                     </optgroup>
                 `;
             }
@@ -1057,9 +1045,7 @@
         function getInsuranceCost(insuranceType) {
             const costs = {
                 'none': 0,
-                'basic': 15,
-                'standard': 35,
-                'premium': 65
+                'standard': 30
             };
             return costs[insuranceType] || 0;
         }
@@ -1072,6 +1058,11 @@
             const selectedInsuranceCost = document.getElementById('selectedInsuranceCost');
             
             if (!insuranceOptions.length) return;
+            
+            // Show price update immediately on page load
+            if (insurancePriceUpdate) {
+                insurancePriceUpdate.style.display = 'block';
+            }
             
             insuranceOptions.forEach(option => {
                 option.addEventListener('change', function() {
@@ -1086,11 +1077,14 @@
                         // Show the live price update
                         if (insurancePriceUpdate) insurancePriceUpdate.style.display = 'block';
                         
-                        // Update total price estimate if visible
+                        // Update total price estimate immediately
                         updateTotalPrice();
                     }
                 });
             });
+            
+            // Trigger initial update
+            updateTotalPrice();
         }
         
         // Update total price including insurance
@@ -1109,24 +1103,28 @@
                 const serviceType = serviceTypeSelect.value;
                 switch(serviceType) {
                     case 'SAME_DAY':
-                        basePrice = 140;
+                        basePrice = 250;
                         break;
                     case 'OVERNIGHT':
-                        basePrice = 120;
+                        basePrice = 200;
                         break;
                     case 'ECONOMY':
-                        basePrice = 100;
+                        basePrice = 150;
                         break;
                     case 'URGENT':
-                        basePrice = 425;
+                        basePrice = 600;
                         break;
                     case 'FURNITURE':
+                        basePrice = 800;
+                        break;
                     case 'MOVING':
+                        basePrice = 1200;
+                        break;
                     case 'LOAD_TRANSPORT':
-                        basePrice = 500; // Default for moving services
+                        basePrice = 500;
                         break;
                     case 'EXPRESS_DELIVERY':
-                        basePrice = 200;
+                        basePrice = 350;
                         break;
                 }
             }
@@ -1136,12 +1134,18 @@
             const estimatedPrice = document.getElementById('estimatedPrice');
             const serviceCost = document.getElementById('serviceCost');
             const insuranceCostDisplay = document.getElementById('insuranceCostDisplay');
+            const updatedTotalPrice = document.getElementById('updatedTotalPrice');
             
             if (priceEstimate && estimatedPrice) {
                 if (serviceCost) serviceCost.textContent = `R${basePrice.toFixed(2)}`;
                 if (insuranceCostDisplay) insuranceCostDisplay.textContent = `R${insuranceCost.toFixed(2)}`;
                 estimatedPrice.textContent = `R${totalPrice.toFixed(2)}`;
                 priceEstimate.classList.remove('hidden');
+            }
+            
+            // Update the insurance price update section
+            if (updatedTotalPrice) {
+                updatedTotalPrice.textContent = `R${totalPrice.toFixed(2)}`;
             }
         }
         
@@ -1509,18 +1513,29 @@
                 if (descriptionField) descriptionField.value = quote.description;
             }
             
-            // Set service type if available
-            if (quote.serviceType) {
+            // Set service type if available - pre-select and make read-only
+            if (quote.serviceType || (quote.selectedService && quote.selectedService.type)) {
+                const serviceType = quote.serviceType || quote.selectedService.type;
                 const serviceSelect = document.getElementById('serviceType');
+                const serviceTypeContainer = document.getElementById('serviceTypeContainer');
+                
                 if (serviceSelect) {
-                    serviceSelect.value = quote.serviceType;
-                    // Trigger change event to update price
-                    serviceSelect.dispatchEvent(new Event('change'));
-                }
-            } else if (quote.selectedService && quote.selectedService.type) {
-                const serviceSelect = document.getElementById('serviceType');
-                if (serviceSelect) {
-                    serviceSelect.value = quote.selectedService.type;
+                    serviceSelect.value = serviceType;
+                    // Make it read-only since it's from quote
+                    serviceSelect.setAttribute('readonly', 'readonly');
+                    serviceSelect.classList.add('bg-gray-50', 'cursor-not-allowed');
+                    
+                    // Add visual indicator
+                    if (serviceTypeContainer) {
+                        const label = serviceTypeContainer.querySelector('label');
+                        if (label && !label.querySelector('.pre-filled-badge')) {
+                            const badge = document.createElement('span');
+                            badge.className = 'pre-filled-badge text-xs text-green-600 ml-2';
+                            badge.innerHTML = '<i class="fas fa-check-circle"></i> From quote';
+                            label.appendChild(badge);
+                        }
+                    }
+                    
                     // Trigger change event to update price
                     serviceSelect.dispatchEvent(new Event('change'));
                 }
