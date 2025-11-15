@@ -774,6 +774,11 @@
             const container = document.getElementById('quoteResults');
             
             // Store quote data for later use
+            const length = document.getElementById('length').value;
+            const width = document.getElementById('width').value;
+            const height = document.getElementById('height').value;
+            const dimensions = length && width && height ? `${length}x${width}x${height}` : '';
+            
             currentQuote = {
                 service: service,
                 price: price,
@@ -788,12 +793,13 @@
                 deliveryLatitude: document.getElementById('deliveryLatitude').value,
                 deliveryLongitude: document.getElementById('deliveryLongitude').value,
                 deliveryPlaceId: document.getElementById('deliveryPlaceId').value,
-                length: document.getElementById('length').value,
-                width: document.getElementById('width').value,
-                height: document.getElementById('height').value,
+                length: length,
+                width: width,
+                height: height,
+                dimensions: dimensions,
                 weight: document.getElementById('weight').value,
-                packageType: document.querySelector('input[name="packageType"]:checked')?.value || 'parcel'
-                ,insurance: insuranceSelected || false,
+                packageType: document.querySelector('input[name="packageType"]:checked')?.value || 'parcel',
+                insurance: insuranceSelected || false,
                 insuranceFee: insuranceFee || 0
             };
             
