@@ -566,7 +566,10 @@
             const actualWeight = Math.max(weight, volumeWeight);
             
             const selectedService = serviceOptions.find(s => s.id === serviceType);
-            if (!selectedService) return;
+            if (!selectedService) {
+                alert('Please select a service type');
+                return;
+            }
 
             // Calculate distance using Google Maps API
             const distance = await calculateDistance();
@@ -624,67 +627,102 @@
         let distanceService, directionsService, directionsRenderer;
         let pickupCoordinates = null;
         let deliveryCoordinates = null;
+        let mapsInitialized = false;
 
         function initMap() {
-            // Initialize services
-            distanceService = new google.maps.DistanceMatrixService();
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
+            // Check if Google Maps is available
+            if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+                console.error('Google Maps API not loaded');
+                return;
+            }
 
-            // Initialize autocomplete for pickup address
-            pickupAutocomplete = new google.maps.places.Autocomplete(
-                document.getElementById('pickupAddress'),
-                {
-                    types: ['address'],
-                    componentRestrictions: { country: 'za' } // Restrict to South Africa
-                }
-            );
+            // Check if DOM elements exist
+            const pickupInput = document.getElementById('pickupAddress');
+            const deliveryInput = document.getElementById('deliveryAddress');
+            
+            if (!pickupInput || !deliveryInput) {
+                console.error('Address input fields not found');
+                return;
+            }
 
-            // Initialize autocomplete for delivery address
-            deliveryAutocomplete = new google.maps.places.Autocomplete(
-                document.getElementById('deliveryAddress'),
-                {
-                    types: ['address'],
-                    componentRestrictions: { country: 'za' } // Restrict to South Africa
-                }
-            );
+            try {
+                // Initialize services
+                distanceService = new google.maps.DistanceMatrixService();
+                directionsService = new google.maps.DirectionsService();
+                directionsRenderer = new google.maps.DirectionsRenderer();
 
-            // Add place changed listeners to capture coordinates
-            pickupAutocomplete.addListener('place_changed', function() {
-                const place = pickupAutocomplete.getPlace();
-                if (place.geometry && place.geometry.location) {
-                    pickupCoordinates = {
-                        lat: place.geometry.location.lat(),
-                        lng: place.geometry.location.lng(),
-                        formattedAddress: place.formatted_address,
-                        placeId: place.place_id
-                    };
-                    console.log('Pickup coordinates captured:', pickupCoordinates);
-                    
-                    // Store coordinates in hidden fields for form submission
-                    document.getElementById('pickupLatitude').value = pickupCoordinates.lat;
-                    document.getElementById('pickupLongitude').value = pickupCoordinates.lng;
-                    document.getElementById('pickupPlaceId').value = pickupCoordinates.placeId;
-                }
-            });
+                // Initialize autocomplete for pickup address (only if not already initialized)
+                if (!pickupAutocomplete) {
+                    pickupAutocomplete = new google.maps.places.Autocomplete(
+                        pickupInput,
+                        {
+                            types: ['address'],
+                            componentRestrictions: { country: 'za' }, // Restrict to South Africa
+                            fields: ['geometry', 'formatted_address', 'place_id']
+                        }
+                    );
 
-            deliveryAutocomplete.addListener('place_changed', function() {
-                const place = deliveryAutocomplete.getPlace();
-                if (place.geometry && place.geometry.location) {
-                    deliveryCoordinates = {
-                        lat: place.geometry.location.lat(),
-                        lng: place.geometry.location.lng(),
-                        formattedAddress: place.formatted_address,
-                        placeId: place.place_id
-                    };
-                    console.log('Delivery coordinates captured:', deliveryCoordinates);
-                    
-                    // Store coordinates in hidden fields for form submission
-                    document.getElementById('deliveryLatitude').value = deliveryCoordinates.lat;
-                    document.getElementById('deliveryLongitude').value = deliveryCoordinates.lng;
-                    document.getElementById('deliveryPlaceId').value = deliveryCoordinates.placeId;
+                    // Add place changed listeners to capture coordinates
+                    pickupAutocomplete.addListener('place_changed', function() {
+                        const place = pickupAutocomplete.getPlace();
+                        if (place.geometry && place.geometry.location) {
+                            pickupCoordinates = {
+                                lat: place.geometry.location.lat(),
+                                lng: place.geometry.location.lng(),
+                                formattedAddress: place.formatted_address,
+                                placeId: place.place_id
+                            };
+                            console.log('Pickup coordinates captured:', pickupCoordinates);
+                            
+                            // Store coordinates in hidden fields for form submission
+                            const latField = document.getElementById('pickupLatitude');
+                            const lngField = document.getElementById('pickupLongitude');
+                            const placeIdField = document.getElementById('pickupPlaceId');
+                            if (latField) latField.value = pickupCoordinates.lat;
+                            if (lngField) lngField.value = pickupCoordinates.lng;
+                            if (placeIdField) placeIdField.value = pickupCoordinates.placeId;
+                        }
+                    });
                 }
-            });
+
+                // Initialize autocomplete for delivery address (only if not already initialized)
+                if (!deliveryAutocomplete) {
+                    deliveryAutocomplete = new google.maps.places.Autocomplete(
+                        deliveryInput,
+                        {
+                            types: ['address'],
+                            componentRestrictions: { country: 'za' }, // Restrict to South Africa
+                            fields: ['geometry', 'formatted_address', 'place_id']
+                        }
+                    );
+
+                    deliveryAutocomplete.addListener('place_changed', function() {
+                        const place = deliveryAutocomplete.getPlace();
+                        if (place.geometry && place.geometry.location) {
+                            deliveryCoordinates = {
+                                lat: place.geometry.location.lat(),
+                                lng: place.geometry.location.lng(),
+                                formattedAddress: place.formatted_address,
+                                placeId: place.place_id
+                            };
+                            console.log('Delivery coordinates captured:', deliveryCoordinates);
+                            
+                            // Store coordinates in hidden fields for form submission
+                            const latField = document.getElementById('deliveryLatitude');
+                            const lngField = document.getElementById('deliveryLongitude');
+                            const placeIdField = document.getElementById('deliveryPlaceId');
+                            if (latField) latField.value = deliveryCoordinates.lat;
+                            if (lngField) lngField.value = deliveryCoordinates.lng;
+                            if (placeIdField) placeIdField.value = deliveryCoordinates.placeId;
+                        }
+                    });
+                }
+
+                mapsInitialized = true;
+                console.log('Google Maps autocomplete initialized successfully');
+            } catch (error) {
+                console.error('Error initializing Google Maps:', error);
+            }
         }
 
         // Real distance calculation using Google Maps API
@@ -693,27 +731,38 @@
             const delivery = document.getElementById('deliveryAddress').value;
             
             if (!pickup || !delivery) {
-            return 100; // Default distance
-        }
+                return Promise.resolve(100); // Default distance
+            }
+
+            // Check if distanceService is initialized
+            if (!distanceService || typeof google === 'undefined' || !google.maps) {
+                console.log('Google Maps API not loaded yet, using default distance');
+                return Promise.resolve(100); // Fallback distance
+            }
 
             return new Promise((resolve) => {
-                distanceService.getDistanceMatrix({
-                    origins: [pickup],
-                    destinations: [delivery],
-                    travelMode: google.maps.TravelMode.DRIVING,
-                    unitSystem: google.maps.UnitSystem.METRIC,
-                    avoidHighways: false,
-                    avoidTolls: false
-                }, (response, status) => {
-                    if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-                        const distance = response.rows[0].elements[0].distance.value / 1000; // Convert to km
-                        console.log('Google Maps distance:', distance, 'km');
-                        resolve(distance);
-                    } else {
-                        console.log('Google Maps API error:', status);
-                        resolve(100); // Fallback distance
-                    }
-                });
+                try {
+                    distanceService.getDistanceMatrix({
+                        origins: [pickup],
+                        destinations: [delivery],
+                        travelMode: google.maps.TravelMode.DRIVING,
+                        unitSystem: google.maps.UnitSystem.METRIC,
+                        avoidHighways: false,
+                        avoidTolls: false
+                    }, (response, status) => {
+                        if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                            const distance = response.rows[0].elements[0].distance.value / 1000; // Convert to km
+                            console.log('Google Maps distance:', distance, 'km');
+                            resolve(distance);
+                        } else {
+                            console.log('Google Maps API error:', status);
+                            resolve(100); // Fallback distance
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error calculating distance:', error);
+                    resolve(100); // Fallback distance on error
+                }
             });
         }
 
@@ -1133,24 +1182,40 @@
         }
 
         // Event listeners
-        // Call initMap after Google Maps script loads to avoid "initMap is not a function" race
+        // Initialize Google Maps when both script and DOM are ready
+        function initializeMapsWhenReady() {
+            // Check if both Google Maps and DOM are ready
+            if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+                const pickupInput = document.getElementById('pickupAddress');
+                const deliveryInput = document.getElementById('deliveryAddress');
+                
+                if (pickupInput && deliveryInput && !mapsInitialized) {
+                    initMap();
+                }
+            }
+        }
+
+        // Call initMap after Google Maps script loads
         (function attachMapsLoader() {
             const mapsScript = document.getElementById('gmap-script');
-            if (!mapsScript) return;
-            mapsScript.addEventListener('load', function() {
-                try {
-                    if (typeof initMap === 'function') {
-                        initMap();
-                    } else {
-                        // If initMap not yet defined, call it once DOM is ready
-                        document.addEventListener('DOMContentLoaded', function() {
-                            if (typeof initMap === 'function') initMap();
-                        });
-                    }
-                } catch (e) {
-                    console.error('Error invoking initMap after Google script load:', e);
-                }
-            });
+            if (mapsScript) {
+                mapsScript.addEventListener('load', function() {
+                    console.log('Google Maps script loaded');
+                    // Wait a bit for everything to be ready, then initialize
+                    setTimeout(initializeMapsWhenReady, 100);
+                });
+            }
+            
+            // Also try to initialize when DOM is ready (in case script loads first)
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log('DOM ready, checking Google Maps');
+                    setTimeout(initializeMapsWhenReady, 100);
+                });
+            } else {
+                // DOM is already ready
+                setTimeout(initializeMapsWhenReady, 100);
+            }
         })();
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1173,6 +1238,21 @@
                 e.preventDefault();
                 calculateQuote();
             });
+            
+            // Ensure Google Maps autocomplete is initialized (retry if needed)
+            initializeMapsWhenReady();
+            
+            // Retry initialization after a short delay in case Google Maps loads late
+            let retryCount = 0;
+            const maxRetries = 10;
+            const retryInterval = setInterval(function() {
+                if (mapsInitialized || retryCount >= maxRetries) {
+                    clearInterval(retryInterval);
+                    return;
+                }
+                retryCount++;
+                initializeMapsWhenReady();
+            }, 500);
         });
     </script>
 </body>
