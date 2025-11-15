@@ -280,15 +280,9 @@
             const identifier = document.getElementById('identifier').value.trim();
             const password = document.getElementById('password').value;
             
-            // Client-side validation
-            if (!identifier) {
-                showAlert('Email or phone number is required', 'error');
-                return;
-            }
-            
-            if (!password) {
-                showAlert('Password is required', 'error');
-                return;
+            // Client-side validation (silent - backend will validate and return proper errors)
+            if (!identifier || !password) {
+                return; // Don't show alert, let backend handle validation
             }
             
             // Show loading state

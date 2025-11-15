@@ -112,5 +112,25 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(driverUser);
             System.out.println("Driver user created successfully: hugorex@gmail.com");
         }
+
+// Create admin user: ntshuxekochabalala80@gmail.com
+if (!userRepository.findByEmail("reliablecarriersadmn@gmail.com").isPresent()) {
+    User adminUser = new User();
+    adminUser.setFirstName("Reliable");
+    adminUser.setLastName("Carriers");
+    adminUser.setEmail("reliablecarriersadmn@gmai.com");
+    adminUser.setPassword(passwordEncoder.encode("RCAdmin@123."));
+    adminUser.setPhone("+27680413149");
+    adminUser.setAddress("Admin Address");
+    adminUser.setCity("Admin City");
+    adminUser.setState("GA");
+    adminUser.setZipCode("0000");
+    adminUser.setCountry("South Africa");
+    adminUser.setRole(UserRole.ADMIN);
+    adminUser.setEmailVerified(true); // Admins are trusted, no need for email verification
+    adminUser.setIsActive(true);
+    userRepository.save(adminUser);
+    System.out.println("Admin user created successfully: reliablecarriersadmn@gmail.com");
+}
     }
 }
