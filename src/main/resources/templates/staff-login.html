@@ -408,25 +408,27 @@
                 return response.json();
             })
             .then(data => {
-                if (data && data.token) {
+                // Check if response has user object (from verify2faMethod endpoint)
+                const user = data && data.user ? data.user : data;
+                if (user && user.token) {
                     // Store the JWT token
-                    localStorage.setItem('jwtToken', data.token);
-                    sessionStorage.setItem('jwtToken', data.token);
-                    localStorage.setItem('token', data.token);
-                    sessionStorage.setItem('token', data.token);
-                    localStorage.setItem('userRole', data.role);
-                    localStorage.setItem('userEmail', data.email);
+                    localStorage.setItem('jwtToken', user.token);
+                    sessionStorage.setItem('jwtToken', user.token);
+                    localStorage.setItem('token', user.token);
+                    sessionStorage.setItem('token', user.token);
+                    localStorage.setItem('userRole', user.role);
+                    localStorage.setItem('userEmail', user.email);
                     
                     showAlert('Authentication successful! Redirecting to staff portal...', 'success');
                     setTimeout(() => {
                         // Redirect based on user role
-                        if (data.role === 'ADMIN') {
+                        if (user.role === 'ADMIN') {
                             window.location.href = '/admin/dashboard';
-                        } else if (data.role === 'DRIVER') {
+                        } else if (user.role === 'DRIVER') {
                             window.location.href = '/driver/dashboard';
-                        } else if (data.role === 'TRACKING_MANAGER') {
+                        } else if (user.role === 'TRACKING_MANAGER') {
                             window.location.href = '/tracking/dashboard';
-                        } else if (data.role === 'STAFF') {
+                        } else if (user.role === 'STAFF') {
                             window.location.href = '/staff/dashboard';
                         } else {
                             window.location.href = '/dashboard';
