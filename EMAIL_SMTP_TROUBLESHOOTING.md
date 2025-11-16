@@ -98,13 +98,74 @@ spring.mail.username=apikey
 spring.mail.password=your-sendgrid-api-key
 ```
 
-#### C. Mailgun
+#### C. Mailgun (API-based - Recommended for Railway)
 ```properties
-spring.mail.host=smtp.mailgun.org
-spring.mail.port=587
-spring.mail.username=your-mailgun-username
-spring.mail.password=your-mailgun-password
+# Mailgun uses REST API instead of SMTP (works on platforms that block SMTP)
+mailgun.enabled=true
+mailgun.api.key=your-mailgun-api-key
+mailgun.domain=your-verified-domain.com
+mailgun.from.email=noreply@your-verified-domain.com
 ```
+
+**Mailgun API Setup:**
+1. Sign up at [Mailgun](https://www.mailgun.com/) (free tier: 5,000 emails/month for first 3 months)
+2. Verify your domain in Mailgun dashboard
+3. Get your API key from: https://app.mailgun.com/app/domains
+4. Set environment variables:
+   ```bash
+   MAILGUN_ENABLED=true
+   MAILGUN_API_KEY=your-api-key-here
+   MAILGUN_DOMAIN=your-verified-domain.com
+   MAILGUN_FROM_EMAIL=noreply@your-verified-domain.com
+   ```
+
+**Troubleshooting Mailgun 401 Unauthorized Error:**
+
+If you see `401 UNAUTHORIZED - Unauthorized. Check API key`:
+
+1. **Verify API Key**: 
+   - Log into https://app.mailgun.com/app/domains
+   - Go to your domain settings
+   - Copy the Private API key (not the Public key)
+   - Ensure the API key matches your domain
+
+2. **Verify Domain**:
+   - Domain must be verified in Mailgun dashboard
+   - Check DNS records are properly configured
+   - Domain status should show "Active" or "Verified"
+
+3. **Check API Key Format**:
+   - API key should be in format: `key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxx`
+   - No spaces or extra characters
+   - Ensure you're using the Private API key, not Public
+
+4. **Domain Matching**:
+   - The API key must be for the domain specified in `MAILGUN_DOMAIN`
+   - If you have multiple domains, use the API key for the correct domain
+
+5. **Sandbox Domain Issues**:
+   - Sandbox domains (e.g., `sandbox123.mailgun.org`) can only send to authorized recipients
+   - For production, use a verified custom domain
+   - Authorize recipients in Mailgun dashboard if using sandbox
+
+6. **IP Restrictions**:
+   - Check if IP whitelisting is enabled in Mailgun
+   - Add your server IPs to the whitelist if needed
+
+7. **Account Status**:
+   - Verify your Mailgun account is active
+   - Check billing status if on paid plan
+   - Free tier has limits but should still work
+
+**Environment Variables for Mailgun:**
+```bash
+MAILGUN_ENABLED=true
+MAILGUN_API_KEY=your-mailgun-api-key-here
+MAILGUN_DOMAIN=your-verified-domain.com
+MAILGUN_FROM_EMAIL=noreply@your-verified-domain.com
+```
+
+**Note**: The application automatically falls back to SMTP if Mailgun fails, so emails will still be sent.
 
 #### D. Amazon SES
 ```properties

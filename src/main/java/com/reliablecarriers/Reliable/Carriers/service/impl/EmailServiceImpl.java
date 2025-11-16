@@ -62,35 +62,71 @@ public class EmailServiceImpl implements EmailService {
     
     private WebClient mailgunWebClient;
     private String mailgunFromAddress;
+    private int mailgunAuthFailureCount = 0;
+    private static final int MAX_MAILGUN_AUTH_FAILURES = 3;
     
     /**
      * Initialize Mailgun configuration if enabled and credentials are provided
      */
     @PostConstruct
     public void initMailgun() {
-        if (mailgunEnabled && mailgunApiKey != null && !mailgunApiKey.isEmpty() 
-            && mailgunDomain != null && !mailgunDomain.isEmpty()) {
+        if (mailgunEnabled) {
+            // Validate configuration
+            if (mailgunApiKey == null || mailgunApiKey.isEmpty()) {
+                logger.warn("Mailgun is enabled but API key is missing. Set MAILGUN_API_KEY environment variable. Falling back to SMTP.");
+                mailgunEnabled = false;
+                return;
+            }
+            
+            if (mailgunDomain == null || mailgunDomain.isEmpty()) {
+                logger.warn("Mailgun is enabled but domain is missing. Set MAILGUN_DOMAIN environment variable. Falling back to SMTP.");
+                mailgunEnabled = false;
+                return;
+            }
+            
+            // Trim API key to remove any whitespace
+            mailgunApiKey = mailgunApiKey.trim();
+            mailgunDomain = mailgunDomain.trim();
+            
+            // Validate API key format (should not contain spaces and should be reasonable length)
+            if (mailgunApiKey.length() < 20) {
+                logger.warn("Mailgun API key appears to be invalid (too short: {} chars). Please check your MAILGUN_API_KEY. Falling back to SMTP.", 
+                    mailgunApiKey.length());
+                mailgunEnabled = false;
+                return;
+            }
+            
+            // Log configuration (without exposing full API key)
+            String apiKeyPreview = mailgunApiKey.length() > 10 
+                ? mailgunApiKey.substring(0, 10) + "..." + mailgunApiKey.substring(mailgunApiKey.length() - 4)
+                : "***";
+            logger.info("Initializing Mailgun with domain: {}, API key: {}", mailgunDomain, apiKeyPreview);
+            
             try {
                 // Create WebClient for Mailgun API
+                // Mailgun uses Basic Auth with format: "api:YOUR_API_KEY"
+                String authString = "api:" + mailgunApiKey;
+                String encodedAuth = java.util.Base64.getEncoder().encodeToString(authString.getBytes());
+                
                 mailgunWebClient = WebClient.builder()
                     .baseUrl("https://api.mailgun.net/v3/" + mailgunDomain)
-                    .defaultHeader("Authorization", "Basic " + java.util.Base64.getEncoder()
-                        .encodeToString(("api:" + mailgunApiKey).getBytes()))
+                    .defaultHeader("Authorization", "Basic " + encodedAuth)
                     .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
                     .build();
                 
                 // Set from address
                 mailgunFromAddress = (mailgunFromEmail != null && !mailgunFromEmail.isEmpty()) 
-                    ? mailgunFromEmail 
+                    ? mailgunFromEmail.trim()
                     : "noreply@" + mailgunDomain;
                 
-                logger.info("Mailgun email service initialized successfully for domain: {}", mailgunDomain);
+                logger.info("Mailgun email service initialized successfully for domain: {} (from: {})", 
+                    mailgunDomain, mailgunFromAddress);
             } catch (Exception e) {
                 logger.error("Failed to initialize Mailgun: {}", e.getMessage(), e);
                 mailgunEnabled = false;
             }
         } else {
-            logger.info("Mailgun not configured, using SMTP fallback");
+            logger.debug("Mailgun not enabled, using SMTP fallback");
         }
     }
 
@@ -197,6 +233,8 @@ public class EmailServiceImpl implements EmailService {
         
         // Send request to Mailgun API
         try {
+            logger.debug("Sending email via Mailgun to: {}, from: {}, subject: {}", to, mailgunFromAddress, subject);
+            
             String response = mailgunWebClient.post()
                 .uri("/messages")
                 .body(BodyInserters.fromFormData(formData))
@@ -207,18 +245,37 @@ public class EmailServiceImpl implements EmailService {
                             .flatMap(errorBody -> {
                                 logger.error("Mailgun API error response ({}): {}", 
                                     clientResponse.statusCode(), errorBody);
+                                logger.error("Mailgun request details - Domain: {}, From: {}, To: {}", 
+                                    mailgunDomain, mailgunFromAddress, to);
                                 String errorMsg = "Mailgun API error: " + clientResponse.statusCode();
                                 
                                 // Provide helpful error messages based on status code
-                                if (clientResponse.statusCode().value() == 403) {
-                                    errorMsg += " - Authentication failed. Please check:\n" +
-                                        "1. API key is correct\n" +
-                                        "2. Domain is verified in Mailgun\n" +
-                                        "3. IP whitelisting (if enabled) includes Railway IPs\n" +
-                                        "4. If using sandbox domain, recipient must be authorized\n" +
+                                if (clientResponse.statusCode().value() == 401) {
+                                    mailgunAuthFailureCount++;
+                                    errorMsg += " UNAUTHORIZED - Unauthorized. Check API key.\n" +
+                                        "Troubleshooting steps:\n" +
+                                        "1. Verify MAILGUN_API_KEY environment variable is set correctly\n" +
+                                        "2. Check that the API key matches your Mailgun account\n" +
+                                        "3. Ensure the API key is for the correct domain\n" +
+                                        "4. Verify the domain in MAILGUN_DOMAIN matches the API key's domain\n" +
+                                        "5. Check Mailgun dashboard at https://app.mailgun.com/app/domains\n" +
                                         "Error details: " + errorBody;
-                                } else if (clientResponse.statusCode().value() == 401) {
-                                    errorMsg += " - Unauthorized. Check API key.";
+                                    
+                                    // Disable Mailgun after too many auth failures to prevent spam
+                                    if (mailgunAuthFailureCount >= MAX_MAILGUN_AUTH_FAILURES) {
+                                        logger.error("Mailgun authentication failed {} times. Disabling Mailgun and using SMTP only. " +
+                                            "Please fix MAILGUN_API_KEY and MAILGUN_DOMAIN configuration.", mailgunAuthFailureCount);
+                                        mailgunEnabled = false;
+                                        mailgunWebClient = null;
+                                    }
+                                } else if (clientResponse.statusCode().value() == 403) {
+                                    errorMsg += " FORBIDDEN - Authentication failed. Please check:\n" +
+                                        "1. API key is correct and active\n" +
+                                        "2. Domain is verified in Mailgun\n" +
+                                        "3. IP whitelisting (if enabled) includes your server IPs\n" +
+                                        "4. If using sandbox domain, recipient must be authorized\n" +
+                                        "5. Check Mailgun account status and billing\n" +
+                                        "Error details: " + errorBody;
                                 }
                                 
                                 return Mono.error(new RuntimeException(errorMsg));
@@ -229,6 +286,8 @@ public class EmailServiceImpl implements EmailService {
                 .block(); // Block for synchronous operation
             
             logger.debug("Mailgun API response: {}", response);
+            // Reset failure counter on successful send
+            mailgunAuthFailureCount = 0;
         } catch (Exception e) {
             logger.error("Mailgun API error: {}", e.getMessage(), e);
             
