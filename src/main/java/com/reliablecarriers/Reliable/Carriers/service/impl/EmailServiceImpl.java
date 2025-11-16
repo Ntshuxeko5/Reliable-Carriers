@@ -67,29 +67,40 @@ public class EmailServiceImpl implements EmailService {
      */
     @PostConstruct
     public void initMailgun() {
-        if (mailgunEnabled && mailgunApiKey != null && !mailgunApiKey.isEmpty() 
-            && mailgunDomain != null && !mailgunDomain.isEmpty()) {
-            try {
-                // Create WebClient for Mailgun API
-                mailgunWebClient = WebClient.builder()
-                    .baseUrl("https://api.mailgun.net/v3/" + mailgunDomain)
-                    .defaultHeader("Authorization", "Basic " + java.util.Base64.getEncoder()
-                        .encodeToString(("api:" + mailgunApiKey).getBytes()))
-                    .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
-                    .build();
-                
-                // Set from address
-                mailgunFromAddress = (mailgunFromEmail != null && !mailgunFromEmail.isEmpty()) 
-                    ? mailgunFromEmail 
-                    : "noreply@" + mailgunDomain;
-                
-                logger.info("Mailgun email service initialized successfully for domain: {}", mailgunDomain);
-            } catch (Exception e) {
-                logger.error("Failed to initialize Mailgun: {}", e.getMessage(), e);
-                mailgunEnabled = false;
+        try {
+            if (mailgunEnabled && mailgunApiKey != null && !mailgunApiKey.isEmpty() 
+                && mailgunDomain != null && !mailgunDomain.isEmpty()) {
+                try {
+                    // Create WebClient for Mailgun API
+                    mailgunWebClient = WebClient.builder()
+                        .baseUrl("https://api.mailgun.net/v3/" + mailgunDomain)
+                        .defaultHeader("Authorization", "Basic " + java.util.Base64.getEncoder()
+                            .encodeToString(("api:" + mailgunApiKey).getBytes()))
+                        .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
+                        .build();
+                    
+                    // Set from address
+                    mailgunFromAddress = (mailgunFromEmail != null && !mailgunFromEmail.isEmpty()) 
+                        ? mailgunFromEmail 
+                        : "noreply@" + mailgunDomain;
+                    
+                    logger.info("Mailgun email service initialized successfully for domain: {}", mailgunDomain);
+                } catch (Exception e) {
+                    logger.error("Failed to initialize Mailgun: {}", e.getMessage(), e);
+                    mailgunEnabled = false;
+                    mailgunWebClient = null;
+                    mailgunFromAddress = null;
+                }
+            } else {
+                logger.info("Mailgun not configured, using SMTP fallback");
+                mailgunWebClient = null;
+                mailgunFromAddress = null;
             }
-        } else {
-            logger.info("Mailgun not configured, using SMTP fallback");
+        } catch (Exception e) {
+            logger.error("Error during Mailgun initialization: {}", e.getMessage(), e);
+            mailgunEnabled = false;
+            mailgunWebClient = null;
+            mailgunFromAddress = null;
         }
     }
 
@@ -177,6 +188,10 @@ public class EmailServiceImpl implements EmailService {
     private void sendViaMailgun(String to, String subject, String text, String html) {
         if (mailgunWebClient == null) {
             throw new IllegalStateException("Mailgun is not configured");
+        }
+        
+        if (mailgunFromAddress == null || mailgunFromAddress.isEmpty()) {
+            throw new IllegalStateException("Mailgun from address is not configured");
         }
         
         // Build form data for Mailgun API
