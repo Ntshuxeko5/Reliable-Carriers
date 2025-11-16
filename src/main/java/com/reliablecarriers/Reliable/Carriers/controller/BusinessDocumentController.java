@@ -96,6 +96,16 @@ public class BusinessDocumentController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getDocuments(Authentication authentication) {
         try {
+            // Allow access even if authentication is null (for testing/debugging)
+            if (authentication == null || authentication.getName() == null) {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "data", new ArrayList<>(),
+                    "hasAllRequired", false,
+                    "message", "Authentication required"
+                ));
+            }
+            
             User business = getAuthenticatedBusiness(authentication);
             List<BusinessDocument> documents = documentService.getBusinessDocuments(business);
             
@@ -121,9 +131,18 @@ public class BusinessDocumentController {
                 "success", true,
                 "data", docsData,
                 "hasAllRequired", documentService.hasAllRequiredDocuments(business),
-                "verificationStatus", business.getBusinessVerificationStatus()
+                "verificationStatus", business.getBusinessVerificationStatus() != null ? 
+                    business.getBusinessVerificationStatus().toString() : "PENDING"
             ));
             
+        } catch (SecurityException e) {
+            // Return empty list if not authenticated or not a business user
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", new ArrayList<>(),
+                "hasAllRequired", false,
+                "error", e.getMessage()
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,

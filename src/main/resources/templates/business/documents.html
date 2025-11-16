@@ -242,7 +242,13 @@
             console.log('Displaying required documents:', docs);
             
             container.innerHTML = docs.map(doc => {
-                const uploaded = uploadedDocuments.find(ud => ud.documentType === doc.type);
+                // Find matching uploaded document by comparing documentType string
+                const uploaded = uploadedDocuments.find(ud => {
+                    // Handle both string and object comparisons
+                    const docType = typeof ud.documentType === 'string' ? ud.documentType : ud.documentType?.toString();
+                    const reqType = typeof doc.type === 'string' ? doc.type : doc.type?.toString();
+                    return docType === reqType;
+                });
                 const status = uploaded ? uploaded.verificationStatus : 'NOT_UPLOADED';
                 const statusClass = status === 'VERIFIED' ? 'bg-green-100 text-green-800' :
                                    status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
