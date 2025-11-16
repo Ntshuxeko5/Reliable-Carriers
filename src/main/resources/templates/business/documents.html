@@ -160,55 +160,86 @@
         // Load required documents
         async function loadRequiredDocuments() {
             try {
+                console.log('Loading required documents...');
                 const response = await fetch('/api/business/documents/required', {
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
+                
+                console.log('Required documents response status:', response.status);
                 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Required documents data:', data);
                     requiredDocuments = data.required || [];
                     
                     // Populate document type dropdown
                     const documentTypeSelect = document.getElementById('documentType');
-                    documentTypeSelect.innerHTML = '<option value="">Select document type...</option>';
-                    
-                    // Add required documents
-                    requiredDocuments.forEach(doc => {
-                        const option = document.createElement('option');
-                        option.value = doc.type;
-                        option.textContent = doc.name;
-                        option.dataset.required = 'true';
-                        documentTypeSelect.appendChild(option);
-                    });
-                    
-                    // Add optional documents
-                    if (data.optional) {
-                        data.optional.forEach(doc => {
+                    if (documentTypeSelect) {
+                        documentTypeSelect.innerHTML = '<option value="">Select document type...</option>';
+                        
+                        // Add required documents
+                        requiredDocuments.forEach(doc => {
                             const option = document.createElement('option');
                             option.value = doc.type;
-                            option.textContent = doc.name + ' (Optional)';
-                            option.dataset.required = 'false';
+                            option.textContent = doc.name;
+                            option.dataset.required = 'true';
                             documentTypeSelect.appendChild(option);
                         });
+                        
+                        // Add optional documents
+                        if (data.optional) {
+                            data.optional.forEach(doc => {
+                                const option = document.createElement('option');
+                                option.value = doc.type;
+                                option.textContent = doc.name + ' (Optional)';
+                                option.dataset.required = 'false';
+                                documentTypeSelect.appendChild(option);
+                            });
+                        }
                     }
                     
                     // Display required documents list
-                    displayRequiredDocuments(requiredDocuments);
+                    if (requiredDocuments.length > 0) {
+                        displayRequiredDocuments(requiredDocuments);
+                    } else {
+                        const container = document.getElementById('requiredDocumentsList');
+                        if (container) {
+                            container.innerHTML = '<p class="text-gray-500">No required documents found.</p>';
+                        }
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('Failed to load required documents:', response.status, errorText);
+                    const container = document.getElementById('requiredDocumentsList');
+                    if (container) {
+                        container.innerHTML = `<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Error loading required documents (${response.status})</p><p class="text-xs">${errorText}</p></div>`;
+                    }
                 }
             } catch (error) {
                 console.error('Error loading required documents:', error);
-                document.getElementById('requiredDocumentsList').innerHTML = 
-                    '<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Error loading required documents</p></div>';
+                const container = document.getElementById('requiredDocumentsList');
+                if (container) {
+                    container.innerHTML = `<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Error loading required documents</p><p class="text-xs">${error.message}</p></div>`;
+                }
             }
         }
 
         function displayRequiredDocuments(docs) {
             const container = document.getElementById('requiredDocumentsList');
+            if (!container) {
+                console.error('Required documents container not found');
+                return;
+            }
             
-            if (docs.length === 0) {
+            if (!docs || docs.length === 0) {
                 container.innerHTML = '<p class="text-gray-500">No required documents found.</p>';
                 return;
             }
+            
+            console.log('Displaying required documents:', docs);
             
             container.innerHTML = docs.map(doc => {
                 const uploaded = uploadedDocuments.find(ud => ud.documentType === doc.type);
@@ -259,34 +290,58 @@
         // Load uploaded documents
         async function loadUploadedDocuments() {
             try {
+                console.log('Loading uploaded documents...');
                 const response = await fetch('/api/business/documents', {
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
+                
+                console.log('Uploaded documents response status:', response.status);
                 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Uploaded documents data:', data);
                     uploadedDocuments = data.data || [];
                     
-                    // Refresh required documents display to show status
-                    displayRequiredDocuments(requiredDocuments);
+                    // Refresh required documents display to show status (if required documents are already loaded)
+                    if (requiredDocuments.length > 0) {
+                        displayRequiredDocuments(requiredDocuments);
+                    }
                     
                     // Display uploaded documents list
                     displayUploadedDocuments(uploadedDocuments);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Failed to load uploaded documents:', response.status, errorText);
+                    const container = document.getElementById('uploadedDocumentsList');
+                    if (container) {
+                        container.innerHTML = `<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Error loading documents (${response.status})</p><p class="text-xs">${errorText}</p></div>`;
+                    }
                 }
             } catch (error) {
                 console.error('Error loading uploaded documents:', error);
-                document.getElementById('uploadedDocumentsList').innerHTML = 
-                    '<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Error loading documents</p></div>';
+                const container = document.getElementById('uploadedDocumentsList');
+                if (container) {
+                    container.innerHTML = `<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Error loading documents</p><p class="text-xs">${error.message}</p></div>`;
+                }
             }
         }
 
         function displayUploadedDocuments(docs) {
             const container = document.getElementById('uploadedDocumentsList');
+            if (!container) {
+                console.error('Uploaded documents container not found');
+                return;
+            }
             
-            if (docs.length === 0) {
+            if (!docs || docs.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-folder-open text-3xl mb-2"></i><p>No documents uploaded yet</p></div>';
                 return;
             }
+            
+            console.log('Displaying uploaded documents:', docs);
             
             container.innerHTML = docs.map(doc => {
                 const statusClass = doc.verificationStatus === 'VERIFIED' ? 'bg-green-100 text-green-800' :
@@ -425,9 +480,11 @@
         }
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadRequiredDocuments();
-            loadUploadedDocuments();
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Page loaded, initializing document management...');
+            // Load required documents first, then uploaded documents
+            await loadRequiredDocuments();
+            await loadUploadedDocuments();
         });
     </script>
 </body>
