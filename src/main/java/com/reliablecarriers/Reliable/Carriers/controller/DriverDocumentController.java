@@ -30,7 +30,7 @@ public class DriverDocumentController {
     public ResponseEntity<Map<String, Object>> uploadDocument(
             @RequestParam("file") MultipartFile file,
             @RequestParam("documentType") String documentTypeStr,
-            @RequestParam("isCertified") Boolean isCertified,
+            @RequestParam(value = "isCertified", required = false) String isCertifiedStr,
             @RequestParam("certifiedBy") String certifiedBy,
             @RequestParam(value = "certificationDate", required = false) String certificationDateStr,
             @RequestParam(value = "expiresAt", required = false) String expiresAtStr,
@@ -38,6 +38,12 @@ public class DriverDocumentController {
         
         try {
             User driver = getAuthenticatedDriver(authentication);
+            
+            // Parse isCertified - handle both string "true"/"false" and boolean
+            Boolean isCertified = true; // Default to true since all documents must be certified
+            if (isCertifiedStr != null) {
+                isCertified = Boolean.parseBoolean(isCertifiedStr) || "true".equalsIgnoreCase(isCertifiedStr);
+            }
             
             DriverDocumentType documentType = DriverDocumentType.valueOf(documentTypeStr);
             
@@ -79,10 +85,21 @@ public class DriverDocumentController {
                 "documentId", document.getId()
             ));
             
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "error", e.getMessage()
+            ));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the full exception for debugging
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage() != null ? e.getMessage() : "Failed to upload document. Please try again."
             ));
         }
     }

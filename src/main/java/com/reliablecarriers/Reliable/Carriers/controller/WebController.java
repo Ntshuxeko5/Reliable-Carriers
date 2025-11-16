@@ -216,9 +216,8 @@ public class WebController {
                     currentUser.getBusinessVerificationStatus() == BusinessVerificationStatus.PENDING) {
                     return "redirect:/waiting-approval";
                 }
-                // Business users can access both customer and business dashboards
-                // Default to customer dashboard which has more features
-                return "redirect:/customer";
+                // Business users should go to business dashboard
+                return "redirect:/business/dashboard";
             }
 
             // Redirect based on role

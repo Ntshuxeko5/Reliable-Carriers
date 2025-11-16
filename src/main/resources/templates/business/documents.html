@@ -438,7 +438,16 @@
                     credentials: 'include'
                 });
                 
-                const result = await response.json();
+                let result;
+                try {
+                    result = await response.json();
+                } catch (jsonError) {
+                    console.error('Failed to parse response:', jsonError);
+                    const text = await response.text();
+                    console.error('Response text:', text);
+                    alert('Error uploading document: Invalid response from server');
+                    return;
+                }
                 
                 if (result.success) {
                     alert('Document uploaded successfully! Awaiting admin verification.');
