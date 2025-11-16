@@ -42,10 +42,16 @@ public class DemoDataService implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (autoCreateUsers && sampleDataEnabled) {
-            createDemoUsers();
-            createDemoBookings();
-            createDemoShipments();
+        try {
+            if (autoCreateUsers && sampleDataEnabled) {
+                createDemoUsers();
+                createDemoBookings();
+                createDemoShipments();
+            }
+        } catch (Exception e) {
+            System.err.println("Error during demo data creation: " + e.getMessage());
+            e.printStackTrace();
+            // Don't throw - allow application to continue even if demo data creation fails
         }
     }
 
