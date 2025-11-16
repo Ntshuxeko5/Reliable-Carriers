@@ -1,5 +1,6 @@
 package com.reliablecarriers.Reliable.Carriers.repository;
 
+import com.reliablecarriers.Reliable.Carriers.model.Booking;
 import com.reliablecarriers.Reliable.Carriers.model.Payment;
 import com.reliablecarriers.Reliable.Carriers.model.PaymentMethod;
 import com.reliablecarriers.Reliable.Carriers.model.PaymentStatus;
@@ -21,6 +22,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByTransactionId(String transactionId);
     
     Optional<Payment> findByReference(String reference);
+    
+    List<Payment> findByBooking(Booking booking);
     
     List<Payment> findByShipment(Shipment shipment);
     
