@@ -295,6 +295,7 @@
                 console.log('Map initialized successfully');
                 
                 // Load drivers once map is initialized
+                // Note: Drivers are also loaded on DOMContentLoaded, so this is just for refresh
                 if (map) {
                     // Small delay to ensure map is fully ready
                     setTimeout(() => {
@@ -328,21 +329,61 @@
         
         // Load driver locations
         async function loadDriverLocations() {
+            const container = document.getElementById('driverList');
+            
             try {
+                console.log('Loading driver locations...');
                 const response = await fetch('/api/admin/drivers/tracking/all');
-                const result = await response.json();
                 
-                if (result.success) {
-                    const drivers = result.data;
-                    updateDriverList(drivers);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Driver locations response:', result);
+                
+                // Handle different response formats
+                let drivers = [];
+                if (result.success && result.data) {
+                    drivers = result.data;
+                } else if (Array.isArray(result)) {
+                    drivers = result;
+                } else if (result.data && Array.isArray(result.data)) {
+                    drivers = result.data;
+                } else if (result.drivers && Array.isArray(result.drivers)) {
+                    drivers = result.drivers;
+                }
+                
+                console.log(`Loaded ${drivers.length} drivers`);
+                
+                // Always update the driver list, even if empty
+                updateDriverList(drivers);
+                updateStatistics(drivers);
+                
+                // Only update map if it's initialized
+                try {
                     updateDriverMap(drivers);
-                    updateStatistics(drivers);
-                } else {
-                    console.error('Error loading drivers:', result.error);
+                } catch (mapError) {
+                    console.warn('Error updating driver map:', mapError);
+                    // Continue even if map update fails
+                }
+                
+                // Show error if result indicates an error
+                if (result.error || (result.message && !result.success)) {
+                    throw new Error(result.error || result.message || 'Failed to load drivers');
                 }
                 
             } catch (error) {
                 console.error('Error loading driver locations:', error);
+                if (container) {
+                    container.innerHTML = `
+                        <div class="text-center text-red-500 py-4">
+                            <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                            <p>Error loading drivers</p>
+                            <p class="text-sm mt-2">${error.message || 'Please try refreshing the page'}</p>
+                        </div>
+                    `;
+                }
             }
         }
         
@@ -350,7 +391,22 @@
         function updateDriverList(drivers) {
             const container = document.getElementById('driverList');
             
-            if (drivers.length === 0) {
+            if (!container) {
+                console.error('Driver list container not found');
+                return;
+            }
+            
+            // Update driver select dropdown (always, even if empty)
+            const driverSelect = document.getElementById('driverSelect');
+            if (driverSelect) {
+                driverSelect.innerHTML = '<option value="">Choose a driver...</option>' + 
+                    (drivers && drivers.length > 0 ? drivers.map(driver => {
+                        const driverName = `${driver.firstName || ''} ${driver.lastName || ''}`.trim();
+                        return `<option value="${driver.driverId}">${driverName} (${driver.activeBookingsCount || 0} active)</option>`;
+                    }).join('') : '');
+            }
+            
+            if (!drivers || drivers.length === 0) {
                 container.innerHTML = `
                     <div class="text-center text-gray-500 py-4">
                         <i class="fas fa-users text-2xl mb-2"></i>
@@ -415,14 +471,6 @@
                 </div>
             `;
             }).join('');
-            
-            // Update driver select dropdown
-            const driverSelect = document.getElementById('driverSelect');
-            driverSelect.innerHTML = '<option value="">Choose a driver...</option>' + 
-                drivers.map(driver => {
-                    const driverName = `${driver.firstName || ''} ${driver.lastName || ''}`.trim();
-                    return `<option value="${driver.driverId}">${driverName} (${driver.activeBookingsCount || 0} active)</option>`;
-                }).join('');
         }
         
         function formatTimeAgo(date) {
