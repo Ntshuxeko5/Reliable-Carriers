@@ -182,6 +182,18 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             return true;
         }
         
+        // Token not found as unused - check if it was already used but is still valid (not expired)
+        // This handles duplicate requests/race conditions where token was consumed but request is retried
+        var usedToken = tokenRepository.findUsedButValidToken(user, finalNormalizedToken, now);
+        
+        if (usedToken.isPresent()) {
+            // Token was already used but is still valid (not expired) - allow re-verification
+            // This handles cases where the frontend makes duplicate requests or user clicks submit multiple times
+            logger.info("2FA TOKEN ALREADY USED BUT STILL VALID - User: {}, Token: {} (allowing re-verification for duplicate request)", 
+                user.getEmail(), finalNormalizedToken);
+            return true;
+        }
+        
         // Token not found or expired - check what happened for better error messages
         var allTokens = tokenRepository.findByUserAndUsedFalseOrderByExpiresAtDesc(user);
         
