@@ -57,6 +57,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${mailgun.from.email:}")
     private String mailgunFromEmail;
     
+    @Value("${mailgun.region:us}")
+    private String mailgunRegion;
+    
     @Value("${mailgun.enabled:false}")
     private boolean mailgunEnabled;
     
@@ -103,23 +106,38 @@ public class EmailServiceImpl implements EmailService {
             logger.info("Initializing Mailgun with domain: {}, API key length: {} chars, preview: {}", 
                 mailgunDomain, mailgunApiKey.length(), apiKeyPreview);
             
-            // Validate API key format (Mailgun keys typically start with "key-" or are in format "xxx-xxx-xxx")
-            if (!mailgunApiKey.contains("-")) {
-                logger.warn("Mailgun API key format may be incorrect (expected format: key-xxx-xxx-xxx or xxx-xxx-xxx). " +
-                    "Please verify you're using the Private API key from Mailgun dashboard.");
+            // Validate API key format
+            // Mailgun API keys should start with "key-" for Primary Account keys
+            // Domain Sending Keys may not have the "key-" prefix
+            boolean hasKeyPrefix = mailgunApiKey.startsWith("key-");
+            if (!hasKeyPrefix) {
+                logger.warn("Mailgun API key does not start with 'key-'. " +
+                    "If you're using a Domain Sending Key, this is normal. " +
+                    "If you're using a Primary Account API Key, it should start with 'key-'. " +
+                    "Please verify you're using the correct API key from Mailgun dashboard.");
+            }
+            
+            // Determine API endpoint based on region
+            String apiBaseUrl;
+            if ("eu".equalsIgnoreCase(mailgunRegion)) {
+                apiBaseUrl = "https://api.eu.mailgun.net/v3/" + mailgunDomain;
+                logger.info("Using Mailgun EU region endpoint");
+            } else {
+                apiBaseUrl = "https://api.mailgun.net/v3/" + mailgunDomain;
+                logger.info("Using Mailgun US region endpoint (default)");
             }
             
             try {
                 // Create WebClient for Mailgun API
                 // Mailgun uses Basic Auth with format: "api:YOUR_API_KEY"
+                // Note: The API key should be used as-is, even if it starts with "key-"
                 String authString = "api:" + mailgunApiKey;
                 String encodedAuth = java.util.Base64.getEncoder().encodeToString(authString.getBytes());
                 
-                String baseUrl = "https://api.mailgun.net/v3/" + mailgunDomain;
-                logger.debug("Mailgun base URL: {}", baseUrl);
+                logger.debug("Mailgun base URL: {}", apiBaseUrl);
                 
                 mailgunWebClient = WebClient.builder()
-                    .baseUrl(baseUrl)
+                    .baseUrl(apiBaseUrl)
                     .defaultHeader("Authorization", "Basic " + encodedAuth)
                     .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
                     .build();
@@ -267,21 +285,31 @@ public class EmailServiceImpl implements EmailService {
                                     logger.error("Mailgun 401 Unauthorized - Diagnostic Info:");
                                     logger.error("  - Domain: {}", mailgunDomain);
                                     logger.error("  - From Address: {}", mailgunFromAddress);
+                                    logger.error("  - Region: {} (current endpoint)", mailgunRegion);
                                     logger.error("  - API Key Length: {} characters", mailgunApiKey.length());
-                                    logger.error("  - API Key Format: {} (should contain hyphens)", 
-                                        mailgunApiKey.contains("-") ? "Valid format" : "WARNING: May be invalid");
+                                    logger.error("  - API Key Format: {} (starts with 'key-': {})", 
+                                        mailgunApiKey.contains("-") ? "Has hyphens" : "WARNING: No hyphens",
+                                        mailgunApiKey.startsWith("key-") ? "Yes" : "No");
+                                    logger.error("  - API Key Preview: {}...{}", 
+                                        mailgunApiKey.length() > 10 ? mailgunApiKey.substring(0, 10) : "***",
+                                        mailgunApiKey.length() > 4 ? mailgunApiKey.substring(mailgunApiKey.length() - 4) : "***");
                                     logger.error("  - Error Response: {}", errorBody);
+                                    logger.error("  - Troubleshooting: If API key doesn't start with 'key-', try:");
+                                    logger.error("    1. Get Primary Account API Key from Account Settings > API Security");
+                                    logger.error("    2. Or verify you're using the correct region (US vs EU)");
+                                    logger.error("    3. Check Mailgun dashboard: https://app.mailgun.com/app/domains");
                                     
                                     errorMsg += " UNAUTHORIZED - Unauthorized. Check API key.\n" +
                                         "Troubleshooting steps:\n" +
                                         "1. Verify MAILGUN_API_KEY environment variable is set correctly\n" +
-                                        "2. Check that the API key matches your Mailgun account\n" +
-                                        "3. Ensure you're using the PRIVATE API key (not Public key)\n" +
-                                        "4. Ensure the API key is for the correct domain\n" +
-                                        "5. Verify the domain in MAILGUN_DOMAIN matches the API key's domain\n" +
-                                        "6. Check that domain '" + mailgunDomain + "' is verified in Mailgun dashboard\n" +
+                                        "2. Get PRIMARY ACCOUNT API KEY from Mailgun: Account Settings > API Security\n" +
+                                        "3. API key should start with 'key-' for Primary Account keys\n" +
+                                        "4. If using Domain Sending Key, ensure it matches domain '" + mailgunDomain + "'\n" +
+                                        "5. Check Mailgun region: Set MAILGUN_REGION=eu if your account is EU region\n" +
+                                        "6. Verify the domain '" + mailgunDomain + "' is verified in Mailgun dashboard\n" +
                                         "7. Check Mailgun dashboard at https://app.mailgun.com/app/domains\n" +
                                         "8. Verify domain status shows 'Active' or 'Verified'\n" +
+                                        "9. Try regenerating the API key in Mailgun dashboard\n" +
                                         "Error details: " + errorBody;
                                     
                                     // Disable Mailgun after too many auth failures to prevent spam
