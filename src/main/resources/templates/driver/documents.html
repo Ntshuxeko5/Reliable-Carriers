@@ -399,24 +399,56 @@
         document.getElementById('documentUploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const form = this;
             const formData = new FormData();
             const fileInput = document.getElementById('documentFile');
             const documentType = document.getElementById('documentType').value;
-            const certifiedBy = document.getElementById('certifiedBy').value;
+            const certifiedBy = document.getElementById('certifiedBy').value.trim();
             const certificationDate = document.getElementById('certificationDate').value;
             const expiresAt = document.getElementById('expiresAt').value;
             
+            // Validate required fields
             if (!fileInput.files[0]) {
                 alert('Please select a file to upload');
+                fileInput.focus();
                 return;
             }
             
             if (!documentType) {
                 alert('Please select a document type');
+                document.getElementById('documentType').focus();
                 return;
             }
             
-            formData.append('file', fileInput.files[0]);
+            if (!certifiedBy) {
+                alert('Please enter the name of the certifying officer (e.g., "John Smith - Commissioner of Oaths")');
+                document.getElementById('certifiedBy').focus();
+                return;
+            }
+            
+            if (!certificationDate) {
+                alert('Please enter the certification date');
+                document.getElementById('certificationDate').focus();
+                return;
+            }
+            
+            // Validate file size (10MB max)
+            const file = fileInput.files[0];
+            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+            if (file.size > maxSize) {
+                alert('File size exceeds 10MB limit. Please select a smaller file.');
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Invalid file type. Please upload a PDF, PNG, or JPG file.');
+                return;
+            }
+            
+            // Build form data
+            formData.append('file', file);
             formData.append('documentType', documentType);
             formData.append('isCertified', 'true'); // All driver documents must be certified
             formData.append('certifiedBy', certifiedBy);
@@ -427,43 +459,91 @@
                 formData.append('expiresAt', expiresAt);
             }
             
+            // Log form data for debugging
+            console.log('Uploading document:', {
+                documentType: documentType,
+                certifiedBy: certifiedBy,
+                certificationDate: certificationDate,
+                expiresAt: expiresAt,
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type
+            });
+            
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.innerHTML;
+            
             try {
-                const submitButton = this.querySelector('button[type="submit"]');
                 submitButton.disabled = true;
                 submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
                 
+                // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
                 const response = await fetch('/api/driver/documents/upload', {
                     method: 'POST',
                     body: formData,
                     credentials: 'include'
                 });
                 
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                
                 let result;
-                try {
+                const contentType = response.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    // Response is JSON
                     result = await response.json();
-                } catch (jsonError) {
-                    console.error('Failed to parse response:', jsonError);
-                    const text = await response.text();
-                    console.error('Response text:', text);
-                    alert('Error uploading document: Invalid response from server');
-                    return;
+                    console.log('Response JSON:', result);
+                } else {
+                    // Response is not JSON - try to parse as text first
+                    const responseText = await response.text();
+                    console.log('Response text:', responseText);
+                    
+                    if (responseText) {
+                        try {
+                            result = JSON.parse(responseText);
+                        } catch (parseError) {
+                            // Not valid JSON
+                            result = {
+                                success: false,
+                                error: responseText || `Server returned status ${response.status}`
+                            };
+                        }
+                    } else {
+                        result = {
+                            success: false,
+                            error: `Server returned empty response (status ${response.status})`
+                        };
+                    }
                 }
                 
-                if (result.success) {
+                if (response.ok && result.success) {
                     alert('Document uploaded successfully! Awaiting admin verification.');
-                    this.reset();
-                    loadUploadedDocuments();
-                    loadRequiredDocuments();
+                    form.reset();
+                    // Reload documents
+                    await Promise.all([
+                        loadUploadedDocuments(),
+                        loadRequiredDocuments()
+                    ]);
                 } else {
-                    alert('Error uploading document: ' + (result.error || 'Unknown error'));
+                    const errorMessage = result.error || result.message || `Failed to upload document (Status: ${response.status}). Please try again.`;
+                    console.error('Upload error:', errorMessage, result);
+                    alert('Error uploading document: ' + errorMessage);
                 }
             } catch (error) {
                 console.error('Error uploading document:', error);
-                alert('Error uploading document. Please try again.');
+                let errorMessage = 'Network error. Please check your connection and try again.';
+                
+                if (error instanceof TypeError && error.message.includes('fetch')) {
+                    errorMessage = 'Failed to connect to server. Please check your internet connection.';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                alert('Error uploading document: ' + errorMessage);
             } finally {
-                const submitButton = this.querySelector('button[type="submit"]');
                 submitButton.disabled = false;
-                submitButton.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Document';
+                submitButton.innerHTML = originalButtonText;
             }
         });
 
