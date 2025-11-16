@@ -15,7 +15,6 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-import reactor.core.publisher.Mono;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -201,44 +200,13 @@ public class EmailServiceImpl implements EmailService {
                 .uri("/messages")
                 .body(BodyInserters.fromFormData(formData))
                 .retrieve()
-                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
-                    clientResponse -> {
-                        return clientResponse.bodyToMono(String.class)
-                            .flatMap(errorBody -> {
-                                logger.error("Mailgun API error response ({}): {}",
-                                    clientResponse.statusCode(), errorBody);
-                                String errorMsg = "Mailgun API error: " + clientResponse.statusCode();
-
-                                // Provide helpful error messages based on status code
-                                if (clientResponse.statusCode().value() == 403) {
-                                    errorMsg += " - Authentication failed. Please check:\n" +
-                                        "1. API key is correct\n" +
-                                        "2. Domain is verified in Mailgun\n" +
-                                        "3. IP whitelisting (if enabled) includes Railway IPs\n" +
-                                        "4. If using sandbox domain, recipient must be authorized\n" +
-                                        "Error details: " + errorBody;
-                                } else if (clientResponse.statusCode().value() == 401) {
-                                    errorMsg += " - Unauthorized. Check API key.";
-                                }
-
-                                return Mono.error(new RuntimeException(errorMsg));
-                            });
-                    })
                 .bodyToMono(String.class)
                 .timeout(Duration.ofSeconds(30))
                 .block(); // Block for synchronous operation
-
+            
             logger.debug("Mailgun API response: {}", response);
         } catch (Exception e) {
             logger.error("Mailgun API error: {}", e.getMessage(), e);
-
-            // Check if it's a sandbox domain issue
-            if (mailgunDomain != null && mailgunDomain.contains("sandbox")) {
-                throw new RuntimeException("Mailgun sandbox domain detected. Sandbox domains can only send to authorized recipients. " +
-                    "Please authorize the recipient email in Mailgun dashboard or use a verified domain. " +
-                    "Original error: " + e.getMessage(), e);
-            }
-
             throw new RuntimeException("Failed to send email via Mailgun: " + e.getMessage(), e);
         }
     }

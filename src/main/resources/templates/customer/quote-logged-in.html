@@ -803,40 +803,39 @@
     </footer>
 
     <script>
-// Service options data with member pricing
-const serviceOptions = [
-  {
-    id: "express",
-    name: "Express Delivery",
-    description: "Same-day & Next-day",
-    icon: "fas fa-bolt",
-    color: "red",
-    basePrice: 160,
-    memberPrice: 136, // 15% discount
-    multiplier: 1.2,
-  },
-  {
-    id: "standard",
-    name: "Standard Delivery",
-    description: "2-3 Business Days",
-    icon: "fas fa-truck",
-    color: "blue",
-    basePrice: 120,
-    memberPrice: 102, // 15% discount
-    multiplier: 1.0,
-  },
-  {
-    id: "economy",
-    name: "Economy Delivery",
-    description: "4-7 Business Days",
-    icon: "fas fa-shipping-fast",
-    color: "green",
-    basePrice: 90,
-    memberPrice: 77, // 15% discount
-    multiplier: 0.8,
-  },
-];
-
+      // Service options data with member pricing (single definition)
+      const serviceOptions = [
+        {
+          id: "express",
+          name: "Express Delivery",
+          description: "Same-day & Next-day",
+          icon: "fas fa-bolt",
+          color: "red",
+          basePrice: 160,
+          memberPrice: 136, // 15% discount
+          multiplier: 1.2,
+        },
+        {
+          id: "standard",
+          name: "Standard Delivery",
+          description: "2-3 Business Days",
+          icon: "fas fa-truck",
+          color: "blue",
+          basePrice: 120,
+          memberPrice: 102, // 15% discount
+          multiplier: 1.0,
+        },
+        {
+          id: "economy",
+          name: "Economy Delivery",
+          description: "4-7 Business Days",
+          icon: "fas fa-shipping-fast",
+          color: "green",
+          basePrice: 90,
+          memberPrice: 77, // 15% discount
+          multiplier: 0.8,
+        },
+      ];
 
       // Global state
       let map,
