@@ -1,1069 +1,1126 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard - Reliable Carriers</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'reliable': {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
-                        },
-                        'reliable-yellow': {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            200: '#fed7aa',
-                            300: '#fdba74',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                            800: '#9a3412',
-                            900: '#7c2d12',
-                        }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.3s ease-out',
-                        'bounce-gentle': 'bounceGentle 2s infinite',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              reliable: {
+                50: "#f0f9ff",
+                100: "#e0f2fe",
+                200: "#bae6fd",
+                300: "#7dd3fc",
+                400: "#38bdf8",
+                500: "#0ea5e9",
+                600: "#0284c7",
+                700: "#0369a1",
+                800: "#075985",
+                900: "#0c4a6e",
+              },
+              "reliable-yellow": {
+                50: "#fff7ed",
+                100: "#ffedd5",
+                200: "#fed7aa",
+                300: "#fdba74",
+                400: "#fb923c",
+                500: "#f97316",
+                600: "#ea580c",
+                700: "#c2410c",
+                800: "#9a3412",
+                900: "#7c2d12",
+              },
+            },
+            animation: {
+              "fade-in": "fadeIn 0.5s ease-in-out",
+              "slide-up": "slideUp 0.3s ease-out",
+              "bounce-gentle": "bounceGentle 2s infinite",
+              "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
         }
-        @keyframes slideUp {
-            from { transform: translateY(10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        to {
+          opacity: 1;
         }
-        @keyframes bounceGentle {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(10px);
+          opacity: 0;
         }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      @keyframes bounceGentle {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-5px);
+        }
+      }
     </style>
-    
+
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+
     <!-- Admin Utilities -->
     <script src="/js/admin-utils.js"></script>
     <script src="/js/currency-utils.js"></script>
-</head>
-<body class="bg-gray-50 min-h-screen">
+  </head>
+  <body class="bg-gray-50 min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-reliable-600">
-                        <i class="fas fa-shield-alt mr-2"></i>
-                        Admin Dashboard
-                    </h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <span class="text-gray-600" id="currentTime"></span>
-                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-sign-out-alt mr-2"></i>
-                        Logout
-                    </button>
-                </div>
-            </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+          <div class="flex items-center">
+            <h1 class="text-2xl font-bold text-reliable-600">
+              <i class="fas fa-shield-alt mr-2"></i>
+              Admin Dashboard
+            </h1>
+          </div>
+          <div class="flex items-center space-x-4">
+            <span class="text-gray-600" id="currentTime"></span>
+            <button
+              onclick="logout()"
+              class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <i class="fas fa-sign-out-alt mr-2"></i>
+              Logout
+            </button>
+          </div>
         </div>
+      </div>
     </header>
 
     <!-- Navigation Menu -->
     <nav class="bg-gray-100 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex space-x-8 py-3">
-                <a href="/admin/dashboard" class="text-reliable-600 border-b-2 border-reliable-600 px-3 py-2 text-sm font-medium">
-                    <i class="fas fa-tachometer-alt mr-2"></i>
-                    Dashboard
-                </a>
-                <a href="/admin/analytics" class="text-gray-500 hover:text-reliable-600 px-3 py-2 text-sm font-medium transition-colors">
-                    <i class="fas fa-chart-line mr-2"></i>
-                    Analytics
-                </a>
-                <a href="/admin/driver-management" class="text-gray-500 hover:text-reliable-600 px-3 py-2 text-sm font-medium transition-colors">
-                    <i class="fas fa-truck mr-2"></i>
-                    Driver Management
-                </a>
-                <a href="/admin/verification" class="text-gray-500 hover:text-reliable-600 px-3 py-2 text-sm font-medium transition-colors">
-                    <i class="fas fa-shield-alt mr-2"></i>
-                    Verification
-                </a>
-                <a href="/admin/audit" class="text-gray-500 hover:text-reliable-600 px-3 py-2 text-sm font-medium transition-colors">
-                    <i class="fas fa-history mr-2"></i>
-                    Audit Log
-                </a>
-            </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex space-x-8 py-3">
+          <a
+            href="/admin/dashboard"
+            class="text-reliable-600 border-b-2 border-reliable-600 px-3 py-2 text-sm font-medium"
+          >
+            <i class="fas fa-tachometer-alt mr-2"></i>
+            Dashboard
+          </a>
+          <a
+            href="/admin/analytics"
+            class="text-gray-500 hover:text-reliable-600 px-3 py-2 text-sm font-medium transition-colors"
+          >
+            <i class="fas fa-chart-line mr-2"></i>
+            Analytics
+          </a>
+          <a
+            href="/admin/driver-management"
+            class="text-gray-500 hover:text-reliable-600 px-3 py-2 text-sm font-medium transition-colors"
+          >
+            <i class="fas fa-truck mr-2"></i>
+            Driver Management
+          </a>
+          <a
+            href="/admin/verification"
+            class="text-gray-500 hover:text-reliable-600 px-3 py-2 text-sm font-medium transition-colors"
+          >
+            <i class="fas fa-shield-alt mr-2"></i>
+            Verification
+          </a>
+          <a
+            href="/admin/audit"
+            class="text-gray-500 hover:text-reliable-600 px-3 py-2 text-sm font-medium transition-colors"
+          >
+            <i class="fas fa-history mr-2"></i>
+            Audit Log
+          </a>
         </div>
+      </div>
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                        <i class="fas fa-users text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Total Users</p>
-                        <p class="text-2xl font-bold text-gray-900" id="totalUsers">-</p>
-                    </div>
-                </div>
+      <!-- Statistics Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+              <i class="fas fa-users text-xl"></i>
             </div>
-            
-            <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 text-green-600">
-                        <i class="fas fa-truck text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Drivers</p>
-                        <p class="text-2xl font-bold text-gray-900" id="totalDrivers">-</p>
-                    </div>
-                </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Total Users</p>
+              <p class="text-2xl font-bold text-gray-900" id="totalUsers">-</p>
             </div>
-            
-            <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-                        <i class="fas fa-user-tie text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Customers</p>
-                        <p class="text-2xl font-bold text-gray-900" id="totalCustomers">-</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-                        <i class="fas fa-user-cog text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Staff</p>
-                        <p class="text-2xl font-bold text-gray-900" id="totalStaff">-</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
-                        <i class="fas fa-map-marker-alt text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Tracking Managers</p>
-                        <p class="text-2xl font-bold text-gray-900" id="totalTrackingManagers">-</p>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
 
-        <!-- Quick Actions and System Status -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <!-- Quick Actions -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-bolt mr-2 text-reliable-600"></i>
-                        Quick Actions
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <button onclick="showCreateDriverModal()" class="bg-reliable-600 hover:bg-reliable-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left">
-                            <i class="fas fa-plus mr-2"></i>
-                            Create Driver Account
-                        </button>
-                        <button onclick="showCreateTrackingManagerModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left">
-                            <i class="fas fa-plus mr-2"></i>
-                            Create Tracking Manager
-                        </button>
-                        <button onclick="window.location.href='/admin/analytics'" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left">
-                            <i class="fas fa-chart-line mr-2"></i>
-                            View Analytics
-                        </button>
-                        <button onclick="window.location.href='/admin/packages'" class="bg-reliable-yellow-600 hover:bg-reliable-yellow-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left">
-                            <i class="fas fa-boxes mr-2"></i>
-                            Package Management
-                        </button>
-                        <button onclick="window.location.href='/admin/driver-tracking'" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left">
-                            <i class="fas fa-map-marker-alt mr-2"></i>
-                            Driver Tracking
-                        </button>
-                        <button onclick="window.location.href='/admin/audit'" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left">
-                            <i class="fas fa-history mr-2"></i>
-                            Audit Log
-                        </button>
-                    </div>
-                </div>
+        <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600">
+              <i class="fas fa-truck text-xl"></i>
             </div>
-
-            <!-- System Status -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-server mr-2 text-reliable-600"></i>
-                    System Status
-                </h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between system-status">
-                        <span class="text-sm text-gray-600">Database</span>
-                        <span class="flex items-center text-green-600">
-                            <i class="fas fa-circle text-xs mr-2"></i>
-                            Online
-                        </span>
-                    </div>
-                    <div class="flex items-center justify-between system-status">
-                        <span class="text-sm text-gray-600">API Services</span>
-                        <span class="flex items-center text-green-600">
-                            <i class="fas fa-circle text-xs mr-2"></i>
-                            Online
-                        </span>
-                    </div>
-                    <div class="flex items-center justify-between system-status">
-                        <span class="text-sm text-gray-600">Email Service</span>
-                        <span class="flex items-center text-green-600">
-                            <i class="fas fa-circle text-xs mr-2"></i>
-                            Online
-                        </span>
-                    </div>
-                    <div class="flex items-center justify-between system-status">
-                        <span class="text-sm text-gray-600">SMS Service</span>
-                        <span class="flex items-center text-green-600">
-                            <i class="fas fa-circle text-xs mr-2"></i>
-                            Online
-                        </span>
-                    </div>
-                </div>
-                <div class="mt-4 pt-4 border-t border-gray-200">
-                    <button onclick="loadUsers()" class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors text-sm">
-                        <i class="fas fa-refresh mr-2"></i>
-                        Refresh All Data
-                    </button>
-                </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Drivers</p>
+              <p class="text-2xl font-bold text-gray-900" id="totalDrivers">
+                -
+              </p>
             </div>
+          </div>
         </div>
 
-        <!-- Users Table -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden animate-fade-in">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-semibold text-gray-900">User Management</h2>
-                    <div class="flex items-center space-x-4">
-                        <div class="relative">
-                            <input type="text" id="userSearch" placeholder="Search users..." 
-                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent text-sm">
-                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        </div>
-                        <select id="roleFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent text-sm">
-                            <option value="">All Roles</option>
-                            <option value="ADMIN">Admin</option>
-                            <option value="DRIVER">Driver</option>
-                            <option value="CUSTOMER">Customer</option>
-                            <option value="STAFF">Staff</option>
-                            <option value="TRACKING_MANAGER">Tracking Manager</option>
-                        </select>
-                        <button onclick="exportUserData()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                            <i class="fas fa-download mr-2"></i>
-                            Export
-                        </button>
-                    </div>
-                </div>
+        <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+              <i class="fas fa-user-tie text-xl"></i>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('name')">
-                                Name <i class="fas fa-sort ml-1"></i>
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('email')">
-                                Email <i class="fas fa-sort ml-1"></i>
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('role')">
-                                Role <i class="fas fa-sort ml-1"></i>
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('created')">
-                                Created <i class="fas fa-sort ml-1"></i>
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200" id="usersTableBody">
-                        <!-- Users will be loaded here -->
-                    </tbody>
-                </table>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Customers</p>
+              <p class="text-2xl font-bold text-gray-900" id="totalCustomers">
+                -
+              </p>
             </div>
-            <div class="px-6 py-3 border-t border-gray-200 bg-gray-50">
-                <div class="flex justify-between items-center text-sm text-gray-600">
-                    <span id="userCount">Showing 0 users</span>
-                    <div class="flex items-center space-x-2">
-                        <span>Show:</span>
-                        <select id="pageSize" class="border border-gray-300 rounded px-2 py-1">
-                            <option value="10">10</option>
-                            <option value="25" selected>25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        <span>per page</span>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+              <i class="fas fa-user-cog text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Staff</p>
+              <p class="text-2xl font-bold text-gray-900" id="totalStaff">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions and System Status -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Quick Actions -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              <i class="fas fa-bolt mr-2 text-reliable-600"></i>
+              Quick Actions
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onclick="showCreateDriverModal()"
+                class="bg-reliable-600 hover:bg-reliable-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left"
+              >
+                <i class="fas fa-plus mr-2"></i>
+                Create Driver Account
+              </button>
+              <button
+                onclick="window.location.href='/admin/analytics'"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left"
+              >
+                <i class="fas fa-chart-line mr-2"></i>
+                View Analytics
+              </button>
+              <button
+                onclick="window.location.href='/admin/packages'"
+                class="bg-reliable-yellow-600 hover:bg-reliable-yellow-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left"
+              >
+                <i class="fas fa-boxes mr-2"></i>
+                Package Management
+              </button>
+              <button
+                onclick="window.location.href='/admin/driver-tracking'"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left"
+              >
+                <i class="fas fa-map-marker-alt mr-2"></i>
+                Driver Tracking
+              </button>
+              <button
+                onclick="window.location.href='/admin/audit'"
+                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition-colors animate-slide-up text-left"
+              >
+                <i class="fas fa-history mr-2"></i>
+                Audit Log
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-server mr-2 text-reliable-600"></i>
+            System Status
+          </h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between system-status">
+              <span class="text-sm text-gray-600">Database</span>
+              <span class="flex items-center text-green-600">
+                <i class="fas fa-circle text-xs mr-2"></i>
+                Online
+              </span>
+            </div>
+            <div class="flex items-center justify-between system-status">
+              <span class="text-sm text-gray-600">API Services</span>
+              <span class="flex items-center text-green-600">
+                <i class="fas fa-circle text-xs mr-2"></i>
+                Online
+              </span>
+            </div>
+            <div class="flex items-center justify-between system-status">
+              <span class="text-sm text-gray-600">Email Service</span>
+              <span class="flex items-center text-green-600">
+                <i class="fas fa-circle text-xs mr-2"></i>
+                Online
+              </span>
+            </div>
+            <div class="flex items-center justify-between system-status">
+              <span class="text-sm text-gray-600">SMS Service</span>
+              <span class="flex items-center text-green-600">
+                <i class="fas fa-circle text-xs mr-2"></i>
+                Online
+              </span>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-gray-200">
+            <button
+              onclick="loadUsers()"
+              class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+            >
+              <i class="fas fa-refresh mr-2"></i>
+              Refresh All Data
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <div
+        class="bg-white rounded-lg shadow-md overflow-hidden animate-fade-in"
+      >
+        <div class="px-6 py-4 border-b border-gray-200">
+          <div class="flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-900">User Management</h2>
+            <div class="flex items-center space-x-4">
+              <div class="relative">
+                <input
+                  type="text"
+                  id="userSearch"
+                  placeholder="Search users..."
+                  class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent text-sm"
+                />
+                <i
+                  class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                ></i>
+              </div>
+              <select
+                id="roleFilter"
+                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reliable-500 focus:border-transparent text-sm"
+              >
+                <option value="">All Roles</option>
+                <option value="ADMIN">Admin</option>
+                <option value="DRIVER">Driver</option>
+                <option value="CUSTOMER">Customer</option>
+                <option value="STAFF">Staff</option>
+              </select>
+              <button
+                onclick="exportUserData()"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+              >
+                <i class="fas fa-download mr-2"></i>
+                Export
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onclick="sortTable('name')"
+                >
+                  Name <i class="fas fa-sort ml-1"></i>
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onclick="sortTable('email')"
+                >
+                  Email <i class="fas fa-sort ml-1"></i>
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onclick="sortTable('role')"
+                >
+                  Role <i class="fas fa-sort ml-1"></i>
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Phone
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onclick="sortTable('created')"
+                >
+                  Created <i class="fas fa-sort ml-1"></i>
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              class="bg-white divide-y divide-gray-200"
+              id="usersTableBody"
+            >
+              <!-- Users will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+        <div class="px-6 py-3 border-t border-gray-200 bg-gray-50">
+          <div class="flex justify-between items-center text-sm text-gray-600">
+            <span id="userCount">Showing 0 users</span>
+            <div class="flex items-center space-x-2">
+              <span>Show:</span>
+              <select
+                id="pageSize"
+                class="border border-gray-300 rounded px-2 py-1"
+              >
+                <option value="10">10</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <span>per page</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Create Driver Modal -->
-    <div id="createDriverModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-md w-full animate-slide-up">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Create Driver Account</h3>
-                </div>
-                <form id="createDriverForm" class="p-6 space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                            <input type="text" name="firstName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                            <input type="text" name="lastName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                        <input type="email" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-                        <input type="tel" name="phone" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-                        <input type="password" name="password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                        <input type="text" name="address" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                    </div>
-                    
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                            <input type="text" name="city" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
-                            <input type="text" name="state" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
-                            <input type="text" name="zipCode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                        <select name="country" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                            <option value="South Africa">South Africa</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                </form>
-                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                    <button onclick="hideCreateDriverModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
-                        Cancel
-                    </button>
-                    <button onclick="createDriver()" class="bg-reliable-600 hover:bg-reliable-700 text-white px-4 py-2 rounded-md transition-colors">
-                        Create Driver
-                    </button>
-                </div>
+    <div
+      id="createDriverModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50"
+    >
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div
+          class="bg-white rounded-lg shadow-xl max-w-md w-full animate-slide-up"
+        >
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">
+              Create Driver Account
+            </h3>
+          </div>
+          <form id="createDriverForm" class="p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >First Name *</label
+                >
+                <input
+                  type="text"
+                  name="firstName"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >Last Name *</label
+                >
+                <input
+                  type="text"
+                  name="lastName"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+                />
+              </div>
             </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Email *</label
+              >
+              <input
+                type="email"
+                name="email"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Phone *</label
+              >
+              <input
+                type="tel"
+                name="phone"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Password *</label
+              >
+              <input
+                type="password"
+                name="password"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Address</label
+              >
+              <input
+                type="text"
+                name="address"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+              />
+            </div>
+
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >City</label
+                >
+                <input
+                  type="text"
+                  name="city"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >State</label
+                >
+                <input
+                  type="text"
+                  name="state"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >Zip Code</label
+                >
+                <input
+                  type="text"
+                  name="zipCode"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Country</label
+              >
+              <select
+                name="country"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent"
+              >
+                <option value="South Africa">South Africa</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </form>
+          <div
+            class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3"
+          >
+            <button
+              onclick="hideCreateDriverModal()"
+              class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onclick="createDriver()"
+              class="bg-reliable-600 hover:bg-reliable-700 text-white px-4 py-2 rounded-md transition-colors"
+            >
+              Create Driver
+            </button>
+          </div>
         </div>
+      </div>
     </div>
 
     <!-- Create Tracking Manager Modal -->
-    <div id="createTrackingManagerModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-md w-full animate-slide-up">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Create Tracking Manager Account</h3>
-                </div>
-                <form id="createTrackingManagerForm" class="p-6 space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                            <input type="text" name="firstName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                            <input type="text" name="lastName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                        <input type="email" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-                        <input type="tel" name="phone" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-                        <input type="password" name="password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                        <input type="text" name="address" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    </div>
-                    
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                            <input type="text" name="city" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
-                            <input type="text" name="state" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
-                            <input type="text" name="zipCode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                        <select name="country" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            <option value="South Africa">South Africa</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                </form>
-                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                    <button onclick="hideCreateTrackingManagerModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
-                        Cancel
-                    </button>
-                    <button onclick="createTrackingManager()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition-colors">
-                        Create Tracking Manager
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit User Modal -->
-    <div id="editUserModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-md w-full animate-slide-up">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Edit User</h3>
-                </div>
-                <form id="editUserForm" class="p-6 space-y-4">
-                    <input type="hidden" name="userId" id="editUserId">
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                            <input type="text" name="firstName" id="editFirstName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                            <input type="text" name="lastName" id="editLastName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                        <input type="email" name="email" id="editEmail" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                        <input type="tel" name="phone" id="editPhone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Role *</label>
-                        <select name="role" id="editRole" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-reliable-500 focus:border-transparent">
-                            <option value="CUSTOMER">Customer</option>
-                            <option value="DRIVER">Driver</option>
-                            <option value="STAFF">Staff</option>
-                            <option value="ADMIN">Admin</option>
-                        </select>
-                    </div>
-                </form>
-                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                    <button onclick="hideEditUserModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
-                        Cancel
-                    </button>
-                    <button onclick="updateUser()" class="bg-reliable-600 hover:bg-reliable-700 text-white px-4 py-2 rounded-md transition-colors">
-                        Update User
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Global variables for user management
-        let allUsers = [];
-        let filteredUsers = [];
-        let currentSort = { field: 'name', direction: 'asc' };
+      // Global variables for user management
+      let allUsers = [];
+      let filteredUsers = [];
+      let currentSort = { field: "name", direction: "asc" };
 
-        // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            loadStatistics();
-            loadUsers();
-            checkSystemStatus();
-            updateCurrentTime();
-            setInterval(updateCurrentTime, 1000);
-            setInterval(checkSystemStatus, 30000); // Check system status every 30 seconds
-            
-            // Add event listeners for search and filter
-            document.getElementById('userSearch').addEventListener('input', filterUsers);
-            document.getElementById('roleFilter').addEventListener('change', filterUsers);
-            document.getElementById('pageSize').addEventListener('change', function() {
-                renderUsers();
-            });
+      // Initialize dashboard
+      document.addEventListener("DOMContentLoaded", function () {
+        loadStatistics();
+        loadUsers();
+        checkSystemStatus();
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+        setInterval(checkSystemStatus, 30000); // Check system status every 30 seconds
+
+        // Add event listeners for search and filter
+        document
+          .getElementById("userSearch")
+          .addEventListener("input", filterUsers);
+        document
+          .getElementById("roleFilter")
+          .addEventListener("change", filterUsers);
+        document
+          .getElementById("pageSize")
+          .addEventListener("change", function () {
+            renderUsers();
+          });
+      });
+
+      function updateCurrentTime() {
+        const now = new Date();
+        document.getElementById("currentTime").textContent =
+          now.toLocaleString();
+      }
+
+      function loadStatistics() {
+        fetch("/api/admin/users/statistics", {
+          headers: {
+            Authorization: "Bearer " + getToken(),
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                `HTTP ${response.status}: ${response.statusText}`
+              );
+            }
+            return response.json();
+          })
+          .then((data) => {
+            document.getElementById("totalUsers").textContent =
+              data.totalUsers || 0;
+            document.getElementById("totalDrivers").textContent =
+              data.driverCount || 0;
+            document.getElementById("totalCustomers").textContent =
+              data.customerCount || 0;
+            document.getElementById("totalStaff").textContent =
+              data.staffCount || 0;
+            document.getElementById("totalTrackingManagers").textContent =
+              data.trackingManagerCount || 0;
+          })
+          .catch((error) => {
+            console.error("Error loading statistics:", error);
+            // Set default values on error
+            document.getElementById("totalUsers").textContent = "0";
+            document.getElementById("totalDrivers").textContent = "0";
+            document.getElementById("totalCustomers").textContent = "0";
+            document.getElementById("totalStaff").textContent = "0";
+            document.getElementById("totalTrackingManagers").textContent = "0";
+            showNotification("Error loading statistics", "error");
+          });
+      }
+
+      function checkSystemStatus() {
+        // Check database connectivity
+        fetch("/api/admin/users/statistics", {
+          headers: {
+            Authorization: "Bearer " + getToken(),
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              updateSystemStatus("Database", "online");
+            } else {
+              updateSystemStatus("Database", "offline");
+            }
+          })
+          .catch(() => {
+            updateSystemStatus("Database", "offline");
+          });
+
+        // Check API services
+        fetch("/api/admin/users", {
+          headers: {
+            Authorization: "Bearer " + getToken(),
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              updateSystemStatus("API Services", "online");
+            } else {
+              updateSystemStatus("API Services", "offline");
+            }
+          })
+          .catch(() => {
+            updateSystemStatus("API Services", "offline");
+          });
+
+        // For demo purposes, we'll assume email and SMS services are online
+        // In a real application, you would check actual service endpoints
+        updateSystemStatus("Email Service", "online");
+        updateSystemStatus("SMS Service", "online");
+      }
+
+      function updateSystemStatus(service, status) {
+        const statusElements = document.querySelectorAll(".system-status");
+        statusElements.forEach((element) => {
+          if (element.textContent.includes(service)) {
+            const statusSpan = element.querySelector("span");
+            const icon = element.querySelector("i");
+
+            if (status === "online") {
+              statusSpan.textContent = "Online";
+              statusSpan.className = "flex items-center text-green-600";
+              icon.className = "fas fa-circle text-xs mr-2";
+            } else {
+              statusSpan.textContent = "Offline";
+              statusSpan.className = "flex items-center text-red-600";
+              icon.className = "fas fa-circle text-xs mr-2";
+            }
+          }
+        });
+      }
+
+      function loadUsers() {
+        fetch("/api/admin/users", {
+          headers: {
+            Authorization: "Bearer " + getToken(),
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                `HTTP ${response.status}: ${response.statusText}`
+              );
+            }
+            return response.json();
+          })
+          .then((users) => {
+            allUsers = Array.isArray(users) ? users : [];
+            filterUsers();
+          })
+          .catch((error) => {
+            console.error("Error loading users:", error);
+            allUsers = []; // Ensure allUsers is always an array
+            filterUsers();
+            showNotification("Error loading users", "error");
+          });
+      }
+
+      function filterUsers() {
+        const searchTerm = document
+          .getElementById("userSearch")
+          .value.toLowerCase();
+        const roleFilter = document.getElementById("roleFilter").value;
+
+        filteredUsers = allUsers.filter((user) => {
+          const matchesSearch =
+            !searchTerm ||
+            user.firstName.toLowerCase().includes(searchTerm) ||
+            user.lastName.toLowerCase().includes(searchTerm) ||
+            user.email.toLowerCase().includes(searchTerm) ||
+            (user.phone && user.phone.includes(searchTerm));
+
+          const matchesRole = !roleFilter || user.role === roleFilter;
+
+          return matchesSearch && matchesRole;
         });
 
-        function updateCurrentTime() {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = now.toLocaleString();
+        sortUsers();
+        renderUsers();
+      }
+
+      function sortUsers() {
+        filteredUsers.sort((a, b) => {
+          let aValue, bValue;
+
+          switch (currentSort.field) {
+            case "name":
+              aValue = `${a.firstName} ${a.lastName}`.toLowerCase();
+              bValue = `${b.firstName} ${b.lastName}`.toLowerCase();
+              break;
+            case "email":
+              aValue = a.email.toLowerCase();
+              bValue = b.email.toLowerCase();
+              break;
+            case "role":
+              aValue = a.role.toLowerCase();
+              bValue = b.role.toLowerCase();
+              break;
+            case "created":
+              aValue = new Date(a.createdAt);
+              bValue = new Date(b.createdAt);
+              break;
+            default:
+              aValue = a[currentSort.field];
+              bValue = b[currentSort.field];
+          }
+
+          if (aValue < bValue) return currentSort.direction === "asc" ? -1 : 1;
+          if (aValue > bValue) return currentSort.direction === "asc" ? 1 : -1;
+          return 0;
+        });
+      }
+
+      function sortTable(field) {
+        if (currentSort.field === field) {
+          currentSort.direction =
+            currentSort.direction === "asc" ? "desc" : "asc";
+        } else {
+          currentSort.field = field;
+          currentSort.direction = "asc";
         }
+        sortUsers();
+        renderUsers();
+      }
 
-        function loadStatistics() {
-            fetch('/api/admin/users/statistics', {
-                headers: {
-                    'Authorization': 'Bearer ' + getToken()
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('totalUsers').textContent = data.totalUsers || 0;
-                document.getElementById('totalDrivers').textContent = data.driverCount || 0;
-                document.getElementById('totalCustomers').textContent = data.customerCount || 0;
-                document.getElementById('totalStaff').textContent = data.staffCount || 0;
-                document.getElementById('totalTrackingManagers').textContent = data.trackingManagerCount || 0;
-            })
-            .catch(error => {
-                console.error('Error loading statistics:', error);
-                // Set default values on error
-                document.getElementById('totalUsers').textContent = '0';
-                document.getElementById('totalDrivers').textContent = '0';
-                document.getElementById('totalCustomers').textContent = '0';
-                document.getElementById('totalStaff').textContent = '0';
-                document.getElementById('totalTrackingManagers').textContent = '0';
-                showNotification('Error loading statistics', 'error');
-            });
-        }
+      function renderUsers() {
+        const tbody = document.getElementById("usersTableBody");
+        const pageSize = parseInt(document.getElementById("pageSize").value);
+        const startIndex = 0;
+        const endIndex = Math.min(startIndex + pageSize, filteredUsers.length);
+        const usersToShow = filteredUsers.slice(startIndex, endIndex);
 
-        function checkSystemStatus() {
-            // Check database connectivity
-            fetch('/api/admin/users/statistics', {
-                headers: {
-                    'Authorization': 'Bearer ' + getToken()
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    updateSystemStatus('Database', 'online');
-                } else {
-                    updateSystemStatus('Database', 'offline');
-                }
-            })
-            .catch(() => {
-                updateSystemStatus('Database', 'offline');
-            });
+        tbody.innerHTML = "";
 
-            // Check API services
-            fetch('/api/admin/users', {
-                headers: {
-                    'Authorization': 'Bearer ' + getToken()
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    updateSystemStatus('API Services', 'online');
-                } else {
-                    updateSystemStatus('API Services', 'offline');
-                }
-            })
-            .catch(() => {
-                updateSystemStatus('API Services', 'offline');
-            });
+        usersToShow.forEach((user) => {
+          const row = document.createElement("tr");
+          row.className = "hover:bg-gray-50";
 
-            // For demo purposes, we'll assume email and SMS services are online
-            // In a real application, you would check actual service endpoints
-            updateSystemStatus('Email Service', 'online');
-            updateSystemStatus('SMS Service', 'online');
-        }
+          const createdAt = new Date(user.createdAt).toLocaleDateString();
 
-        function updateSystemStatus(service, status) {
-            const statusElements = document.querySelectorAll('.system-status');
-            statusElements.forEach(element => {
-                if (element.textContent.includes(service)) {
-                    const statusSpan = element.querySelector('span');
-                    const icon = element.querySelector('i');
-                    
-                    if (status === 'online') {
-                        statusSpan.textContent = 'Online';
-                        statusSpan.className = 'flex items-center text-green-600';
-                        icon.className = 'fas fa-circle text-xs mr-2';
-                    } else {
-                        statusSpan.textContent = 'Offline';
-                        statusSpan.className = 'flex items-center text-red-600';
-                        icon.className = 'fas fa-circle text-xs mr-2';
-                    }
-                }
-            });
-        }
-
-        function loadUsers() {
-            fetch('/api/admin/users', {
-                headers: {
-                    'Authorization': 'Bearer ' + getToken()
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(users => {
-                allUsers = Array.isArray(users) ? users : [];
-                filterUsers();
-            })
-            .catch(error => {
-                console.error('Error loading users:', error);
-                allUsers = []; // Ensure allUsers is always an array
-                filterUsers();
-                showNotification('Error loading users', 'error');
-            });
-        }
-
-        function filterUsers() {
-            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
-            const roleFilter = document.getElementById('roleFilter').value;
-            
-            filteredUsers = allUsers.filter(user => {
-                const matchesSearch = !searchTerm || 
-                    user.firstName.toLowerCase().includes(searchTerm) ||
-                    user.lastName.toLowerCase().includes(searchTerm) ||
-                    user.email.toLowerCase().includes(searchTerm) ||
-                    (user.phone && user.phone.includes(searchTerm));
-                
-                const matchesRole = !roleFilter || user.role === roleFilter;
-                
-                return matchesSearch && matchesRole;
-            });
-            
-            sortUsers();
-            renderUsers();
-        }
-
-        function sortUsers() {
-            filteredUsers.sort((a, b) => {
-                let aValue, bValue;
-                
-                switch(currentSort.field) {
-                    case 'name':
-                        aValue = `${a.firstName} ${a.lastName}`.toLowerCase();
-                        bValue = `${b.firstName} ${b.lastName}`.toLowerCase();
-                        break;
-                    case 'email':
-                        aValue = a.email.toLowerCase();
-                        bValue = b.email.toLowerCase();
-                        break;
-                    case 'role':
-                        aValue = a.role.toLowerCase();
-                        bValue = b.role.toLowerCase();
-                        break;
-                    case 'created':
-                        aValue = new Date(a.createdAt);
-                        bValue = new Date(b.createdAt);
-                        break;
-                    default:
-                        aValue = a[currentSort.field];
-                        bValue = b[currentSort.field];
-                }
-                
-                if (aValue < bValue) return currentSort.direction === 'asc' ? -1 : 1;
-                if (aValue > bValue) return currentSort.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-
-        function sortTable(field) {
-            if (currentSort.field === field) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.field = field;
-                currentSort.direction = 'asc';
-            }
-            sortUsers();
-            renderUsers();
-        }
-
-        function renderUsers() {
-            const tbody = document.getElementById('usersTableBody');
-            const pageSize = parseInt(document.getElementById('pageSize').value);
-            const startIndex = 0;
-            const endIndex = Math.min(startIndex + pageSize, filteredUsers.length);
-            const usersToShow = filteredUsers.slice(startIndex, endIndex);
-            
-            tbody.innerHTML = '';
-            
-            usersToShow.forEach(user => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50';
-                
-                const createdAt = new Date(user.createdAt).toLocaleDateString();
-                
-                row.innerHTML = `
+          row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">${user.firstName} ${user.lastName}</div>
+                        <div class="text-sm font-medium text-gray-900">${
+                          user.firstName
+                        } ${user.lastName}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm text-gray-900">${user.email}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeClass(user.role)}">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeClass(
+                          user.role
+                        )}">
                             ${user.role}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${user.phone || '-'}
+                        ${user.phone || "-"}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${createdAt}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onclick="editUser(${user.id})" class="text-reliable-600 hover:text-reliable-900 mr-3">
+                        <button onclick="editUser(${
+                          user.id
+                        })" class="text-reliable-600 hover:text-reliable-900 mr-3">
                             <i class="fas fa-edit"></i>
                         </button>
-                        ${user.role !== 'ADMIN' ? `<button onclick="deleteUser(${user.id})" class="text-red-600 hover:text-red-900">
+                        ${
+                          user.role !== "ADMIN"
+                            ? `<button onclick="deleteUser(${user.id})" class="text-red-600 hover:text-red-900">
                             <i class="fas fa-trash"></i>
-                        </button>` : ''}
+                        </button>`
+                            : ""
+                        }
                     </td>
                 `;
-                
-                tbody.appendChild(row);
-            });
-            
-            // Update user count
-            document.getElementById('userCount').textContent = `Showing ${filteredUsers.length} of ${allUsers.length} users`;
-        }
 
-        function getRoleBadgeClass(role) {
-            switch(role) {
-                case 'ADMIN': return 'bg-red-100 text-red-800';
-                case 'DRIVER': return 'bg-green-100 text-green-800';
-                case 'CUSTOMER': return 'bg-blue-100 text-blue-800';
-                case 'STAFF': return 'bg-purple-100 text-purple-800';
-                case 'TRACKING_MANAGER': return 'bg-indigo-100 text-indigo-800';
-                default: return 'bg-gray-100 text-gray-800';
+          tbody.appendChild(row);
+        });
+
+        // Update user count
+        document.getElementById(
+          "userCount"
+        ).textContent = `Showing ${filteredUsers.length} of ${allUsers.length} users`;
+      }
+
+      function getRoleBadgeClass(role) {
+        switch (role) {
+          case "ADMIN":
+            return "bg-red-100 text-red-800";
+          case "DRIVER":
+            return "bg-green-100 text-green-800";
+          case "CUSTOMER":
+            return "bg-blue-100 text-blue-800";
+          case "STAFF":
+            return "bg-purple-100 text-purple-800";
+          case "TRACKING_MANAGER":
+            return "bg-indigo-100 text-indigo-800";
+          default:
+            return "bg-gray-100 text-gray-800";
+        }
+      }
+
+      function showCreateDriverModal() {
+        document.getElementById("createDriverModal").classList.remove("hidden");
+      }
+
+      function hideCreateDriverModal() {
+        document.getElementById("createDriverModal").classList.add("hidden");
+        document.getElementById("createDriverForm").reset();
+      }
+
+      function showCreateTrackingManagerModal() {
+        document
+          .getElementById("createTrackingManagerModal")
+          .classList.remove("hidden");
+      }
+
+      function hideCreateTrackingManagerModal() {
+        document
+          .getElementById("createTrackingManagerModal")
+          .classList.add("hidden");
+        document.getElementById("createTrackingManagerForm").reset();
+      }
+
+      function createDriver() {
+        const form = document.getElementById("createDriverForm");
+        const formData = new FormData(form);
+
+        const driverData = {
+          firstName: formData.get("firstName"),
+          lastName: formData.get("lastName"),
+          email: formData.get("email"),
+          password: formData.get("password"),
+          phone: formData.get("phone"),
+          address: formData.get("address"),
+          city: formData.get("city"),
+          state: formData.get("state"),
+          zipCode: formData.get("zipCode"),
+          country: formData.get("country"),
+          role: "DRIVER",
+        };
+
+        fetch("/api/admin/drivers", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + getToken(),
+          },
+          body: JSON.stringify(driverData),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.id) {
+              showNotification(
+                "Driver account created successfully",
+                "success"
+              );
+              hideCreateDriverModal();
+              loadStatistics();
+              loadUsers();
+            } else {
+              showNotification(
+                "Error creating driver account: " + data,
+                "error"
+              );
             }
-        }
+          })
+          .catch((error) => {
+            console.error("Error creating driver:", error);
+            showNotification("Error creating driver account", "error");
+          });
+      }
 
-        function showCreateDriverModal() {
-            document.getElementById('createDriverModal').classList.remove('hidden');
-        }
+      function editUser(userId) {
+        fetch(`/api/admin/users/${userId}`, {
+          headers: {
+            Authorization: "Bearer " + getToken(),
+          },
+        })
+          .then((response) => response.json())
+          .then((user) => {
+            document.getElementById("editUserId").value = user.id;
+            document.getElementById("editFirstName").value = user.firstName;
+            document.getElementById("editLastName").value = user.lastName;
+            document.getElementById("editEmail").value = user.email;
+            document.getElementById("editPhone").value = user.phone || "";
+            document.getElementById("editRole").value = user.role;
 
-        function hideCreateDriverModal() {
-            document.getElementById('createDriverModal').classList.add('hidden');
-            document.getElementById('createDriverForm').reset();
-        }
+            document.getElementById("editUserModal").classList.remove("hidden");
+          })
+          .catch((error) => {
+            console.error("Error loading user:", error);
+            showNotification("Error loading user details", "error");
+          });
+      }
 
-        function showCreateTrackingManagerModal() {
-            document.getElementById('createTrackingManagerModal').classList.remove('hidden');
-        }
+      function hideEditUserModal() {
+        document.getElementById("editUserModal").classList.add("hidden");
+      }
 
-        function hideCreateTrackingManagerModal() {
-            document.getElementById('createTrackingManagerModal').classList.add('hidden');
-            document.getElementById('createTrackingManagerForm').reset();
-        }
+      function updateUser() {
+        const form = document.getElementById("editUserForm");
+        const formData = new FormData(form);
+        const userId = formData.get("userId");
 
-        function createDriver() {
-            const form = document.getElementById('createDriverForm');
-            const formData = new FormData(form);
-            
-            const driverData = {
-                firstName: formData.get('firstName'),
-                lastName: formData.get('lastName'),
-                email: formData.get('email'),
-                password: formData.get('password'),
-                phone: formData.get('phone'),
-                address: formData.get('address'),
-                city: formData.get('city'),
-                state: formData.get('state'),
-                zipCode: formData.get('zipCode'),
-                country: formData.get('country'),
-                role: 'DRIVER'
-            };
+        const userData = {
+          firstName: formData.get("firstName"),
+          lastName: formData.get("lastName"),
+          email: formData.get("email"),
+          phone: formData.get("phone"),
+          role: formData.get("role"),
+        };
 
-            fetch('/api/admin/drivers', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + getToken()
-                },
-                body: JSON.stringify(driverData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.id) {
-                    showNotification('Driver account created successfully', 'success');
-                    hideCreateDriverModal();
-                    loadStatistics();
-                    loadUsers();
-                } else {
-                    showNotification('Error creating driver account: ' + data, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error creating driver:', error);
-                showNotification('Error creating driver account', 'error');
-            });
-        }
-
-        function createTrackingManager() {
-            const form = document.getElementById('createTrackingManagerForm');
-            const formData = new FormData(form);
-            
-            const trackingManagerData = {
-                firstName: formData.get('firstName'),
-                lastName: formData.get('lastName'),
-                email: formData.get('email'),
-                password: formData.get('password'),
-                phone: formData.get('phone'),
-                address: formData.get('address'),
-                city: formData.get('city'),
-                state: formData.get('state'),
-                zipCode: formData.get('zipCode'),
-                country: formData.get('country'),
-                role: 'TRACKING_MANAGER'
-            };
-
-            fetch('/api/admin/tracking-managers', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + getToken()
-                },
-                body: JSON.stringify(trackingManagerData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.id) {
-                    showNotification('Tracking Manager account created successfully', 'success');
-                    hideCreateTrackingManagerModal();
-                    loadStatistics();
-                    loadUsers();
-                } else {
-                    showNotification('Error creating tracking manager account: ' + data, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error creating tracking manager:', error);
-                showNotification('Error creating tracking manager account', 'error');
-            });
-        }
-
-        function editUser(userId) {
-            fetch(`/api/admin/users/${userId}`, {
-                headers: {
-                    'Authorization': 'Bearer ' + getToken()
-                }
-            })
-            .then(response => response.json())
-            .then(user => {
-                document.getElementById('editUserId').value = user.id;
-                document.getElementById('editFirstName').value = user.firstName;
-                document.getElementById('editLastName').value = user.lastName;
-                document.getElementById('editEmail').value = user.email;
-                document.getElementById('editPhone').value = user.phone || '';
-                document.getElementById('editRole').value = user.role;
-                
-                document.getElementById('editUserModal').classList.remove('hidden');
-            })
-            .catch(error => {
-                console.error('Error loading user:', error);
-                showNotification('Error loading user details', 'error');
-            });
-        }
-
-        function hideEditUserModal() {
-            document.getElementById('editUserModal').classList.add('hidden');
-        }
-
-        function updateUser() {
-            const form = document.getElementById('editUserForm');
-            const formData = new FormData(form);
-            const userId = formData.get('userId');
-            
-            const userData = {
-                firstName: formData.get('firstName'),
-                lastName: formData.get('lastName'),
-                email: formData.get('email'),
-                phone: formData.get('phone'),
-                role: formData.get('role')
-            };
-
-            fetch(`/api/admin/users/${userId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + getToken()
-                },
-                body: JSON.stringify(userData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.id) {
-                    showNotification('User updated successfully', 'success');
-                    hideEditUserModal();
-                    loadStatistics();
-                    loadUsers();
-                } else {
-                    showNotification('Error updating user: ' + data, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error updating user:', error);
-                showNotification('Error updating user', 'error');
-            });
-        }
-
-        function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user?')) {
-                fetch(`/api/admin/users/${userId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken()
-                    }
-                })
-                .then(response => response.text())
-                .then(data => {
-                    showNotification('User deleted successfully', 'success');
-                    loadStatistics();
-                    loadUsers();
-                })
-                .catch(error => {
-                    console.error('Error deleting user:', error);
-                    showNotification('Error deleting user', 'error');
-                });
+        fetch(`/api/admin/users/${userId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + getToken(),
+          },
+          body: JSON.stringify(userData),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.id) {
+              showNotification("User updated successfully", "success");
+              hideEditUserModal();
+              loadStatistics();
+              loadUsers();
+            } else {
+              showNotification("Error updating user: " + data, "error");
             }
-        }
+          })
+          .catch((error) => {
+            console.error("Error updating user:", error);
+            showNotification("Error updating user", "error");
+          });
+      }
 
-        function showNotification(message, type) {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white ${
-                type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            } animate-slide-up`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        function getToken() {
-            // Read JWT from any supported storage key
-            return (
-                localStorage.getItem('token') ||
-                sessionStorage.getItem('token') ||
-                localStorage.getItem('jwtToken') ||
-                sessionStorage.getItem('jwtToken')
-            );
-        }
-
-        function exportUserData() {
-            const csvContent = generateCSV();
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function generateCSV() {
-            const headers = ['ID', 'First Name', 'Last Name', 'Email', 'Role', 'Phone', 'Address', 'City', 'State', 'Zip Code', 'Country', 'Created At'];
-            const csvRows = [headers.join(',')];
-            
-            filteredUsers.forEach(user => {
-                const row = [
-                    user.id,
-                    `"${user.firstName}"`,
-                    `"${user.lastName}"`,
-                    `"${user.email}"`,
-                    user.role,
-                    `"${user.phone || ''}"`,
-                    `"${user.address || ''}"`,
-                    `"${user.city || ''}"`,
-                    `"${user.state || ''}"`,
-                    `"${user.zipCode || ''}"`,
-                    `"${user.country || ''}"`,
-                    new Date(user.createdAt).toISOString()
-                ];
-                csvRows.push(row.join(','));
+      function deleteUser(userId) {
+        if (confirm("Are you sure you want to delete this user?")) {
+          fetch(`/api/admin/users/${userId}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: "Bearer " + getToken(),
+            },
+          })
+            .then((response) => response.text())
+            .then((data) => {
+              showNotification("User deleted successfully", "success");
+              loadStatistics();
+              loadUsers();
+            })
+            .catch((error) => {
+              console.error("Error deleting user:", error);
+              showNotification("Error deleting user", "error");
             });
-            
-            return csvRows.join('\n');
         }
+      }
 
-        function logout() {
-            // Clear tokens and redirect to login
-            localStorage.removeItem('token');
-            sessionStorage.removeItem('token');
-            window.location.href = '/login';
-        }
+      function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement("div");
+        notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white ${
+          type === "success" ? "bg-green-500" : "bg-red-500"
+        } animate-slide-up`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+
+      function getToken() {
+        // Read JWT from any supported storage key
+        return (
+          localStorage.getItem("token") ||
+          sessionStorage.getItem("token") ||
+          localStorage.getItem("jwtToken") ||
+          sessionStorage.getItem("jwtToken")
+        );
+      }
+
+      function exportUserData() {
+        const csvContent = generateCSV();
+        const blob = new Blob([csvContent], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute(
+          "download",
+          `users_export_${new Date().toISOString().split("T")[0]}.csv`
+        );
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      function generateCSV() {
+        const headers = [
+          "ID",
+          "First Name",
+          "Last Name",
+          "Email",
+          "Role",
+          "Phone",
+          "Address",
+          "City",
+          "State",
+          "Zip Code",
+          "Country",
+          "Created At",
+        ];
+        const csvRows = [headers.join(",")];
+
+        filteredUsers.forEach((user) => {
+          const row = [
+            user.id,
+            `"${user.firstName}"`,
+            `"${user.lastName}"`,
+            `"${user.email}"`,
+            user.role,
+            `"${user.phone || ""}"`,
+            `"${user.address || ""}"`,
+            `"${user.city || ""}"`,
+            `"${user.state || ""}"`,
+            `"${user.zipCode || ""}"`,
+            `"${user.country || ""}"`,
+            new Date(user.createdAt).toISOString(),
+          ];
+          csvRows.push(row.join(","));
+        });
+
+        return csvRows.join("\n");
+      }
+
+      function logout() {
+        // Clear tokens and redirect to login
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
+        window.location.href = "/login";
+      }
     </script>
-</body>
+  </body>
 </html>
