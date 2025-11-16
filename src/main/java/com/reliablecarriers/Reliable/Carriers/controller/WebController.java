@@ -516,6 +516,27 @@ public class WebController {
         return "driver/profile";
     }
 
+    @GetMapping("/driver/documents")
+    public String driverDocuments(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Verify user is a driver
+            if (currentUser.getRole() != UserRole.DRIVER) {
+                return "redirect:/customer";
+            }
+            
+            // Allow access even if pending - they need to upload documents
+            model.addAttribute("user", currentUser);
+            return "driver/documents";
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
+    }
+
     @GetMapping("/driver/login-history")
     @PreAuthorize("hasRole('DRIVER')")
     public String driverLoginHistory(Model model) {

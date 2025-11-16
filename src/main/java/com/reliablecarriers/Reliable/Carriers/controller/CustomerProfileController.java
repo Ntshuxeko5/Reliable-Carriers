@@ -86,6 +86,9 @@ public class CustomerProfileController {
                 profile.put("isBusiness", false);
             }
             
+            // Include role for driver detection
+            profile.put("role", user.getRole() != null ? user.getRole().toString() : "CUSTOMER");
+            
             return ResponseEntity.ok(profile);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
