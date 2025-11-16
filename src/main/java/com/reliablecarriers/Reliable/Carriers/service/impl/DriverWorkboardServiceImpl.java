@@ -33,6 +33,8 @@ public class DriverWorkboardServiceImpl implements DriverWorkboardService {
 
     private final UserRepository userRepository;
 
+    private final ShipmentTrackingRepository shipmentTrackingRepository;
+
     // NotificationService used for sending notifications
     private final NotificationService notificationService;
 
@@ -40,11 +42,13 @@ public class DriverWorkboardServiceImpl implements DriverWorkboardService {
                                       ProofOfDeliveryRepository proofOfDeliveryRepository,
                                       DriverLocationRepository driverLocationRepository,
                                       UserRepository userRepository,
+                                      ShipmentTrackingRepository shipmentTrackingRepository,
                                       NotificationService notificationService) {
     this.shipmentRepository = shipmentRepository;
     this.proofOfDeliveryRepository = proofOfDeliveryRepository;
         this.driverLocationRepository = driverLocationRepository;
         this.userRepository = userRepository;
+        this.shipmentTrackingRepository = shipmentTrackingRepository;
         this.notificationService = notificationService;
     }
 
@@ -842,31 +846,58 @@ public class DriverWorkboardServiceImpl implements DriverWorkboardService {
         try {
             Optional<Shipment> packageOpt = shipmentRepository.findById(packageId);
             if (!packageOpt.isPresent()) {
+                System.out.println("Package not found: " + packageId);
                 return false;
             }
             
             Shipment shipment = packageOpt.get();
-            
-            // Check if package is assigned to this driver
-            if (shipment.getAssignedDriver() == null || !shipment.getAssignedDriver().getId().equals(driverId)) {
+            User driver = userRepository.findById(driverId).orElse(null);
+            if (driver == null) {
+                System.out.println("Driver not found: " + driverId);
                 return false;
             }
             
-            // Check if package is in ASSIGNED status
-            if (shipment.getStatus() != ShipmentStatus.ASSIGNED) {
+            // Allow accepting unassigned PENDING packages OR already assigned packages
+            if (shipment.getStatus() == ShipmentStatus.PENDING && shipment.getAssignedDriver() == null) {
+                // Accept unassigned PENDING package - assign it to driver
+                System.out.println("Accepting unassigned PENDING package " + packageId + " for driver " + driverId);
+                shipment.setAssignedDriver(driver);
+                shipment.setStatus(ShipmentStatus.ASSIGNED);
+                shipment.setUpdatedAt(new Date());
+                shipmentRepository.save(shipment);
+                
+                // Create tracking entry
+                createTrackingEntry(shipment, ShipmentStatus.ASSIGNED, 
+                    "Package accepted by driver", 
+                    "Driver " + driver.getFirstName() + " " + driver.getLastName() + " accepted this package");
+                
+                // Send notification to admin about acceptance
+                sendPackageAcceptanceNotification(shipment);
+                
+                System.out.println("Successfully accepted and assigned package " + packageId + " to driver " + driverId);
+                return true;
+            } else if (shipment.getStatus() == ShipmentStatus.ASSIGNED && 
+                       shipment.getAssignedDriver() != null && 
+                       shipment.getAssignedDriver().getId().equals(driverId)) {
+                // Package already assigned to this driver - just confirm acceptance
+                System.out.println("Package " + packageId + " already assigned to driver " + driverId + " - confirming acceptance");
+                shipment.setUpdatedAt(new Date());
+                shipmentRepository.save(shipment);
+                
+                // Send notification to admin about acceptance
+                sendPackageAcceptanceNotification(shipment);
+                
+                return true;
+            } else {
+                // Package is assigned to another driver or in wrong status
+                System.out.println("Cannot accept package " + packageId + 
+                    " - Status: " + shipment.getStatus() + 
+                    ", AssignedDriver: " + (shipment.getAssignedDriver() != null ? shipment.getAssignedDriver().getId() : "null"));
                 return false;
             }
-            
-            // Update package status to accepted (you might want to add a new status like ACCEPTED)
-            shipment.setStatus(ShipmentStatus.ASSIGNED); // Keep as ASSIGNED for now
-            shipment.setUpdatedAt(new Date());
-            shipmentRepository.save(shipment);
-            
-            // Send notification to admin about acceptance
-            sendPackageAcceptanceNotification(shipment);
-            
-            return true;
         } catch (Exception e) {
+            System.err.println("Error accepting package: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -898,6 +929,27 @@ public class DriverWorkboardServiceImpl implements DriverWorkboardService {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private void createTrackingEntry(Shipment shipment, ShipmentStatus status, String location, String notes) {
+        try {
+            ShipmentTracking tracking = new ShipmentTracking();
+            tracking.setShipment(shipment);
+            tracking.setStatus(status);
+            tracking.setLocation(location != null ? location : "Location not specified");
+            tracking.setNotes(notes != null ? notes : "");
+            tracking.setCreatedAt(new Date());
+            
+            // Set updated by to the assigned driver if available
+            if (shipment.getAssignedDriver() != null) {
+                tracking.setUpdatedBy(shipment.getAssignedDriver());
+            }
+            
+            shipmentTrackingRepository.save(tracking);
+        } catch (Exception e) {
+            System.err.println("Error creating tracking entry: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

@@ -103,16 +103,27 @@ public class AdminDriverController {
                 .map(pkg -> {
                     Map<String, Object> packageMap = new HashMap<>();
                     packageMap.put("id", pkg.getId());
-                    packageMap.put("trackingNumber", pkg.getTrackingNumber());
-                    packageMap.put("senderName", pkg.getSender().getFirstName() + " " + pkg.getSender().getLastName());
-                    packageMap.put("recipientName", pkg.getRecipientName());
-                    packageMap.put("pickupAddress", pkg.getPickupAddress());
-                    packageMap.put("deliveryAddress", pkg.getDeliveryAddress());
-                    packageMap.put("pickupCity", pkg.getPickupCity());
-                    packageMap.put("deliveryCity", pkg.getDeliveryCity());
-                    packageMap.put("weight", pkg.getWeight());
-                    packageMap.put("dimensions", pkg.getDimensions());
-                    packageMap.put("createdAt", pkg.getCreatedAt());
+                    packageMap.put("trackingNumber", pkg.getTrackingNumber() != null ? pkg.getTrackingNumber() : "N/A");
+                    
+                    // Handle null sender
+                    if (pkg.getSender() != null) {
+                        String senderName = (pkg.getSender().getFirstName() != null ? pkg.getSender().getFirstName() : "") + 
+                                          " " + (pkg.getSender().getLastName() != null ? pkg.getSender().getLastName() : "");
+                        packageMap.put("senderName", senderName.trim());
+                    } else {
+                        packageMap.put("senderName", "N/A");
+                    }
+                    
+                    packageMap.put("recipientName", pkg.getRecipientName() != null ? pkg.getRecipientName() : "N/A");
+                    packageMap.put("pickupAddress", pkg.getPickupAddress() != null ? pkg.getPickupAddress() : "");
+                    packageMap.put("deliveryAddress", pkg.getDeliveryAddress() != null ? pkg.getDeliveryAddress() : "");
+                    packageMap.put("pickupCity", pkg.getPickupCity() != null ? pkg.getPickupCity() : "");
+                    packageMap.put("deliveryCity", pkg.getDeliveryCity() != null ? pkg.getDeliveryCity() : "");
+                    packageMap.put("deliveryState", pkg.getDeliveryState() != null ? pkg.getDeliveryState() : "");
+                    packageMap.put("weight", pkg.getWeight() != null ? pkg.getWeight() : 0);
+                    packageMap.put("dimensions", pkg.getDimensions() != null ? pkg.getDimensions() : "");
+                    packageMap.put("createdAt", pkg.getCreatedAt() != null ? pkg.getCreatedAt() : new Date());
+                    packageMap.put("status", pkg.getStatus() != null ? pkg.getStatus().toString() : "PENDING");
                     return packageMap;
                 })
                 .collect(Collectors.toList());

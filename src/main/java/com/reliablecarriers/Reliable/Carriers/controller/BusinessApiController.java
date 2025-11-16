@@ -538,27 +538,113 @@ public class BusinessApiController {
             // Get bookings for this business
             List<BookingResponse> bookings = bookingService.getBookingsByEmail(businessUser.getEmail());
             
+            // Also get shipments (packages created directly from payment, not from bookings)
+            List<Shipment> shipments = shipmentRepository.findBySenderEmailOrRecipientEmailOrderByCreatedAtDesc(businessUser.getEmail());
+            
+            // Convert shipments to booking-like response format for consistency
+            List<Map<String, Object>> shipmentResponses = shipments.stream()
+                .map(shipment -> {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("id", shipment.getId());
+                    response.put("bookingNumber", shipment.getTrackingNumber());
+                    response.put("trackingNumber", shipment.getTrackingNumber());
+                    response.put("status", shipment.getStatus() != null ? shipment.getStatus().toString() : "PENDING");
+                    response.put("customerName", shipment.getSender() != null ? 
+                        (shipment.getSender().getFirstName() + " " + (shipment.getSender().getLastName() != null ? shipment.getSender().getLastName() : "")) : 
+                        "Customer");
+                    response.put("customerEmail", shipment.getSender() != null ? shipment.getSender().getEmail() : shipment.getRecipientEmail());
+                    response.put("customerPhone", shipment.getSender() != null ? shipment.getSender().getPhone() : shipment.getRecipientPhone());
+                    response.put("pickupAddress", shipment.getPickupAddress());
+                    response.put("pickupCity", shipment.getPickupCity());
+                    response.put("pickupState", shipment.getPickupState());
+                    response.put("deliveryAddress", shipment.getDeliveryAddress());
+                    response.put("deliveryCity", shipment.getDeliveryCity());
+                    response.put("deliveryState", shipment.getDeliveryState());
+                    response.put("weight", shipment.getWeight());
+                    response.put("shippingCost", shipment.getShippingCost());
+                    response.put("serviceType", shipment.getServiceType() != null ? shipment.getServiceType().toString() : "ECONOMY");
+                    response.put("createdAt", shipment.getCreatedAt());
+                    response.put("estimatedDeliveryDate", shipment.getEstimatedDeliveryDate());
+                    response.put("recipientName", shipment.getRecipientName());
+                    response.put("recipientEmail", shipment.getRecipientEmail());
+                    response.put("recipientPhone", shipment.getRecipientPhone());
+                    return response;
+                })
+                .collect(Collectors.toList());
+            
+            // Combine bookings and shipments, removing duplicates by tracking number
+            Set<String> processedTrackingNumbers = new HashSet<>();
+            List<Map<String, Object>> allPackages = new ArrayList<>();
+            
+            // Add bookings first
+            for (BookingResponse booking : bookings) {
+                if (booking.getTrackingNumber() != null) {
+                    processedTrackingNumbers.add(booking.getTrackingNumber());
+                }
+                Map<String, Object> bookingMap = new HashMap<>();
+                bookingMap.put("id", booking.getId());
+                bookingMap.put("bookingNumber", booking.getBookingNumber());
+                bookingMap.put("trackingNumber", booking.getTrackingNumber());
+                bookingMap.put("status", booking.getStatus() != null ? booking.getStatus().toString() : "PENDING");
+                bookingMap.put("customerName", booking.getCustomerName());
+                bookingMap.put("customerEmail", booking.getCustomerEmail());
+                bookingMap.put("customerPhone", booking.getCustomerPhone());
+                bookingMap.put("pickupAddress", booking.getPickupAddress());
+                bookingMap.put("pickupCity", booking.getPickupCity());
+                bookingMap.put("pickupState", booking.getPickupState());
+                bookingMap.put("deliveryAddress", booking.getDeliveryAddress());
+                bookingMap.put("deliveryCity", booking.getDeliveryCity());
+                bookingMap.put("deliveryState", booking.getDeliveryState());
+                bookingMap.put("weight", booking.getWeight());
+                bookingMap.put("totalAmount", booking.getTotalAmount());
+                bookingMap.put("serviceType", booking.getServiceType() != null ? booking.getServiceType().toString() : "ECONOMY");
+                bookingMap.put("createdAt", booking.getCreatedAt());
+                bookingMap.put("estimatedDeliveryDate", booking.getEstimatedDeliveryDate());
+                allPackages.add(bookingMap);
+            }
+            
+            // Add shipments that don't have matching bookings
+            for (Map<String, Object> shipment : shipmentResponses) {
+                String trackingNumber = (String) shipment.get("trackingNumber");
+                if (trackingNumber == null || !processedTrackingNumbers.contains(trackingNumber)) {
+                    allPackages.add(shipment);
+                }
+            }
+            
             // Filter by status if provided
             if (status != null && !status.isEmpty()) {
-                bookings = bookings.stream()
-                    .filter(b -> b.getStatus().toString().equalsIgnoreCase(status))
+                allPackages = allPackages.stream()
+                    .filter(p -> {
+                        String pkgStatus = (String) p.get("status");
+                        return pkgStatus != null && pkgStatus.equalsIgnoreCase(status);
+                    })
                     .collect(Collectors.toList());
             }
             
+            // Sort by creation date descending
+            allPackages.sort((a, b) -> {
+                Date dateA = (Date) a.get("createdAt");
+                Date dateB = (Date) b.get("createdAt");
+                if (dateA == null && dateB == null) return 0;
+                if (dateA == null) return 1;
+                if (dateB == null) return -1;
+                return dateB.compareTo(dateA);
+            });
+            
             // Paginate
             int start = page * size;
-            int end = Math.min(start + size, bookings.size());
-            List<BookingResponse> paginatedBookings = start < bookings.size() ?
-                bookings.subList(start, end) : Collections.emptyList();
+            int end = Math.min(start + size, allPackages.size());
+            List<Map<String, Object>> paginatedPackages = start < allPackages.size() ?
+                allPackages.subList(start, end) : Collections.emptyList();
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", paginatedBookings,
+                "data", paginatedPackages,
                 "pagination", Map.of(
                     "page", page,
                     "size", size,
-                    "total", bookings.size(),
-                    "totalPages", (int) Math.ceil((double) bookings.size() / size)
+                    "total", allPackages.size(),
+                    "totalPages", (int) Math.ceil((double) allPackages.size() / size)
                 )
             ));
             

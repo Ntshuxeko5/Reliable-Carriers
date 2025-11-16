@@ -308,8 +308,62 @@
                     });
                     if (verifyResponse.ok) {
                         const verifyData = await verifyResponse.json();
+                        
+                        // If we have bookingId, try to load full booking details
                         if (verifyData.bookingId) {
-                            // Reload with booking ID
+                            try {
+                                const bookingResponse = await fetch(`/api/booking/${verifyData.bookingId}`, {
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    credentials: 'include'
+                                });
+                                if (bookingResponse.ok) {
+                                    const bookingResult = await bookingResponse.json();
+                                    const booking = bookingResult.booking || bookingResult;
+                                    updateBookingDisplay(booking, customerProfile);
+                                    return;
+                                }
+                            } catch (error) {
+                                console.error('Error loading booking from bookingId:', error);
+                            }
+                        }
+                        
+                        // Use payment verification data directly if it has shipment details
+                        if (verifyData.trackingNumber || verifyData.pickupAddress || verifyData.deliveryAddress) {
+                            const urlParams = new URLSearchParams(window.location.search);
+                            // Map payment verification response to booking display format
+                            const displayData = {
+                                bookingNumber: verifyData.trackingNumber || verifyData.bookingNumber || urlParams.get('trackingNumber') || urlParams.get('tracking'),
+                                trackingNumber: verifyData.trackingNumber || verifyData.bookingNumber,
+                                customerName: verifyData.customerName,
+                                customerFirstName: verifyData.customerName ? verifyData.customerName.split(' ')[0] : null,
+                                customerLastName: verifyData.customerName ? verifyData.customerName.split(' ').slice(1).join(' ') : null,
+                                serviceType: verifyData.serviceType || urlParams.get('service') || 'Express Delivery',
+                                totalAmount: verifyData.amount || urlParams.get('amount'),
+                                amount: verifyData.amount || urlParams.get('amount'),
+                                pickupAddress: verifyData.pickupAddress,
+                                pickupCity: verifyData.pickupCity,
+                                pickupState: verifyData.pickupState,
+                                pickupCountry: verifyData.pickupCountry,
+                                deliveryAddress: verifyData.deliveryAddress,
+                                deliveryCity: verifyData.deliveryCity,
+                                deliveryState: verifyData.deliveryState,
+                                deliveryCountry: verifyData.deliveryCountry,
+                                collectionCode: verifyData.collectionCode,
+                                dropOffCode: verifyData.dropOffCode,
+                                pickupCode: verifyData.collectionCode,
+                                deliveryCode: verifyData.dropOffCode,
+                                status: verifyData.status || 'Confirmed',
+                                customerEmail: verifyData.customerEmail,
+                                customerPhone: verifyData.customerPhone
+                            };
+                            updateBookingDisplay(displayData, customerProfile);
+                            return;
+                        }
+                        
+                        // If we have bookingId but couldn't load booking, reload with bookingId
+                        if (verifyData.bookingId) {
                             window.location.href = `/payment-success?bookingId=${verifyData.bookingId}&reference=${reference}`;
                             return;
                         }
@@ -317,6 +371,7 @@
                 } catch (error) {
                     console.error('Error verifying payment:', error);
                 }
+                // Fallback to URL params if verification fails
                 loadFromUrlParams(customerProfile);
             } else {
                 loadFromUrlParams(customerProfile);
@@ -326,23 +381,37 @@
         function loadFromUrlParams(customerProfile) {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // Update display with URL parameters
-            if (document.getElementById('bookingNumber')) {
-                document.getElementById('bookingNumber').textContent = urlParams.get('bookingNumber') || urlParams.get('tracking') || 'RC1234567890';
-            }
-            if (document.getElementById('customerName')) {
-                // Use customer profile name if available, otherwise URL param, otherwise default
+            // Build data object from URL parameters
+            const urlData = {
+                bookingNumber: urlParams.get('bookingNumber') || urlParams.get('trackingNumber') || urlParams.get('tracking'),
+                trackingNumber: urlParams.get('trackingNumber') || urlParams.get('tracking') || urlParams.get('bookingNumber'),
+                customerName: urlParams.get('customerName'),
+                serviceType: urlParams.get('serviceType') || urlParams.get('service'),
+                totalAmount: urlParams.get('totalAmount') || urlParams.get('amount'),
+                amount: urlParams.get('amount') || urlParams.get('totalAmount'),
+                pickupAddress: urlParams.get('pickupAddress'),
+                pickupCity: urlParams.get('pickupCity'),
+                pickupState: urlParams.get('pickupState'),
+                deliveryAddress: urlParams.get('deliveryAddress'),
+                deliveryCity: urlParams.get('deliveryCity'),
+                deliveryState: urlParams.get('deliveryState'),
+                collectionCode: urlParams.get('collectionCode'),
+                dropOffCode: urlParams.get('dropOffCode'),
+                pickupCode: urlParams.get('collectionCode'),
+                deliveryCode: urlParams.get('dropOffCode'),
+                status: urlParams.get('status') || 'Confirmed'
+            };
+            
+            // Use updateBookingDisplay to ensure consistent formatting
+            updateBookingDisplay(urlData, customerProfile);
+            
+            // Fallback for customer name if not in URL data
+            if (document.getElementById('customerName') && !urlData.customerName) {
                 if (customerProfile && customerProfile.firstName && customerProfile.lastName) {
                     document.getElementById('customerName').textContent = `${customerProfile.firstName} ${customerProfile.lastName}`;
                 } else {
-                    document.getElementById('customerName').textContent = urlParams.get('customerName') || 'Guest User';
+                    document.getElementById('customerName').textContent = 'Guest User';
                 }
-            }
-            if (document.getElementById('serviceType')) {
-                document.getElementById('serviceType').textContent = urlParams.get('serviceType') || urlParams.get('service') || 'Express Delivery';
-            }
-            if (document.getElementById('totalAmount')) {
-                document.getElementById('totalAmount').textContent = 'R' + (urlParams.get('totalAmount') || urlParams.get('amount') || '250.00');
             }
             // Construct full address from URL params if available
             const pickupAddrFromUrl = urlParams.get('pickupAddress');
@@ -378,8 +447,7 @@
             }
             
             // Initialize maps with URL params if available
-            const pickupAddrFromUrl = urlParams.get('pickupAddress');
-            const deliveryAddrFromUrl = urlParams.get('deliveryAddress');
+            // Reuse variables already declared above
             
             // Construct full addresses for maps
             let pickupAddrForMap = '';
@@ -447,9 +515,21 @@
                 }
             }
             
-            // Update service type
+            // Update service type - handle enum objects and strings
             if (document.getElementById('serviceType')) {
-                document.getElementById('serviceType').textContent = data.serviceType || 'Express Delivery';
+                let serviceTypeText = data.serviceType;
+                if (typeof serviceTypeText === 'object' && serviceTypeText !== null) {
+                    if (serviceTypeText.displayName) {
+                        serviceTypeText = serviceTypeText.displayName;
+                    } else if (serviceTypeText.name) {
+                        serviceTypeText = serviceTypeText.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    } else {
+                        serviceTypeText = 'Express Delivery';
+                    }
+                } else if (!serviceTypeText || serviceTypeText === 'null' || serviceTypeText === 'undefined') {
+                    serviceTypeText = 'Express Delivery';
+                }
+                document.getElementById('serviceType').textContent = serviceTypeText;
             }
             
             // Update total amount
@@ -494,12 +574,14 @@
                 document.getElementById('deliveryAddress').textContent = deliveryAddr || 'Address not available';
             }
             
-            // Update codes
+            // Update codes - use actual codes if available, otherwise show placeholder
             if (document.getElementById('pickupCode')) {
-                document.getElementById('pickupCode').textContent = data.pickupCode || data.collectionCode || 'P123456';
+                const pickupCode = data.pickupCode || data.collectionCode;
+                document.getElementById('pickupCode').textContent = pickupCode || 'Will be assigned';
             }
             if (document.getElementById('deliveryCode')) {
-                document.getElementById('deliveryCode').textContent = data.deliveryCode || data.dropOffCode || 'D789012';
+                const deliveryCode = data.deliveryCode || data.dropOffCode;
+                document.getElementById('deliveryCode').textContent = deliveryCode || 'Will be assigned';
             }
             
             // Update status

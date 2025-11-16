@@ -51,6 +51,11 @@ public class AdminUserController {
                     userMap.put("isActive", true); // Default to active since User model doesn't have isActive field
                     userMap.put("createdAt", user.getCreatedAt());
                     userMap.put("lastLogin", user.getUpdatedAt()); // Using updatedAt as proxy for last login
+                    // Add business-related fields
+                    userMap.put("isBusiness", user.getIsBusiness() != null && user.getIsBusiness());
+                    userMap.put("businessName", user.getBusinessName());
+                    userMap.put("businessVerificationStatus", user.getBusinessVerificationStatus() != null ? user.getBusinessVerificationStatus().toString() : null);
+                    userMap.put("driverVerificationStatus", user.getDriverVerificationStatus() != null ? user.getDriverVerificationStatus().toString() : null);
                     return userMap;
                 })
                 .collect(Collectors.toList());

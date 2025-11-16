@@ -168,12 +168,17 @@ async function loadBusinessDocuments() {
 // Load pending businesses
 async function loadPendingBusinesses() {
     try {
-        // This would need a new endpoint to get pending businesses
-        const response = await fetch('/api/admin/users/role/CUSTOMER');
+        // Get all users and filter for businesses that are pending verification
+        const response = await fetch('/api/admin/users');
         const data = await response.json();
         
         // Filter for businesses that are pending verification
-        const businesses = Array.isArray(data) ? data.filter(b => b.isBusiness) : [];
+        const businesses = Array.isArray(data) ? data.filter(b => 
+            b.isBusiness && 
+            (b.businessVerificationStatus === null || 
+             b.businessVerificationStatus === 'PENDING' || 
+             b.businessVerificationStatus === 'UNDER_REVIEW')
+        ) : [];
         
         const container = document.getElementById('pendingBusinessesList');
         if (!businesses || businesses.length === 0) {
@@ -187,13 +192,16 @@ async function loadPendingBusinesses() {
                     <div class="flex-1">
                         <h4 class="font-semibold text-gray-900 dark:text-white">${business.businessName || 'N/A'}</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-400">${business.email}</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">${business.phone}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">${business.phone || 'N/A'}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                            Status: ${business.businessVerificationStatus || 'PENDING'}
+                        </p>
                     </div>
                     <div class="flex space-x-2">
                         <button onclick="viewBusinessDetails(${business.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded">
                             <i class="fas fa-eye mr-1"></i>View Details
                         </button>
-                        <button onclick="openBusinessVerificationModal(${business.id}, '${business.businessName || business.email}')" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded">
+                        <button onclick="openBusinessVerificationModal(${business.id}, '${(business.businessName || business.email).replace(/'/g, "\\'")}')" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded">
                             <i class="fas fa-check mr-1"></i>Approve
                         </button>
                     </div>

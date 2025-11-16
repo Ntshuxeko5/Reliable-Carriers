@@ -360,9 +360,10 @@ public class PaystackController {
                     }
                 }
 
-                // Build redirect URL with all parameters
-                String redirectUrl = String.format("/api/paystack/payment-success?reference=%s&tracking=%s&amount=%s&service=%s&email=%s&status=COMPLETED",
+                // Build redirect URL with all parameters - use /payment-success endpoint
+                String redirectUrl = String.format("/payment-success?reference=%s&trackingNumber=%s&tracking=%s&amount=%s&service=%s&email=%s&status=COMPLETED",
                         URLEncoder.encode(reference, StandardCharsets.UTF_8),
+                        URLEncoder.encode(trackingNumber != null ? trackingNumber : "", StandardCharsets.UTF_8),
                         URLEncoder.encode(trackingNumber != null ? trackingNumber : "", StandardCharsets.UTF_8),
                         URLEncoder.encode(amount.toString(), StandardCharsets.UTF_8),
                         URLEncoder.encode(serviceType, StandardCharsets.UTF_8),
@@ -718,11 +719,12 @@ public class PaystackController {
             shipment.setShippingCost(payment.getAmount());
             shipment.setServiceType(ServiceType.ECONOMY); // Default service type
             
-            // Set sender email if available
+            // Set sender email if available - CRITICAL: This must succeed for packages to be visible
+            User sender = null;
             if (email != null && !email.isEmpty()) {
                 // Try to find existing user or create a basic one
                 try {
-                    User sender = userRepository.findByEmail(email).orElse(null);
+                    sender = userRepository.findByEmail(email).orElse(null);
                     if (sender == null) {
                         // Create a basic user record
                         sender = new User();
@@ -731,16 +733,31 @@ public class PaystackController {
                         sender.setLastName("User");
                         sender.setRole(UserRole.CUSTOMER);
                         sender = userRepository.save(sender);
+                        System.out.println("Created new user for email: " + email);
                     }
                     shipment.setSender(sender);
+                    System.out.println("Set sender for shipment: " + sender.getEmail());
                 } catch (Exception e) {
-                    System.out.println("Could not create/find user for email: " + email);
+                    System.err.println("CRITICAL: Could not create/find user for email: " + email);
+                    System.err.println("Error: " + e.getMessage());
+                    e.printStackTrace();
+                    // Still try to set recipient email even if sender creation fails
                 }
             }
             
             // Set shipment details from extracted data
-            shipment.setRecipientName(getStringValue(addressData, "recipientName", "Recipient"));
-            shipment.setRecipientEmail(getStringValue(addressData, "recipientEmail", email));
+            String recipientName = getStringValue(addressData, "recipientName", "Recipient");
+            String recipientEmail = getStringValue(addressData, "recipientEmail", email != null ? email : "");
+            String recipientPhone = getStringValue(addressData, "recipientPhone", null);
+            
+            shipment.setRecipientName(recipientName);
+            shipment.setRecipientEmail(recipientEmail != null && !recipientEmail.isEmpty() ? recipientEmail : (email != null ? email : ""));
+            if (recipientPhone != null && !recipientPhone.isEmpty() && !recipientPhone.equals("Not provided")) {
+                shipment.setRecipientPhone(recipientPhone);
+            }
+            
+            System.out.println("Set recipient email: " + shipment.getRecipientEmail());
+            System.out.println("Set recipient name: " + shipment.getRecipientName());
             shipment.setPickupAddress(getStringValue(addressData, "pickupAddress", "Pickup Address"));
             shipment.setPickupCity(getStringValue(addressData, "pickupCity", "Pickup City"));
             shipment.setPickupState(getStringValue(addressData, "pickupState", "Pickup State"));
@@ -1127,6 +1144,75 @@ public class PaystackController {
                     } catch (Exception e) {
                         System.err.println("Failed to send SMS notification: " + e.getMessage());
                         e.printStackTrace();
+                    }
+                }
+                
+                // Send notification to receiver (delivery contact) if different from sender
+                String receiverEmail = shipment.getRecipientEmail();
+                String receiverPhone = shipment.getRecipientPhone();
+                String receiverName = shipment.getRecipientName();
+                
+                // Check if receiver is different from sender
+                boolean receiverDifferent = (receiverEmail != null && !receiverEmail.equals(customerEmail)) ||
+                                           (receiverPhone != null && !receiverPhone.equals(customerPhone));
+                
+                if (receiverDifferent) {
+                    // Send email to receiver if email is available and different
+                    if (receiverEmail != null && !receiverEmail.trim().isEmpty() && 
+                        !receiverEmail.equals(customerEmail)) {
+                        try {
+                            String receiverSubject = "Package Delivery Scheduled - " + shipment.getTrackingNumber();
+                            String receiverMessage = String.format(
+                                "Dear %s,\n\n" +
+                                "A package delivery has been scheduled to your address.\n\n" +
+                                "Delivery Information:\n" +
+                                "- Tracking Number: %s\n" +
+                                "- Drop-off Code: %s\n" +
+                                "- Delivery Address: %s, %s, %s\n" +
+                                "- Service Type: %s\n\n" +
+                                "Important: Please ensure someone is available to receive the package " +
+                                "and provide the Drop-off Code '%s' when the driver arrives.\n\n" +
+                                "Track your package: http://localhost:8080/tracking/%s\n\n" +
+                                "Thank you,\n" +
+                                "Reliable Carriers Team",
+                                receiverName != null ? receiverName : "Valued Customer",
+                                shipment.getTrackingNumber(),
+                                shipment.getDropOffCode() != null ? shipment.getDropOffCode() : "N/A",
+                                deliveryAddressFull,
+                                shipment.getDeliveryCity() != null ? shipment.getDeliveryCity() : "",
+                                shipment.getDeliveryCountry() != null ? shipment.getDeliveryCountry() : "",
+                                shipment.getServiceType() != null ? shipment.getServiceType().toString() : "N/A",
+                                shipment.getDropOffCode() != null ? shipment.getDropOffCode() : "N/A",
+                                shipment.getTrackingNumber()
+                            );
+                            
+                            notificationService.sendCustomEmailNotification(receiverEmail, receiverSubject, receiverMessage);
+                            System.out.println("Payment confirmation email sent to receiver: " + receiverEmail);
+                        } catch (Exception e) {
+                            System.err.println("Failed to send email to receiver: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                    
+                    // Send SMS to receiver if phone is available and different
+                    if (receiverPhone != null && !receiverPhone.trim().isEmpty() && 
+                        !receiverPhone.equals(customerPhone)) {
+                        try {
+                            String receiverSms = String.format(
+                                "Package delivery scheduled! Tracking: %s, Drop-off Code: %s. " +
+                                "Delivery to: %s. Track: http://localhost:8080/tracking/%s",
+                                shipment.getTrackingNumber(),
+                                shipment.getDropOffCode() != null ? shipment.getDropOffCode() : "N/A",
+                                deliveryAddressFull,
+                                shipment.getTrackingNumber()
+                            );
+                            
+                            notificationService.sendCustomSmsNotification(receiverPhone, receiverSms);
+                            System.out.println("Payment confirmation SMS sent to receiver: " + receiverPhone);
+                        } catch (Exception e) {
+                            System.err.println("Failed to send SMS to receiver: " + e.getMessage());
+                            e.printStackTrace();
+                        }
                     }
                 }
                 

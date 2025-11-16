@@ -2071,7 +2071,12 @@
                 return;
             }
             
-            container.innerHTML = packages.map(pkg => `
+            container.innerHTML = packages.map(pkg => {
+                const acceptButton = pkg.status === 'PENDING' 
+                    ? '<button onclick="acceptPackage(' + pkg.id + ')" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center"><i class="fas fa-check mr-1"></i>Accept</button>'
+                    : '<button onclick="requestPackagePickup(' + pkg.id + ')" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center"><i class="fas fa-hand-holding-box mr-1"></i>Pickup</button>';
+                
+                return `
                 <div class="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors duration-200 package-item"
                      data-package-id="${pkg.id}"
                      data-tracking="${pkg.trackingNumber}"
@@ -2121,17 +2126,15 @@
                                 class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
                             <i class="fas fa-route mr-1"></i>Navigate
                         </button>
-                        <button onclick="requestPackagePickup(${pkg.id})" 
-                                class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
-                            <i class="fas fa-hand-holding-box mr-1"></i>Pickup
-                        </button>
+                        ${acceptButton}
                         <button onclick="showPackageDetails(${pkg.id})" 
                                 class="bg-gray-600 hover:bg-gray-700 text-white text-xs py-2 px-3 rounded-lg transition-colors duration-200">
                             <i class="fas fa-info-circle"></i>
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
         
         // Update assigned packages
@@ -2740,7 +2743,7 @@
                                 <strong>Pickup:</strong> ${markerData.pickupAddress}<br>
                                 <strong>Delivery:</strong> ${markerData.deliveryAddress}<br>
                                 ${markerData.distance ? `<strong>Distance:</strong> ${markerData.distance.toFixed(1)} km<br>` : ''}
-                                <button onclick="focusOnPackage(${markerData.id})" class="mt-2 bg-blue-600 text-white px-2 py-1 rounded text-xs">View Details</button>
+                                <button onclick="focusOnPackage(` + markerData.id + `)" class="mt-2 bg-blue-600 text-white px-2 py-1 rounded text-xs">View Details</button>
                             </div>
                         `
                     });

@@ -223,12 +223,33 @@
         
         // Initialize Google Maps
         function initMap() {
-            map = new google.maps.Map(document.getElementById('driverMap'), {
-                zoom: 10,
-                center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
-                mapTypeId: google.maps.MapTypeId.ROADMAP
-            });
+            const mapElement = document.getElementById('driverMap');
+            if (!mapElement) {
+                console.error('Map element not found');
+                return;
+            }
+            
+            try {
+                map = new google.maps.Map(mapElement, {
+                    zoom: 10,
+                    center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                });
+                
+                // Load drivers once map is initialized
+                if (map) {
+                    // Small delay to ensure map is fully ready
+                    setTimeout(() => {
+                        loadDriverLocations();
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Error initializing map:', error);
+            }
         }
+        
+        // Make initMap available globally for Google Maps callback
+        window.initMap = initMap;
         
         // Load driver locations
         async function loadDriverLocations() {
@@ -342,6 +363,12 @@
         
         // Update driver map
         function updateDriverMap(drivers) {
+            // Check if map is initialized
+            if (!map) {
+                console.warn('Map not initialized yet, skipping map update');
+                return;
+            }
+            
             // Clear existing markers
             Object.values(driverMarkers).forEach(marker => marker.setMap(null));
             Object.values(infoWindows).forEach(infoWindow => infoWindow.close());
@@ -486,16 +513,46 @@
             try {
                 const response = await fetch('/api/admin/drivers/available-packages', {
                     headers: {
-                        'Authorization': 'Bearer ' + getToken()
-                    }
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
                 });
+                
+                if (!response.ok) {
+                    console.error('Error loading packages:', response.status, response.statusText);
+                    const container = document.getElementById('availablePackagesList');
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="text-center text-red-500 py-4">
+                                <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                                <p>Error loading packages: ${response.status}</p>
+                            </div>
+                        `;
+                    }
+                    return;
+                }
+                
                 const packages = await response.json();
                 
-                updateAvailablePackagesList(packages);
-                document.getElementById('availablePackages').textContent = packages.length;
+                // Handle both array and wrapped response
+                const packageList = Array.isArray(packages) ? packages : (packages.data || packages.packages || []);
+                
+                updateAvailablePackagesList(packageList);
+                if (document.getElementById('availablePackages')) {
+                    document.getElementById('availablePackages').textContent = packageList.length;
+                }
                 
             } catch (error) {
                 console.error('Error loading available packages:', error);
+                const container = document.getElementById('availablePackagesList');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="text-center text-red-500 py-4">
+                            <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                            <p>Error loading packages</p>
+                        </div>
+                    `;
+                }
             }
         }
         
@@ -646,16 +703,24 @@
         // Note: initMap is called by Google Maps API callback
         // If map is not initialized, wait for it
         function checkMapInitialized() {
+            // Load drivers immediately, don't wait for map
+            loadDriverLocations();
+            loadAvailablePackages();
+            
             if (typeof google !== 'undefined' && google.maps && map) {
-                loadDriverLocations();
-                loadAvailablePackages();
                 startAutoRefresh();
             } else {
-                setTimeout(checkMapInitialized, 100);
+                // Try again after a short delay
+                setTimeout(checkMapInitialized, 500);
             }
         }
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Load drivers immediately
+            loadDriverLocations();
+            loadAvailablePackages();
+            
+            // Also check for map initialization
             checkMapInitialized();
             window.addEventListener('beforeunload', stopAutoRefresh);
         });
