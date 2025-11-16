@@ -100,7 +100,14 @@ public class EmailServiceImpl implements EmailService {
             String apiKeyPreview = mailgunApiKey.length() > 10 
                 ? mailgunApiKey.substring(0, 10) + "..." + mailgunApiKey.substring(mailgunApiKey.length() - 4)
                 : "***";
-            logger.info("Initializing Mailgun with domain: {}, API key: {}", mailgunDomain, apiKeyPreview);
+            logger.info("Initializing Mailgun with domain: {}, API key length: {} chars, preview: {}", 
+                mailgunDomain, mailgunApiKey.length(), apiKeyPreview);
+            
+            // Validate API key format (Mailgun keys typically start with "key-" or are in format "xxx-xxx-xxx")
+            if (!mailgunApiKey.contains("-")) {
+                logger.warn("Mailgun API key format may be incorrect (expected format: key-xxx-xxx-xxx or xxx-xxx-xxx). " +
+                    "Please verify you're using the Private API key from Mailgun dashboard.");
+            }
             
             try {
                 // Create WebClient for Mailgun API
@@ -108,8 +115,11 @@ public class EmailServiceImpl implements EmailService {
                 String authString = "api:" + mailgunApiKey;
                 String encodedAuth = java.util.Base64.getEncoder().encodeToString(authString.getBytes());
                 
+                String baseUrl = "https://api.mailgun.net/v3/" + mailgunDomain;
+                logger.debug("Mailgun base URL: {}", baseUrl);
+                
                 mailgunWebClient = WebClient.builder()
-                    .baseUrl("https://api.mailgun.net/v3/" + mailgunDomain)
+                    .baseUrl(baseUrl)
                     .defaultHeader("Authorization", "Basic " + encodedAuth)
                     .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
                     .build();
@@ -252,13 +262,26 @@ public class EmailServiceImpl implements EmailService {
                                 // Provide helpful error messages based on status code
                                 if (clientResponse.statusCode().value() == 401) {
                                     mailgunAuthFailureCount++;
+                                    
+                                    // Log detailed diagnostic information
+                                    logger.error("Mailgun 401 Unauthorized - Diagnostic Info:");
+                                    logger.error("  - Domain: {}", mailgunDomain);
+                                    logger.error("  - From Address: {}", mailgunFromAddress);
+                                    logger.error("  - API Key Length: {} characters", mailgunApiKey.length());
+                                    logger.error("  - API Key Format: {} (should contain hyphens)", 
+                                        mailgunApiKey.contains("-") ? "Valid format" : "WARNING: May be invalid");
+                                    logger.error("  - Error Response: {}", errorBody);
+                                    
                                     errorMsg += " UNAUTHORIZED - Unauthorized. Check API key.\n" +
                                         "Troubleshooting steps:\n" +
                                         "1. Verify MAILGUN_API_KEY environment variable is set correctly\n" +
                                         "2. Check that the API key matches your Mailgun account\n" +
-                                        "3. Ensure the API key is for the correct domain\n" +
-                                        "4. Verify the domain in MAILGUN_DOMAIN matches the API key's domain\n" +
-                                        "5. Check Mailgun dashboard at https://app.mailgun.com/app/domains\n" +
+                                        "3. Ensure you're using the PRIVATE API key (not Public key)\n" +
+                                        "4. Ensure the API key is for the correct domain\n" +
+                                        "5. Verify the domain in MAILGUN_DOMAIN matches the API key's domain\n" +
+                                        "6. Check that domain '" + mailgunDomain + "' is verified in Mailgun dashboard\n" +
+                                        "7. Check Mailgun dashboard at https://app.mailgun.com/app/domains\n" +
+                                        "8. Verify domain status shows 'Active' or 'Verified'\n" +
                                         "Error details: " + errorBody;
                                     
                                     // Disable Mailgun after too many auth failures to prevent spam
