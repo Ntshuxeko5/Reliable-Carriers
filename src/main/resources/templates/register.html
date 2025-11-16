@@ -23,16 +23,16 @@
                             900: '#0c4a6e',
                         },
                         'reliable-yellow': {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            200: '#fed7aa',
-                            300: '#fdba74',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                            800: '#9a3412',
-                            900: '#7c2d12',
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
                         }
                     },
                     animation: {
@@ -502,7 +502,7 @@
             if (metCount < 2) {
                 return { percentage: 25, class: 'bg-red-500', text: 'Weak Password', textClass: 'text-red-600' };
             } else if (metCount === 2) {
-                return { percentage: 50, class: 'bg-orange-500', text: 'Fair Password', textClass: 'text-orange-600' };
+                return { percentage: 50, class: 'bg-reliable-yellow-500', text: 'Fair Password', textClass: 'text-reliable-yellow-600' };
             } else if (metCount === 3) {
                 return { percentage: 75, class: 'bg-yellow-500', text: 'Good Password', textClass: 'text-yellow-600' };
             } else if (metCount === 4) {
