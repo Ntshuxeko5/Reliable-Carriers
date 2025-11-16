@@ -143,16 +143,24 @@ If you see `401 UNAUTHORIZED - Unauthorized. Check API key`:
    - The API key must be for the domain specified in `MAILGUN_DOMAIN`
    - If you have multiple domains, use the API key for the correct domain
 
-5. **Sandbox Domain Issues**:
+5. **Region Mismatch (CRITICAL)**:
+   - **If your Mailgun account is EU region, you MUST set `MAILGUN_REGION=eu`**
+   - US accounts use `MAILGUN_REGION=us` (default)
+   - Using the wrong region endpoint causes 401 authentication errors
+   - Check your account region in Mailgun dashboard
+   - EU region uses: `https://api.eu.mailgun.net`
+   - US region uses: `https://api.mailgun.net`
+
+6. **Sandbox Domain Issues**:
    - Sandbox domains (e.g., `sandbox123.mailgun.org`) can only send to authorized recipients
    - For production, use a verified custom domain
    - Authorize recipients in Mailgun dashboard if using sandbox
 
-6. **IP Restrictions**:
+7. **IP Restrictions**:
    - Check if IP whitelisting is enabled in Mailgun
    - Add your server IPs to the whitelist if needed
 
-7. **Account Status**:
+8. **Account Status**:
    - Verify your Mailgun account is active
    - Check billing status if on paid plan
    - Free tier has limits but should still work
@@ -163,7 +171,15 @@ MAILGUN_ENABLED=true
 MAILGUN_API_KEY=your-mailgun-api-key-here
 MAILGUN_DOMAIN=your-verified-domain.com
 MAILGUN_FROM_EMAIL=noreply@your-verified-domain.com
+# IMPORTANT: Set region based on your Mailgun account location
+MAILGUN_REGION=us  # Use 'us' for US region, 'eu' for EU region
 ```
+
+**Region Configuration:**
+- **US Region** (default): `MAILGUN_REGION=us` → Uses `https://api.mailgun.net`
+- **EU Region**: `MAILGUN_REGION=eu` → Uses `https://api.eu.mailgun.net`
+
+**Important**: Using the wrong region will cause 401 authentication errors!
 
 **Note**: The application automatically falls back to SMTP if Mailgun fails, so emails will still be sent.
 
