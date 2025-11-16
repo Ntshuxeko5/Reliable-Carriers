@@ -333,10 +333,35 @@
             
             try {
                 console.log('Loading driver locations...');
-                const response = await fetch('/api/admin/drivers/tracking/all');
+                const token = getToken();
+                console.log('Token available:', token ? 'Yes' : 'No');
+                
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                
+                // Add Authorization header if token is available
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                    console.log('Added Authorization header');
+                } else {
+                    console.warn('No token found, using cookie-based authentication');
+                }
+                
+                const apiUrl = '/api/admin/drivers/tracking/all';
+                console.log('Fetching from:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: headers,
+                    credentials: 'include' // Include cookies for authentication
+                });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('API Error Response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
                 }
                 
                 const result = await response.json();
@@ -376,11 +401,29 @@
             } catch (error) {
                 console.error('Error loading driver locations:', error);
                 if (container) {
+                    let errorMessage = 'Error loading drivers';
+                    let errorDetails = 'Please try refreshing the page';
+                    
+                    if (error.message) {
+                        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                            errorMessage = 'Network Error';
+                            errorDetails = 'Unable to connect to the server. Please check your internet connection and try again.';
+                        } else if (error.message.includes('HTTP error')) {
+                            errorMessage = 'Server Error';
+                            errorDetails = error.message;
+                        } else {
+                            errorDetails = error.message;
+                        }
+                    }
+                    
                     container.innerHTML = `
                         <div class="text-center text-red-500 py-4">
                             <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
-                            <p>Error loading drivers</p>
-                            <p class="text-sm mt-2">${error.message || 'Please try refreshing the page'}</p>
+                            <p class="font-semibold">${errorMessage}</p>
+                            <p class="text-sm mt-2">${errorDetails}</p>
+                            <button onclick="loadDriverLocations()" class="mt-3 bg-reliable-600 hover:bg-reliable-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm">
+                                <i class="fas fa-redo mr-2"></i>Retry
+                            </button>
                         </div>
                     `;
                 }
