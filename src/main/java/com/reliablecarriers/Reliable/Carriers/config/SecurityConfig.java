@@ -53,6 +53,9 @@ public class SecurityConfig {
     private CustomLogoutHandler customLogoutHandler;
 
     @Autowired
+    private CustomLogoutSuccessHandler customLogoutSuccessHandler;
+
+    @Autowired
     private SessionAuthenticationFilter sessionAuthenticationFilter;
     
     @Autowired(required = false)
@@ -177,10 +180,10 @@ public class SecurityConfig {
         // Configure logout
         http.logout(logout -> logout
             .logoutUrl("/logout")
-            .logoutSuccessUrl("/login?logout=true")
             .invalidateHttpSession(true)
             .deleteCookies("JSESSIONID")
             .addLogoutHandler(customLogoutHandler)
+            .logoutSuccessHandler(customLogoutSuccessHandler)
             .permitAll()
         );
 
