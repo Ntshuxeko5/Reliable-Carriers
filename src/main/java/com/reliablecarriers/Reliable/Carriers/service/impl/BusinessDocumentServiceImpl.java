@@ -40,9 +40,26 @@ public class BusinessDocumentServiceImpl implements BusinessDocumentService {
     public BusinessDocument uploadDocument(User business, BusinessDocumentType documentType, MultipartFile file,
                                           Boolean isCertified, String certifiedBy, Date certificationDate, Date expiresAt) {
         try {
-            // Validate file
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("File is empty");
+            }
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isBlank()) {
+                throw new IllegalArgumentException("Invalid file name");
+            }
+            String contentType = file.getContentType() != null ? file.getContentType() : "";
+            long size = file.getSize();
+            if (size <= 0) {
+                throw new IllegalArgumentException("Invalid file size");
+            }
+            if (size > 10 * 1024 * 1024) {
+                throw new IllegalArgumentException("File exceeds 10MB limit");
+            }
+            boolean allowedType = contentType.equalsIgnoreCase("application/pdf") ||
+                                  contentType.equalsIgnoreCase("image/png") ||
+                                  contentType.equalsIgnoreCase("image/jpeg");
+            if (!allowedType) {
+                throw new IllegalArgumentException("Unsupported file type");
             }
             
             // Validate it's a certified copy (required for all documents)
@@ -54,21 +71,17 @@ public class BusinessDocumentServiceImpl implements BusinessDocumentService {
                 throw new IllegalArgumentException("Certified by name is required");
             }
             
-            // Create upload directory if it doesn't exist
             Path uploadPath = Paths.get(uploadDir);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
             
-            // Generate unique filename
-            String originalFilename = file.getOriginalFilename();
             String extension = originalFilename != null && originalFilename.contains(".") 
                 ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
                 : "";
             String uniqueFilename = UUID.randomUUID().toString() + extension;
             Path filePath = uploadPath.resolve(uniqueFilename);
             
-            // Save file
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
             
             // Create document record

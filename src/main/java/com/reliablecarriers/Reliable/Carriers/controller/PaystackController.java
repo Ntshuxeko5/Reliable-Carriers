@@ -34,6 +34,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 @RestController
 @RequestMapping("/api/paystack")
@@ -44,6 +46,8 @@ public class PaystackController {
     
     @Value("${app.base.url:http://localhost:8080}")
     private String appBaseUrl;
+    @Value("${paystack.webhook.secret:}")
+    private String paystackWebhookSecret;
     
     private final PaystackService paystackService;
     private final PaymentService paymentService;
@@ -361,13 +365,14 @@ public class PaystackController {
                 }
 
                 // Build redirect URL with all parameters - use /payment-success endpoint
-                String redirectUrl = String.format("/payment-success?reference=%s&trackingNumber=%s&tracking=%s&amount=%s&service=%s&email=%s&status=COMPLETED",
+                String redirectUrl = String.format("/payment-success?reference=%s&trackingNumber=%s&tracking=%s&amount=%s&service=%s&email=%s&status=COMPLETED%s",
                         URLEncoder.encode(reference, StandardCharsets.UTF_8),
                         URLEncoder.encode(trackingNumber != null ? trackingNumber : "", StandardCharsets.UTF_8),
                         URLEncoder.encode(trackingNumber != null ? trackingNumber : "", StandardCharsets.UTF_8),
                         URLEncoder.encode(amount.toString(), StandardCharsets.UTF_8),
                         URLEncoder.encode(serviceType, StandardCharsets.UTF_8),
-                        URLEncoder.encode(email, StandardCharsets.UTF_8));
+                        URLEncoder.encode(email, StandardCharsets.UTF_8),
+                        buildShipmentQueryParams(payment != null ? payment.getShipment() : null));
 
                 logger.info("=== REDIRECTING TO: " + redirectUrl + " ===");
 
@@ -717,16 +722,28 @@ public class PaystackController {
             shipment.setDropOffCode(dropOffCode);
             shipment.setStatus(ShipmentStatus.PENDING);
             shipment.setShippingCost(payment.getAmount());
-            shipment.setServiceType(ServiceType.ECONOMY); // Default service type
+            try {
+                if (serviceType != null && !serviceType.isBlank()) {
+                    shipment.setServiceType(ServiceType.valueOf(serviceType.toUpperCase()));
+                } else {
+                    shipment.setServiceType(ServiceType.ECONOMY);
+                }
+            } catch (Exception ex) {
+                shipment.setServiceType(ServiceType.ECONOMY);
+            }
             
-            // Set sender email if available - CRITICAL: This must succeed for packages to be visible
             User sender = null;
-            if (email != null && !email.isEmpty()) {
-                // Try to find existing user or create a basic one
+            try {
+                if (payment.getUser() != null) {
+                    sender = payment.getUser();
+                    System.out.println("Using authenticated payment user as sender: " + sender.getEmail());
+                }
+            } catch (Exception ignored) {}
+
+            if (sender == null && email != null && !email.isEmpty()) {
                 try {
                     sender = userRepository.findByEmail(email).orElse(null);
                     if (sender == null) {
-                        // Create a basic user record
                         sender = new User();
                         sender.setEmail(email);
                         sender.setFirstName("Customer");
@@ -735,14 +752,16 @@ public class PaystackController {
                         sender = userRepository.save(sender);
                         System.out.println("Created new user for email: " + email);
                     }
-                    shipment.setSender(sender);
-                    System.out.println("Set sender for shipment: " + sender.getEmail());
                 } catch (Exception e) {
                     System.err.println("CRITICAL: Could not create/find user for email: " + email);
                     System.err.println("Error: " + e.getMessage());
                     e.printStackTrace();
-                    // Still try to set recipient email even if sender creation fails
                 }
+            }
+
+            if (sender != null) {
+                shipment.setSender(sender);
+                System.out.println("Set sender for shipment: " + sender.getEmail());
             }
             
             // Set shipment details from extracted data
@@ -1342,5 +1361,141 @@ public class PaystackController {
         response.put("dropOffCode", shipment.getDropOffCode());
         
         return response;
+    }
+
+    private String buildShipmentQueryParams(Shipment shipment) {
+        if (shipment == null) {
+            return "";
+        }
+        try {
+            StringBuilder sb = new StringBuilder();
+            if (shipment.getCollectionCode() != null) {
+                sb.append("&collectionCode=")
+                  .append(URLEncoder.encode(shipment.getCollectionCode(), StandardCharsets.UTF_8));
+            }
+            if (shipment.getDropOffCode() != null) {
+                sb.append("&dropOffCode=")
+                  .append(URLEncoder.encode(shipment.getDropOffCode(), StandardCharsets.UTF_8));
+            }
+            if (shipment.getPickupAddress() != null) {
+                sb.append("&pickupAddress=")
+                  .append(URLEncoder.encode(shipment.getPickupAddress(), StandardCharsets.UTF_8));
+            }
+            if (shipment.getPickupCity() != null) {
+                sb.append("&pickupCity=")
+                  .append(URLEncoder.encode(shipment.getPickupCity(), StandardCharsets.UTF_8));
+            }
+            if (shipment.getPickupCountry() != null) {
+                sb.append("&pickupCountry=")
+                  .append(URLEncoder.encode(shipment.getPickupCountry(), StandardCharsets.UTF_8));
+            }
+            if (shipment.getDeliveryAddress() != null) {
+                sb.append("&deliveryAddress=")
+                  .append(URLEncoder.encode(shipment.getDeliveryAddress(), StandardCharsets.UTF_8));
+            }
+            if (shipment.getDeliveryCity() != null) {
+                sb.append("&deliveryCity=")
+                  .append(URLEncoder.encode(shipment.getDeliveryCity(), StandardCharsets.UTF_8));
+            }
+            if (shipment.getDeliveryCountry() != null) {
+                sb.append("&deliveryCountry=")
+                  .append(URLEncoder.encode(shipment.getDeliveryCountry(), StandardCharsets.UTF_8));
+            }
+            if (shipment.getSender() != null) {
+                String name = (shipment.getSender().getFirstName() != null ? shipment.getSender().getFirstName() : "") +
+                              (shipment.getSender().getLastName() != null ? (" " + shipment.getSender().getLastName()) : "");
+                if (!name.isBlank()) {
+                    sb.append("&customerName=")
+                      .append(URLEncoder.encode(name, StandardCharsets.UTF_8));
+                }
+                if (shipment.getSender().getPhone() != null) {
+                    sb.append("&customerPhone=")
+                      .append(URLEncoder.encode(shipment.getSender().getPhone(), StandardCharsets.UTF_8));
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    @PostMapping("/webhook")
+    public ResponseEntity<Map<String, Object>> handleWebhook(@RequestBody String payload,
+                                                             @RequestHeader(value = "X-Paystack-Signature", required = false) String signature) {
+        try {
+            if (paystackWebhookSecret == null || paystackWebhookSecret.isBlank()) {
+                return ResponseEntity.status(500).body(Map.of("success", false, "error", "Webhook secret not configured"));
+            }
+            if (signature == null || !verifySignature(payload, signature)) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "error", "Invalid signature"));
+            }
+            Map<String, Object> event = objectMapper.readValue(payload, new TypeReference<Map<String, Object>>(){});
+            Object dataObj = event.get("data");
+            Map<String, Object> dataMap = objectMapper.convertValue(dataObj, new TypeReference<Map<String,Object>>(){});
+            String reference = dataMap.get("reference") != null ? String.valueOf(dataMap.get("reference")) : null;
+            String status = dataMap.get("status") != null ? String.valueOf(dataMap.get("status")) : null;
+            if (reference == null) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Missing reference"));
+            }
+            Payment payment = paymentRepository.findByTransactionId(reference).orElse(null);
+            if (payment == null) {
+                return ResponseEntity.ok(Map.of("success", true));
+            }
+            boolean completed = "success".equalsIgnoreCase(status) || "completed".equalsIgnoreCase(status);
+            if (completed) {
+                if (payment.getStatus() != PaymentStatus.COMPLETED) {
+                    payment.setStatus(PaymentStatus.COMPLETED);
+                    payment.setPaymentDate(new java.util.Date());
+                    paymentRepository.save(payment);
+                }
+                if (payment.getShipment() == null) {
+                    String email = "customer@example.com";
+                    String serviceType = "OVERNIGHT";
+                    String notes = payment.getNotes();
+                    if (notes != null && notes.contains("|")) {
+                        try {
+                            String[] parts = notes.split("\\|");
+                            for (String part : parts) {
+                                if (part.contains(":")) {
+                                    String[] kv = part.split(":", 2);
+                                    if (kv.length == 2) {
+                                        String k = kv[0].trim();
+                                        String v = kv[1].trim();
+                                        if ("email".equals(k)) email = v;
+                                        if ("serviceType".equals(k)) serviceType = v;
+                                    }
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    Shipment shipment = createShipmentFromPaymentData(payment, email, serviceType);
+                    if (shipment != null) {
+                        try {
+                            sendPaymentConfirmationEmail(shipment, payment);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    private boolean verifySignature(String payload, String signature) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA512");
+            SecretKeySpec keySpec = new SecretKeySpec(paystackWebhookSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
+            mac.init(keySpec);
+            byte[] digest = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            String computed = sb.toString();
+            return computed.equalsIgnoreCase(signature);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
