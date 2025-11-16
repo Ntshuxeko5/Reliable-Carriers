@@ -76,6 +76,16 @@ public class CustomerProfileController {
             profile.put("createdAt", user.getCreatedAt());
             profile.put("updatedAt", user.getUpdatedAt());
             
+            // Include business-related fields for business users
+            if (user.getIsBusiness() != null && user.getIsBusiness()) {
+                profile.put("isBusiness", true);
+                profile.put("businessName", user.getBusinessName());
+                profile.put("businessVerificationStatus", user.getBusinessVerificationStatus() != null ? 
+                    user.getBusinessVerificationStatus().toString() : "PENDING");
+            } else {
+                profile.put("isBusiness", false);
+            }
+            
             return ResponseEntity.ok(profile);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Documents - Reliable Carriers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                <span class="gradient-text">Business Documents</span>
+            </h1>
+            <p class="text-xl text-gray-600">Upload your business documents for verification</p>
+        </div>
+
+        <!-- Important Notice -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-6 mb-8 rounded">
+            <div class="flex items-start">
+                <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl mr-4 mt-1"></i>
+                <div>
+                    <h3 class="text-lg font-semibold text-yellow-900 mb-2">Important: All Documents Must Be Certified Copies</h3>
+                    <p class="text-yellow-800 mb-2">
+                        All business documents must be certified copies. Documents can be certified by:
+                    </p>
+                    <ul class="list-disc list-inside text-yellow-800 space-y-1">
+                        <li>Commissioner of Oaths</li>
+                        <li>Notary Public</li>
+                        <li>Police Officer (Station Commander or higher)</li>
+                        <li>Bank Manager</li>
+                        <li>Post Office Manager</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Required Documents Section -->
+        <div class="glass-effect rounded-2xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-file-check text-blue-600 mr-2"></i>Required Documents
+            </h2>
+            <div id="requiredDocumentsList" class="space-y-4">
+                <div class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-2xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">Loading required documents...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Document Form -->
+        <div class="glass-effect rounded-2xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-upload text-green-600 mr-2"></i>Upload Document
+            </h2>
+            <form id="documentUploadForm" class="space-y-6" enctype="multipart/form-data">
+                <div>
+                    <label for="documentType" class="block text-sm font-medium text-gray-700 mb-2">
+                        Document Type *
+                    </label>
+                    <select id="documentType" name="documentType" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Select document type...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="documentFile" class="block text-sm font-medium text-gray-700 mb-2">
+                        Document File * (PDF, PNG, JPG - Max 10MB)
+                    </label>
+                    <input type="file" id="documentFile" name="file" accept=".pdf,.png,.jpg,.jpeg" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="text-sm text-gray-500 mt-1">Accepted formats: PDF, PNG, JPG, JPEG</p>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-blue-900 mb-2">Certification Information (Required)</h4>
+                    <p class="text-sm text-blue-800 mb-4">
+                        All documents must be certified copies. Please provide the following information:
+                    </p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="certifiedBy" class="block text-sm font-medium text-blue-900 mb-2">
+                                Certified By (Name of Certifying Officer) *
+                            </label>
+                            <input type="text" id="certifiedBy" name="certifiedBy" required
+                                   class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="e.g., John Smith - Commissioner of Oaths">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="certificationDate" class="block text-sm font-medium text-blue-900 mb-2">
+                                    Certification Date *
+                                </label>
+                                <input type="date" id="certificationDate" name="certificationDate" required
+                                       class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+
+                            <div>
+                                <label for="expiresAt" class="block text-sm font-medium text-blue-900 mb-2">
+                                    Expiry Date (if applicable)
+                                </label>
+                                <input type="date" id="expiresAt" name="expiresAt"
+                                       class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-upload mr-2"></i>Upload Document
+                    </button>
+                    <button type="reset" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-redo mr-2"></i>Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Uploaded Documents Section -->
+        <div class="glass-effect rounded-2xl shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-folder-open text-purple-600 mr-2"></i>Uploaded Documents
+            </h2>
+            <div id="uploadedDocumentsList" class="space-y-4">
+                <div class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-2xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">Loading documents...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let requiredDocuments = [];
+        let uploadedDocuments = [];
+
+        // Load required documents
+        async function loadRequiredDocuments() {
+            try {
+                const response = await fetch('/api/business/documents/required', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    requiredDocuments = data.required || [];
+                    
+                    // Populate document type dropdown
+                    const documentTypeSelect = document.getElementById('documentType');
+                    documentTypeSelect.innerHTML = '<option value="">Select document type...</option>';
+                    
+                    // Add required documents
+                    requiredDocuments.forEach(doc => {
+                        const option = document.createElement('option');
+                        option.value = doc.type;
+                        option.textContent = doc.name;
+                        option.dataset.required = 'true';
+                        documentTypeSelect.appendChild(option);
+                    });
+                    
+                    // Add optional documents
+                    if (data.optional) {
+                        data.optional.forEach(doc => {
+                            const option = document.createElement('option');
+                            option.value = doc.type;
+                            option.textContent = doc.name + ' (Optional)';
+                            option.dataset.required = 'false';
+                            documentTypeSelect.appendChild(option);
+                        });
+                    }
+                    
+                    // Display required documents list
+                    displayRequiredDocuments(requiredDocuments);
+                }
+            } catch (error) {
+                console.error('Error loading required documents:', error);
+                document.getElementById('requiredDocumentsList').innerHTML = 
+                    '<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Error loading required documents</p></div>';
+            }
+        }
+
+        function displayRequiredDocuments(docs) {
+            const container = document.getElementById('requiredDocumentsList');
+            
+            if (docs.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No required documents found.</p>';
+                return;
+            }
+            
+            container.innerHTML = docs.map(doc => {
+                const uploaded = uploadedDocuments.find(ud => ud.documentType === doc.type);
+                const status = uploaded ? uploaded.verificationStatus : 'NOT_UPLOADED';
+                const statusClass = status === 'VERIFIED' ? 'bg-green-100 text-green-800' :
+                                   status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                   status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                   'bg-gray-100 text-gray-800';
+                const statusText = status === 'VERIFIED' ? 'Verified' :
+                                  status === 'PENDING' ? 'Pending Review' :
+                                  status === 'REJECTED' ? 'Rejected' :
+                                  'Not Uploaded';
+                
+                return `
+                    <div class="border border-gray-200 rounded-lg p-4 ${uploaded ? 'bg-green-50' : 'bg-white'}">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900">${doc.name}</h4>
+                                <p class="text-sm text-gray-600 mt-1">${doc.description}</p>
+                                ${uploaded ? `
+                                    <p class="text-xs text-gray-500 mt-2">
+                                        <i class="fas fa-file mr-1"></i>${uploaded.fileName}
+                                        <br>
+                                        <i class="fas fa-calendar mr-1"></i>Uploaded: ${new Date(uploaded.createdAt).toLocaleDateString()}
+                                        ${uploaded.certifiedBy ? `<br><i class="fas fa-stamp mr-1"></i>Certified by: ${uploaded.certifiedBy}` : ''}
+                                    </p>
+                                ` : ''}
+                            </div>
+                            <div class="ml-4">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusClass}">
+                                    ${statusText}
+                                </span>
+                            </div>
+                        </div>
+                        ${uploaded && uploaded.rejectionReason ? `
+                            <div class="mt-3 bg-red-50 border border-red-200 rounded p-3">
+                                <p class="text-sm text-red-800">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    <strong>Rejection Reason:</strong> ${uploaded.rejectionReason}
+                                </p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load uploaded documents
+        async function loadUploadedDocuments() {
+            try {
+                const response = await fetch('/api/business/documents', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    uploadedDocuments = data.data || [];
+                    
+                    // Refresh required documents display to show status
+                    displayRequiredDocuments(requiredDocuments);
+                    
+                    // Display uploaded documents list
+                    displayUploadedDocuments(uploadedDocuments);
+                }
+            } catch (error) {
+                console.error('Error loading uploaded documents:', error);
+                document.getElementById('uploadedDocumentsList').innerHTML = 
+                    '<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Error loading documents</p></div>';
+            }
+        }
+
+        function displayUploadedDocuments(docs) {
+            const container = document.getElementById('uploadedDocumentsList');
+            
+            if (docs.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-folder-open text-3xl mb-2"></i><p>No documents uploaded yet</p></div>';
+                return;
+            }
+            
+            container.innerHTML = docs.map(doc => {
+                const statusClass = doc.verificationStatus === 'VERIFIED' ? 'bg-green-100 text-green-800' :
+                                   doc.verificationStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                   doc.verificationStatus === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                   'bg-gray-100 text-gray-800';
+                const statusText = doc.verificationStatus === 'VERIFIED' ? 'Verified' :
+                                  doc.verificationStatus === 'PENDING' ? 'Pending Review' :
+                                  doc.verificationStatus === 'REJECTED' ? 'Rejected' :
+                                  'Unknown';
+                
+                return `
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900">${doc.documentTypeName}</h4>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    <i class="fas fa-file mr-1"></i>${doc.fileName}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    <i class="fas fa-calendar mr-1"></i>Uploaded: ${new Date(doc.createdAt).toLocaleDateString()}
+                                    ${doc.certifiedBy ? `<br><i class="fas fa-stamp mr-1"></i>Certified by: ${doc.certifiedBy}` : ''}
+                                    ${doc.certificationDate ? `<br><i class="fas fa-calendar-check mr-1"></i>Certified on: ${new Date(doc.certificationDate).toLocaleDateString()}` : ''}
+                                </p>
+                            </div>
+                            <div class="ml-4 flex items-center space-x-2">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusClass}">
+                                    ${statusText}
+                                </span>
+                                <button onclick="deleteDocument(${doc.id})" class="text-red-600 hover:text-red-800" title="Delete document">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        ${doc.rejectionReason ? `
+                            <div class="mt-3 bg-red-50 border border-red-200 rounded p-3">
+                                <p class="text-sm text-red-800">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    <strong>Rejection Reason:</strong> ${doc.rejectionReason}
+                                </p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Handle form submission
+        document.getElementById('documentUploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const fileInput = document.getElementById('documentFile');
+            const documentType = document.getElementById('documentType').value;
+            const certifiedBy = document.getElementById('certifiedBy').value;
+            const certificationDate = document.getElementById('certificationDate').value;
+            const expiresAt = document.getElementById('expiresAt').value;
+            
+            if (!fileInput.files[0]) {
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            if (!documentType) {
+                alert('Please select a document type');
+                return;
+            }
+            
+            formData.append('file', fileInput.files[0]);
+            formData.append('documentType', documentType);
+            formData.append('isCertified', 'true'); // All business documents must be certified
+            formData.append('certifiedBy', certifiedBy);
+            if (certificationDate) {
+                formData.append('certificationDate', certificationDate);
+            }
+            if (expiresAt) {
+                formData.append('expiresAt', expiresAt);
+            }
+            
+            try {
+                const submitButton = this.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
+                
+                const response = await fetch('/api/business/documents/upload', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Document uploaded successfully! Awaiting admin verification.');
+                    this.reset();
+                    loadUploadedDocuments();
+                    loadRequiredDocuments();
+                } else {
+                    alert('Error uploading document: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error uploading document:', error);
+                alert('Error uploading document. Please try again.');
+            } finally {
+                const submitButton = this.querySelector('button[type="submit"]');
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Document';
+            }
+        });
+
+        // Delete document
+        async function deleteDocument(documentId) {
+            if (!confirm('Are you sure you want to delete this document?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/business/documents/${documentId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Document deleted successfully');
+                    loadUploadedDocuments();
+                    loadRequiredDocuments();
+                } else {
+                    alert('Error deleting document: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting document:', error);
+                alert('Error deleting document. Please try again.');
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRequiredDocuments();
+            loadUploadedDocuments();
+        });
+    </script>
+</body>
+</html>
+

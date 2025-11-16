@@ -91,6 +91,12 @@ public class WebController {
         analytics.put("active", "analytics".equals(activePage));
         links.add(analytics);
         
+        Map<String, Object> documents = new HashMap<>();
+        documents.put("label", "Documents");
+        documents.put("url", "/business/documents");
+        documents.put("active", "documents".equals(activePage));
+        links.add(documents);
+        
         // Business-specific pages (invoices, webhooks, API keys)
         Map<String, Object> invoices = new HashMap<>();
         invoices.put("label", "Invoices");
@@ -343,6 +349,28 @@ public class WebController {
             model.addAttribute("navLinks", createBusinessNavLinks("analytics"));
             model.addAttribute("user", currentUser);
             return "business/analytics";
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
+    }
+
+    @GetMapping("/business/documents")
+    public String businessDocuments(Model model) {
+        try {
+            User currentUser = authService.getCurrentUser();
+            if (currentUser == null) {
+                return "redirect:/login";
+            }
+            
+            // Verify user is a business user
+            if (currentUser.getIsBusiness() == null || !currentUser.getIsBusiness()) {
+                return "redirect:/customer";
+            }
+            
+            // Allow access even if pending - they need to upload documents
+            model.addAttribute("navLinks", createBusinessNavLinks("documents"));
+            model.addAttribute("user", currentUser);
+            return "business/documents";
         } catch (Exception e) {
             return "redirect:/login";
         }

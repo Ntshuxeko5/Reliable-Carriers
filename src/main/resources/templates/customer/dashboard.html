@@ -291,6 +291,37 @@
 
     <!-- Main Content -->
     <div class="bg-gray-50 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-800">
+        <!-- Business Document Upload Notification Banner -->
+        <div id="businessDocumentBanner" class="hidden mb-6">
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg shadow-lg">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 text-3xl"></i>
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <h3 class="text-lg font-semibold text-yellow-900 mb-2">
+                            Action Required: Upload Business Documents
+                        </h3>
+                        <p class="text-yellow-800 mb-4">
+                            Your business account is pending verification. To complete your registration and get approved, 
+                            please upload all required business documents. All documents must be certified copies.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <a href="/business/documents" class="inline-flex items-center justify-center bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors">
+                                <i class="fas fa-upload mr-2"></i>Upload Documents Now
+                            </a>
+                            <a href="/waiting-approval" class="inline-flex items-center justify-center bg-yellow-100 hover:bg-yellow-200 text-yellow-900 font-semibold px-6 py-3 rounded-lg transition-colors">
+                                <i class="fas fa-info-circle mr-2"></i>Learn More
+                            </a>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('businessDocumentBanner').classList.add('hidden')" class="ml-4 text-yellow-600 hover:text-yellow-800">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
         <!-- Welcome Section -->
         <div class="text-center mb-12">
             <div class="welcome-section p-8 mb-8 hover-lift">
@@ -876,12 +907,11 @@
         // Check authentication and load user data
         async function checkAuthAndLoadUser() {
             const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-            if (!token) return;
             
             try {
                 const response = await fetch('/api/customer/profile', {
                     headers: {
-                        'Authorization': 'Bearer ' + token,
+                        'Authorization': token ? 'Bearer ' + token : undefined,
                         'Content-Type': 'application/json'
                     },
                     credentials: 'include'
@@ -889,6 +919,40 @@
                 
                 if (response.ok) {
                     const userData = await response.json();
+                    
+                    // Check if user is a business with pending verification
+                    if (userData && userData.isBusiness) {
+                        const verificationStatus = userData.businessVerificationStatus;
+                        if (!verificationStatus || verificationStatus === 'PENDING' || verificationStatus === 'UNDER_REVIEW') {
+                            // Check if they have uploaded documents
+                            try {
+                                const docsResponse = await fetch('/api/business/documents', {
+                                    credentials: 'include'
+                                });
+                                if (docsResponse.ok) {
+                                    const docsData = await docsResponse.json();
+                                    const hasDocuments = docsData.data && docsData.data.length > 0;
+                                    
+                                    // Show banner if pending/under review or if no documents uploaded
+                                    if (verificationStatus === 'PENDING' || !hasDocuments) {
+                                        document.getElementById('businessDocumentBanner').classList.remove('hidden');
+                                    }
+                                } else {
+                                    // If we can't check documents, show banner if pending
+                                    if (verificationStatus === 'PENDING') {
+                                        document.getElementById('businessDocumentBanner').classList.remove('hidden');
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('Error checking documents:', error);
+                                // Show banner if pending status
+                                if (verificationStatus === 'PENDING') {
+                                    document.getElementById('businessDocumentBanner').classList.remove('hidden');
+                                }
+                            }
+                        }
+                    }
+                    
                     // Update page with user data if Thymeleaf didn't load it
                     if (userData && !document.querySelector('[th\\:if="${isAuthenticated}"]')) {
                         const welcomeElement = document.querySelector('h1');
