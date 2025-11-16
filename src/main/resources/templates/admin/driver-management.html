@@ -676,46 +676,89 @@
         
         // Load available packages
         async function loadAvailablePackages() {
+            const container = document.getElementById('availablePackagesList');
+            
             try {
-                const response = await fetch('/api/admin/drivers/available-packages', {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include'
+                console.log('Loading available packages...');
+                const token = getToken();
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                
+                // Add Authorization header if token is available
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                
+                const apiUrl = '/api/admin/drivers/available-packages';
+                console.log('Fetching packages from:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: headers,
+                    credentials: 'include' // Include cookies for authentication
                 });
                 
                 if (!response.ok) {
-                    console.error('Error loading packages:', response.status, response.statusText);
-                    const container = document.getElementById('availablePackagesList');
-                    if (container) {
-                        container.innerHTML = `
-                            <div class="text-center text-red-500 py-4">
-                                <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
-                                <p>Error loading packages: ${response.status}</p>
-                            </div>
-                        `;
-                    }
-                    return;
+                    const errorText = await response.text();
+                    console.error('API Error Response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
                 }
                 
                 const packages = await response.json();
+                console.log('Available packages response:', packages);
                 
                 // Handle both array and wrapped response
-                const packageList = Array.isArray(packages) ? packages : (packages.data || packages.packages || []);
+                let packageList = [];
+                if (Array.isArray(packages)) {
+                    packageList = packages;
+                } else if (packages.data && Array.isArray(packages.data)) {
+                    packageList = packages.data;
+                } else if (packages.packages && Array.isArray(packages.packages)) {
+                    packageList = packages.packages;
+                } else if (packages.success && packages.data && Array.isArray(packages.data)) {
+                    packageList = packages.data;
+                }
+                
+                console.log(`Loaded ${packageList.length} available packages`);
                 
                 updateAvailablePackagesList(packageList);
                 if (document.getElementById('availablePackages')) {
                     document.getElementById('availablePackages').textContent = packageList.length;
                 }
                 
+                // Show error if result indicates an error
+                if (packages.error || (packages.message && !packages.success)) {
+                    throw new Error(packages.error || packages.message || 'Failed to load packages');
+                }
+                
             } catch (error) {
                 console.error('Error loading available packages:', error);
-                const container = document.getElementById('availablePackagesList');
                 if (container) {
+                    let errorMessage = 'Error loading packages';
+                    let errorDetails = 'Please try refreshing the page';
+                    
+                    if (error.message) {
+                        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                            errorMessage = 'Network Error';
+                            errorDetails = 'Unable to connect to the server. Please check your internet connection and try again.';
+                        } else if (error.message.includes('HTTP error')) {
+                            errorMessage = 'Server Error';
+                            errorDetails = error.message;
+                        } else {
+                            errorDetails = error.message;
+                        }
+                    }
+                    
                     container.innerHTML = `
                         <div class="text-center text-red-500 py-4">
                             <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
-                            <p>Error loading packages</p>
+                            <p class="font-semibold">${errorMessage}</p>
+                            <p class="text-sm mt-2">${errorDetails}</p>
+                            <button onclick="loadAvailablePackages()" class="mt-3 bg-reliable-600 hover:bg-reliable-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm">
+                                <i class="fas fa-redo mr-2"></i>Retry
+                            </button>
                         </div>
                     `;
                 }
@@ -726,7 +769,12 @@
         function updateAvailablePackagesList(packages) {
             const container = document.getElementById('availablePackagesList');
             
-            if (packages.length === 0) {
+            if (!container) {
+                console.error('Available packages list container not found');
+                return;
+            }
+            
+            if (!packages || packages.length === 0) {
                 container.innerHTML = `
                     <div class="text-center text-gray-500 py-4">
                         <i class="fas fa-box-open text-2xl mb-2"></i>
@@ -736,19 +784,36 @@
                 return;
             }
             
-            container.innerHTML = packages.map(pkg => `
+            // Helper function to escape HTML and prevent XSS
+            const escapeHtml = (text) => {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+            
+            container.innerHTML = packages.map(pkg => {
+                const trackingNumber = escapeHtml(pkg.trackingNumber || 'N/A');
+                const recipientName = escapeHtml(pkg.recipientName || 'N/A');
+                const deliveryCity = escapeHtml(pkg.deliveryCity || '');
+                const deliveryState = escapeHtml(pkg.deliveryState || '');
+                const packageId = pkg.id || pkg.packageId || 0;
+                const isSelected = selectedPackages.has(packageId);
+                
+                return `
                 <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors duration-200" 
-                     onclick="togglePackageSelection(${pkg.id}, '${pkg.trackingNumber}')">
+                     onclick="togglePackageSelection(${packageId}, '${trackingNumber.replace(/'/g, "\\'")}')">
                     <div class="flex items-center">
-                        <input type="checkbox" id="pkg-${pkg.id}" class="mr-3" ${selectedPackages.has(pkg.id) ? 'checked' : ''}>
+                        <input type="checkbox" id="pkg-${packageId}" class="mr-3" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation();">
                         <div class="flex-1">
-                            <h4 class="font-semibold text-gray-900 text-sm">${pkg.trackingNumber}</h4>
-                            <p class="text-xs text-gray-600">${pkg.recipientName}</p>
-                            <p class="text-xs text-gray-500">${pkg.deliveryCity}, ${pkg.deliveryState}</p>
+                            <h4 class="font-semibold text-gray-900 text-sm">${trackingNumber}</h4>
+                            <p class="text-xs text-gray-600">${recipientName}</p>
+                            ${deliveryCity || deliveryState ? `<p class="text-xs text-gray-500">${deliveryCity}${deliveryCity && deliveryState ? ', ' : ''}${deliveryState}</p>` : ''}
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
         
         // Toggle package selection
