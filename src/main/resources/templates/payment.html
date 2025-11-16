@@ -123,14 +123,14 @@
                                     <i class="fas fa-hand-holding-box text-blue-500 mt-1 mr-2"></i>
                                     <div>
                                         <div class="text-sm text-gray-600">Pickup from:</div>
-                                        <div class="font-medium text-gray-800" id="pickupAddressDisplay">123 Main Street, Johannesburg</div>
+                                        <div class="font-medium text-gray-800" id="pickupAddressDisplay">Loading address...</div>
                                     </div>
                                 </div>
                                 <div class="flex items-start">
                                     <i class="fas fa-truck text-green-500 mt-1 mr-2"></i>
                                     <div>
                                         <div class="text-sm text-gray-600">Deliver to:</div>
-                                        <div class="font-medium text-gray-800" id="deliveryAddressDisplay">456 Oak Avenue, Pretoria</div>
+                                        <div class="font-medium text-gray-800" id="deliveryAddressDisplay">Loading address...</div>
                                     </div>
                                 </div>
                             </div>
@@ -345,16 +345,47 @@
                     });
                     
                     if (response.ok) {
-                        const booking = await response.json();
+                        const result = await response.json();
+                        // Handle both wrapped response (result.booking) and direct booking object
+                        const booking = result.booking || result;
                         currentBooking = booking;
                         
                         // Update display with booking data
                         if (booking.serviceType) {
-                            document.getElementById('serviceType').textContent = booking.serviceType;
+                            // Handle enum object - get displayName if it's an object, otherwise use as string
+                            let serviceTypeText = booking.serviceType;
+                            if (typeof booking.serviceType === 'object' && booking.serviceType.displayName) {
+                                serviceTypeText = booking.serviceType.displayName;
+                            } else if (typeof booking.serviceType === 'object' && booking.serviceType.name) {
+                                // Convert enum name to readable format
+                                serviceTypeText = booking.serviceType.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            } else if (typeof booking.serviceType === 'string') {
+                                serviceTypeText = booking.serviceType;
+                            }
+                            document.getElementById('serviceType').textContent = serviceTypeText;
                         }
-                        if (booking.distanceKm || booking.distance) {
-                            const distance = booking.distanceKm || booking.distance;
-                            document.getElementById('distance').textContent = distance + ' km';
+                        // Try to get distance from booking, quote data, or calculate from coordinates
+                        let distance = null;
+                        if (booking.distanceKm) {
+                            distance = booking.distanceKm;
+                        } else if (booking.distance) {
+                            distance = booking.distance;
+                        } else if (sessionStorage.getItem('quoteDistance')) {
+                            distance = parseFloat(sessionStorage.getItem('quoteDistance'));
+                        } else if (booking.pickupLatitude && booking.pickupLongitude && 
+                                   booking.deliveryLatitude && booking.deliveryLongitude) {
+                            // Calculate distance from coordinates if available
+                            distance = calculateDistanceFromCoords(
+                                booking.pickupLatitude, booking.pickupLongitude,
+                                booking.deliveryLatitude, booking.deliveryLongitude
+                            );
+                        }
+                        if (distance) {
+                            document.getElementById('distance').textContent = distance.toFixed(1) + ' km';
+                        } else {
+                            // Hide distance if not available
+                            const distanceElement = document.getElementById('distance').parentElement;
+                            if (distanceElement) distanceElement.style.display = 'none';
                         }
                         if (booking.weight || booking.weightKg) {
                             const weight = booking.weight || booking.weightKg;
@@ -391,11 +422,43 @@
                                 console.error('No amount found in booking or sessionStorage');
                             }
                         }
+                        // Construct full addresses from components
+                        let pickupAddr = '';
                         if (booking.pickupAddress) {
-                            document.getElementById('pickupAddressDisplay').textContent = booking.pickupAddress;
+                            const parts = [booking.pickupAddress];
+                            if (booking.pickupCity) parts.push(booking.pickupCity);
+                            if (booking.pickupState) parts.push(booking.pickupState);
+                            if (booking.pickupPostalCode) parts.push(booking.pickupPostalCode);
+                            pickupAddr = parts.join(', ');
                         }
+                        
+                        let deliveryAddr = '';
                         if (booking.deliveryAddress) {
-                            document.getElementById('deliveryAddressDisplay').textContent = booking.deliveryAddress;
+                            const parts = [booking.deliveryAddress];
+                            if (booking.deliveryCity) parts.push(booking.deliveryCity);
+                            if (booking.deliveryState) parts.push(booking.deliveryState);
+                            if (booking.deliveryPostalCode) parts.push(booking.deliveryPostalCode);
+                            deliveryAddr = parts.join(', ');
+                        }
+                        
+                        if (pickupAddr) {
+                            document.getElementById('pickupAddressDisplay').textContent = pickupAddr;
+                        }
+                        if (deliveryAddr) {
+                            document.getElementById('deliveryAddressDisplay').textContent = deliveryAddr;
+                        }
+                        // Update customer name from booking
+                        if (booking.customerName) {
+                            document.getElementById('customerName').textContent = booking.customerName;
+                        } else if (booking.customerFirstName || booking.customerLastName) {
+                            const fullName = (booking.customerFirstName || '') + ' ' + (booking.customerLastName || '');
+                            if (fullName.trim()) {
+                                document.getElementById('customerName').textContent = fullName.trim();
+                            }
+                        }
+                        // Update customer email from booking
+                        if (booking.customerEmail) {
+                            document.getElementById('customerEmail').textContent = booking.customerEmail;
                         }
                         // Update customer name from booking
                         if (booking.customerName) {
@@ -497,20 +560,94 @@
             document.getElementById('payButtonText').textContent = 'Pay R' + parseFloat(totalAmount).toFixed(2) + ' Securely';
             
             // Load addresses if provided
-            const pickupAddress = urlParams.get('pickupAddress');
-            const deliveryAddress = urlParams.get('deliveryAddress');
+            // Construct full addresses from URL params if available
+            const pickupAddrFromUrl = urlParams.get('pickupAddress');
+            const deliveryAddrFromUrl = urlParams.get('deliveryAddress');
             
-            if (pickupAddress) {
-                document.getElementById('pickupAddressDisplay').textContent = pickupAddress;
+            if (pickupAddrFromUrl) {
+                const parts = [pickupAddrFromUrl];
+                if (urlParams.get('pickupCity')) parts.push(urlParams.get('pickupCity'));
+                if (urlParams.get('pickupState')) parts.push(urlParams.get('pickupState'));
+                if (urlParams.get('pickupPostalCode')) parts.push(urlParams.get('pickupPostalCode'));
+                document.getElementById('pickupAddressDisplay').textContent = parts.join(', ');
             }
-            if (deliveryAddress) {
-                document.getElementById('deliveryAddressDisplay').textContent = deliveryAddress;
+            
+            if (deliveryAddrFromUrl) {
+                const parts = [deliveryAddrFromUrl];
+                if (urlParams.get('deliveryCity')) parts.push(urlParams.get('deliveryCity'));
+                if (urlParams.get('deliveryState')) parts.push(urlParams.get('deliveryState'));
+                if (urlParams.get('deliveryPostalCode')) parts.push(urlParams.get('deliveryPostalCode'));
+                document.getElementById('deliveryAddressDisplay').textContent = parts.join(', ');
             }
         }
 
         // Initialize payment for booking
+        // Calculate distance from coordinates using Haversine formula
+        function calculateDistanceFromCoords(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
         async function initializeBookingPayment(bookingId) {
             try {
+                // Check if payment already exists for this booking
+                const bookingResponse = await fetch(`/api/booking/${bookingId}`, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (bookingResponse.ok) {
+                    const bookingData = await bookingResponse.json();
+                    const booking = bookingData.booking || bookingData;
+                    
+                    // Check if payment is already completed
+                    if (booking.paymentStatus === 'COMPLETED') {
+                        console.log('Payment already completed for this booking');
+                        // Use existing payment reference if available
+                        if (booking.paymentReference) {
+                            sessionStorage.setItem('paymentReference', booking.paymentReference);
+                            paymentInitialized = true;
+                            return;
+                        }
+                    }
+                    
+                    // Check if payment reference already exists
+                    if (booking.paymentReference) {
+                        // Check if payment with this reference is already completed
+                        try {
+                            const paymentCheck = await fetch(`/api/payment/booking/${bookingId}`, {
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                credentials: 'include'
+                            });
+                            
+                            if (paymentCheck.ok) {
+                                const paymentData = await paymentCheck.json();
+                                if (paymentData.status === 'COMPLETED') {
+                                    console.log('Payment already exists and is completed');
+                                    sessionStorage.setItem('paymentReference', booking.paymentReference);
+                                    paymentInitialized = true;
+                                    alert('This booking has already been paid. Redirecting to payment success page...');
+                                    window.location.href = `/payment-success?bookingId=${bookingId}&reference=${booking.paymentReference}`;
+                                    return;
+                                }
+                            }
+                        } catch (e) {
+                            console.log('Could not check existing payment, proceeding with initialization');
+                        }
+                    }
+                }
+                
+                // Initialize new payment
                 const response = await fetch(`/api/booking/${bookingId}/payment/initialize`, {
                     method: 'POST',
                     headers: {
@@ -525,6 +662,21 @@
                         // Store payment reference
                         sessionStorage.setItem('paymentReference', data.payment.data?.reference || '');
                         paymentInitialized = true;
+                    } else if (data.error && data.error.toLowerCase().includes('duplicate')) {
+                        // Handle duplicate payment error
+                        alert('A payment for this booking already exists. Please check your payment status.');
+                        // Try to redirect to payment success if booking exists
+                        if (bookingId) {
+                            window.location.href = `/payment-success?bookingId=${bookingId}`;
+                        }
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.error && errorData.error.toLowerCase().includes('duplicate')) {
+                        alert('A payment for this booking already exists. Please check your payment status.');
+                        if (bookingId) {
+                            window.location.href = `/payment-success?bookingId=${bookingId}`;
+                        }
                     }
                 }
             } catch (error) {

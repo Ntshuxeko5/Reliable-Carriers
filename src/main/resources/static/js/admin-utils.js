@@ -60,7 +60,7 @@ function formatStatus(status, type = 'shipment') {
             },
             'RETURNED': {
                 text: 'Returned',
-                color: 'bg-orange-100 text-orange-800',
+                color: 'bg-reliable-yellow-100 text-reliable-yellow-800',
                 icon: 'fa-undo'
             }
         };
@@ -86,7 +86,7 @@ function formatStatus(status, type = 'shipment') {
             },
             'PAYMENT_PENDING': {
                 text: 'Payment Pending',
-                color: 'bg-orange-100 text-orange-800',
+                color: 'bg-reliable-yellow-100 text-reliable-yellow-800',
                 icon: 'fa-credit-card'
             },
             'CANCELLED': {
@@ -199,7 +199,7 @@ function formatStatus(status, type = 'shipment') {
             },
             'REFUNDED': {
                 text: 'Refunded',
-                color: 'bg-orange-100 text-orange-800',
+                color: 'bg-reliable-yellow-100 text-reliable-yellow-800',
                 icon: 'fa-undo'
             }
         };

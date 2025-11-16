@@ -5,6 +5,7 @@ import com.reliablecarriers.Reliable.Carriers.dto.BookingResponse;
 import com.reliablecarriers.Reliable.Carriers.dto.PaystackRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.PaystackResponse;
 import com.reliablecarriers.Reliable.Carriers.model.*;
+import com.reliablecarriers.Reliable.Carriers.repository.PaymentRepository;
 import com.reliablecarriers.Reliable.Carriers.service.BookingService;
 import com.reliablecarriers.Reliable.Carriers.service.PaystackService;
 import com.reliablecarriers.Reliable.Carriers.service.PaymentService;
@@ -25,11 +26,13 @@ public class BookingController {
     private final BookingService bookingService;
     private final PaystackService paystackService;
     private final PaymentService paymentService;
+    private final PaymentRepository paymentRepository;
 
-    public BookingController(BookingService bookingService, PaystackService paystackService, PaymentService paymentService) {
+    public BookingController(BookingService bookingService, PaystackService paystackService, PaymentService paymentService, PaymentRepository paymentRepository) {
         this.bookingService = bookingService;
         this.paystackService = paystackService;
         this.paymentService = paymentService;
+        this.paymentRepository = paymentRepository;
     }
 
     /**
@@ -65,6 +68,44 @@ public class BookingController {
                 return ResponseEntity.notFound().build();
             }
 
+            // Check if payment is already completed
+            if (booking.getPaymentStatus() != null && 
+                (booking.getPaymentStatus().equals("COMPLETED") || booking.getPaymentStatus().equals("PAID"))) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Payment already completed for this booking",
+                    "duplicate", true,
+                    "bookingId", bookingId
+                ));
+            }
+
+            // Check if there's an existing completed payment for this booking
+            Booking bookingEntity = bookingService.getBookingEntityById(bookingId);
+            if (bookingEntity != null) {
+                List<Payment> existingPayments = paymentRepository.findByBooking(bookingEntity);
+                for (Payment payment : existingPayments) {
+                    if (payment.getStatus() == PaymentStatus.COMPLETED) {
+                        return ResponseEntity.badRequest().body(Map.of(
+                            "success", false,
+                            "error", "A payment for this booking already exists and has been completed",
+                            "duplicate", true,
+                            "bookingId", bookingId,
+                            "paymentId", payment.getId()
+                        ));
+                    }
+                }
+            }
+
+            // Check if payment reference already exists and is being used
+            if (booking.getPaymentReference() != null && !booking.getPaymentReference().isEmpty()) {
+                // Check if this reference has a completed payment
+                paymentRepository.findByReference(booking.getPaymentReference()).ifPresent(payment -> {
+                    if (payment.getStatus() == PaymentStatus.COMPLETED) {
+                        throw new RuntimeException("Payment already completed with reference: " + booking.getPaymentReference());
+                    }
+                });
+            }
+
             // Create payment request
             PaystackRequest paymentRequest = new PaystackRequest();
             paymentRequest.setAmount(booking.getTotalAmount());
@@ -83,6 +124,18 @@ public class BookingController {
             response.put("bookingId", bookingId);
             
             return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("already completed")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", e.getMessage(),
+                    "duplicate", true
+                ));
+            }
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", "Failed to initialize payment: " + e.getMessage()
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,

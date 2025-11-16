@@ -20,10 +20,18 @@ public class ShipmentCoordinatesMigration implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         try {
+            // Check if this is PostgreSQL - skip MySQL-specific queries
+            String dbUrl = System.getenv("DB_URL");
+            if (dbUrl != null && dbUrl.contains("postgresql")) {
+                System.out.println("PostgreSQL detected - skipping MySQL-specific coordinate migration");
+                System.out.println("Hibernate ddl-auto will handle schema updates for PostgreSQL");
+                return;
+            }
+            
             System.out.println("=== Shipment Coordinates Migration ===");
             System.out.println("Checking shipments table for coordinate columns...");
             
-            // Get database name dynamically
+            // Get database name dynamically (MySQL only)
             String dbName = jdbcTemplate.queryForObject("SELECT DATABASE()", String.class);
             System.out.println("Database: " + dbName);
             

@@ -15,8 +15,15 @@ public class DatabaseMigrationService implements CommandLineRunner {
     public void run(String... args) throws Exception {
         try {
             // Check if the payments table exists and has the old schema
+            // Only run on MySQL - PostgreSQL uses different syntax
+            String dbUrl = System.getenv("DB_URL");
+            if (dbUrl != null && dbUrl.contains("postgresql")) {
+                System.out.println("PostgreSQL detected - skipping MySQL-specific migration");
+                return;
+            }
+            
             String checkColumnQuery = "SELECT COLUMN_NAME, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS " +
-                    "WHERE TABLE_SCHEMA = 'reliable_carriers' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'shipment_id'";
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'shipment_id'";
             
             var result = jdbcTemplate.queryForList(checkColumnQuery);
             
@@ -42,6 +49,7 @@ public class DatabaseMigrationService implements CommandLineRunner {
             }
         } catch (Exception e) {
             System.err.println("Error updating database schema: " + e.getMessage());
+            e.printStackTrace();
             // Don't fail the application startup if migration fails
         }
     }

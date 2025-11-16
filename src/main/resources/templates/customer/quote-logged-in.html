@@ -1,501 +1,862 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Get Instant Quote - Reliable Carriers</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#3b82f6">
-    <script id="gmap-script" th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places'" async defer></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#3b82f6" />
+    <script
+      id="gmap-script"
+      th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places'"
+      async
+      defer
+    ></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'reliable-blue': {
-                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
-                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1e40af',
-                            800: '#1e3a8a', 900: '#1e40af',
-                        },
-                        'reliable-yellow': {
-                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
-                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
-                            800: '#854d0e', 900: '#713f12',
-                        }
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "reliable-blue": {
+                50: "#eff6ff",
+                100: "#dbeafe",
+                200: "#bfdbfe",
+                300: "#93c5fd",
+                400: "#60a5fa",
+                500: "#3b82f6",
+                600: "#2563eb",
+                700: "#1e40af",
+                800: "#1e3a8a",
+                900: "#1e40af",
+              },
+              "reliable-yellow": {
+                50: "#fefce8",
+                100: "#fef9c3",
+                200: "#fef08a",
+                300: "#fde047",
+                400: "#facc15",
+                500: "#eab308",
+                600: "#ca8a04",
+                700: "#a16207",
+                800: "#854d0e",
+                900: "#713f12",
+              },
+            },
+          },
+        },
+      };
     </script>
     <style>
-        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
-        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-        .pricing-card { transition: all 0.3s ease; }
-        .pricing-card:hover { transform: translateY(-8px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
-        .selected-service { border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.05); }
-        .dimension-input { transition: all 0.3s ease; }
-        .dimension-input:focus { transform: scale(1.02); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-        .customer-badge { background: linear-gradient(135deg, #10b981, #059669); }
-        .premium-feature { background: linear-gradient(135deg, #f59e0b, #d97706); }
+      .glass-effect {
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+      .gradient-text {
+        background: linear-gradient(135deg, #3b82f6, #1e40af);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .pricing-card {
+        transition: all 0.3s ease;
+      }
+      .pricing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      }
+      .selected-service {
+        border: 2px solid #3b82f6;
+        background: rgba(59, 130, 246, 0.05);
+      }
+      .dimension-input {
+        transition: all 0.3s ease;
+      }
+      .dimension-input:focus {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      .customer-badge {
+        background: linear-gradient(135deg, #10b981, #059669);
+      }
+      .premium-feature {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
     </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
+  </head>
+  <body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
     <div th:replace="~{fragments/navbar :: navbar(navLinks=${navLinks})}"></div>
 
     <!-- Customer Benefits Banner -->
     <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="flex items-center justify-center space-x-4">
-                <i class="fas fa-crown text-2xl"></i>
-                <span class="text-lg font-semibold">Welcome back, <span th:text="${userName}">Customer</span>!</span>
-                <span class="text-sm">• 15% discount for logged-in customers • Priority support • Save addresses</span>
-            </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="flex items-center justify-center space-x-4">
+          <i class="fas fa-crown text-2xl"></i>
+          <span class="text-lg font-semibold"
+            >Welcome back, <span th:text="${userName}">Customer</span>!</span
+          >
+          <span class="text-sm"
+            >• 15% discount for logged-in customers • Priority support • Save
+            addresses</span
+          >
         </div>
+      </div>
     </div>
 
     <!-- Hero Section -->
-    <section class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl md:text-5xl font-bold text-white mb-6">
-                <span class="gradient-text">Get Instant Quote</span>
-            </h1>
-            <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-                Calculate shipping costs with your exclusive member discounts. Save your addresses and get priority support.
-            </p>
-            <div class="flex justify-center space-x-4 text-sm text-blue-200">
-                <div class="flex items-center">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    <span>15% Member Discount</span>
-                </div>
-                <div class="flex items-center">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    <span>Saved Addresses</span>
-                </div>
-                <div class="flex items-center">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    <span>Priority Support</span>
-                </div>
-            </div>
+    <section
+      class="bg-gradient-to-br from-reliable-blue-600 via-reliable-blue-700 to-reliable-blue-800 py-16"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-6">
+          <span class="gradient-text">Get Instant Quote</span>
+        </h1>
+        <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+          Calculate shipping costs with your exclusive member discounts. Save
+          your addresses and get priority support.
+        </p>
+        <div class="flex justify-center space-x-4 text-sm text-blue-200">
+          <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span>15% Member Discount</span>
+          </div>
+          <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span>Saved Addresses</span>
+          </div>
+          <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span>Priority Support</span>
+          </div>
         </div>
+      </div>
     </section>
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Quote Form -->
-            <div class="lg:col-span-2">
-                <div class="glass-effect rounded-2xl p-8 mb-8">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                        <i class="fas fa-calculator mr-3 gradient-text"></i>Package Details
-                    </h2>
-                    
-                    <form id="quoteForm" class="space-y-6">
-                        <!-- Saved Addresses -->
-                        <div class="bg-green-50 rounded-xl p-6 mb-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-bookmark mr-2 text-green-600"></i>Saved Addresses
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Pickup Address</label>
-                                    <select id="pickupAddressSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <option value="">Select saved address or enter new</option>
-                                        <option value="home">Home - 123 Main St, Johannesburg</option>
-                                        <option value="office">Office - 456 Business Ave, Sandton</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Address</label>
-                                    <select id="deliveryAddressSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <option value="">Select saved address or enter new</option>
-                                        <option value="client1">Client Office - 789 Client St, Cape Town</option>
-                                        <option value="client2">Warehouse - 321 Industrial Rd, Durban</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Quote Form -->
+        <div class="lg:col-span-2">
+          <div class="glass-effect rounded-2xl p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+              <i class="fas fa-calculator mr-3 gradient-text"></i>Package
+              Details
+            </h2>
 
-                        <!-- Manual Address Input -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>Pickup Address
-                                </label>
-                                <input type="text" id="pickupAddress" name="pickupAddress" 
-                                       placeholder="Enter pickup address" required
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Delivery Address
-                                </label>
-                                <input type="text" id="deliveryAddress" name="deliveryAddress" 
-                                       placeholder="Enter delivery address" required
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            </div>
-                        </div>
-
-                        <!-- Hidden fields for coordinates -->
-                        <input type="hidden" id="pickupLatitude" name="pickupLatitude">
-                        <input type="hidden" id="pickupLongitude" name="pickupLongitude">
-                        <input type="hidden" id="pickupPlaceId" name="pickupPlaceId">
-                        <input type="hidden" id="deliveryLatitude" name="deliveryLatitude">
-                        <input type="hidden" id="deliveryLongitude" name="deliveryLongitude">
-                        <input type="hidden" id="deliveryPlaceId" name="deliveryPlaceId">
-
-                        <!-- Sample Box Sizes -->
-                        <div class="bg-blue-50 rounded-xl p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-boxes mr-2 text-blue-600"></i>Quick Fill - Common Box Sizes
-                            </h3>
-                            <p class="text-sm text-gray-600 mb-4">Click on a box size to automatically fill in the dimensions and weight:</p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <!-- Small Box -->
-                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
-                                     data-length="25" data-width="20" data-height="10" data-weight="0.5" data-name="Small Box">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                                            <i class="fas fa-box text-blue-600 text-sm"></i>
-                                        </div>
-                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Small</span>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900 mb-1">Small Box</h4>
-                                    <p class="text-xs text-gray-600 mb-2">25×20×10 cm</p>
-                                    <p class="text-xs text-gray-500">~0.5 kg</p>
-                                    <p class="text-xs text-gray-500">Shoes, books, small items</p>
-                                </div>
-
-                                <!-- Medium Box -->
-                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
-                                     data-length="40" data-width="30" data-height="20" data-weight="1.5" data-name="Medium Box">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
-                                            <i class="fas fa-box text-green-600 text-sm"></i>
-                                        </div>
-                                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Medium</span>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900 mb-1">Medium Box</h4>
-                                    <p class="text-xs text-gray-600 mb-2">40×30×20 cm</p>
-                                    <p class="text-xs text-gray-500">~1.5 kg</p>
-                                    <p class="text-xs text-gray-500">Electronics, clothing</p>
-                                </div>
-
-                                <!-- Large Box -->
-                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
-                                     data-length="60" data-width="40" data-height="30" data-weight="3.0" data-name="Large Box">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="w-8 h-8 bg-orange-100 rounded flex items-center justify-center">
-                                            <i class="fas fa-box text-orange-600 text-sm"></i>
-                                        </div>
-                                        <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">Large</span>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900 mb-1">Large Box</h4>
-                                    <p class="text-xs text-gray-600 mb-2">60×40×30 cm</p>
-                                    <p class="text-xs text-gray-500">~3.0 kg</p>
-                                    <p class="text-xs text-gray-500">Household items, bulk</p>
-                                </div>
-
-                                <!-- Document Envelope -->
-                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
-                                     data-length="32" data-width="23" data-height="2" data-weight="0.1" data-name="Document Envelope">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="w-8 h-8 bg-purple-100 rounded flex items-center justify-center">
-                                            <i class="fas fa-envelope text-purple-600 text-sm"></i>
-                                        </div>
-                                        <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Document</span>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900 mb-1">Document Envelope</h4>
-                                    <p class="text-xs text-gray-600 mb-2">32×23×2 cm</p>
-                                    <p class="text-xs text-gray-500">~0.1 kg</p>
-                                    <p class="text-xs text-gray-500">Letters, contracts</p>
-                                </div>
-
-                                <!-- Shoebox -->
-                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
-                                     data-length="35" data-width="25" data-height="15" data-weight="0.8" data-name="Shoebox">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="w-8 h-8 bg-pink-100 rounded flex items-center justify-center">
-                                            <i class="fas fa-shoe-prints text-pink-600 text-sm"></i>
-                                        </div>
-                                        <span class="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded">Shoes</span>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900 mb-1">Shoebox</h4>
-                                    <p class="text-xs text-gray-600 mb-2">35×25×15 cm</p>
-                                    <p class="text-xs text-gray-500">~0.8 kg</p>
-                                    <p class="text-xs text-gray-500">Shoes, small items</p>
-                                </div>
-
-                                <!-- Gift Box -->
-                                <div class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200" 
-                                     data-length="30" data-width="20" data-height="12" data-weight="0.6" data-name="Gift Box">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="w-8 h-8 bg-red-100 rounded flex items-center justify-center">
-                                            <i class="fas fa-gift text-red-600 text-sm"></i>
-                                        </div>
-                                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Gift</span>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900 mb-1">Gift Box</h4>
-                                    <p class="text-xs text-gray-600 mb-2">30×20×12 cm</p>
-                                    <p class="text-xs text-gray-500">~0.6 kg</p>
-                                    <p class="text-xs text-gray-500">Gifts, small items</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Package Dimensions -->
-                        <div class="bg-gray-50 rounded-xl p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-ruler-combined mr-2 text-purple-600"></i>Package Dimensions
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Length (cm)</label>
-                                    <input type="number" id="length" name="length" min="1" max="200" required
-                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Width (cm)</label>
-                                    <input type="number" id="width" name="width" min="1" max="200" required
-                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
-                                    <input type="number" id="height" name="height" min="1" max="200" required
-                                           class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                           placeholder="0">
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
-                                <input type="number" id="weight" name="weight" min="0.1" max="50" step="0.1" required
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                       placeholder="0.0">
-                            </div>
-                            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
-                                <p class="text-sm text-blue-800">
-                                    <i class="fas fa-info-circle mr-2"></i>
-                                    <strong>Volume Weight:</strong> <span id="volumeWeight">0.0 kg</span> 
-                                    (Length × Width × Height ÷ 5000)
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Package Type -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-4">
-                                <i class="fas fa-box mr-2 text-orange-600"></i>Package Type
-                            </label>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="radio" name="packageType" value="document" class="mr-3">
-                                    <div>
-                                        <div class="font-medium text-gray-900">Document</div>
-                                        <div class="text-sm text-gray-500">Letters, contracts, certificates</div>
-                                    </div>
-                                </label>
-                                <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="radio" name="packageType" value="parcel" class="mr-3" checked>
-                                    <div>
-                                        <div class="font-medium text-gray-900">Parcel</div>
-                                        <div class="text-sm text-gray-500">Small packages, gifts, products</div>
-                                    </div>
-                                </label>
-                                <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="radio" name="packageType" value="fragile" class="mr-3">
-                                    <div>
-                                        <div class="font-medium text-gray-900">Fragile</div>
-                                        <div class="text-sm text-gray-500">Glass, electronics, delicate items</div>
-                                    </div>
-                                </label>
-                                <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="radio" name="packageType" value="valuable" class="mr-3">
-                                    <div>
-                                        <div class="font-medium text-gray-900">Valuable</div>
-                                        <div class="text-sm text-gray-500">Jewelry, electronics, high-value items</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Service Type Selection -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-4">
-                                <i class="fas fa-truck mr-2 text-indigo-600"></i>Service Type
-                            </label>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="serviceOptions">
-                                <!-- Service options will be populated by JavaScript -->
-                            </div>
-                        </div>
-
-                        <!-- Calculate Button -->
-                        <div class="pt-6">
-                            <button type="submit" id="calculateBtn" 
-                                    class="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center">
-                                <i class="fas fa-calculator mr-2"></i>
-                                Calculate Quote
-                            </button>
-                        </div>
-                    </form>
+            <form id="quoteForm" class="space-y-6">
+              <!-- Saved Addresses -->
+              <div class="bg-green-50 rounded-xl p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                  <i class="fas fa-bookmark mr-2 text-green-600"></i>Saved
+                  Addresses
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"
+                      >Pickup Address</label
+                    >
+                    <select
+                      id="pickupAddressSelect"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">
+                        Select saved address or enter new
+                      </option>
+                      <option value="home">
+                        Home - 123 Main St, Johannesburg
+                      </option>
+                      <option value="office">
+                        Office - 456 Business Ave, Sandton
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"
+                      >Delivery Address</label
+                    >
+                    <select
+                      id="deliveryAddressSelect"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">
+                        Select saved address or enter new
+                      </option>
+                      <option value="client1">
+                        Client Office - 789 Client St, Cape Town
+                      </option>
+                      <option value="client2">
+                        Warehouse - 321 Industrial Rd, Durban
+                      </option>
+                    </select>
+                  </div>
                 </div>
-            </div>
+              </div>
 
-            <!-- Quote Results -->
-            <div class="lg:col-span-1">
-                <div class="glass-effect rounded-2xl p-8 sticky top-8">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                        <i class="fas fa-receipt mr-3 gradient-text"></i>Quote Results
-                    </h2>
-                    
-                    <div id="quoteResults" class="space-y-4">
-                        <div class="text-center text-gray-500 py-8">
-                            <i class="fas fa-calculator text-4xl mb-4"></i>
-                            <p>Enter package details to get instant pricing</p>
-                        </div>
-                    </div>
-
-                    <!-- Member Benefits -->
-                    <div class="mt-8 pt-6 border-t border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Your Member Benefits</h3>
-                        <div class="space-y-3">
-                            <div class="p-3 bg-green-50 rounded-lg flex items-center">
-                                <i class="fas fa-percentage text-green-600 mr-3"></i>
-                                <div>
-                                    <div class="font-medium text-gray-900">15% Member Discount</div>
-                                    <div class="text-sm text-gray-600">Applied automatically to all quotes</div>
-                                </div>
-                            </div>
-                            <div class="p-3 bg-blue-50 rounded-lg flex items-center">
-                                <i class="fas fa-bookmark text-blue-600 mr-3"></i>
-                                <div>
-                                    <div class="font-medium text-gray-900">Saved Addresses</div>
-                                    <div class="text-sm text-gray-600">Quick access to frequent destinations</div>
-                                </div>
-                            </div>
-                            <div class="p-3 bg-purple-50 rounded-lg flex items-center">
-                                <i class="fas fa-headset text-purple-600 mr-3"></i>
-                                <div>
-                                    <div class="font-medium text-gray-900">Priority Support</div>
-                                    <div class="text-sm text-gray-600">24/7 dedicated customer service</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+              <!-- Manual Address Input -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i
+                    >Pickup Address
+                  </label>
+                  <input
+                    type="text"
+                    id="pickupAddress"
+                    name="pickupAddress"
+                    placeholder="Enter pickup address"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
-            </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-map-marker-alt mr-2 text-green-600"></i
+                    >Delivery Address
+                  </label>
+                  <input
+                    type="text"
+                    id="deliveryAddress"
+                    name="deliveryAddress"
+                    placeholder="Enter delivery address"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <!-- Hidden fields for coordinates -->
+              <input type="hidden" id="pickupLatitude" name="pickupLatitude" />
+              <input
+                type="hidden"
+                id="pickupLongitude"
+                name="pickupLongitude"
+              />
+              <input type="hidden" id="pickupPlaceId" name="pickupPlaceId" />
+              <input
+                type="hidden"
+                id="deliveryLatitude"
+                name="deliveryLatitude"
+              />
+              <input
+                type="hidden"
+                id="deliveryLongitude"
+                name="deliveryLongitude"
+              />
+              <input
+                type="hidden"
+                id="deliveryPlaceId"
+                name="deliveryPlaceId"
+              />
+
+              <!-- Sample Box Sizes -->
+              <div class="bg-blue-50 rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                  <i class="fas fa-boxes mr-2 text-blue-600"></i>Quick Fill -
+                  Common Box Sizes
+                </h3>
+                <p class="text-sm text-gray-600 mb-4">
+                  Click on a box size to automatically fill in the dimensions
+                  and weight:
+                </p>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                >
+                  <!-- Small Box -->
+                  <div
+                    class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200"
+                    data-length="25"
+                    data-width="20"
+                    data-height="10"
+                    data-weight="0.5"
+                    data-name="Small Box"
+                  >
+                    <div class="flex items-center justify-between mb-2">
+                      <div
+                        class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center"
+                      >
+                        <i class="fas fa-box text-blue-600 text-sm"></i>
+                      </div>
+                      <span
+                        class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
+                        >Small</span
+                      >
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1">Small Box</h4>
+                    <p class="text-xs text-gray-600 mb-2">25×20×10 cm</p>
+                    <p class="text-xs text-gray-500">~0.5 kg</p>
+                    <p class="text-xs text-gray-500">
+                      Shoes, books, small items
+                    </p>
+                  </div>
+
+                  <!-- Medium Box -->
+                  <div
+                    class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200"
+                    data-length="40"
+                    data-width="30"
+                    data-height="20"
+                    data-weight="1.5"
+                    data-name="Medium Box"
+                  >
+                    <div class="flex items-center justify-between mb-2">
+                      <div
+                        class="w-8 h-8 bg-green-100 rounded flex items-center justify-center"
+                      >
+                        <i class="fas fa-box text-green-600 text-sm"></i>
+                      </div>
+                      <span
+                        class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded"
+                        >Medium</span
+                      >
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1">Medium Box</h4>
+                    <p class="text-xs text-gray-600 mb-2">40×30×20 cm</p>
+                    <p class="text-xs text-gray-500">~1.5 kg</p>
+                    <p class="text-xs text-gray-500">Electronics, clothing</p>
+                  </div>
+
+                  <!-- Large Box -->
+                  <div
+                    class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200"
+                    data-length="60"
+                    data-width="40"
+                    data-height="30"
+                    data-weight="3.0"
+                    data-name="Large Box"
+                  >
+                    <div class="flex items-center justify-between mb-2">
+                      <div
+                        class="w-8 h-8 bg-reliable-yellow-100 rounded flex items-center justify-center"
+                      >
+                        <i class="fas fa-box text-reliable-yellow-600 text-sm"></i>
+                      </div>
+                      <span
+                        class="text-xs bg-reliable-yellow-100 text-reliable-yellow-800 px-2 py-1 rounded"
+                        >Large</span
+                      >
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1">Large Box</h4>
+                    <p class="text-xs text-gray-600 mb-2">60×40×30 cm</p>
+                    <p class="text-xs text-gray-500">~3.0 kg</p>
+                    <p class="text-xs text-gray-500">Household items, bulk</p>
+                  </div>
+
+                  <!-- Document Envelope -->
+                  <div
+                    class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200"
+                    data-length="32"
+                    data-width="23"
+                    data-height="2"
+                    data-weight="0.1"
+                    data-name="Document Envelope"
+                  >
+                    <div class="flex items-center justify-between mb-2">
+                      <div
+                        class="w-8 h-8 bg-purple-100 rounded flex items-center justify-center"
+                      >
+                        <i class="fas fa-envelope text-purple-600 text-sm"></i>
+                      </div>
+                      <span
+                        class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded"
+                        >Document</span
+                      >
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1">
+                      Document Envelope
+                    </h4>
+                    <p class="text-xs text-gray-600 mb-2">32×23×2 cm</p>
+                    <p class="text-xs text-gray-500">~0.1 kg</p>
+                    <p class="text-xs text-gray-500">Letters, contracts</p>
+                  </div>
+
+                  <!-- Shoebox -->
+                  <div
+                    class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200"
+                    data-length="35"
+                    data-width="25"
+                    data-height="15"
+                    data-weight="0.8"
+                    data-name="Shoebox"
+                  >
+                    <div class="flex items-center justify-between mb-2">
+                      <div
+                        class="w-8 h-8 bg-pink-100 rounded flex items-center justify-center"
+                      >
+                        <i class="fas fa-shoe-prints text-pink-600 text-sm"></i>
+                      </div>
+                      <span
+                        class="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded"
+                        >Shoes</span
+                      >
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1">Shoebox</h4>
+                    <p class="text-xs text-gray-600 mb-2">35×25×15 cm</p>
+                    <p class="text-xs text-gray-500">~0.8 kg</p>
+                    <p class="text-xs text-gray-500">Shoes, small items</p>
+                  </div>
+
+                  <!-- Gift Box -->
+                  <div
+                    class="sample-box bg-white rounded-lg p-4 border-2 border-gray-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all duration-200"
+                    data-length="30"
+                    data-width="20"
+                    data-height="12"
+                    data-weight="0.6"
+                    data-name="Gift Box"
+                  >
+                    <div class="flex items-center justify-between mb-2">
+                      <div
+                        class="w-8 h-8 bg-red-100 rounded flex items-center justify-center"
+                      >
+                        <i class="fas fa-gift text-red-600 text-sm"></i>
+                      </div>
+                      <span
+                        class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded"
+                        >Gift</span
+                      >
+                    </div>
+                    <h4 class="font-medium text-gray-900 mb-1">Gift Box</h4>
+                    <p class="text-xs text-gray-600 mb-2">30×20×12 cm</p>
+                    <p class="text-xs text-gray-500">~0.6 kg</p>
+                    <p class="text-xs text-gray-500">Gifts, small items</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Package Dimensions -->
+              <div class="bg-gray-50 rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                  <i class="fas fa-ruler-combined mr-2 text-purple-600"></i
+                  >Package Dimensions
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"
+                      >Length (cm)</label
+                    >
+                    <input
+                      type="number"
+                      id="length"
+                      name="length"
+                      min="1"
+                      max="200"
+                      required
+                      class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"
+                      >Width (cm)</label
+                    >
+                    <input
+                      type="number"
+                      id="width"
+                      name="width"
+                      min="1"
+                      max="200"
+                      required
+                      class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2"
+                      >Height (cm)</label
+                    >
+                    <input
+                      type="number"
+                      id="height"
+                      name="height"
+                      min="1"
+                      max="200"
+                      required
+                      class="dimension-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <div class="mt-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2"
+                    >Weight (kg)</label
+                  >
+                  <input
+                    type="number"
+                    id="weight"
+                    name="weight"
+                    min="0.1"
+                    max="50"
+                    step="0.1"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="0.0"
+                  />
+                </div>
+                <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Volume Weight:</strong>
+                    <span id="volumeWeight">0.0 kg</span>
+                    (Length × Width × Height ÷ 5000)
+                  </p>
+                </div>
+              </div>
+
+              <!-- Package Type -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-4">
+                  <i class="fas fa-box mr-2 text-reliable-yellow-600"></i>Package Type
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label
+                    class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="radio"
+                      name="packageType"
+                      value="document"
+                      class="mr-3"
+                    />
+                    <div>
+                      <div class="font-medium text-gray-900">Document</div>
+                      <div class="text-sm text-gray-500">
+                        Letters, contracts, certificates
+                      </div>
+                    </div>
+                  </label>
+                  <label
+                    class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="radio"
+                      name="packageType"
+                      value="parcel"
+                      class="mr-3"
+                      checked
+                    />
+                    <div>
+                      <div class="font-medium text-gray-900">Parcel</div>
+                      <div class="text-sm text-gray-500">
+                        Small packages, gifts, products
+                      </div>
+                    </div>
+                  </label>
+                  <label
+                    class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="radio"
+                      name="packageType"
+                      value="fragile"
+                      class="mr-3"
+                    />
+                    <div>
+                      <div class="font-medium text-gray-900">Fragile</div>
+                      <div class="text-sm text-gray-500">
+                        Glass, electronics, delicate items
+                      </div>
+                    </div>
+                  </label>
+                  <label
+                    class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="radio"
+                      name="packageType"
+                      value="valuable"
+                      class="mr-3"
+                    />
+                    <div>
+                      <div class="font-medium text-gray-900">Valuable</div>
+                      <div class="text-sm text-gray-500">
+                        Jewelry, electronics, high-value items
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Service Type Selection -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-4">
+                  <i class="fas fa-truck mr-2 text-indigo-600"></i>Service Type
+                </label>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-3 gap-4"
+                  id="serviceOptions"
+                >
+                  <!-- Service options will be populated by JavaScript -->
+                </div>
+              </div>
+
+              <!-- Calculate Button -->
+              <div class="pt-6">
+                <button
+                  type="submit"
+                  id="calculateBtn"
+                  class="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center"
+                >
+                  <i class="fas fa-calculator mr-2"></i>
+                  Calculate Quote
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
+
+        <!-- Quote Results -->
+        <div class="lg:col-span-1">
+          <div class="glass-effect rounded-2xl p-8 sticky top-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+              <i class="fas fa-receipt mr-3 gradient-text"></i>Quote Results
+            </h2>
+
+            <div id="quoteResults" class="space-y-4">
+              <div class="text-center text-gray-500 py-8">
+                <i class="fas fa-calculator text-4xl mb-4"></i>
+                <p>Enter package details to get instant pricing</p>
+              </div>
+            </div>
+
+            <!-- Member Benefits -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                Your Member Benefits
+              </h3>
+              <div class="space-y-3">
+                <div class="p-3 bg-green-50 rounded-lg flex items-center">
+                  <i class="fas fa-percentage text-green-600 mr-3"></i>
+                  <div>
+                    <div class="font-medium text-gray-900">
+                      15% Member Discount
+                    </div>
+                    <div class="text-sm text-gray-600">
+                      Applied automatically to all quotes
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 bg-blue-50 rounded-lg flex items-center">
+                  <i class="fas fa-bookmark text-blue-600 mr-3"></i>
+                  <div>
+                    <div class="font-medium text-gray-900">Saved Addresses</div>
+                    <div class="text-sm text-gray-600">
+                      Quick access to frequent destinations
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 bg-purple-50 rounded-lg flex items-center">
+                  <i class="fas fa-headset text-purple-600 mr-3"></i>
+                  <div>
+                    <div class="font-medium text-gray-900">
+                      Priority Support
+                    </div>
+                    <div class="text-sm text-gray-600">
+                      24/7 dedicated customer service
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Moving Services Section -->
     <section class="py-12 bg-gradient-to-br from-purple-50 to-blue-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="glass-effect rounded-2xl p-8 text-center">
-                <div class="flex items-center justify-center mb-4">
-                    <i class="fas fa-truck-moving text-4xl text-purple-600 mr-4"></i>
-                    <h2 class="text-3xl font-bold text-gray-900">
-                        Need Moving Services?
-                    </h2>
-                </div>
-                <p class="text-xl text-gray-700 mb-6 max-w-2xl mx-auto">
-                    Moving furniture or relocating? Get a specialized quote for our professional moving services including packing, loading, and delivery.
-                </p>
-                    <a href="/moving-services" class="inline-block bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:from-reliable-yellow-600 hover:to-reliable-yellow-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
-                    <i class="fas fa-truck-moving mr-2"></i>Get Moving Services Quote
-                </a>
-            </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass-effect rounded-2xl p-8 text-center">
+          <div class="flex items-center justify-center mb-4">
+            <i class="fas fa-truck-moving text-4xl text-purple-600 mr-4"></i>
+            <h2 class="text-3xl font-bold text-gray-900">
+              Need Moving Services?
+            </h2>
+          </div>
+          <p class="text-xl text-gray-700 mb-6 max-w-2xl mx-auto">
+            Moving furniture or relocating? Get a specialized quote for our
+            professional moving services including packing, loading, and
+            delivery.
+          </p>
+          <a
+            href="/moving-services"
+            class="inline-block bg-gradient-to-r from-reliable-yellow-500 to-reliable-yellow-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:from-reliable-yellow-600 hover:to-reliable-yellow-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+          >
+            <i class="fas fa-truck-moving mr-2"></i>Get Moving Services Quote
+          </a>
         </div>
+      </div>
     </section>
 
     <!-- Footer -->
     <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <div class="flex items-center mb-4">
-                        <i class="fas fa-shipping-fast text-2xl text-reliable-yellow-400 mr-2"></i>
-                        <span class="text-xl font-bold">Reliable Carriers</span>
-                    </div>
-                    <p class="text-gray-400">Your trusted partner for all courier and logistics needs.</p>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Services</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Express Delivery</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Standard Delivery</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Economy Delivery</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">International</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Company</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="/careers" class="hover:text-white transition-colors">Careers</a></li>
-                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
-                        <li><a href="/news" class="hover:text-white transition-colors">News</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Support</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="/help-center" class="hover:text-white transition-colors">Help Center</a></li>
-                        <li><a href="/customer/track" class="hover:text-white transition-colors">Track Package</a></li>
-                        <li><a href="/terms" class="hover:text-white transition-colors">Terms of Service</a></li>
-                        <li><a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
-                    </ul>
-                </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <div class="flex items-center mb-4">
+              <i
+                class="fas fa-shipping-fast text-2xl text-reliable-yellow-400 mr-2"
+              ></i>
+              <span class="text-xl font-bold">Reliable Carriers</span>
             </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
-            </div>
+            <p class="text-gray-400">
+              Your trusted partner for all courier and logistics needs.
+            </p>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Services</h3>
+            <ul class="space-y-2 text-gray-400">
+              <li>
+                <a href="#" class="hover:text-white transition-colors"
+                  >Express Delivery</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-white transition-colors"
+                  >Standard Delivery</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-white transition-colors"
+                  >Economy Delivery</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-white transition-colors"
+                  >International</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Company</h3>
+            <ul class="space-y-2 text-gray-400">
+              <li>
+                <a href="/about" class="hover:text-white transition-colors"
+                  >About Us</a
+                >
+              </li>
+              <li>
+                <a href="/careers" class="hover:text-white transition-colors"
+                  >Careers</a
+                >
+              </li>
+              <li>
+                <a href="/contact" class="hover:text-white transition-colors"
+                  >Contact</a
+                >
+              </li>
+              <li>
+                <a href="/news" class="hover:text-white transition-colors"
+                  >News</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Support</h3>
+            <ul class="space-y-2 text-gray-400">
+              <li>
+                <a
+                  href="/help-center"
+                  class="hover:text-white transition-colors"
+                  >Help Center</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/customer/track"
+                  class="hover:text-white transition-colors"
+                  >Track Package</a
+                >
+              </li>
+              <li>
+                <a href="/terms" class="hover:text-white transition-colors"
+                  >Terms of Service</a
+                >
+              </li>
+              <li>
+                <a href="/privacy" class="hover:text-white transition-colors"
+                  >Privacy Policy</a
+                >
+              </li>
+            </ul>
+          </div>
         </div>
+        <div
+          class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400"
+        >
+          <p>&copy; 2024 Reliable Carriers. All rights reserved.</p>
+        </div>
+      </div>
     </footer>
 
     <script>
-        // Service options data with member pricing
-        const serviceOptions = [
-            {
-                id: 'express',
-                name: 'Express Delivery',
-                description: 'Same-day & Next-day',
-                icon: 'fas fa-bolt',
-                color: 'red',
-                basePrice: 160,
-                memberPrice: 136, // 15% discount
-                multiplier: 1.2
-            },
-            {
-                id: 'standard',
-                name: 'Standard Delivery',
-                description: '2-3 Business Days',
-                icon: 'fas fa-truck',
-                color: 'blue',
-                basePrice: 120,
-                memberPrice: 102, // 15% discount
-                multiplier: 1.0
-            },
-            {
-                id: 'economy',
-                name: 'Economy Delivery',
-                description: '4-7 Business Days',
-                icon: 'fas fa-shipping-fast',
-                color: 'green',
-                basePrice: 90,
-                memberPrice: 77, // 15% discount
-                multiplier: 0.8
-            }
-        ];
+      // Service options data with member pricing (single definition)
+      const serviceOptions = [
+        {
+          id: "express",
+          name: "Express Delivery",
+          description: "Same-day & Next-day",
+          icon: "fas fa-bolt",
+          color: "red",
+          basePrice: 160,
+          memberPrice: 136, // 15% discount
+          multiplier: 1.2,
+        },
+        {
+          id: "standard",
+          name: "Standard Delivery",
+          description: "2-3 Business Days",
+          icon: "fas fa-truck",
+          color: "blue",
+          basePrice: 120,
+          memberPrice: 102, // 15% discount
+          multiplier: 1.0,
+        },
+        {
+          id: "economy",
+          name: "Economy Delivery",
+          description: "4-7 Business Days",
+          icon: "fas fa-shipping-fast",
+          color: "green",
+          basePrice: 90,
+          memberPrice: 77, // 15% discount
+          multiplier: 0.8,
+        },
+      ];
 
-        // Initialize service options
-        function initializeServiceOptions() {
-            const container = document.getElementById('serviceOptions');
-            container.innerHTML = serviceOptions.map(service => `
+      // Global state
+      let map,
+        pickupAutocomplete,
+        deliveryAutocomplete,
+        distanceService,
+        directionsService,
+        directionsRenderer;
+      let pickupCoordinates = null;
+      let deliveryCoordinates = null;
+      let currentQuote = null;
+      // Safe defaults for insurance variables referenced in displayQuoteResults
+      let insuranceSelected = false;
+      let insuranceFee = 30;
+
+      // Initialize service options into DOM
+      function initializeServiceOptions() {
+        const container = document.getElementById("serviceOptions");
+        container.innerHTML = serviceOptions
+          .map(
+            (service) => `
                 <label class="service-option pricing-card glass-effect rounded-xl p-6 cursor-pointer hover-lift" data-service="${service.id}">
                     <input type="radio" name="serviceType" value="${service.id}" class="hidden">
                     <div class="text-center">
@@ -510,246 +871,316 @@
                         <div class="text-xs text-green-600 font-medium">Member Price</div>
                     </div>
                 </label>
-            `).join('');
+            `
+          )
+          .join("");
 
-            // Add click handlers
-            document.querySelectorAll('.service-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    // Remove selected class from all options
-                    document.querySelectorAll('.service-option').forEach(opt => opt.classList.remove('selected-service'));
-                    // Add selected class to clicked option
-                    this.classList.add('selected-service');
-                    // Check the radio button
-                    this.querySelector('input[type="radio"]').checked = true;
-                });
-            });
+        // Add click handlers
+        document.querySelectorAll(".service-option").forEach((option) => {
+          option.addEventListener("click", function () {
+            // Remove selected class from all options
+            document
+              .querySelectorAll(".service-option")
+              .forEach((opt) => opt.classList.remove("selected-service"));
+            // Add selected class to clicked option
+            this.classList.add("selected-service");
+            // Check the radio button
+            this.querySelector('input[type="radio"]').checked = true;
+          });
+        });
+      }
+
+      // Calculate volume weight
+      function calculateVolumeWeight() {
+        const length = parseFloat(document.getElementById("length").value) || 0;
+        const width = parseFloat(document.getElementById("width").value) || 0;
+        const height = parseFloat(document.getElementById("height").value) || 0;
+
+        const volumeWeight = (length * width * height) / 5000;
+        document.getElementById("volumeWeight").textContent =
+          volumeWeight.toFixed(2);
+
+        return volumeWeight;
+      }
+
+      // Calculate quote with member discount
+      async function calculateQuote() {
+        const length = parseFloat(document.getElementById("length").value) || 0;
+        const width = parseFloat(document.getElementById("width").value) || 0;
+        const height = parseFloat(document.getElementById("height").value) || 0;
+        const weight = parseFloat(document.getElementById("weight").value) || 0;
+        const packageType =
+          document.querySelector('input[name="packageType"]:checked')?.value ||
+          "parcel";
+        const serviceType =
+          document.querySelector('input[name="serviceType"]:checked')?.value ||
+          "standard";
+
+        if (!length || !width || !height || !weight) {
+          alert("Please fill in all package dimensions and weight");
+          return;
         }
 
-        // Calculate volume weight
-        function calculateVolumeWeight() {
-            const length = parseFloat(document.getElementById('length').value) || 0;
-            const width = parseFloat(document.getElementById('width').value) || 0;
-            const height = parseFloat(document.getElementById('height').value) || 0;
-            
-            const volumeWeight = (length * width * height) / 5000;
-            document.getElementById('volumeWeight').textContent = volumeWeight.toFixed(2);
-            
-            return volumeWeight;
+        const volumeWeight = calculateVolumeWeight();
+        const actualWeight = Math.max(weight, volumeWeight);
+
+        const selectedService = serviceOptions.find(
+          (s) => s.id === serviceType
+        );
+        if (!selectedService) {
+          alert("Please select a service type");
+          return;
         }
 
-        // Calculate quote with member discount
-        async function calculateQuote() {
-            const length = parseFloat(document.getElementById('length').value) || 0;
-            const width = parseFloat(document.getElementById('width').value) || 0;
-            const height = parseFloat(document.getElementById('height').value) || 0;
-            const weight = parseFloat(document.getElementById('weight').value) || 0;
-            const packageType = document.querySelector('input[name="packageType"]:checked')?.value || 'parcel';
-            const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || 'standard';
-            
-            if (!length || !width || !height || !weight) {
-                alert('Please fill in all package dimensions and weight');
-                return;
-            }
+        // Calculate distance using Google Maps API (fallback handled inside)
+        const distance = await calculateDistance();
 
-            const volumeWeight = calculateVolumeWeight();
-            const actualWeight = Math.max(weight, volumeWeight);
-            
-            const selectedService = serviceOptions.find(s => s.id === serviceType);
-            if (!selectedService) return;
+        // Calculate pricing with member discount
+        let basePrice = selectedService.memberPrice; // Use member price as base
 
-            // Calculate distance using Google Maps API
-            const distance = await calculateDistance();
-            
-            // Calculate pricing with member discount
-            let basePrice = selectedService.memberPrice; // Use member price as base
-            
-            // Weight surcharge (reasonable limits to prevent excessive pricing)
-            if (actualWeight > 5) {
-                const extraWeight = Math.min(actualWeight - 5, 20); // Cap at 20kg extra
-                basePrice += extraWeight * 2; // R2 per kg over 5kg, max R40
-            }
-            if (actualWeight > 25) {
-                const extraWeight = actualWeight - 25; // Additional weight over 25kg
-                basePrice += extraWeight * 1.5; // R1.50 per kg over 25kg
-            }
-            
-            // Distance surcharge (reasonable limits)
-            if (distance > 50) {
-                const extraDistance = Math.min(distance - 50, 200); // Cap at 200km extra
-                basePrice += extraDistance * 0.3; // R0.30 per km over 50km, max R60
-            }
-            if (distance > 250) {
-                const extraDistance = distance - 250; // Additional distance over 250km
-                basePrice += extraDistance * 0.2; // R0.20 per km over 250km
-            }
-            
-            // Package type multiplier (reduced for members)
-            const typeMultipliers = {
-                'document': 0.9,
-                'parcel': 1.0,
-                'fragile': 1.15,
-                'valuable': 1.2
-            };
-            basePrice *= typeMultipliers[packageType] || 1.0;
-            
-            // Service multiplier
-            basePrice *= selectedService.multiplier;
-            
-            const finalPrice = Math.round(basePrice);
-            const originalPrice = Math.round(finalPrice / 0.85); // Calculate original price
-            const savings = originalPrice - finalPrice;
-            
-            // Display results
-            displayQuoteResults(selectedService, finalPrice, originalPrice, savings, actualWeight, distance);
+        // Weight multiplier (reduced for members)
+        if (actualWeight > 5) basePrice += (actualWeight - 5) * 4;
+        if (actualWeight > 10) basePrice += (actualWeight - 10) * 2.5;
+
+        // Distance multiplier (reduced for members)
+        if (distance > 100) basePrice += (distance - 100) * 0.4;
+        if (distance > 500) basePrice += (distance - 500) * 0.25;
+
+        // Package type multiplier (reduced for members)
+        const typeMultipliers = {
+          document: 0.7,
+          parcel: 0.9,
+          fragile: 1.2,
+          valuable: 1.3,
+        };
+        basePrice *= typeMultipliers[packageType] || 0.9;
+
+        // Service multiplier
+        basePrice *= selectedService.multiplier;
+
+        const finalPrice = Math.round(basePrice);
+        const originalPrice = Math.round(finalPrice / 0.85); // Calculate original price
+        const savings = originalPrice - finalPrice;
+
+        // Display results
+        displayQuoteResults(
+          selectedService,
+          finalPrice,
+          originalPrice,
+          savings,
+          actualWeight,
+          distance
+        );
+      }
+
+      // Google Maps API integration: single initMap definition
+      function initMap() {
+        // Guard if Google Maps not loaded
+        if (
+          typeof google === "undefined" ||
+          !google.maps ||
+          !google.maps.places
+        ) {
+          console.error("Google Maps API not loaded");
+          return;
         }
 
-        // Google Maps API integration
-        let map, pickupAutocomplete, deliveryAutocomplete;
-        let distanceService, directionsService, directionsRenderer;
-        let pickupCoordinates = null;
-        let deliveryCoordinates = null;
+        try {
+          distanceService = new google.maps.DistanceMatrixService();
+          directionsService = new google.maps.DirectionsService();
+          directionsRenderer = new google.maps.DirectionsRenderer();
 
-        function initMap() {
-            // Initialize services
-            distanceService = new google.maps.DistanceMatrixService();
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
+          const pickupInput = document.getElementById("pickupAddress");
+          const deliveryInput = document.getElementById("deliveryAddress");
 
-            // Initialize autocomplete for pickup address
-            pickupAutocomplete = new google.maps.places.Autocomplete(
-                document.getElementById('pickupAddress'),
-                {
-                    types: ['address'],
-                    componentRestrictions: { country: 'za' } // Restrict to South Africa
+          if (!pickupInput || !deliveryInput) {
+            console.error("Address input fields not found");
+            return;
+          }
+
+          pickupAutocomplete = new google.maps.places.Autocomplete(
+            pickupInput,
+            {
+              types: ["address"],
+              componentRestrictions: { country: "za" },
+            }
+          );
+
+          deliveryAutocomplete = new google.maps.places.Autocomplete(
+            deliveryInput,
+            {
+              types: ["address"],
+              componentRestrictions: { country: "za" },
+            }
+          );
+
+          pickupAutocomplete.addListener("place_changed", function () {
+            const place = pickupAutocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+              pickupCoordinates = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                formattedAddress: place.formatted_address,
+                placeId: place.place_id,
+              };
+              document.getElementById("pickupLatitude").value =
+                pickupCoordinates.lat;
+              document.getElementById("pickupLongitude").value =
+                pickupCoordinates.lng;
+              document.getElementById("pickupPlaceId").value =
+                pickupCoordinates.placeId;
+            }
+          });
+
+          deliveryAutocomplete.addListener("place_changed", function () {
+            const place = deliveryAutocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+              deliveryCoordinates = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                formattedAddress: place.formatted_address,
+                placeId: place.place_id,
+              };
+              document.getElementById("deliveryLatitude").value =
+                deliveryCoordinates.lat;
+              document.getElementById("deliveryLongitude").value =
+                deliveryCoordinates.lng;
+              document.getElementById("deliveryPlaceId").value =
+                deliveryCoordinates.placeId;
+            }
+          });
+        } catch (err) {
+          console.error("Error initializing Google Maps services:", err);
+        }
+      }
+
+      // Real distance calculation using Google Maps API
+      function calculateDistance() {
+        const pickup = document.getElementById("pickupAddress").value;
+        const delivery = document.getElementById("deliveryAddress").value;
+
+        if (!pickup || !delivery) {
+          return Promise.resolve(100); // Default distance
+        }
+
+        if (
+          typeof google === "undefined" ||
+          !distanceService ||
+          typeof distanceService.getDistanceMatrix !== "function"
+        ) {
+          console.warn(
+            "Google Maps not available or distanceService not initialized. Using fallback distance."
+          );
+          return Promise.resolve(100);
+        }
+        return new Promise((resolve) => {
+          try {
+            distanceService.getDistanceMatrix(
+              {
+                origins: [pickup],
+                destinations: [delivery],
+                travelMode: google.maps.TravelMode.DRIVING,
+                unitSystem: google.maps.UnitSystem.METRIC,
+                avoidHighways: false,
+                avoidTolls: false,
+              },
+              (response, status) => {
+                try {
+                  if (
+                    status === "OK" &&
+                    response &&
+                    response.rows &&
+                    response.rows[0] &&
+                    response.rows[0].elements[0] &&
+                    response.rows[0].elements[0].status === "OK"
+                  ) {
+                    const distance =
+                      response.rows[0].elements[0].distance.value / 1000; // km
+                    resolve(distance);
+                  } else {
+                    console.warn(
+                      "Google Maps API error or no route found:",
+                      status
+                    );
+                    resolve(100);
+                  }
+                } catch (err) {
+                  console.error("Error parsing DistanceMatrix response:", err);
+                  resolve(100);
                 }
+              }
             );
+          } catch (err) {
+            console.error("DistanceMatrix request failed:", err);
+            resolve(100);
+          }
+        });
+      }
 
-            // Initialize autocomplete for delivery address
-            deliveryAutocomplete = new google.maps.places.Autocomplete(
-                document.getElementById('deliveryAddress'),
-                {
-                    types: ['address'],
-                    componentRestrictions: { country: 'za' } // Restrict to South Africa
-                }
-            );
+      // Display quote results
+      function displayQuoteResults(
+        service,
+        price,
+        originalPrice,
+        savings,
+        weight,
+        distance
+      ) {
+        const container = document.getElementById("quoteResults");
 
-            // Add place changed listeners to capture coordinates
-            pickupAutocomplete.addListener('place_changed', function() {
-                const place = pickupAutocomplete.getPlace();
-                if (place.geometry && place.geometry.location) {
-                    pickupCoordinates = {
-                        lat: place.geometry.location.lat(),
-                        lng: place.geometry.location.lng(),
-                        formattedAddress: place.formatted_address,
-                        placeId: place.place_id
-                    };
-                    console.log('Pickup coordinates captured:', pickupCoordinates);
-                    
-                    // Store coordinates in hidden fields for form submission
-                    document.getElementById('pickupLatitude').value = pickupCoordinates.lat;
-                    document.getElementById('pickupLongitude').value = pickupCoordinates.lng;
-                    document.getElementById('pickupPlaceId').value = pickupCoordinates.placeId;
-                }
-            });
+        currentQuote = {
+          service: service,
+          price: price,
+          originalPrice: originalPrice,
+          savings: savings,
+          weight: weight,
+          distance: distance,
+          pickupAddress: document.getElementById("pickupAddress").value,
+          deliveryAddress: document.getElementById("deliveryAddress").value,
+          pickupLatitude: document.getElementById("pickupLatitude").value,
+          pickupLongitude: document.getElementById("pickupLongitude").value,
+          pickupPlaceId: document.getElementById("pickupPlaceId").value,
+          deliveryLatitude: document.getElementById("deliveryLatitude").value,
+          deliveryLongitude: document.getElementById("deliveryLongitude").value,
+          deliveryPlaceId: document.getElementById("deliveryPlaceId").value,
+          length: document.getElementById("length").value,
+          width: document.getElementById("width").value,
+          height: document.getElementById("height").value,
+          weight: document.getElementById("weight").value,
+          packageType:
+            document.querySelector('input[name="packageType"]:checked')
+              ?.value || "parcel",
+        };
 
-            deliveryAutocomplete.addListener('place_changed', function() {
-                const place = deliveryAutocomplete.getPlace();
-                if (place.geometry && place.geometry.location) {
-                    deliveryCoordinates = {
-                        lat: place.geometry.location.lat(),
-                        lng: place.geometry.location.lng(),
-                        formattedAddress: place.formatted_address,
-                        placeId: place.place_id
-                    };
-                    console.log('Delivery coordinates captured:', deliveryCoordinates);
-                    
-                    // Store coordinates in hidden fields for form submission
-                    document.getElementById('deliveryLatitude').value = deliveryCoordinates.lat;
-                    document.getElementById('deliveryLongitude').value = deliveryCoordinates.lng;
-                    document.getElementById('deliveryPlaceId').value = deliveryCoordinates.placeId;
-                }
-            });
-        }
-
-        // Real distance calculation using Google Maps API
-        function calculateDistance() {
-            const pickup = document.getElementById('pickupAddress').value;
-            const delivery = document.getElementById('deliveryAddress').value;
-            
-            if (!pickup || !delivery) {
-            return 100; // Default distance
-        }
-
-            return new Promise((resolve) => {
-                distanceService.getDistanceMatrix({
-                    origins: [pickup],
-                    destinations: [delivery],
-                    travelMode: google.maps.TravelMode.DRIVING,
-                    unitSystem: google.maps.UnitSystem.METRIC,
-                    avoidHighways: false,
-                    avoidTolls: false
-                }, (response, status) => {
-                    if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-                        const distance = response.rows[0].elements[0].distance.value / 1000; // Convert to km
-                        console.log('Google Maps distance:', distance, 'km');
-                        resolve(distance);
-                    } else {
-                        console.log('Google Maps API error:', status);
-                        resolve(100); // Fallback distance
-                    }
-                });
-            });
-        }
-
-        // Store current quote globally
-        let currentQuote = null;
-
-        // Display quote results with member benefits
-        function displayQuoteResults(service, price, originalPrice, savings, weight, distance) {
-            const container = document.getElementById('quoteResults');
-            
-            // Store quote data for later use
-            currentQuote = {
-                service: service,
-                price: price,
-                originalPrice: originalPrice,
-                savings: savings,
-                weight: weight,
-                distance: distance,
-                pickupAddress: document.getElementById('pickupAddress').value,
-                deliveryAddress: document.getElementById('deliveryAddress').value,
-                pickupLatitude: document.getElementById('pickupLatitude').value,
-                pickupLongitude: document.getElementById('pickupLongitude').value,
-                pickupPlaceId: document.getElementById('pickupPlaceId').value,
-                deliveryLatitude: document.getElementById('deliveryLatitude').value,
-                deliveryLongitude: document.getElementById('deliveryLongitude').value,
-                deliveryPlaceId: document.getElementById('deliveryPlaceId').value,
-                length: document.getElementById('length').value,
-                width: document.getElementById('width').value,
-                height: document.getElementById('height').value,
-                weight: document.getElementById('weight').value,
-                packageType: document.querySelector('input[name="packageType"]:checked')?.value || 'parcel'
-            };
-            
-            container.innerHTML = `
+        container.innerHTML = `
                 <div class="bg-${service.color}-50 rounded-xl p-6">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-${service.color}-100 rounded-full flex items-center justify-center mr-3">
-                                <i class="${service.icon} text-${service.color}-600"></i>
+                            <div class="w-10 h-10 bg-${
+                              service.color
+                            }-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="${service.icon} text-${
+          service.color
+        }-600"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900">${service.name}</h3>
-                                <p class="text-sm text-gray-600">${service.description}</p>
+                                <h3 class="font-semibold text-gray-900">${
+                                  service.name
+                                }</h3>
+                                <p class="text-sm text-gray-600">${
+                                  service.description
+                                }</p>
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="text-2xl font-bold text-${service.color}-600">R${price}</div>
+                            <div class="text-2xl font-bold text-${
+                              service.color
+                            }-600">R${price}</div>
                             <div class="text-sm text-gray-500 line-through">R${originalPrice}</div>
                             <div class="text-xs text-green-600 font-medium">You save R${savings}</div>
                         </div>
                     </div>
-                    
+
                     <div class="space-y-2 text-sm text-gray-600">
                         <div class="flex justify-between">
                             <span>Weight:</span>
@@ -767,8 +1198,18 @@
                             <span>Member Discount:</span>
                             <span>15%</span>
                         </div>
+                        ${
+                          insuranceSelected
+                            ? `
+                        <div class="flex justify-between">
+                            <span>Insurance:</span>
+                            <span>R${insuranceFee}</span>
+                        </div>
+                        `
+                            : ""
+                        }
                     </div>
-                    
+
                     <div class="mt-4 pt-4 border-t border-gray-200">
                         <div class="bg-blue-50 rounded-lg p-4 mb-4">
                             <div class="flex items-center justify-between mb-2">
@@ -781,374 +1222,402 @@
                             <p class="text-sm text-gray-600">Up to R20,000 coverage included</p>
                         </div>
                     </div>
-                    
+
                     <div class="mt-4 pt-4 border-t border-gray-200 space-y-2">
-                        <button onclick="proceedToBooking('${service.id}')" class="w-full bg-${service.color}-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-${service.color}-700 transition-colors duration-300">
+                        <button onclick="proceedToBooking('${
+                          service.id
+                        }')" class="w-full bg-${
+          service.color
+        }-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-${
+          service.color
+        }-700 transition-colors duration-300">
                             <i class="fas fa-shopping-cart mr-2"></i>Book This Service
                         </button>
-                        <button onclick="saveQuoteForLater('${service.id}')" class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-300">
+                        <button onclick="saveQuoteForLater('${
+                          service.id
+                        }')" class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-300">
                             <i class="fas fa-bookmark mr-2"></i>Save Quote for Later
                         </button>
                     </div>
                 </div>
             `;
-        }
-        
-        // Save quote for later
-        async function saveQuoteForLater(serviceId) {
-            if (!currentQuote) {
-                showAlert('No quote to save. Please generate a quote first.', 'error');
-                return;
-            }
-            
-            try {
-                // Get authentication token
-                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-                
-                if (!token) {
-                    showAlert('You need to login to save quotes. Redirecting to login...', 'error');
-                    sessionStorage.setItem('pendingQuoteData', JSON.stringify(currentQuote));
-                    sessionStorage.setItem('pendingBookingAction', 'save');
-                    setTimeout(() => {
-                        window.location.href = '/login?redirect=/customer/quote';
-                    }, 2000);
-                    return;
-                }
-                
-                // Prepare quote data for API
-                const quoteData = {
-                    pickupAddress: currentQuote.pickupAddress || '',
-                    deliveryAddress: currentQuote.deliveryAddress || '',
-                    weight: parseFloat(currentQuote.weight) || 0,
-                    length: currentQuote.length || '',
-                    width: currentQuote.width || '',
-                    height: currentQuote.height || '',
-                    dimensions: currentQuote.dimensions || '',
-                    serviceType: currentQuote.service?.type || 'SAME_DAY',
-                    price: parseFloat(currentQuote.price) || 0,
-                    distance: parseFloat(currentQuote.distance) || 0
-                };
-                
-                // Debug: show token and quote data before calling API
-                console.log('[DEBUG] Saving quote, token:', token);
-                console.log('[DEBUG] Quote data:', quoteData);
+      }
 
-                // Call API to save quote
-                const response = await fetch('/api/customer/quote/save', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify(quoteData)
-                });
-
-                console.log('[DEBUG] HTTP response status:', response.status);
-                const result = await response.json();
-                console.log('[DEBUG] API result:', result);
-                
-                if (response.ok && result.success) {
-                    showAlert(result.message || 'Quote saved successfully! A confirmation email has been sent.', 'success');
-                } else {
-                    const errorMsg = result.error || 'Failed to save quote. Please try again.';
-                    showAlert(errorMsg, 'error');
-                    
-                    // If authentication failed, redirect to login
-                    if (response.status === 401) {
-                        sessionStorage.setItem('pendingQuoteData', JSON.stringify(currentQuote));
-                        sessionStorage.setItem('pendingBookingAction', 'save');
-                        setTimeout(() => {
-                            window.location.href = '/login?redirect=/customer/quote';
-                        }, 2000);
-                    }
-                }
-            } catch (error) {
-                console.error('Error saving quote:', error);
-                showAlert('An error occurred while saving the quote. Please try again.', 'error');
-            }
+      // Save quote for later
+      async function saveQuoteForLater(serviceId) {
+        if (!currentQuote) {
+          showAlert(
+            "No quote to save. Please generate a quote first.",
+            "error"
+          );
+          return;
         }
 
-        // Proceed to booking
-        function proceedToBooking(selectedServiceType) {
-            try {
-                if (!currentQuote) {
-                    alert('Please generate a quote first before booking.');
-                    return;
-                }
-                
-                // Map service IDs to booking page service types
-                const serviceTypeMap = {
-                    'express': 'SAME_DAY',  // Express Delivery -> Same Day
-                    'standard': 'OVERNIGHT', // Standard Delivery -> Overnight
-                    'economy': 'ECONOMY',    // Economy Delivery -> Economy
-                    'urgent': 'URGENT'
-                };
-                
-                // Get the service type - use the passed parameter or fall back to current quote service
-                const serviceId = selectedServiceType || currentQuote.service?.id || 'standard';
-                const mappedServiceType = serviceTypeMap[serviceId] || 'SAME_DAY';
-                
-                // Use currentQuote data
-                const quoteData = {
-                    ...currentQuote,
-                    serviceType: mappedServiceType,
-                    serviceId: serviceId
-                };
-                
-                // Store quote data in sessionStorage for the booking page
-                sessionStorage.setItem('quoteData', JSON.stringify(quoteData));
-                
-                // Redirect to booking page
-                window.location.href = '/booking';
-            } catch (error) {
-                console.error('Error proceeding to booking:', error);
-                alert('An error occurred. Please try again.');
-            }
-        }
+        try {
+          const token =
+            localStorage.getItem("token") || sessionStorage.getItem("token");
 
-        // Check authentication and load user data
-        async function checkAuthAndLoadUser() {
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-            if (!token) {
-                // If no token, redirect to public quote page
-                window.location.href = '/customer/quote';
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/customer/profile', {
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    // If auth fails, redirect to public quote page
-                    window.location.href = '/customer/quote';
-                    return;
-                }
-                
-                const userData = await response.json();
-                // Update page with user data if needed
-                if (userData) {
-                    // User is authenticated, page should already show logged-in version
-                    console.log('User authenticated:', userData.email);
-                }
-            } catch (error) {
-                console.error('Error loading user data:', error);
-                // On error, redirect to public quote page
-                window.location.href = '/customer/quote';
-            }
-        }
-        
-        // Load saved addresses and populate dropdowns
-        function loadSavedAddresses() {
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-            if (!token) return;
-            
-            fetch('/api/customer/profile/addresses', {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            })
-            .then(response => {
-                if (!response.ok) return [];
-                return response.json();
-            })
-            .then(addresses => {
-                const pickupSelect = document.getElementById('pickupAddressSelect');
-                const deliverySelect = document.getElementById('deliveryAddressSelect');
-                
-                // Clear existing options except the first one
-                while (pickupSelect.children.length > 1) {
-                    pickupSelect.removeChild(pickupSelect.lastChild);
-                }
-                while (deliverySelect.children.length > 1) {
-                    deliverySelect.removeChild(deliverySelect.lastChild);
-                }
-                
-                // Add saved addresses to dropdowns
-                addresses.forEach(addr => {
-                    const option = document.createElement('option');
-                    option.value = addr.id;
-                    option.textContent = `${addr.label || 'Address'} - ${addr.fullAddress || addr.addressLine1}`;
-                    option.dataset.address = addr.fullAddress || addr.addressLine1;
-                    option.dataset.latitude = addr.latitude || '';
-                    option.dataset.longitude = addr.longitude || '';
-                    option.dataset.placeId = addr.placeId || '';
-                    
-                    pickupSelect.appendChild(option.cloneNode(true));
-                    deliverySelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error loading saved addresses:', error);
-            });
-        }
-
-        // Address selection handlers
-        document.getElementById('pickupAddressSelect').addEventListener('change', function() {
-            if (this.value) {
-                const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption.dataset.address) {
-                    document.getElementById('pickupAddress').value = selectedOption.dataset.address;
-                    if (selectedOption.dataset.latitude) {
-                        document.getElementById('pickupLatitude').value = selectedOption.dataset.latitude;
-                    }
-                    if (selectedOption.dataset.longitude) {
-                        document.getElementById('pickupLongitude').value = selectedOption.dataset.longitude;
-                    }
-                    if (selectedOption.dataset.placeId) {
-                        document.getElementById('pickupPlaceId').value = selectedOption.dataset.placeId;
-                    }
-                }
-            }
-        });
-
-        document.getElementById('deliveryAddressSelect').addEventListener('change', function() {
-            if (this.value) {
-                const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption.dataset.address) {
-                    document.getElementById('deliveryAddress').value = selectedOption.dataset.address;
-                    if (selectedOption.dataset.latitude) {
-                        document.getElementById('deliveryLatitude').value = selectedOption.dataset.latitude;
-                    }
-                    if (selectedOption.dataset.longitude) {
-                        document.getElementById('deliveryLongitude').value = selectedOption.dataset.longitude;
-                    }
-                    if (selectedOption.dataset.placeId) {
-                        document.getElementById('deliveryPlaceId').value = selectedOption.dataset.placeId;
-                    }
-                }
-            }
-        });
-        
-        // Load saved addresses on page load
-        document.addEventListener('DOMContentLoaded', async function() {
-            checkAuthAndLoadUser();
-            loadSavedAddresses();
-            
-            // Check for pending quote save action after login
-            const pendingQuote = sessionStorage.getItem('pendingQuoteData');
-            const pendingAction = sessionStorage.getItem('pendingBookingAction');
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-            
-            if (pendingQuote && pendingAction === 'save' && token) {
-                try {
-                    const quoteData = JSON.parse(pendingQuote);
-                    currentQuote = quoteData;
-                    
-                    // Automatically save the quote
-                    await saveQuoteForLater();
-                    
-                    // Clear pending data
-                    sessionStorage.removeItem('pendingQuoteData');
-                    sessionStorage.removeItem('pendingBookingAction');
-                } catch (error) {
-                    console.error('Error auto-saving quote after login:', error);
-                    sessionStorage.removeItem('pendingQuoteData');
-                    sessionStorage.removeItem('pendingBookingAction');
-                }
-            }
-        });
-
-        // Sample box click handler
-        function handleSampleBoxClick(boxElement) {
-            const length = boxElement.dataset.length;
-            const width = boxElement.dataset.width;
-            const height = boxElement.dataset.height;
-            const weight = boxElement.dataset.weight;
-            const name = boxElement.dataset.name;
-            
-            // Fill in the form fields
-            document.getElementById('length').value = length;
-            document.getElementById('width').value = width;
-            document.getElementById('height').value = height;
-            document.getElementById('weight').value = weight;
-            
-            // Calculate volume weight
-            calculateVolumeWeight();
-            
-            // Add visual feedback
-            document.querySelectorAll('.sample-box').forEach(box => {
-                box.classList.remove('ring-2', 'ring-blue-400', 'bg-blue-50');
-            });
-            boxElement.classList.add('ring-2', 'ring-blue-400', 'bg-blue-50');
-            
-            // Show success message
-            showTemporaryMessage(`✓ ${name} dimensions filled!`, 'success');
-        }
-
-        // Show temporary message
-        function showTemporaryMessage(message, type = 'info') {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white font-medium z-50 transition-all duration-300 ${
-                type === 'success' ? 'bg-green-500' : 'bg-blue-500'
-            }`;
-            messageDiv.textContent = message;
-            document.body.appendChild(messageDiv);
-            
-            // Remove after 3 seconds
+          if (!token) {
+            showAlert(
+              "You need to login to save quotes. Redirecting to login...",
+              "error"
+            );
+            sessionStorage.setItem(
+              "pendingQuoteData",
+              JSON.stringify(currentQuote)
+            );
+            sessionStorage.setItem("pendingBookingAction", "save");
             setTimeout(() => {
-                messageDiv.style.opacity = '0';
-                messageDiv.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    document.body.removeChild(messageDiv);
-                }, 300);
-            }, 3000);
+              window.location.href = "/login?redirect=/customer/quote";
+            }, 2000);
+            return;
+          }
+
+          const quoteData = {
+            pickupAddress: currentQuote.pickupAddress || "",
+            deliveryAddress: currentQuote.deliveryAddress || "",
+            weight: parseFloat(currentQuote.weight) || 0,
+            length: currentQuote.length || "",
+            width: currentQuote.width || "",
+            height: currentQuote.height || "",
+            dimensions: currentQuote.dimensions || "",
+            serviceType: currentQuote.service?.type || "SAME_DAY",
+            price: parseFloat(currentQuote.price) || 0,
+            distance: parseFloat(currentQuote.distance) || 0,
+          };
+
+          const response = await fetch("/api/customer/quote/save", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            credentials: "include",
+            body: JSON.stringify(quoteData),
+          });
+
+          const result = await response.json();
+
+          if (response.ok && result.success) {
+            showAlert(
+              result.message ||
+                "Quote saved successfully! A confirmation email has been sent.",
+              "success"
+            );
+          } else {
+            const errorMsg =
+              result.error || "Failed to save quote. Please try again.";
+            showAlert(errorMsg, "error");
+            if (response.status === 401) {
+              sessionStorage.setItem(
+                "pendingQuoteData",
+                JSON.stringify(currentQuote)
+              );
+              sessionStorage.setItem("pendingBookingAction", "save");
+              setTimeout(() => {
+                window.location.href = "/login?redirect=/customer/quote";
+              }, 2000);
+            }
+          }
+        } catch (error) {
+          console.error("Error saving quote:", error);
+          showAlert(
+            "An error occurred while saving the quote. Please try again.",
+            "error"
+          );
+        }
+      }
+
+      // Proceed to booking
+      function proceedToBooking(selectedServiceType) {
+        try {
+          if (!currentQuote) {
+            alert("Please generate a quote first before booking.");
+            return;
+          }
+
+          const serviceTypeMap = {
+            standard: "SAME_DAY",
+            express: "OVERNIGHT",
+            economy: "ECONOMY",
+            urgent: "URGENT",
+          };
+
+          const serviceId =
+            selectedServiceType || currentQuote.service?.id || "standard";
+          const mappedServiceType = serviceTypeMap[serviceId] || "SAME_DAY";
+
+          const quoteData = {
+            ...currentQuote,
+            serviceType: mappedServiceType,
+            serviceId: serviceId,
+          };
+
+          sessionStorage.setItem("quoteData", JSON.stringify(quoteData));
+          window.location.href = "/booking";
+        } catch (error) {
+          console.error("Error proceeding to booking:", error);
+          alert("An error occurred. Please try again.");
+        }
+      }
+
+      // Authentication check and profile/address loaders
+      async function checkAuthAndLoadUser() {
+        const token =
+          localStorage.getItem("token") || sessionStorage.getItem("token");
+        if (!token) {
+          window.location.href = "/customer/quote";
+          return;
         }
 
-        // Simple alert wrapper used across the page; maps to showTemporaryMessage
-        function showAlert(message, type = 'info') {
-            const t = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
-            showTemporaryMessage(message, t);
-        }
+        try {
+          const response = await fetch("/api/customer/profile", {
+            headers: {
+              Authorization: "Bearer " + token,
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          });
 
-        // Event listeners
-        // Call initMap after Google Maps script loads to avoid "initMap is not a function" race
-        (function attachMapsLoader() {
-            const mapsScript = document.getElementById('gmap-script');
-            if (!mapsScript) return;
-            mapsScript.addEventListener('load', function() {
-                try {
-                    if (typeof initMap === 'function') {
-                        initMap();
-                    } else {
-                        // If initMap not yet defined, call it once DOM is ready
-                        document.addEventListener('DOMContentLoaded', function() {
-                            if (typeof initMap === 'function') initMap();
-                        });
-                    }
-                } catch (e) {
-                    console.error('Error invoking initMap after Google script load:', e);
+          if (!response.ok) {
+            window.location.href = "/customer/quote";
+            return;
+          }
+
+          const userData = await response.json();
+          if (userData) {
+            console.log("User authenticated:", userData.email);
+          }
+        } catch (error) {
+          console.error("Error loading user data:", error);
+          window.location.href = "/customer/quote";
+        }
+      }
+
+      function loadSavedAddresses() {
+        const token =
+          localStorage.getItem("token") || sessionStorage.getItem("token");
+        if (!token) return;
+
+        fetch("/api/customer/profile/addresses", {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        })
+          .then((response) => {
+            if (!response.ok) return [];
+            return response.json();
+          })
+          .then((addresses) => {
+            const pickupSelect = document.getElementById("pickupAddressSelect");
+            const deliverySelect = document.getElementById(
+              "deliveryAddressSelect"
+            );
+
+            while (pickupSelect.children.length > 1) {
+              pickupSelect.removeChild(pickupSelect.lastChild);
+            }
+            while (deliverySelect.children.length > 1) {
+              deliverySelect.removeChild(deliverySelect.lastChild);
+            }
+
+            addresses.forEach((addr) => {
+              const option = document.createElement("option");
+              option.value = addr.id;
+              option.textContent = `${addr.label || "Address"} - ${
+                addr.fullAddress || addr.addressLine1
+              }`;
+              option.dataset.address = addr.fullAddress || addr.addressLine1;
+              option.dataset.latitude = addr.latitude || "";
+              option.dataset.longitude = addr.longitude || "";
+              option.dataset.placeId = addr.placeId || "";
+
+              pickupSelect.appendChild(option.cloneNode(true));
+              deliverySelect.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Error loading saved addresses:", error);
+          });
+      }
+
+      // Address selection handlers
+      document.addEventListener("DOMContentLoaded", function () {
+        // Hook up selection handlers after DOM ready
+        const pickupSelect = document.getElementById("pickupAddressSelect");
+        const deliverySelect = document.getElementById("deliveryAddressSelect");
+        if (pickupSelect) {
+          pickupSelect.addEventListener("change", function () {
+            if (this.value) {
+              const selectedOption = this.options[this.selectedIndex];
+              if (selectedOption.dataset.address) {
+                document.getElementById("pickupAddress").value =
+                  selectedOption.dataset.address;
+                if (selectedOption.dataset.latitude) {
+                  document.getElementById("pickupLatitude").value =
+                    selectedOption.dataset.latitude;
                 }
-            });
-        })();
+                if (selectedOption.dataset.longitude) {
+                  document.getElementById("pickupLongitude").value =
+                    selectedOption.dataset.longitude;
+                }
+                if (selectedOption.dataset.placeId) {
+                  document.getElementById("pickupPlaceId").value =
+                    selectedOption.dataset.placeId;
+                }
+              }
+            }
+          });
+        }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeServiceOptions();
-            
-            // Add click handlers for sample boxes
-            document.querySelectorAll('.sample-box').forEach(box => {
-                box.addEventListener('click', function() {
-                    handleSampleBoxClick(this);
-                });
-            });
-            
-            // Calculate volume weight on dimension change
-            ['length', 'width', 'height'].forEach(id => {
-                document.getElementById(id).addEventListener('input', calculateVolumeWeight);
-            });
-            
-            // Form submission
-            document.getElementById('quoteForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                calculateQuote();
-            });
+        if (deliverySelect) {
+          deliverySelect.addEventListener("change", function () {
+            if (this.value) {
+              const selectedOption = this.options[this.selectedIndex];
+              if (selectedOption.dataset.address) {
+                document.getElementById("deliveryAddress").value =
+                  selectedOption.dataset.address;
+                if (selectedOption.dataset.latitude) {
+                  document.getElementById("deliveryLatitude").value =
+                    selectedOption.dataset.latitude;
+                }
+                if (selectedOption.dataset.longitude) {
+                  document.getElementById("deliveryLongitude").value =
+                    selectedOption.dataset.longitude;
+                }
+                if (selectedOption.dataset.placeId) {
+                  document.getElementById("deliveryPlaceId").value =
+                    selectedOption.dataset.placeId;
+                }
+              }
+            }
+          });
+        }
+
+        // Initialize UI pieces
+        initializeServiceOptions();
+
+        document.querySelectorAll(".sample-box").forEach((box) => {
+          box.addEventListener("click", function () {
+            handleSampleBoxClick(this);
+          });
         });
+
+        ["length", "width", "height"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener("input", calculateVolumeWeight);
+        });
+
+        const form = document.getElementById("quoteForm");
+        if (form) {
+          form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            (async function () {
+              try {
+                await calculateQuote();
+              } catch (err) {
+                console.error("Error during calculateQuote:", err);
+                showAlert(
+                  "An error occurred while calculating the quote. Please try again.",
+                  "error"
+                );
+              }
+            })();
+          });
+        }
+
+        // Run auth/address load after DOM ready
+        checkAuthAndLoadUser();
+        loadSavedAddresses();
+
+        // Pending quote save handling
+        const pendingQuote = sessionStorage.getItem("pendingQuoteData");
+        const pendingAction = sessionStorage.getItem("pendingBookingAction");
+        const token =
+          localStorage.getItem("token") || sessionStorage.getItem("token");
+
+        if (pendingQuote && pendingAction === "save" && token) {
+          try {
+            const quoteData = JSON.parse(pendingQuote);
+            currentQuote = quoteData;
+            saveQuoteForLater();
+            sessionStorage.removeItem("pendingQuoteData");
+            sessionStorage.removeItem("pendingBookingAction");
+          } catch (error) {
+            console.error("Error auto-saving quote after login:", error);
+            sessionStorage.removeItem("pendingQuoteData");
+            sessionStorage.removeItem("pendingBookingAction");
+          }
+        }
+      });
+
+      // Sample box handler and small UI helpers
+      function handleSampleBoxClick(boxElement) {
+        const length = boxElement.dataset.length;
+        const width = boxElement.dataset.width;
+        const height = boxElement.dataset.height;
+        const weight = boxElement.dataset.weight;
+        const name = boxElement.dataset.name;
+
+        document.getElementById("length").value = length;
+        document.getElementById("width").value = width;
+        document.getElementById("height").value = height;
+        document.getElementById("weight").value = weight;
+
+        calculateVolumeWeight();
+
+        document.querySelectorAll(".sample-box").forEach((box) => {
+          box.classList.remove("ring-2", "ring-blue-400", "bg-blue-50");
+        });
+        boxElement.classList.add("ring-2", "ring-blue-400", "bg-blue-50");
+
+        showTemporaryMessage(`✓ ${name} dimensions filled!`, "success");
+      }
+
+      function showTemporaryMessage(message, type = "info") {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white font-medium z-50 transition-all duration-300 ${
+          type === "success" ? "bg-green-500" : "bg-blue-500"
+        }`;
+        messageDiv.textContent = message;
+        document.body.appendChild(messageDiv);
+
+        setTimeout(() => {
+          messageDiv.style.opacity = "0";
+          messageDiv.style.transform = "translateX(100%)";
+          setTimeout(() => {
+            if (messageDiv.parentNode) document.body.removeChild(messageDiv);
+          }, 300);
+        }, 3000);
+      }
+
+      function showAlert(message, type = "info") {
+        const t =
+          type === "success" ? "success" : type === "error" ? "error" : "info";
+        showTemporaryMessage(message, t);
+      }
+
+      // Ensure initMap is invoked after Google Maps script loads
+      (function attachMapsLoader() {
+        const mapsScript = document.getElementById("gmap-script");
+        if (!mapsScript) return;
+        mapsScript.addEventListener("load", function () {
+          try {
+            if (typeof initMap === "function") {
+              initMap();
+            } else {
+              document.addEventListener("DOMContentLoaded", function () {
+                if (typeof initMap === "function") initMap();
+              });
+            }
+          } catch (e) {
+            console.error(
+              "Error invoking initMap after Google script load:",
+              e
+            );
+          }
+        });
+      })();
     </script>
-</body>
+  </body>
 </html>

@@ -316,9 +316,12 @@
                 const response = await fetch(`/api/booking/${bookingId}`);
                 const result = await response.json();
                 
-                if (result.success) {
-                    const booking = result.booking;
+                // Handle both wrapped response (result.booking) and direct booking object
+                const booking = result.booking || result;
+                if (booking && (booking.bookingNumber || booking.id)) {
                     updateBookingDetails(booking);
+                } else {
+                    console.error('Invalid booking data received:', result);
                 }
             } catch (error) {
                 console.error('Error loading booking details:', error);

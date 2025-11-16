@@ -56,16 +56,16 @@
                             900: '#0c4a6e',
                         },
                         'reliable-yellow': {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            200: '#fed7aa',
-                            300: '#fdba74',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                            800: '#9a3412',
-                            900: '#7c2d12',
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
                         }
                     },
                     animation: {
@@ -1378,12 +1378,18 @@
                 `;
             }
             
-            if (quote.weight || quote.dimensions) {
+            if (quote.weight || quote.dimensions || (quote.length && quote.width && quote.height)) {
+                // Construct dimensions string from individual values if not provided
+                let dimensionsStr = quote.dimensions;
+                if (!dimensionsStr && quote.length && quote.width && quote.height) {
+                    dimensionsStr = `${quote.length}x${quote.width}x${quote.height}`;
+                }
+                
                 html += `
                     <div class="bg-white rounded-lg p-4 border border-gray-200">
                         <h3 class="font-semibold text-gray-700 mb-2">Package Details</h3>
                         <p class="text-gray-900">Weight: ${quote.weight || 'N/A'} kg</p>
-                        <p class="text-gray-900">Dimensions: ${quote.dimensions || 'N/A'}</p>
+                        <p class="text-gray-900">Dimensions: ${dimensionsStr || 'N/A'}</p>
                     </div>
                 `;
             }

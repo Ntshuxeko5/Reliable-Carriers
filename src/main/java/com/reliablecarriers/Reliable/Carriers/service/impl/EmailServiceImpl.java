@@ -29,7 +29,7 @@ public class EmailServiceImpl implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
 
-    @Autowired
+    @Autowired(required = false)
     private JavaMailSender mailSender;
 
     @Autowired
@@ -38,7 +38,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.base.url:http://localhost:8080}")
     private String baseUrl;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:}")
     private String fromEmail;
 
     @Value("${app.name:Reliable Carriers}")
@@ -152,9 +152,13 @@ public class EmailServiceImpl implements EmailService {
             } catch (Exception e) {
                 logger.error("Failed to initialize Mailgun: {}", e.getMessage(), e);
                 mailgunEnabled = false;
+                mailgunWebClient = null;
+                mailgunFromAddress = null;
             }
         } else {
             logger.debug("Mailgun not enabled, using SMTP fallback");
+            mailgunWebClient = null;
+            mailgunFromAddress = null;
         }
     }
 
@@ -242,6 +246,10 @@ public class EmailServiceImpl implements EmailService {
     private void sendViaMailgun(String to, String subject, String text, String html) {
         if (mailgunWebClient == null) {
             throw new IllegalStateException("Mailgun is not configured");
+        }
+        
+        if (mailgunFromAddress == null || mailgunFromAddress.isEmpty()) {
+            throw new IllegalStateException("Mailgun from address is not configured");
         }
         
         // Build form data for Mailgun API
@@ -341,14 +349,6 @@ public class EmailServiceImpl implements EmailService {
             mailgunAuthFailureCount = 0;
         } catch (Exception e) {
             logger.error("Mailgun API error: {}", e.getMessage(), e);
-            
-            // Check if it's a sandbox domain issue
-            if (mailgunDomain != null && mailgunDomain.contains("sandbox")) {
-                throw new RuntimeException("Mailgun sandbox domain detected. Sandbox domains can only send to authorized recipients. " +
-                    "Please authorize the recipient email in Mailgun dashboard or use a verified domain. " +
-                    "Original error: " + e.getMessage(), e);
-            }
-            
             throw new RuntimeException("Failed to send email via Mailgun: " + e.getMessage(), e);
         }
     }
@@ -377,6 +377,11 @@ public class EmailServiceImpl implements EmailService {
             }
             
             // Fallback to SMTP
+            if (mailSender == null) {
+                logger.error("Cannot send HTML email: JavaMailSender is not configured. Email configuration is missing.");
+                throw new IllegalStateException("Email service is not configured. Please configure SMTP or Mailgun settings.");
+            }
+            
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
