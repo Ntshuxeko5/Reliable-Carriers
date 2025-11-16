@@ -34,7 +34,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Google Maps API -->
-    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" async defer></script>
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'" 
+            async 
+            defer
+            onerror="console.error('Failed to load Google Maps API script'); document.getElementById('mapError')?.classList.remove('hidden');"></script>
     
     <!-- Admin Utilities -->
     <script src="/js/admin-utils.js"></script>
@@ -133,8 +136,18 @@
                             <i class="fas fa-map-marker-alt text-reliable-600 mr-2"></i> Driver Locations
                         </h2>
                     </div>
-                    <div class="p-0">
-                        <div id="driverMap" class="h-96 rounded-b-2xl"></div>
+                    <div class="p-0 relative">
+                        <div id="mapLoading" class="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-b-2xl z-10">
+                            <div class="text-center">
+                                <i class="fas fa-spinner fa-spin text-3xl text-reliable-600 mb-2"></i>
+                                <p class="text-gray-600">Loading map...</p>
+                            </div>
+                        </div>
+                        <div id="driverMap" class="h-96 rounded-b-2xl" style="width: 100%; height: 384px; min-height: 384px;"></div>
+                        <div id="mapError" class="hidden text-center text-red-500 py-4">
+                            <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                            <p>Map failed to load. Please check your Google Maps API key.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -224,17 +237,62 @@
         // Initialize Google Maps
         function initMap() {
             const mapElement = document.getElementById('driverMap');
+            const errorElement = document.getElementById('mapError');
+            const loadingElement = document.getElementById('mapLoading');
+            
             if (!mapElement) {
                 console.error('Map element not found');
+                if (loadingElement) loadingElement.classList.add('hidden');
+                if (errorElement) {
+                    errorElement.classList.remove('hidden');
+                }
+                return;
+            }
+            
+            // Check if Google Maps API is loaded
+            if (typeof google === 'undefined' || !google.maps) {
+                console.error('Google Maps API not loaded');
+                // Try to initialize again after a delay
+                setTimeout(() => {
+                    if (typeof google !== 'undefined' && google.maps) {
+                        initMap();
+                    } else {
+                        // Show error after timeout
+                        if (loadingElement) loadingElement.classList.add('hidden');
+                        if (errorElement) {
+                            errorElement.classList.remove('hidden');
+                            errorElement.innerHTML = `
+                                <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                                <p>Google Maps API failed to load.</p>
+                                <p class="text-sm mt-2">Please check your API key and network connection.</p>
+                            `;
+                        }
+                    }
+                }, 2000);
                 return;
             }
             
             try {
+                // Hide loading and error messages
+                if (loadingElement) loadingElement.classList.add('hidden');
+                if (errorElement) {
+                    errorElement.classList.add('hidden');
+                }
+                
                 map = new google.maps.Map(mapElement, {
                     zoom: 10,
                     center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg
-                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                    mapTypeId: google.maps.MapTypeId.ROADMAP,
+                    disableDefaultUI: false,
+                    zoomControl: true,
+                    mapTypeControl: true,
+                    scaleControl: true,
+                    streetViewControl: true,
+                    rotateControl: true,
+                    fullscreenControl: true
                 });
+                
+                console.log('Map initialized successfully');
                 
                 // Load drivers once map is initialized
                 if (map) {
@@ -245,11 +303,28 @@
                 }
             } catch (error) {
                 console.error('Error initializing map:', error);
+                if (loadingElement) loadingElement.classList.add('hidden');
+                if (errorElement) {
+                    errorElement.classList.remove('hidden');
+                    errorElement.innerHTML = `
+                        <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                        <p>Map failed to load: ${error.message}</p>
+                        <p class="text-sm mt-2">Please check your Google Maps API key and console for details.</p>
+                    `;
+                }
             }
         }
         
         // Make initMap available globally for Google Maps callback
         window.initMap = initMap;
+        
+        // Fallback: Try to initialize map if callback doesn't fire
+        function initializeMapFallback() {
+            if (typeof google !== 'undefined' && google.maps && !map) {
+                console.log('Initializing map via fallback method');
+                initMap();
+            }
+        }
         
         // Load driver locations
         async function loadDriverLocations() {
@@ -703,25 +778,57 @@
         // Note: initMap is called by Google Maps API callback
         // If map is not initialized, wait for it
         function checkMapInitialized() {
+            // Try fallback initialization if map isn't initialized yet
+            if (typeof google !== 'undefined' && google.maps && !map) {
+                initializeMapFallback();
+            }
+            
             // Load drivers immediately, don't wait for map
             loadDriverLocations();
             loadAvailablePackages();
             
             if (typeof google !== 'undefined' && google.maps && map) {
                 startAutoRefresh();
-            } else {
-                // Try again after a short delay
+            } else if (typeof google !== 'undefined' && google.maps) {
+                // Google Maps is loaded but map not initialized yet, try again
                 setTimeout(checkMapInitialized, 500);
+            } else {
+                // Google Maps not loaded yet, wait a bit longer
+                setTimeout(checkMapInitialized, 1000);
             }
         }
         
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded');
+            
             // Load drivers immediately
             loadDriverLocations();
             loadAvailablePackages();
             
-            // Also check for map initialization
-            checkMapInitialized();
+            // Check for map initialization with fallback
+            // Wait a bit for Google Maps API to load
+            setTimeout(() => {
+                checkMapInitialized();
+            }, 500);
+            
+            // Also set up a periodic check in case callback fails
+            let mapInitAttempts = 0;
+            const maxAttempts = 10;
+            const mapInitInterval = setInterval(() => {
+                mapInitAttempts++;
+                if (map) {
+                    clearInterval(mapInitInterval);
+                } else if (typeof google !== 'undefined' && google.maps) {
+                    initializeMapFallback();
+                    if (map) {
+                        clearInterval(mapInitInterval);
+                    }
+                } else if (mapInitAttempts >= maxAttempts) {
+                    clearInterval(mapInitInterval);
+                    console.error('Failed to initialize map after multiple attempts');
+                }
+            }, 1000);
+            
             window.addEventListener('beforeunload', stopAutoRefresh);
         });
 
