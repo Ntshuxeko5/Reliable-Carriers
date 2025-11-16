@@ -848,7 +848,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Today's Earnings</p>
-                        <p class="text-2xl font-bold text-gray-900" id="todayEarnings">$0</p>
+                        <p class="text-2xl font-bold text-gray-900" id="todayEarnings">R 0.00</p>
                     </div>
                 </div>
             </div>
@@ -1277,6 +1277,7 @@
     <!-- WebSocket and SockJS for real-time updates -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
         let directionsService;
         let directionsRenderer;
         let watchId = null;
@@ -1402,46 +1403,16 @@
             });
         }
 
-        // Mark package as picked up
+        // Mark package as picked up - opens pickup modal with code and photo requirements
         function markAsPickedUp(packageId) {
-            const pkg = packages.find(p => p.id === packageId);
-            if (!pkg) return;
-
-            if (confirm(`Mark package ${pkg.trackingNumber} as picked up?`)) {
-                // Update package status
-                pkg.isCurrentlyCarrying = true;
-                pkg.status = 'PICKED_UP';
-                
-                // Refresh the display
-                loadWorkboardData();
-                
-                // Show success message
-                showNotification(`Package ${pkg.trackingNumber} marked as picked up!`, 'success');
-                
-                // In a real app, this would send an API request to update the backend
-                updatePackageStatusOnServer(packageId, 'PICKED_UP');
-            }
+            // Open the pickup modal which requires collection code and photo
+            openPickupModal(packageId);
         }
 
-        // Mark package as delivered
+        // Mark package as delivered - opens delivery modal with code and photo requirements
         function markAsDelivered(packageId) {
-            const pkg = packages.find(p => p.id === packageId);
-            if (!pkg) return;
-
-            if (confirm(`Mark package ${pkg.trackingNumber} as delivered?`)) {
-                // Update package status
-                pkg.isCurrentlyCarrying = false;
-                pkg.status = 'DELIVERED';
-                
-                // Refresh the display
-                loadWorkboardData();
-                
-                // Show success message
-                showNotification(`Package ${pkg.trackingNumber} marked as delivered!`, 'success');
-                
-                // In a real app, this would send an API request to update the backend
-                updatePackageStatusOnServer(packageId, 'DELIVERED');
-            }
+            // Open the delivery modal which requires dropoff code and photo
+            openDeliveryModal(packageId);
         }
 
         // Update package status on server
@@ -2054,7 +2025,8 @@
             document.getElementById('totalPackages').textContent = stats.totalPackages || 0;
             document.getElementById('packagesToPickup').textContent = stats.packagesToPickup || 0;
             document.getElementById('packagesInVehicle').textContent = stats.packagesInVehicle || 0;
-            document.getElementById('todayEarnings').textContent = `$${stats.todayEarnings || 0}`;
+            const earnings = stats.todayEarnings || 0;
+            document.getElementById('todayEarnings').textContent = `R ${earnings.toFixed(2)}`;
         }
         
         // Update available packages
@@ -3494,12 +3466,23 @@
             const modal = document.getElementById('pickupModal');
             modal.classList.remove('hidden');
             
+            // Reset photo preview
+            document.getElementById('packagePhotoPreview').classList.add('hidden');
+            document.getElementById('packagePhotoPlaceholder').classList.remove('hidden');
+            document.getElementById('packageCamera').classList.add('hidden');
+            document.getElementById('packageCanvas').classList.add('hidden');
+            document.getElementById('packageCameraBtn').classList.remove('hidden');
+            document.getElementById('packageCaptureBtn').classList.add('hidden');
+            document.getElementById('packageRetakeBtn').classList.add('hidden');
+            
             // Load package details
             loadPickupPackageDetails(packageId);
             
             // Initialize signature pad
             if (pickupSignaturePad) {
                 pickupSignaturePad.clear();
+            } else if (document.getElementById('pickupSignaturePad')) {
+                pickupSignaturePad = new SignaturePad(document.getElementById('pickupSignaturePad'));
             }
         }
         
@@ -3518,7 +3501,7 @@
             }
         }
         
-        function loadPickupPackageDetails(packageId) {
+        async function loadPickupPackageDetails(packageId) {
             // Load package details for pickup
             const detailsContainer = document.getElementById('pickupPackageDetails');
             detailsContainer.innerHTML = `
@@ -3527,6 +3510,33 @@
                     <p class="text-sm text-gray-600">Loading package information...</p>
                 </div>
             `;
+            
+            try {
+                const token = getToken();
+                const response = await fetch(`/api/driver/workboard/packages/${packageId}/details`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const packageData = await response.json();
+                    detailsContainer.innerHTML = `
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-900 mb-2">${packageData.trackingNumber || 'N/A'}</h4>
+                            <p class="text-sm text-gray-600 mb-1"><strong>Recipient:</strong> ${packageData.recipientName || 'N/A'}</p>
+                            <p class="text-sm text-gray-600 mb-1"><strong>Pickup:</strong> ${packageData.pickupAddress || 'N/A'}</p>
+                            <p class="text-sm text-gray-600 mb-1"><strong>Delivery:</strong> ${packageData.deliveryAddress || 'N/A'}</p>
+                            ${packageData.collectionCode ? `
+                                <p class="text-sm text-yellow-700 mt-2"><strong>Collection Code:</strong> <span class="font-mono bg-yellow-100 px-2 py-1 rounded">${packageData.collectionCode}</span></p>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading pickup package details:', error);
+            }
         }
         
         // Photo capture functions for pickup
@@ -3587,12 +3597,23 @@
             const modal = document.getElementById('deliveryModal');
             modal.classList.remove('hidden');
             
+            // Reset photo preview
+            document.getElementById('deliveryPhotoPreview').classList.add('hidden');
+            document.getElementById('deliveryPhotoPlaceholder').classList.remove('hidden');
+            document.getElementById('deliveryCamera').classList.add('hidden');
+            document.getElementById('deliveryCanvas').classList.add('hidden');
+            document.getElementById('deliveryCameraBtn').classList.remove('hidden');
+            document.getElementById('deliveryCaptureBtn').classList.add('hidden');
+            document.getElementById('deliveryRetakeBtn').classList.add('hidden');
+            
             // Load package details
             loadDeliveryPackageDetails(packageId);
             
             // Initialize signature pad
             if (deliverySignaturePad) {
                 deliverySignaturePad.clear();
+            } else if (document.getElementById('deliverySignaturePad')) {
+                deliverySignaturePad = new SignaturePad(document.getElementById('deliverySignaturePad'));
             }
         }
         
@@ -3611,7 +3632,7 @@
             }
         }
         
-        function loadDeliveryPackageDetails(packageId) {
+        async function loadDeliveryPackageDetails(packageId) {
             // Load package details for delivery
             const detailsContainer = document.getElementById('deliveryPackageDetails');
             detailsContainer.innerHTML = `
@@ -3620,6 +3641,33 @@
                     <p class="text-sm text-gray-600">Loading package information...</p>
                 </div>
             `;
+            
+            try {
+                const token = getToken();
+                const response = await fetch(`/api/driver/workboard/packages/${packageId}/details`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const packageData = await response.json();
+                    detailsContainer.innerHTML = `
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-900 mb-2">${packageData.trackingNumber || 'N/A'}</h4>
+                            <p class="text-sm text-gray-600 mb-1"><strong>Recipient:</strong> ${packageData.recipientName || 'N/A'}</p>
+                            <p class="text-sm text-gray-600 mb-1"><strong>Pickup:</strong> ${packageData.pickupAddress || 'N/A'}</p>
+                            <p class="text-sm text-gray-600 mb-1"><strong>Delivery:</strong> ${packageData.deliveryAddress || 'N/A'}</p>
+                            ${packageData.dropOffCode ? `
+                                <p class="text-sm text-green-700 mt-2"><strong>Drop-off Code:</strong> <span class="font-mono bg-green-100 px-2 py-1 rounded">${packageData.dropOffCode}</span></p>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading delivery package details:', error);
+            }
         }
         
         // Photo capture functions for delivery
