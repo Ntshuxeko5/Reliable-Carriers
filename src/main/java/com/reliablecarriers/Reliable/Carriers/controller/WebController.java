@@ -21,12 +21,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 
 @Controller
 public class WebController {
 
     private static final Logger logger = LoggerFactory.getLogger(WebController.class);
     private final AuthService authService;
+    @Value("${google.maps.api.key:}")
+    private String googleMapsApiKey;
 
     @Autowired
     public WebController(@Lazy AuthService authService) {
@@ -398,6 +401,7 @@ public class WebController {
     @GetMapping("/booking")
     public String booking(Model model) {
         model.addAttribute("navLinks", createPublicNavLinks());
+        model.addAttribute("googleMapsApiKey", googleMapsApiKey);
         try {
             // Check if user is authenticated and get user data
             User currentUser = authService.getCurrentUser();
@@ -653,7 +657,8 @@ public class WebController {
     }
     
     @GetMapping("/payment-success")
-    public String paymentSuccess() {
+    public String paymentSuccess(Model model) {
+        model.addAttribute("googleMapsApiKey", googleMapsApiKey);
         return "payment-success";
     }
 

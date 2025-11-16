@@ -69,7 +69,7 @@ public class DriverDocumentServiceImpl implements DriverDocumentService {
                 throw new IllegalArgumentException("Certified by name is required (e.g., Commissioner of Oaths, Notary Public, etc.)");
             }
             
-            Path uploadPath = Paths.get(uploadDirectory);
+            Path uploadPath = resolveUploadPath(uploadDirectory, "driver-documents");
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -98,7 +98,7 @@ public class DriverDocumentServiceImpl implements DriverDocumentService {
             return documentRepository.save(document);
             
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload document", e);
+            throw new RuntimeException("Failed to upload document: " + e.getMessage(), e);
         }
     }
     
@@ -187,5 +187,36 @@ public class DriverDocumentServiceImpl implements DriverDocumentService {
     }
     
     private static final Logger logger = LoggerFactory.getLogger(DriverDocumentServiceImpl.class);
-}
 
+    private Path resolveUploadPath(String configured, String subfolder) {
+        try {
+            if (configured == null || configured.isBlank()) {
+                configured = System.getProperty("java.io.tmpdir");
+            }
+            Path base = Paths.get(configured);
+            String lower = configured.toLowerCase();
+            boolean alreadySpecific = lower.contains(subfolder);
+            Path path = alreadySpecific ? base : base.resolve(subfolder);
+            // Basic writability check: try to create directories
+            if (!Files.exists(path)) {
+                try {
+                    Files.createDirectories(path);
+                } catch (IOException ignored) {
+                    // Fallback to temp dir
+                    Path tmp = Paths.get(System.getProperty("java.io.tmpdir")).resolve(subfolder);
+                    if (!Files.exists(tmp)) {
+                        Files.createDirectories(tmp);
+                    }
+                    return tmp;
+                }
+            }
+            return path;
+        } catch (Exception ex) {
+            Path tmp = Paths.get(System.getProperty("java.io.tmpdir")).resolve(subfolder);
+            try {
+                if (!Files.exists(tmp)) Files.createDirectories(tmp);
+            } catch (IOException ignored) {}
+            return tmp;
+        }
+    }
+}
