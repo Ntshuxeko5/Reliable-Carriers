@@ -107,6 +107,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/payment/**").permitAll()  // Allow guests to access payment endpoints
 
                 // Business API endpoints (authenticated via API key)
+                .requestMatchers("/api/business/documents/**").authenticated()
                 .requestMatchers("/api/business/**").permitAll() // API key filter will handle authentication
                 
                 // Secured API endpoints by role
