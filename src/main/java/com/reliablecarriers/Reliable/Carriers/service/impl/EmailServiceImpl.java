@@ -28,7 +28,7 @@ public class EmailServiceImpl implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
 
-    @Autowired
+    @Autowired(required = false)
     private JavaMailSender mailSender;
 
     @Autowired
@@ -37,7 +37,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.base.url:http://localhost:8080}")
     private String baseUrl;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:}")
     private String fromEmail;
 
     @Value("${app.name:Reliable Carriers}")
