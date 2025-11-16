@@ -250,6 +250,11 @@ public class EmailServiceImpl implements EmailService {
             }
             
             // Fallback to SMTP
+            if (mailSender == null) {
+                logger.error("Cannot send HTML email: JavaMailSender is not configured. Email configuration is missing.");
+                throw new IllegalStateException("Email service is not configured. Please configure SMTP or Mailgun settings.");
+            }
+            
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
