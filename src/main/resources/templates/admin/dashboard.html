@@ -628,8 +628,6 @@
               data.customerCount || 0;
             document.getElementById("totalStaff").textContent =
               data.staffCount || 0;
-            document.getElementById("totalTrackingManagers").textContent =
-              data.trackingManagerCount || 0;
           })
           .catch((error) => {
             console.error("Error loading statistics:", error);
@@ -638,7 +636,6 @@
             document.getElementById("totalDrivers").textContent = "0";
             document.getElementById("totalCustomers").textContent = "0";
             document.getElementById("totalStaff").textContent = "0";
-            document.getElementById("totalTrackingManagers").textContent = "0";
             showNotification("Error loading statistics", "error");
           });
       }
@@ -868,8 +865,6 @@
           case "CUSTOMER":
             return "bg-blue-100 text-blue-800";
           case "STAFF":
-            return "bg-purple-100 text-purple-800";
-          case "TRACKING_MANAGER":
             return "bg-indigo-100 text-indigo-800";
           default:
             return "bg-gray-100 text-gray-800";
@@ -883,19 +878,6 @@
       function hideCreateDriverModal() {
         document.getElementById("createDriverModal").classList.add("hidden");
         document.getElementById("createDriverForm").reset();
-      }
-
-      function showCreateTrackingManagerModal() {
-        document
-          .getElementById("createTrackingManagerModal")
-          .classList.remove("hidden");
-      }
-
-      function hideCreateTrackingManagerModal() {
-        document
-          .getElementById("createTrackingManagerModal")
-          .classList.add("hidden");
-        document.getElementById("createTrackingManagerForm").reset();
       }
 
       function createDriver() {
