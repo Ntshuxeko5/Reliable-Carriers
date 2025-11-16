@@ -460,6 +460,19 @@
                         if (booking.customerEmail) {
                             document.getElementById('customerEmail').textContent = booking.customerEmail;
                         }
+                        // Update customer name from booking
+                        if (booking.customerName) {
+                            document.getElementById('customerName').textContent = booking.customerName;
+                        } else if (booking.customerFirstName || booking.customerLastName) {
+                            const fullName = (booking.customerFirstName || '') + ' ' + (booking.customerLastName || '');
+                            if (fullName.trim()) {
+                                document.getElementById('customerName').textContent = fullName.trim();
+                            }
+                        }
+                        // Update customer email from booking
+                        if (booking.customerEmail) {
+                            document.getElementById('customerEmail').textContent = booking.customerEmail;
+                        }
                         if (booking.customerPhone || booking.phone) {
                             document.getElementById('customerPhone').textContent = booking.customerPhone || booking.phone;
                             document.getElementById('customerPhoneRow').style.display = 'flex';
