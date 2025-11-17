@@ -1,4 +1,4 @@
-package com.reliablecarriers.Reliable.Carriers.controller;
+gitpackage com.reliablecarriers.Reliable.Carriers.controller;
 
 import com.reliablecarriers.Reliable.Carriers.dto.PaystackRequest;
 import com.reliablecarriers.Reliable.Carriers.dto.PaystackResponse;
