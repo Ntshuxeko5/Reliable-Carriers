@@ -1026,22 +1026,8 @@ public class AuthController {
                         .body(Map.of("success", false, "message", "Access denied. Use the staff portal to sign in for staff accounts."));
             }
 
-            // Check if user has verified their email - block login if not verified
-            // EXCEPT for admins (they're trusted accounts created manually)
-            if (authenticatedUser.getRole() != UserRole.ADMIN) {
-                if (authenticatedUser.getEmailVerified() == null || !authenticatedUser.getEmailVerified()) {
-                    logger.warn("Login attempt by unverified user: {}", authenticatedUser.getEmail());
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of(
-                            "success", false,
-                            "message", "Please verify your email address before logging in. Check your inbox for the verification code.",
-                            "requiresVerification", true,
-                            "email", authenticatedUser.getEmail()
-                        ));
-                }
-            }
-
             // For customers, check if 2FA is enabled
+            // Note: Email verification check removed for customers - they can proceed to 2FA
             boolean has2faEnabled = Boolean.TRUE.equals(authenticatedUser.getTotpEnabled()) || 
                                    (authenticatedUser.getPhone() != null && !authenticatedUser.getPhone().isEmpty());
             

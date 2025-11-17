@@ -385,30 +385,39 @@
                 
                 // Handle forbidden response - could be staff portal or unverified email
                 if (response.status === 403) {
-                    // Check if it's an unverified email issue
+                    // Check if it's an unverified email issue - skip email verification and proceed to 2FA if enabled
                     if (data && data.requiresVerification && data.email) {
-                        // Show verification UI
-                        showUnverifiedEmailUI(data.email, data.message || 'Please verify your email address before logging in.');
+                        // Don't show email verification UI - just proceed to 2FA if enabled
+                        // The backend will still require 2FA if it's enabled
+                        const requires2fa = data && (data.requires2fa === true || data.requires2fa === 'true');
+                        const totpEnabled = data && (data.totpEnabled === true || data.totpEnabled === 'true');
+                        
+                        if (requires2fa || totpEnabled) {
+                            // Continue to 2FA flow below - don't return here
+                        } else {
+                            // If no 2FA, show error about email verification but don't show the UI
+                            showAlert('Please verify your email address. Check your inbox for the verification code.', 'error');
+                            submitBtn.innerHTML = originalText;
+                            submitBtn.disabled = false;
+                            return;
+                        }
+                    } else {
+                        // Otherwise, it's a staff portal issue
+                        let errorMessage = 'Access denied. Please use the staff login portal.';
+                        if (data) {
+                            if (typeof data === 'string') {
+                                errorMessage = data;
+                            } else if (data.message) {
+                                errorMessage = data.message;
+                            } else if (data.error) {
+                                errorMessage = data.error;
+                            }
+                        }
+                        showAlert(errorMessage, 'error');
                         submitBtn.innerHTML = originalText;
                         submitBtn.disabled = false;
                         return;
                     }
-                    
-                    // Otherwise, it's a staff portal issue
-                    let errorMessage = 'Access denied. Please use the staff login portal.';
-                    if (data) {
-                        if (typeof data === 'string') {
-                            errorMessage = data;
-                        } else if (data.message) {
-                            errorMessage = data.message;
-                        } else if (data.error) {
-                            errorMessage = data.error;
-                        }
-                    }
-                    showAlert(errorMessage, 'error');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    return;
                 }
 
                 // Coerce flags and handle non-OK responses

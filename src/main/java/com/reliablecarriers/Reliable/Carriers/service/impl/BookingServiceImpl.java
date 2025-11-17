@@ -644,6 +644,10 @@ public class BookingServiceImpl implements BookingService {
             response.setDriverPhone(booking.getDriver().getPhone());
         }
         
+        // Verification codes
+        response.setCustomerPickupCode(booking.getCustomerPickupCode());
+        response.setCustomerDeliveryCode(booking.getCustomerDeliveryCode());
+        
         // Timestamps
         response.setCreatedAt(booking.getCreatedAt());
         response.setUpdatedAt(booking.getUpdatedAt());

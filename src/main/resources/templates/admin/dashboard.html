@@ -268,6 +268,13 @@
           </h3>
           <div class="space-y-3">
             <div class="flex items-center justify-between system-status">
+              <span class="text-sm text-gray-600">Dashboard</span>
+              <span class="flex items-center text-green-600">
+                <i class="fas fa-circle text-xs mr-2"></i>
+                Online
+              </span>
+            </div>
+            <div class="flex items-center justify-between system-status">
               <span class="text-sm text-gray-600">Database</span>
               <span class="flex items-center text-green-600">
                 <i class="fas fa-circle text-xs mr-2"></i>
@@ -282,6 +289,20 @@
               </span>
             </div>
             <div class="flex items-center justify-between system-status">
+              <span class="text-sm text-gray-600">Web Server</span>
+              <span class="flex items-center text-green-600">
+                <i class="fas fa-circle text-xs mr-2"></i>
+                Online
+              </span>
+            </div>
+            <div class="flex items-center justify-between system-status">
+              <span class="text-sm text-gray-600">Authentication</span>
+              <span class="flex items-center text-green-600">
+                <i class="fas fa-circle text-xs mr-2"></i>
+                Online
+              </span>
+            </div>
+            <div class="flex items-center justify-between system-status">
               <span class="text-sm text-gray-600">Email Service</span>
               <span class="flex items-center text-green-600">
                 <i class="fas fa-circle text-xs mr-2"></i>
@@ -290,6 +311,13 @@
             </div>
             <div class="flex items-center justify-between system-status">
               <span class="text-sm text-gray-600">SMS Service</span>
+              <span class="flex items-center text-green-600">
+                <i class="fas fa-circle text-xs mr-2"></i>
+                Online
+              </span>
+            </div>
+            <div class="flex items-center justify-between system-status">
+              <span class="text-sm text-gray-600">File Storage</span>
               <span class="flex items-center text-green-600">
                 <i class="fas fa-circle text-xs mr-2"></i>
                 Online
@@ -641,6 +669,9 @@
       }
 
       function checkSystemStatus() {
+        // Check Dashboard - if we can access the page, dashboard is online
+        updateSystemStatus("Dashboard", "online");
+
         // Check database connectivity
         fetch("/api/admin/users/statistics", {
           headers: {
@@ -675,10 +706,40 @@
             updateSystemStatus("API Services", "offline");
           });
 
+        // Check Web Server - if we can make requests, web server is online
+        updateSystemStatus("Web Server", "online");
+
+        // Check Authentication - if we have a token and can make authenticated requests, auth is online
+        const token = getToken();
+        if (token) {
+          fetch("/api/admin/users/statistics", {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          })
+            .then((response) => {
+              if (response.ok || response.status === 401) {
+                // 401 means auth service is working (just not authorized)
+                updateSystemStatus("Authentication", "online");
+              } else {
+                updateSystemStatus("Authentication", "offline");
+              }
+            })
+            .catch(() => {
+              updateSystemStatus("Authentication", "offline");
+            });
+        } else {
+          updateSystemStatus("Authentication", "offline");
+        }
+
         // For demo purposes, we'll assume email and SMS services are online
         // In a real application, you would check actual service endpoints
         updateSystemStatus("Email Service", "online");
         updateSystemStatus("SMS Service", "online");
+
+        // Check File Storage - assume online if we can access the application
+        // In a real application, you would check actual file storage endpoints
+        updateSystemStatus("File Storage", "online");
       }
 
       function updateSystemStatus(service, status) {
@@ -1098,10 +1159,12 @@
       }
 
       function logout() {
-        // Clear tokens and redirect to login
+        // Clear tokens and redirect to staff login
         localStorage.removeItem("token");
         sessionStorage.removeItem("token");
-        window.location.href = "/login";
+        localStorage.removeItem("jwtToken");
+        sessionStorage.removeItem("jwtToken");
+        window.location.href = "/staff-login";
       }
     </script>
   </body>

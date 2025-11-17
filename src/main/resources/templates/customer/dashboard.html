@@ -75,6 +75,14 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            font-weight: 700;
+        }
+        .gradient-text-on-light {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
         }
 
         /* Modern card styles with better shadows */
@@ -402,7 +410,7 @@
         <!-- Quick Actions -->
         <div class="mb-12">
             <h2 class="text-4xl font-bold text-black mb-8 text-center">
-                <i class="fas fa-bolt mr-3 gradient-text"></i>Quick Actions
+                <i class="fas fa-bolt mr-3 gradient-text-on-light"></i>Quick Actions
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <a href="/customer/tier-aware-track" class="group">
@@ -456,7 +464,7 @@
         <!-- Why Choose Our Service? -->
         <div class="mb-12">
             <h2 class="text-4xl font-bold text-black mb-8 text-center">
-                <i class="fas fa-star mr-3 gradient-text"></i>Why Choose Our Services?
+                <i class="fas fa-star mr-3 gradient-text-on-light"></i>Why Choose Our Services?
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="glass-effect rounded-2xl p-8 text-center hover-lift">
@@ -487,7 +495,7 @@
         <!-- Service Types -->
         <div class="mb-12">
             <h2 class="text-4xl font-bold text-black mb-8 text-center">
-                <i class="fas fa-truck mr-3 gradient-text"></i>Shipping Services
+                <i class="fas fa-truck mr-3 gradient-text-on-light"></i>Shipping Services
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="glass-effect rounded-2xl overflow-hidden hover-lift">
@@ -562,7 +570,7 @@
         <!-- Recent Packages Section for Authenticated Users -->
         <div th:if="${isAuthenticated}" class="mb-12">
             <h2 class="text-4xl font-bold text-gray-800 mb-8 text-center">
-                <i class="fas fa-boxes mr-3 gradient-text"></i>Your Recent Packages
+                <i class="fas fa-boxes mr-3 gradient-text-on-light"></i>Your Recent Packages
             </h2>
             
             <!-- Recent Packages Grid -->
@@ -630,7 +638,7 @@
             <div class="package-access-section p-6 text-white hover-lift">
                 <div class="text-center">
                     <h3 class="text-2xl font-bold mb-4">Quick Package Access</h3>
-                    <p class="text-blue-100 mb-6">View and track all your packages in one place</p>
+                    <p class="text-white mb-6 font-medium">View and track all your packages in one place</p>
                     <a href="/customer/packages" class="bg-white text-blue-600 px-8 py-4 rounded-full font-bold hover:bg-blue-50 transition-all duration-300 transform hover:scale-105 inline-flex items-center">
                         <i class="fas fa-boxes mr-2"></i>View All Packages
                     </a>

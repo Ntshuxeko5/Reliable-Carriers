@@ -73,6 +73,10 @@ public class BookingResponse {
     private String driverName;
     private String driverPhone;
     
+    // Verification codes
+    private String customerPickupCode;
+    private String customerDeliveryCode;
+    
     // Constructors
     public BookingResponse() {}
     
@@ -435,5 +439,21 @@ public class BookingResponse {
 
     public void setDriverPhone(String driverPhone) {
         this.driverPhone = driverPhone;
+    }
+
+    public String getCustomerPickupCode() {
+        return customerPickupCode;
+    }
+
+    public void setCustomerPickupCode(String customerPickupCode) {
+        this.customerPickupCode = customerPickupCode;
+    }
+
+    public String getCustomerDeliveryCode() {
+        return customerDeliveryCode;
+    }
+
+    public void setCustomerDeliveryCode(String customerDeliveryCode) {
+        this.customerDeliveryCode = customerDeliveryCode;
     }
 }

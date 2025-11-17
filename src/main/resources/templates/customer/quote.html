@@ -33,7 +33,21 @@
         .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
         .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-        .gradient-text { background: linear-gradient(135deg, #3b82f6, #1e40af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .gradient-text { 
+            background: linear-gradient(135deg, #ffffff, #e0f2fe); 
+            -webkit-background-clip: text; 
+            background-clip: text; 
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-weight: 700;
+        }
+        .gradient-text-on-light {
+            background: linear-gradient(135deg, #1e40af, #3b82f6); 
+            -webkit-background-clip: text; 
+            background-clip: text; 
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
         .pricing-card { transition: all 0.3s ease; }
         .pricing-card:hover { transform: translateY(-8px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
         .selected-service { border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.05); }
@@ -51,7 +65,7 @@
             <h1 class="text-4xl md:text-5xl font-bold text-white mb-6">
                 <span class="gradient-text">Get Instant Quote</span>
             </h1>
-            <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+            <p class="text-xl text-white mb-8 max-w-3xl mx-auto font-medium">
                 Calculate shipping costs instantly with our transparent pricing. No hidden fees, no surprises.
             </p>
         </div>
@@ -64,7 +78,7 @@
             <div class="lg:col-span-2">
                 <div class="glass-effect rounded-2xl p-8 mb-8">
                     <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                        <i class="fas fa-calculator mr-3 gradient-text"></i>Package Details
+                        <i class="fas fa-calculator mr-3 gradient-text-on-light"></i>Package Details
                     </h2>
                     
                     <form id="quoteForm" class="space-y-6">
@@ -298,7 +312,7 @@
             <div class="lg:col-span-1">
                 <div class="glass-effect rounded-2xl p-8 sticky top-8">
                     <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                        <i class="fas fa-receipt mr-3 gradient-text"></i>Quote Results
+                        <i class="fas fa-receipt mr-3 gradient-text-on-light"></i>Quote Results
                     </h2>
                     
                     <div id="quoteResults" class="space-y-4">
@@ -339,7 +353,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold text-gray-900 mb-4">
-                    <span class="gradient-text">Our Services</span>
+                    <span class="gradient-text-on-light">Our Services</span>
                 </h2>
                 <p class="text-lg text-gray-600">Choose the right service for your needs</p>
             </div>
@@ -419,7 +433,7 @@
             <h2 class="text-3xl font-bold text-white mb-6">
                 Ready to Ship?
             </h2>
-            <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            <p class="text-xl text-white mb-8 max-w-2xl mx-auto font-medium">
                 Get your quote and start shipping with confidence today.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
