@@ -64,10 +64,19 @@
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
       }
       .gradient-text {
-        background: linear-gradient(135deg, #3b82f6, #1e40af);
+        background: linear-gradient(135deg, #ffffff, #e0f2fe);
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-weight: 700;
+      }
+      .gradient-text-on-light {
+        background: linear-gradient(135deg, #1e40af, #3b82f6);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
       }
       .pricing-card {
         transition: all 0.3s ease;
@@ -123,7 +132,7 @@
         <h1 class="text-4xl md:text-5xl font-bold text-white mb-6">
           <span class="gradient-text">Get Instant Quote</span>
         </h1>
-        <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+        <p class="text-xl text-white mb-8 max-w-3xl mx-auto font-medium">
           Calculate shipping costs with your exclusive member discounts. Save
           your addresses and get priority support.
         </p>
@@ -151,7 +160,7 @@
         <div class="lg:col-span-2">
           <div class="glass-effect rounded-2xl p-8 mb-8">
             <h2 class="text-2xl font-bold text-gray-900 mb-6">
-              <i class="fas fa-calculator mr-3 gradient-text"></i>Package
+              <i class="fas fa-calculator mr-3 gradient-text-on-light"></i>Package
               Details
             </h2>
 
@@ -620,7 +629,7 @@
         <div class="lg:col-span-1">
           <div class="glass-effect rounded-2xl p-8 sticky top-8">
             <h2 class="text-2xl font-bold text-gray-900 mb-6">
-              <i class="fas fa-receipt mr-3 gradient-text"></i>Quote Results
+              <i class="fas fa-receipt mr-3 gradient-text-on-light"></i>Quote Results
             </h2>
 
             <div id="quoteResults" class="space-y-4">

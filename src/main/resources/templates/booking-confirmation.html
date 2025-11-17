@@ -63,8 +63,8 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <!-- Success Message -->
         <div class="text-center mb-12">
-            <div class="bg-green-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-check text-green-600 text-4xl"></i>
+            <div class="bg-reliable-600 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-check text-white text-4xl"></i>
             </div>
             <h1 class="text-4xl font-bold text-gray-800 mb-4">Booking Confirmed!</h1>
             <p class="text-xl text-gray-600">Your service has been successfully booked and payment confirmed.</p>
@@ -90,7 +90,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Status:</span>
-                                <span class="font-medium text-green-600" id="status">Confirmed</span>
+                                <span class="font-medium text-reliable-600" id="status">Confirmed</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Total Amount:</span>
@@ -178,20 +178,39 @@
             </div>
 
             <!-- Payment Details -->
-            <div class="mt-8 bg-green-50 rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-green-800 mb-4">Payment Confirmation</h3>
+            <div class="mt-8 bg-reliable-600 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-white mb-4">Payment Confirmation</h3>
                 <div class="space-y-3">
                     <div class="flex justify-between">
-                        <span class="text-green-700">Payment Reference:</span>
-                        <span class="font-medium" id="paymentReference">-</span>
+                        <span class="text-white">Payment Reference:</span>
+                        <span class="font-medium text-white" id="paymentReference">-</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-green-700">Payment Status:</span>
-                        <span class="font-medium text-green-600">Completed</span>
+                        <span class="text-white">Payment Status:</span>
+                        <span class="font-medium text-white">Completed</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-green-700">Payment Date:</span>
-                        <span class="font-medium" id="paymentDate">-</span>
+                        <span class="text-white">Payment Date:</span>
+                        <span class="font-medium text-white" id="paymentDate">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verification Codes -->
+            <div class="mt-8 bg-yellow-50 rounded-lg p-6 border-2 border-yellow-300">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-key mr-2 text-yellow-600"></i>Verification Codes
+                </h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="text-center">
+                        <div class="text-sm text-gray-600 mb-2">Pickup Code</div>
+                        <div class="text-2xl font-bold text-gray-800 bg-white rounded-lg p-4 border-2 border-yellow-400" id="pickupCode">Will be assigned</div>
+                        <div class="text-xs text-gray-500 mt-2">Show this code to the driver during pickup</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm text-gray-600 mb-2">Delivery Code</div>
+                        <div class="text-2xl font-bold text-gray-800 bg-white rounded-lg p-4 border-2 border-yellow-400" id="deliveryCode">Will be assigned</div>
+                        <div class="text-xs text-gray-500 mt-2">Show this code to the driver during delivery</div>
                     </div>
                 </div>
             </div>
@@ -330,28 +349,120 @@
 
         // Update booking details in UI
         function updateBookingDetails(booking) {
-            document.getElementById('bookingNumber').textContent = booking.bookingNumber;
-            document.getElementById('serviceType').textContent = booking.serviceType;
-            document.getElementById('totalAmount').textContent = `R${booking.totalAmount.toFixed(2)}`;
+            // Booking number
+            if (document.getElementById('bookingNumber')) {
+                document.getElementById('bookingNumber').textContent = booking.bookingNumber || '-';
+            }
             
-            document.getElementById('customerName').textContent = booking.customerName;
-            document.getElementById('customerEmail').textContent = booking.customerEmail;
-            document.getElementById('customerPhone').textContent = booking.customerPhone;
+            // Service type - handle enum objects and strings
+            if (document.getElementById('serviceType')) {
+                let serviceTypeText = booking.serviceType;
+                if (typeof serviceTypeText === 'object' && serviceTypeText !== null) {
+                    if (serviceTypeText.displayName) {
+                        serviceTypeText = serviceTypeText.displayName;
+                    } else if (serviceTypeText.name) {
+                        // Convert enum name to readable format (e.g., EXPRESS_DELIVERY -> Express Delivery)
+                        serviceTypeText = serviceTypeText.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    } else {
+                        serviceTypeText = 'Express Delivery';
+                    }
+                } else if (serviceTypeText) {
+                    // If it's a string, format it
+                    serviceTypeText = serviceTypeText.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                } else {
+                    serviceTypeText = 'Express Delivery';
+                }
+                document.getElementById('serviceType').textContent = serviceTypeText;
+            }
             
-            document.getElementById('pickupAddress').textContent = `${booking.pickupAddress}, ${booking.pickupCity}, ${booking.pickupState} ${booking.pickupPostalCode}`;
-            document.getElementById('pickupContact').textContent = booking.pickupContactName;
-            document.getElementById('pickupPhone').textContent = booking.pickupContactPhone;
+            // Total amount - handle BigDecimal properly
+            if (document.getElementById('totalAmount')) {
+                const amount = booking.totalAmount;
+                let amountValue = 0;
+                if (typeof amount === 'number') {
+                    amountValue = amount;
+                } else if (typeof amount === 'string') {
+                    amountValue = parseFloat(amount) || 0;
+                } else if (amount != null) {
+                    // Handle BigDecimal or other objects
+                    amountValue = parseFloat(amount.toString()) || 0;
+                }
+                document.getElementById('totalAmount').textContent = `R${amountValue.toFixed(2)}`;
+            }
             
-            document.getElementById('deliveryAddress').textContent = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryState} ${booking.deliveryPostalCode}`;
-            document.getElementById('deliveryContact').textContent = booking.deliveryContactName;
-            document.getElementById('deliveryPhone').textContent = booking.deliveryContactPhone;
+            // Customer details
+            if (document.getElementById('customerName')) {
+                document.getElementById('customerName').textContent = booking.customerName || '-';
+            }
+            if (document.getElementById('customerEmail')) {
+                document.getElementById('customerEmail').textContent = booking.customerEmail || '-';
+            }
+            if (document.getElementById('customerPhone')) {
+                document.getElementById('customerPhone').textContent = booking.customerPhone || '-';
+            }
             
-            document.getElementById('packageWeight').textContent = `${booking.weight} kg`;
-            document.getElementById('packageDimensions').textContent = booking.dimensions || 'N/A';
-            document.getElementById('packageDescription').textContent = booking.description || 'N/A';
+            // Pickup address - handle null/undefined values
+            if (document.getElementById('pickupAddress')) {
+                const pickupParts = [];
+                if (booking.pickupAddress) pickupParts.push(booking.pickupAddress);
+                if (booking.pickupCity) pickupParts.push(booking.pickupCity);
+                if (booking.pickupState) pickupParts.push(booking.pickupState);
+                if (booking.pickupPostalCode) pickupParts.push(booking.pickupPostalCode);
+                document.getElementById('pickupAddress').textContent = pickupParts.length > 0 ? pickupParts.join(', ') : 'Address not available';
+            }
+            if (document.getElementById('pickupContact')) {
+                document.getElementById('pickupContact').textContent = booking.pickupContactName || '-';
+            }
+            if (document.getElementById('pickupPhone')) {
+                document.getElementById('pickupPhone').textContent = booking.pickupContactPhone || '-';
+            }
             
-            document.getElementById('paymentReference').textContent = booking.paymentReference;
-            document.getElementById('paymentDate').textContent = new Date(booking.paymentDate).toLocaleDateString();
+            // Delivery address - handle null/undefined values
+            if (document.getElementById('deliveryAddress')) {
+                const deliveryParts = [];
+                if (booking.deliveryAddress) deliveryParts.push(booking.deliveryAddress);
+                if (booking.deliveryCity) deliveryParts.push(booking.deliveryCity);
+                if (booking.deliveryState) deliveryParts.push(booking.deliveryState);
+                if (booking.deliveryPostalCode) deliveryParts.push(booking.deliveryPostalCode);
+                document.getElementById('deliveryAddress').textContent = deliveryParts.length > 0 ? deliveryParts.join(', ') : 'Address not available';
+            }
+            if (document.getElementById('deliveryContact')) {
+                document.getElementById('deliveryContact').textContent = booking.deliveryContactName || '-';
+            }
+            if (document.getElementById('deliveryPhone')) {
+                document.getElementById('deliveryPhone').textContent = booking.deliveryContactPhone || '-';
+            }
+            
+            // Package details
+            if (document.getElementById('packageWeight')) {
+                document.getElementById('packageWeight').textContent = booking.weight ? `${booking.weight} kg` : '-';
+            }
+            if (document.getElementById('packageDimensions')) {
+                document.getElementById('packageDimensions').textContent = booking.dimensions || 'N/A';
+            }
+            if (document.getElementById('packageDescription')) {
+                document.getElementById('packageDescription').textContent = booking.description || 'N/A';
+            }
+            
+            // Payment details
+            if (document.getElementById('paymentReference')) {
+                document.getElementById('paymentReference').textContent = booking.paymentReference || '-';
+            }
+            if (document.getElementById('paymentDate')) {
+                if (booking.paymentDate) {
+                    document.getElementById('paymentDate').textContent = new Date(booking.paymentDate).toLocaleDateString();
+                } else {
+                    document.getElementById('paymentDate').textContent = '-';
+                }
+            }
+            
+            // Verification codes
+            if (document.getElementById('pickupCode')) {
+                document.getElementById('pickupCode').textContent = booking.customerPickupCode || booking.pickupCode || 'Will be assigned';
+            }
+            if (document.getElementById('deliveryCode')) {
+                document.getElementById('deliveryCode').textContent = booking.customerDeliveryCode || booking.deliveryCode || 'Will be assigned';
+            }
         }
 
         // Track package function

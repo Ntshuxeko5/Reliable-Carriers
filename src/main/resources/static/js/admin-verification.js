@@ -2,6 +2,23 @@
 
 let currentTab = 'driver-docs';
 
+// Get authentication token
+function getToken() {
+    return localStorage.getItem('token') || 
+           sessionStorage.getItem('token') || 
+           localStorage.getItem('jwtToken') || 
+           sessionStorage.getItem('jwtToken') || '';
+}
+
+// Get headers with authentication
+function getAuthHeaders() {
+    const token = getToken();
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+    };
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     loadSummary();
@@ -51,7 +68,9 @@ function showTab(tabName) {
 // Load summary statistics
 async function loadSummary() {
     try {
-        const response = await fetch('/api/admin/verification/pending');
+        const response = await fetch('/api/admin/verification/pending', {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
         
         if (data.success) {
@@ -72,7 +91,9 @@ async function loadSummary() {
 // Load driver documents
 async function loadDriverDocuments() {
     try {
-        const response = await fetch('/api/admin/verification/drivers/pending-documents');
+        const response = await fetch('/api/admin/verification/drivers/pending-documents', {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
         
         const container = document.getElementById('driverDocumentsList');
@@ -81,21 +102,24 @@ async function loadDriverDocuments() {
             return;
         }
         
-        container.innerHTML = data.documents.map(doc => `
+        container.innerHTML = data.documents.map(doc => {
+            const driverNameEscaped = (doc.driverName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const docTypeEscaped = (doc.documentTypeName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            return `
             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
                         <div class="flex items-center space-x-3 mb-2">
                             <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-semibold rounded">
-                                ${doc.documentTypeName}
+                                ${doc.documentTypeName || 'N/A'}
                             </span>
                             ${doc.isCertified ? '<span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs font-semibold rounded"><i class="fas fa-certificate mr-1"></i>Certified</span>' : ''}
                         </div>
-                        <h4 class="font-semibold text-gray-900 dark:text-white">${doc.driverName}</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">${doc.driverEmail}</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">${doc.driverPhone}</p>
+                        <h4 class="font-semibold text-gray-900 dark:text-white">${doc.driverName || 'N/A'}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">${doc.driverEmail || 'N/A'}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">${doc.driverPhone || 'N/A'}</p>
                         <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                            <i class="fas fa-file mr-1"></i>${doc.fileName}
+                            <i class="fas fa-file mr-1"></i>${doc.fileName || 'N/A'}
                             ${doc.certifiedBy ? ` | Certified by: ${doc.certifiedBy}` : ''}
                         </p>
                     </div>
@@ -103,13 +127,14 @@ async function loadDriverDocuments() {
                         <button onclick="viewDocument('driver', ${doc.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded">
                             <i class="fas fa-eye mr-1"></i>View
                         </button>
-                        <button onclick="openVerificationModal('driver', ${doc.id}, '${doc.driverName}', '${doc.documentTypeName}')" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded">
+                        <button onclick="openVerificationModal('driver', ${doc.id}, '${driverNameEscaped}', '${docTypeEscaped}')" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded">
                             <i class="fas fa-check mr-1"></i>Verify
                         </button>
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     } catch (error) {
         console.error('Error loading driver documents:', error);
         document.getElementById('driverDocumentsList').innerHTML = 
@@ -120,7 +145,9 @@ async function loadDriverDocuments() {
 // Load business documents
 async function loadBusinessDocuments() {
     try {
-        const response = await fetch('/api/admin/verification/businesses/pending-documents');
+        const response = await fetch('/api/admin/verification/businesses/pending-documents', {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
         
         const container = document.getElementById('businessDocumentsList');
@@ -129,21 +156,24 @@ async function loadBusinessDocuments() {
             return;
         }
         
-        container.innerHTML = data.documents.map(doc => `
+        container.innerHTML = data.documents.map(doc => {
+            const businessNameEscaped = (doc.businessName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const docTypeEscaped = (doc.documentTypeName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            return `
             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
                         <div class="flex items-center space-x-3 mb-2">
                             <span class="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs font-semibold rounded">
-                                ${doc.documentTypeName}
+                                ${doc.documentTypeName || 'N/A'}
                             </span>
                             ${doc.isCertified ? '<span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs font-semibold rounded"><i class="fas fa-certificate mr-1"></i>Certified</span>' : ''}
                         </div>
-                        <h4 class="font-semibold text-gray-900 dark:text-white">${doc.businessName}</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">${doc.businessEmail}</p>
+                        <h4 class="font-semibold text-gray-900 dark:text-white">${doc.businessName || 'N/A'}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">${doc.businessEmail || 'N/A'}</p>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Reg: ${doc.registrationNumber || 'N/A'}</p>
                         <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                            <i class="fas fa-file mr-1"></i>${doc.fileName}
+                            <i class="fas fa-file mr-1"></i>${doc.fileName || 'N/A'}
                             ${doc.certifiedBy ? ` | Certified by: ${doc.certifiedBy}` : ''}
                         </p>
                     </div>
@@ -151,13 +181,14 @@ async function loadBusinessDocuments() {
                         <button onclick="viewDocument('business', ${doc.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded">
                             <i class="fas fa-eye mr-1"></i>View
                         </button>
-                        <button onclick="openVerificationModal('business', ${doc.id}, '${doc.businessName}', '${doc.documentTypeName}')" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded">
+                        <button onclick="openVerificationModal('business', ${doc.id}, '${businessNameEscaped}', '${docTypeEscaped}')" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded">
                             <i class="fas fa-check mr-1"></i>Verify
                         </button>
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     } catch (error) {
         console.error('Error loading business documents:', error);
         document.getElementById('businessDocumentsList').innerHTML = 
@@ -169,7 +200,9 @@ async function loadBusinessDocuments() {
 async function loadPendingBusinesses() {
     try {
         // Get all users and filter for businesses that are pending verification
-        const response = await fetch('/api/admin/users');
+        const response = await fetch('/api/admin/users', {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
         
         // Filter for businesses that are pending verification
@@ -256,9 +289,7 @@ async function submitVerification(type, documentId) {
         
         const response = await fetch(endpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
                 approved: decision === 'approve',
                 notes: notes
@@ -284,16 +315,49 @@ async function submitVerification(type, documentId) {
 
 // View document
 function viewDocument(type, documentId) {
+    const token = getToken();
     const endpoint = type === 'driver'
         ? `/api/admin/verification/drivers/documents/${documentId}/download`
         : `/api/admin/verification/businesses/documents/${documentId}/download`;
-    window.open(endpoint, '_blank');
+    
+    // Create a temporary link with authentication
+    const link = document.createElement('a');
+    link.href = endpoint;
+    link.target = '_blank';
+    
+    // For downloads, we need to fetch with auth and create a blob
+    fetch(endpoint, {
+        headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to load document');
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        link.href = url;
+        link.download = ''; // Let browser determine filename
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error('Error viewing document:', error);
+        alert('Error loading document. Please try again.');
+    });
 }
 
 // View business details
 async function viewBusinessDetails(businessId) {
     try {
-        const response = await fetch(`/api/admin/verification/businesses/${businessId}/details`);
+        const response = await fetch(`/api/admin/verification/businesses/${businessId}/details`, {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
         
         if (data.success) {
@@ -399,9 +463,7 @@ async function submitBusinessVerification(businessId) {
     try {
         const response = await fetch(`/api/admin/verification/businesses/${businessId}/verify`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
                 approved: decision === 'approve',
                 notes: notes,
