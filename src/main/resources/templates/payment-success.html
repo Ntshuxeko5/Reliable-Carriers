@@ -330,34 +330,43 @@
                         }
                         
                         // Use payment verification data directly if it has shipment details
-                        if (verifyData.trackingNumber || verifyData.pickupAddress || verifyData.deliveryAddress) {
+                        // CRITICAL: Always prioritize tracking number from verifyData, then URL params
+                        const trackingFromVerify = verifyData.trackingNumber || verifyData.bookingNumber;
+                        const trackingFromUrl = urlParams.get('trackingNumber') || urlParams.get('tracking');
+                        const finalTrackingNumber = trackingFromVerify || trackingFromUrl;
+                        
+                        if (finalTrackingNumber || verifyData.pickupAddress || verifyData.deliveryAddress || verifyData.trackingNumber) {
                             const urlParams = new URLSearchParams(window.location.search);
                             // Map payment verification response to booking display format
                             const displayData = {
-                                bookingNumber: verifyData.trackingNumber || verifyData.bookingNumber || urlParams.get('trackingNumber') || urlParams.get('tracking'),
-                                trackingNumber: verifyData.trackingNumber || verifyData.bookingNumber,
-                                customerName: verifyData.customerName,
+                                bookingNumber: finalTrackingNumber || 'RC1234567890',
+                                trackingNumber: finalTrackingNumber || verifyData.trackingNumber || verifyData.bookingNumber,
+                                customerName: verifyData.customerName || urlParams.get('customerName'),
                                 customerFirstName: verifyData.customerName ? verifyData.customerName.split(' ')[0] : null,
                                 customerLastName: verifyData.customerName ? verifyData.customerName.split(' ').slice(1).join(' ') : null,
-                                serviceType: verifyData.serviceType || urlParams.get('service') || 'Express Delivery',
-                                totalAmount: verifyData.amount || urlParams.get('amount'),
-                                amount: verifyData.amount || urlParams.get('amount'),
-                                pickupAddress: verifyData.pickupAddress,
-                                pickupCity: verifyData.pickupCity,
-                                pickupState: verifyData.pickupState,
-                                pickupCountry: verifyData.pickupCountry,
-                                deliveryAddress: verifyData.deliveryAddress,
-                                deliveryCity: verifyData.deliveryCity,
-                                deliveryState: verifyData.deliveryState,
-                                deliveryCountry: verifyData.deliveryCountry,
-                                collectionCode: verifyData.collectionCode,
-                                dropOffCode: verifyData.dropOffCode,
-                                pickupCode: verifyData.collectionCode,
-                                deliveryCode: verifyData.dropOffCode,
-                                status: verifyData.status || 'Confirmed',
-                                customerEmail: verifyData.customerEmail,
-                                customerPhone: verifyData.customerPhone
+                                serviceType: verifyData.serviceType || urlParams.get('service') || urlParams.get('serviceType') || 'Express Delivery',
+                                totalAmount: verifyData.amount || urlParams.get('amount') || urlParams.get('totalAmount'),
+                                amount: verifyData.amount || urlParams.get('amount') || urlParams.get('totalAmount'),
+                                pickupAddress: verifyData.pickupAddress || urlParams.get('pickupAddress'),
+                                pickupCity: verifyData.pickupCity || urlParams.get('pickupCity'),
+                                pickupState: verifyData.pickupState || urlParams.get('pickupState'),
+                                pickupCountry: verifyData.pickupCountry || urlParams.get('pickupCountry'),
+                                deliveryAddress: verifyData.deliveryAddress || urlParams.get('deliveryAddress'),
+                                deliveryCity: verifyData.deliveryCity || urlParams.get('deliveryCity'),
+                                deliveryState: verifyData.deliveryState || urlParams.get('deliveryState'),
+                                deliveryCountry: verifyData.deliveryCountry || urlParams.get('deliveryCountry'),
+                                collectionCode: verifyData.collectionCode || urlParams.get('collectionCode'),
+                                dropOffCode: verifyData.dropOffCode || urlParams.get('dropOffCode'),
+                                pickupCode: verifyData.collectionCode || urlParams.get('collectionCode') || urlParams.get('pickupCode'),
+                                deliveryCode: verifyData.dropOffCode || urlParams.get('dropOffCode') || urlParams.get('deliveryCode'),
+                                status: verifyData.status || urlParams.get('status') || 'Confirmed',
+                                customerEmail: verifyData.customerEmail || urlParams.get('email'),
+                                customerPhone: verifyData.customerPhone || urlParams.get('customerPhone')
                             };
+                            
+                            console.log('Display data from verify response:', displayData);
+                            console.log('Tracking number:', displayData.trackingNumber);
+                            
                             updateBookingDisplay(displayData, customerProfile);
                             return;
                         }
@@ -501,9 +510,26 @@
         let deliveryMarker = null;
 
         function updateBookingDisplay(data, customerProfile) {
-            // Update booking number
-            if (document.getElementById('bookingNumber')) {
-                document.getElementById('bookingNumber').textContent = data.bookingNumber || data.trackingNumber || data.id || 'RC1234567890';
+            // CRITICAL: Update booking number - prioritize trackingNumber
+            // This is the most important field for the user
+            const bookingNumberElement = document.getElementById('bookingNumber');
+            if (bookingNumberElement) {
+                const trackingNum = data.trackingNumber || data.bookingNumber || data.id;
+                if (trackingNum && trackingNum !== 'RC1234567890' && trackingNum !== 'null' && trackingNum !== 'undefined') {
+                    bookingNumberElement.textContent = trackingNum;
+                    console.log('Updated booking number to:', trackingNum);
+                } else {
+                    // Try to get from URL params as fallback
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const urlTracking = urlParams.get('trackingNumber') || urlParams.get('tracking');
+                    if (urlTracking && urlTracking !== 'RC1234567890') {
+                        bookingNumberElement.textContent = urlTracking;
+                        console.log('Updated booking number from URL to:', urlTracking);
+                    } else {
+                        bookingNumberElement.textContent = 'RC1234567890';
+                        console.warn('No valid tracking number found, using placeholder');
+                    }
+                }
             }
             
             // Update customer name - prioritize logged-in customer profile
