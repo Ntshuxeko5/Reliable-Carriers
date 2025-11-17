@@ -381,49 +381,22 @@ public class PaystackController {
                         logger.info("Using email from payment user: {}", email);
                     }
 
-                    // Create shipment if not already created - ensure it's always created
-                    if (payment.getShipment() == null) {
-                        logger.info("Creating shipment from payment data...");
-                        logger.info("Payment ID: {}, Email: {}, Service Type: {}", payment.getId(), email, serviceType);
-                        Shipment shipment = createShipmentFromPaymentData(payment, email, serviceType);
-                        if (shipment != null && shipment.getTrackingNumber() != null) {
-                            trackingNumber = shipment.getTrackingNumber();
-                            logger.info("Shipment created successfully with tracking number: {}", trackingNumber);
-                            
-                            // Refresh payment to get updated shipment reference
-                            payment = paymentRepository.findByTransactionId(reference).orElse(payment);
-                        } else {
-                            logger.error("CRITICAL: Shipment creation returned null or missing tracking number. Payment ID: {}", payment.getId());
-                            // Retry once more with minimal data
-                            try {
-                                Shipment retryShipment = createMinimalShipment(payment, email, serviceType);
-                                if (retryShipment != null && retryShipment.getTrackingNumber() != null) {
-                                    trackingNumber = retryShipment.getTrackingNumber();
-                                    logger.info("Retry shipment created with tracking number: {}", trackingNumber);
-                                }
-                            } catch (Exception retryEx) {
-                                logger.error("CRITICAL: Retry shipment creation also failed: {}", retryEx.getMessage());
-                            }
-                            
-                            // Last resort: generate tracking number (but this should rarely happen)
-                            if (trackingNumber == null || trackingNumber.isEmpty()) {
-                                trackingNumber = "RC" + System.currentTimeMillis();
-                                logger.warn("Using fallback tracking number: {}", trackingNumber);
-                            }
-                        }
-                    } else {
-                        trackingNumber = payment.getShipment().getTrackingNumber();
-                        logger.info("Shipment already exists with tracking number: {}", trackingNumber);
+                    // CRITICAL: Ensure package/shipment is always created after payment
+                    trackingNumber = ensurePackageCreation(payment, email, serviceType, reference);
+                    if (trackingNumber == null || trackingNumber.isEmpty()) {
+                        logger.error("CRITICAL: Failed to create package after all attempts. Payment ID: {}", payment.getId());
+                        // Generate temporary tracking number as absolute last resort
+                        trackingNumber = "RC" + System.currentTimeMillis();
+                        logger.warn("Using emergency tracking number: {}", trackingNumber);
                     }
                 } else {
                     logger.error("Payment is null during redirect, cannot create shipment");
                 }
 
                 // CRITICAL: Ensure tracking number is always available
-                // If we still don't have one, try to get from payment shipment one more time
-                if (trackingNumber == null || trackingNumber.isEmpty()) {
-                    // Refresh payment from database to get latest shipment
-                    payment = paymentRepository.findByTransactionId(reference).orElse(payment);
+                // Refresh payment from database one final time to get latest shipment
+                payment = paymentRepository.findByTransactionId(reference).orElse(payment);
+                if (trackingNumber == null || trackingNumber.isEmpty() || trackingNumber.equals("null")) {
                     if (payment != null && payment.getShipment() != null && payment.getShipment().getTrackingNumber() != null) {
                         trackingNumber = payment.getShipment().getTrackingNumber();
                         logger.info("Retrieved tracking number from refreshed payment: {}", trackingNumber);
@@ -431,6 +404,12 @@ public class PaystackController {
                         logger.warn("Tracking number is still null/empty after all attempts, generating temporary one");
                         trackingNumber = "RC" + System.currentTimeMillis();
                     }
+                }
+                
+                // CRITICAL: Final verification - ensure we have a valid tracking number
+                if (trackingNumber == null || trackingNumber.isEmpty() || trackingNumber.equals("null")) {
+                    logger.error("CRITICAL: Tracking number is still invalid, using emergency fallback");
+                    trackingNumber = "RC" + System.currentTimeMillis();
                 }
                 
                 // CRITICAL: Build redirect URL with all parameters - ensure tracking number is always included
@@ -664,37 +643,40 @@ public class PaystackController {
                     if (email != null) shipmentRequest.setSenderEmail(email);
                     if (serviceType != null) shipmentRequest.setServiceType(serviceType);
 
-                    Shipment shipment = null;
-                    // Always create shipment directly from payment data (bypass quote validation)
-                    System.out.println("Creating shipment directly from payment data...");
-                    System.out.println("Payment ID: " + payment.getId() + ", Email: " + email + ", Service Type: " + serviceType);
-                    shipment = createShipmentFromPaymentData(payment, email, serviceType);
-                    System.out.println("Shipment created: " + (shipment != null ? shipment.getTrackingNumber() : "null"));
-
-                    // CRITICAL: Ensure tracking number is always present in response
-                    String trackingNum = shipment != null ? shipment.getTrackingNumber() : null;
+                    // CRITICAL: Ensure package/shipment is always created after payment
+                    String trackingNum = ensurePackageCreation(payment, email, serviceType, reference);
                     if (trackingNum == null || trackingNum.isEmpty()) {
-                        logger.error("CRITICAL: Shipment tracking number is null or empty. Payment ID: {}", payment.getId());
-                        // Try to get from payment if shipment exists
-                        if (payment.getShipment() != null) {
-                            trackingNum = payment.getShipment().getTrackingNumber();
-                        }
-                        // Last resort: generate temporary tracking number
-                        if (trackingNum == null || trackingNum.isEmpty()) {
-                            trackingNum = "RC" + System.currentTimeMillis();
-                            logger.warn("Using fallback tracking number: {}", trackingNum);
-                        }
+                        logger.error("CRITICAL: Failed to create package after all attempts. Payment ID: {}", payment.getId());
+                        trackingNum = "RC" + System.currentTimeMillis();
+                        logger.warn("Using emergency tracking number: {}", trackingNum);
                     }
+                    
+                    // Refresh payment to get latest shipment data
+                    payment = paymentRepository.findByTransactionId(reference).orElse(payment);
+                    Shipment shipment = payment.getShipment();
                     
                     response.put("status", "success");
                     response.put("paymentStatus", "COMPLETED");
                     response.put("message", "Payment verification completed");
                     response.put("reference", reference);
+                    // CRITICAL: Ensure tracking number is always present
                     response.put("trackingNumber", trackingNum);
                     response.put("bookingNumber", trackingNum); // Also include as bookingNumber for compatibility
                     response.put("amount", payment.getAmount());
                     response.put("serviceType", serviceType);
                     response.put("customerEmail", email);
+                    
+                    // CRITICAL: Verify tracking number is not null/empty
+                    if (trackingNum == null || trackingNum.isEmpty() || trackingNum.equals("null")) {
+                        logger.error("CRITICAL: Tracking number is invalid in response. Payment ID: {}", payment.getId());
+                        // Try to get from shipment if available
+                        if (shipment != null && shipment.getTrackingNumber() != null) {
+                            trackingNum = shipment.getTrackingNumber();
+                            response.put("trackingNumber", trackingNum);
+                            response.put("bookingNumber", trackingNum);
+                            logger.info("Retrieved tracking number from shipment: {}", trackingNum);
+                        }
+                    }
                     
                     logger.info("Payment verification successful for reference: " + reference);
                     logger.info("Tracking number: " + (shipment != null ? shipment.getTrackingNumber() : "null"));
@@ -803,6 +785,7 @@ public class PaystackController {
     /**
      * Create shipment directly from payment data when quote validation fails
      * Enhanced with better error handling and retry logic
+     * CRITICAL: This method ensures a package/shipment is ALWAYS created after payment
      */
     private Shipment createShipmentFromPaymentData(Payment payment, String email, String serviceType) {
         int maxRetries = 3;
@@ -822,10 +805,30 @@ public class PaystackController {
                     throw new IllegalArgumentException("Payment cannot be null");
                 }
                 
+                // CRITICAL: Refresh payment from database to get latest state
+                try {
+                    payment = paymentRepository.findById(payment.getId()).orElse(payment);
+                    logger.info("Refreshed payment from database");
+                } catch (Exception e) {
+                    logger.warn("Could not refresh payment, using provided payment: {}", e.getMessage());
+                }
+                
                 // Check if shipment already exists for this payment
                 if (payment.getShipment() != null) {
-                    logger.info("Shipment already exists for payment: {}", payment.getShipment().getTrackingNumber());
-                    return payment.getShipment();
+                    Shipment existingShipment = payment.getShipment();
+                    // Verify shipment is properly saved in database
+                    try {
+                        Shipment verifiedShipment = shipmentRepository.findById(existingShipment.getId())
+                            .orElse(null);
+                        if (verifiedShipment != null && verifiedShipment.getTrackingNumber() != null) {
+                            logger.info("Shipment already exists and verified for payment: {}", verifiedShipment.getTrackingNumber());
+                            return verifiedShipment;
+                        } else {
+                            logger.warn("Shipment reference exists but not found in database, creating new one");
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Could not verify existing shipment, creating new one: {}", e.getMessage());
+                    }
                 }
                 
                 // Extract address data from payment notes
@@ -974,8 +977,17 @@ public class PaystackController {
                 try {
                     logger.info("Saving shipment to database...");
                     savedShipment = shipmentRepository.save(shipment);
+                    // CRITICAL: Flush to ensure it's immediately available
+                    shipmentRepository.flush();
                     logger.info("Shipment saved successfully with ID: {} and tracking number: {}", 
                               savedShipment.getId(), savedShipment.getTrackingNumber());
+                    
+                    // Verify shipment was saved correctly
+                    Shipment verification = shipmentRepository.findById(savedShipment.getId()).orElse(null);
+                    if (verification == null || verification.getTrackingNumber() == null) {
+                        throw new RuntimeException("Shipment verification failed after save");
+                    }
+                    logger.info("Shipment verified in database with tracking: {}", verification.getTrackingNumber());
                 } catch (Exception e) {
                     logger.error("Failed to save shipment on attempt {}: {}", attempt, e.getMessage(), e);
                     if (attempt < maxRetries) {
@@ -986,34 +998,67 @@ public class PaystackController {
                 }
                 
                 // CRITICAL: Update payment with shipment reference and ensure status is COMPLETED
-                try {
-                    logger.info("Updating payment with shipment reference...");
-                    payment.setShipment(savedShipment);
-                    // Ensure payment status is COMPLETED
-                    if (payment.getStatus() != PaymentStatus.COMPLETED) {
-                        payment.setStatus(PaymentStatus.COMPLETED);
-                        payment.setPaymentDate(new java.util.Date());
-                    }
-                    paymentRepository.save(payment);
-                    logger.info("Payment updated successfully with shipment reference and COMPLETED status");
-                } catch (Exception e) {
-                    logger.error("Failed to update payment with shipment reference: {}", e.getMessage(), e);
-                    // Don't fail - shipment is already created, but log the error
-                    // Try to update again in a separate transaction
+                // This must happen atomically to ensure package is linked to customer
+                int paymentUpdateRetries = 3;
+                boolean paymentUpdated = false;
+                for (int paymentRetry = 0; paymentRetry < paymentUpdateRetries; paymentRetry++) {
                     try {
-                        Payment paymentToUpdate = paymentRepository.findById(payment.getId()).orElse(null);
-                        if (paymentToUpdate != null) {
-                            paymentToUpdate.setShipment(savedShipment);
-                            if (paymentToUpdate.getStatus() != PaymentStatus.COMPLETED) {
-                                paymentToUpdate.setStatus(PaymentStatus.COMPLETED);
-                                paymentToUpdate.setPaymentDate(new java.util.Date());
-                            }
-                            paymentRepository.save(paymentToUpdate);
-                            logger.info("Successfully updated payment in retry");
+                        logger.info("Updating payment with shipment reference (attempt {}/{})...", paymentRetry + 1, paymentUpdateRetries);
+                        // Refresh payment from database
+                        Payment paymentToUpdate = paymentRepository.findById(payment.getId())
+                            .orElseThrow(() -> new RuntimeException("Payment not found for update"));
+                        
+                        paymentToUpdate.setShipment(savedShipment);
+                        // Ensure payment status is COMPLETED
+                        if (paymentToUpdate.getStatus() != PaymentStatus.COMPLETED) {
+                            paymentToUpdate.setStatus(PaymentStatus.COMPLETED);
+                            paymentToUpdate.setPaymentDate(new java.util.Date());
                         }
-                    } catch (Exception retryEx) {
-                        logger.error("Retry update also failed: {}", retryEx.getMessage());
+                        paymentRepository.save(paymentToUpdate);
+                        paymentRepository.flush(); // Ensure immediate persistence
+                        
+                        // Verify payment was updated correctly
+                        Payment verifiedPayment = paymentRepository.findById(payment.getId()).orElse(null);
+                        if (verifiedPayment != null && verifiedPayment.getShipment() != null 
+                            && verifiedPayment.getShipment().getId().equals(savedShipment.getId())) {
+                            paymentUpdated = true;
+                            logger.info("Payment updated and verified successfully with shipment reference and COMPLETED status");
+                            break;
+                        } else {
+                            logger.warn("Payment update verification failed, retrying...");
+                        }
+                    } catch (Exception e) {
+                        logger.error("Failed to update payment with shipment reference (attempt {}): {}", 
+                                   paymentRetry + 1, e.getMessage(), e);
+                        if (paymentRetry < paymentUpdateRetries - 1) {
+                            try {
+                                Thread.sleep(300 * (paymentRetry + 1));
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                            }
+                        } else {
+                            // Last attempt failed - this is critical but shipment is already created
+                            logger.error("CRITICAL: Failed to link payment to shipment after all retries. " +
+                                       "Shipment tracking: {}, Payment ID: {}", 
+                                       savedShipment.getTrackingNumber(), payment.getId());
+                            // Try one more time with minimal update
+                            try {
+                                Payment lastAttempt = paymentRepository.findById(payment.getId()).orElse(null);
+                                if (lastAttempt != null) {
+                                    lastAttempt.setShipment(savedShipment);
+                                    paymentRepository.save(lastAttempt);
+                                    logger.info("Final attempt to link payment succeeded");
+                                }
+                            } catch (Exception finalEx) {
+                                logger.error("Final attempt to link payment also failed: {}", finalEx.getMessage());
+                            }
+                        }
                     }
+                }
+                
+                if (!paymentUpdated) {
+                    logger.error("WARNING: Payment was not successfully linked to shipment, but shipment was created. " +
+                               "Tracking: {}, Payment ID: {}", savedShipment.getTrackingNumber(), payment.getId());
                 }
                 
                 logger.info("Successfully created shipment from payment: {}", savedShipment.getTrackingNumber());
@@ -1026,10 +1071,24 @@ public class PaystackController {
                     // Last attempt failed - create minimal shipment as fallback
                     logger.error("All retries failed, creating minimal shipment as fallback");
                     try {
-                        return createMinimalShipment(payment, email, serviceType);
+                        Shipment fallbackShipment = createMinimalShipment(payment, email, serviceType);
+                        if (fallbackShipment != null && fallbackShipment.getTrackingNumber() != null) {
+                            logger.info("Fallback shipment created successfully: {}", fallbackShipment.getTrackingNumber());
+                            return fallbackShipment;
+                        } else {
+                            logger.error("CRITICAL: Fallback shipment creation returned null or missing tracking number");
+                            // Last resort: create emergency shipment
+                            return createEmergencyShipment(payment, email, serviceType);
+                        }
                     } catch (Exception fallbackException) {
                         logger.error("CRITICAL: Even fallback shipment creation failed: {}", fallbackException.getMessage(), fallbackException);
-                        return null;
+                        // Last resort: create emergency shipment
+                        try {
+                            return createEmergencyShipment(payment, email, serviceType);
+                        } catch (Exception emergencyEx) {
+                            logger.error("CRITICAL: Emergency shipment creation also failed: {}", emergencyEx.getMessage());
+                            return null;
+                        }
                     }
                 }
                 
@@ -1039,11 +1098,203 @@ public class PaystackController {
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     logger.error("Thread interrupted during retry wait");
-                    return null;
+                    // Try emergency shipment before giving up
+                    try {
+                        return createEmergencyShipment(payment, email, serviceType);
+                    } catch (Exception emergencyEx) {
+                        logger.error("Emergency shipment creation failed after interrupt: {}", emergencyEx.getMessage());
+                        return null;
+                    }
                 }
             }
         }
         
+        // Should never reach here, but if we do, try emergency shipment
+        logger.error("CRITICAL: Reached end of createShipmentFromPaymentData without creating shipment");
+        try {
+            return createEmergencyShipment(payment, email, serviceType);
+        } catch (Exception e) {
+            logger.error("CRITICAL: Emergency shipment creation failed: {}", e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Create an emergency shipment when all other methods fail
+     * This ensures a package is ALWAYS created, even in worst-case scenarios
+     */
+    private Shipment createEmergencyShipment(Payment payment, String email, String serviceType) {
+        logger.warn("Creating emergency shipment as last resort");
+        try {
+            Shipment shipment = new Shipment();
+            String trackingNumber = "RC" + System.currentTimeMillis() + (int)(Math.random() * 1000);
+            shipment.setTrackingNumber(trackingNumber);
+            shipment.setCollectionCode("COL" + (int)(Math.random() * 100000));
+            shipment.setDropOffCode("DRO" + (int)(Math.random() * 100000));
+            shipment.setStatus(ShipmentStatus.PENDING);
+            shipment.setShippingCost(payment.getAmount());
+            shipment.setServiceType(ServiceType.ECONOMY);
+            shipment.setCreatedAt(new java.util.Date());
+            shipment.setPickupAddress("Address to be updated");
+            shipment.setDeliveryAddress("Address to be updated");
+            shipment.setPickupCountry("South Africa");
+            shipment.setDeliveryCountry("South Africa");
+            shipment.setRecipientEmail(email != null ? email : "customer@example.com");
+            shipment.setRecipientName("Recipient");
+            
+            // Get or create user
+            User sender = null;
+            if (email != null && !email.isEmpty()) {
+                try {
+                    sender = userRepository.findByEmail(email).orElse(null);
+                    if (sender == null) {
+                        sender = new User();
+                        sender.setEmail(email);
+                        sender.setFirstName("Customer");
+                        sender.setLastName("User");
+                        sender.setRole(UserRole.CUSTOMER);
+                        sender.setCreatedAt(new java.util.Date());
+                        sender = userRepository.save(sender);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Could not create/find user for emergency shipment: {}", e.getMessage());
+                }
+            }
+            
+            if (sender == null) {
+                // Create default user
+                String defaultEmail = "customer_" + System.currentTimeMillis() + "@reliablecarriers.co.za";
+                sender = new User();
+                sender.setEmail(defaultEmail);
+                sender.setFirstName("Customer");
+                sender.setLastName("User");
+                sender.setRole(UserRole.CUSTOMER);
+                sender.setCreatedAt(new java.util.Date());
+                sender = userRepository.save(sender);
+            }
+            
+            shipment.setSender(sender);
+            
+            Shipment saved = shipmentRepository.save(shipment);
+            shipmentRepository.flush();
+            
+            // Link to payment
+            try {
+                Payment paymentToUpdate = paymentRepository.findById(payment.getId()).orElse(null);
+                if (paymentToUpdate != null) {
+                    paymentToUpdate.setShipment(saved);
+                    if (paymentToUpdate.getStatus() != PaymentStatus.COMPLETED) {
+                        paymentToUpdate.setStatus(PaymentStatus.COMPLETED);
+                        paymentToUpdate.setPaymentDate(new java.util.Date());
+                    }
+                    paymentRepository.save(paymentToUpdate);
+                }
+            } catch (Exception e) {
+                logger.warn("Could not link emergency shipment to payment: {}", e.getMessage());
+            }
+            
+            logger.warn("Emergency shipment created: {}", saved.getTrackingNumber());
+            return saved;
+        } catch (Exception e) {
+            logger.error("CRITICAL: Emergency shipment creation failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create emergency shipment", e);
+        }
+    }
+    
+    /**
+     * CRITICAL: Ensure package/shipment is always created after payment
+     * This method provides comprehensive error handling and retry logic
+     * Returns tracking number if successful, null otherwise
+     */
+    private String ensurePackageCreation(Payment payment, String email, String serviceType, String reference) {
+        logger.info("=== ensurePackageCreation called ===");
+        logger.info("Payment ID: {}, Reference: {}, Email: {}, Service Type: {}", 
+                   payment.getId(), reference, email, serviceType);
+        
+        // First, check if shipment already exists and is valid
+        try {
+            // Refresh payment from database
+            Payment refreshedPayment = paymentRepository.findByTransactionId(reference)
+                .orElse(paymentRepository.findById(payment.getId()).orElse(payment));
+            
+            if (refreshedPayment.getShipment() != null) {
+                Shipment existingShipment = refreshedPayment.getShipment();
+                // Verify shipment exists in database
+                Shipment verifiedShipment = shipmentRepository.findById(existingShipment.getId())
+                    .orElse(null);
+                if (verifiedShipment != null && verifiedShipment.getTrackingNumber() != null 
+                    && !verifiedShipment.getTrackingNumber().isEmpty()) {
+                    logger.info("Package already exists and verified: {}", verifiedShipment.getTrackingNumber());
+                    return verifiedShipment.getTrackingNumber();
+                } else {
+                    logger.warn("Shipment reference exists but not found in database, creating new one");
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Could not verify existing shipment: {}", e.getMessage());
+        }
+        
+        // Try to create shipment with full retry logic
+        int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                logger.info("Attempting to create package (attempt {}/{})", attempt, maxAttempts);
+                Shipment shipment = createShipmentFromPaymentData(payment, email, serviceType);
+                
+                if (shipment != null && shipment.getTrackingNumber() != null 
+                    && !shipment.getTrackingNumber().isEmpty()) {
+                    // Verify shipment is linked to payment
+                    Payment updatedPayment = paymentRepository.findByTransactionId(reference)
+                        .orElse(paymentRepository.findById(payment.getId()).orElse(null));
+                    
+                    if (updatedPayment != null && updatedPayment.getShipment() != null 
+                        && updatedPayment.getShipment().getId().equals(shipment.getId())) {
+                        logger.info("Package created and linked to payment successfully: {}", shipment.getTrackingNumber());
+                        return shipment.getTrackingNumber();
+                    } else {
+                        logger.warn("Package created but not linked to payment, attempting to link...");
+                        // Try to link manually
+                        try {
+                            if (updatedPayment != null) {
+                                updatedPayment.setShipment(shipment);
+                                paymentRepository.save(updatedPayment);
+                                logger.info("Package manually linked to payment");
+                                return shipment.getTrackingNumber();
+                            }
+                        } catch (Exception linkEx) {
+                            logger.warn("Could not link package to payment: {}", linkEx.getMessage());
+                        }
+                        // Even if linking failed, return tracking number
+                        return shipment.getTrackingNumber();
+                    }
+                } else {
+                    logger.warn("Shipment creation returned null or missing tracking number on attempt {}", attempt);
+                }
+            } catch (Exception e) {
+                logger.error("Package creation attempt {} failed: {}", attempt, e.getMessage());
+                if (attempt < maxAttempts) {
+                    try {
+                        Thread.sleep(500 * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+        
+        // All attempts failed - try emergency shipment
+        logger.error("All package creation attempts failed, trying emergency shipment");
+        try {
+            Shipment emergencyShipment = createEmergencyShipment(payment, email, serviceType);
+            if (emergencyShipment != null && emergencyShipment.getTrackingNumber() != null) {
+                logger.warn("Emergency package created: {}", emergencyShipment.getTrackingNumber());
+                return emergencyShipment.getTrackingNumber();
+            }
+        } catch (Exception e) {
+            logger.error("Emergency package creation also failed: {}", e.getMessage());
+        }
+        
+        logger.error("CRITICAL: Failed to create package after all attempts");
         return null;
     }
     
@@ -1716,72 +1967,63 @@ public class PaystackController {
                     logger.info("Webhook: Payment status updated to COMPLETED for reference: {}", reference);
                 }
                 
-                // CRITICAL: Create shipment if it doesn't exist
-                if (payment.getShipment() == null) {
-                    String email = "customer@example.com";
-                    String serviceType = "OVERNIGHT";
-                    String notes = payment.getNotes();
-                    
-                    // Extract email and serviceType from notes (support both formats)
-                    if (notes != null && !notes.trim().isEmpty()) {
-                        if (notes.contains("|")) {
-                            // Compact format
-                            try {
-                                String[] parts = notes.split("\\|");
-                                for (String part : parts) {
-                                    if (part.contains(":")) {
-                                        String[] kv = part.split(":", 2);
-                                        if (kv.length == 2) {
-                                            String k = kv[0].trim();
-                                            String v = kv[1].trim();
-                                            if ("email".equals(k)) email = v;
-                                            if ("serviceType".equals(k)) serviceType = v;
-                                        }
+                // CRITICAL: Ensure package/shipment is always created after payment
+                String email = "customer@example.com";
+                String serviceType = "OVERNIGHT";
+                String notes = payment.getNotes();
+                
+                // Extract email and serviceType from notes (support both formats)
+                if (notes != null && !notes.trim().isEmpty()) {
+                    if (notes.contains("|")) {
+                        // Compact format
+                        try {
+                            String[] parts = notes.split("\\|");
+                            for (String part : parts) {
+                                if (part.contains(":")) {
+                                    String[] kv = part.split(":", 2);
+                                    if (kv.length == 2) {
+                                        String k = kv[0].trim();
+                                        String v = kv[1].trim();
+                                        if ("email".equals(k)) email = v;
+                                        if ("serviceType".equals(k)) serviceType = v;
                                     }
                                 }
-                            } catch (Exception e) {
-                                logger.warn("Webhook: Could not parse compact notes format: {}", e.getMessage());
                             }
-                        } else if (notes.trim().startsWith("{")) {
-                            // JSON format
-                            try {
-                                Map<String, Object> payload = objectMapper.readValue(notes, new TypeReference<Map<String, Object>>(){});
-                                if (payload.containsKey("email")) email = String.valueOf(payload.get("email"));
-                                if (payload.containsKey("serviceType")) serviceType = String.valueOf(payload.get("serviceType"));
-                            } catch (Exception e) {
-                                logger.warn("Webhook: Could not parse JSON notes format: {}", e.getMessage());
-                            }
+                        } catch (Exception e) {
+                            logger.warn("Webhook: Could not parse compact notes format: {}", e.getMessage());
+                        }
+                    } else if (notes.trim().startsWith("{")) {
+                        // JSON format
+                        try {
+                            Map<String, Object> payload = objectMapper.readValue(notes, new TypeReference<Map<String, Object>>(){});
+                            if (payload.containsKey("email")) email = String.valueOf(payload.get("email"));
+                            if (payload.containsKey("serviceType")) serviceType = String.valueOf(payload.get("serviceType"));
+                        } catch (Exception e) {
+                            logger.warn("Webhook: Could not parse JSON notes format: {}", e.getMessage());
                         }
                     }
-                    
-                    // Also try to get email from payment user
-                    if (payment.getUser() != null && payment.getUser().getEmail() != null) {
-                        email = payment.getUser().getEmail();
-                    }
-                    
-                    logger.info("Webhook: Creating shipment for payment reference: {}, email: {}, serviceType: {}", reference, email, serviceType);
-                    Shipment shipment = createShipmentFromPaymentData(payment, email, serviceType);
-                    if (shipment != null && shipment.getTrackingNumber() != null) {
-                        logger.info("Webhook: Shipment created successfully with tracking number: {}", shipment.getTrackingNumber());
+                }
+                
+                // Also try to get email from payment user
+                if (payment.getUser() != null && payment.getUser().getEmail() != null) {
+                    email = payment.getUser().getEmail();
+                }
+                
+                // CRITICAL: Ensure package is created
+                String trackingNumber = ensurePackageCreation(payment, email, serviceType, reference);
+                if (trackingNumber != null && !trackingNumber.isEmpty()) {
+                    logger.info("Webhook: Package created/verified with tracking number: {}", trackingNumber);
+                    // Refresh payment to get shipment
+                    payment = paymentRepository.findByTransactionId(reference).orElse(payment);
+                    if (payment.getShipment() != null) {
                         try {
-                            sendPaymentConfirmationEmail(shipment, payment);
+                            sendPaymentConfirmationEmail(payment.getShipment(), payment);
                         } catch (Exception e) {
                             logger.warn("Webhook: Failed to send confirmation email: {}", e.getMessage());
                         }
-                    } else {
-                        logger.error("Webhook: CRITICAL - Shipment creation failed or returned null for payment reference: {}", reference);
-                        // Try minimal shipment as fallback
-                        try {
-                            Shipment fallbackShipment = createMinimalShipment(payment, email, serviceType);
-                            if (fallbackShipment != null) {
-                                logger.info("Webhook: Fallback shipment created with tracking number: {}", fallbackShipment.getTrackingNumber());
-                            }
-                        } catch (Exception fallbackEx) {
-                            logger.error("Webhook: CRITICAL - Even fallback shipment creation failed: {}", fallbackEx.getMessage());
-                        }
                     }
                 } else {
-                    logger.info("Webhook: Shipment already exists for payment reference: {}, tracking: {}", reference, payment.getShipment().getTrackingNumber());
+                    logger.error("Webhook: CRITICAL - Failed to create package for payment reference: {}", reference);
                 }
             }
             return ResponseEntity.ok(Map.of("success", true));
