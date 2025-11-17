@@ -1995,9 +1995,9 @@ public class PaystackController {
                     } else if (notes.trim().startsWith("{")) {
                         // JSON format
                         try {
-                            Map<String, Object> payload = objectMapper.readValue(notes, new TypeReference<Map<String, Object>>(){});
-                            if (payload.containsKey("email")) email = String.valueOf(payload.get("email"));
-                            if (payload.containsKey("serviceType")) serviceType = String.valueOf(payload.get("serviceType"));
+                            Map<String, Object> notesPayload = objectMapper.readValue(notes, new TypeReference<Map<String, Object>>(){});
+                            if (notesPayload.containsKey("email")) email = String.valueOf(notesPayload.get("email"));
+                            if (notesPayload.containsKey("serviceType")) serviceType = String.valueOf(notesPayload.get("serviceType"));
                         } catch (Exception e) {
                             logger.warn("Webhook: Could not parse JSON notes format: {}", e.getMessage());
                         }
